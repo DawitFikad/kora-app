@@ -2,7 +2,33 @@ import { PrismaClient, Role, AccountStatus } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { OtpService } from "./otp.service";
 
-const prisma = new PrismaClient();
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
+
+// Parse DATABASE_URL and ensure password is a string for SCRAM authentication
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set. Please check your .env file.');
+}
+
+let url: URL;
+try {
+    url = new URL(databaseUrl);
+} catch (error) {
+    throw new Error(`Invalid DATABASE_URL format: ${databaseUrl}`);
+}
+
+const pool = new pg.Pool({
+    host: url.hostname,
+    port: parseInt(url.port),
+    database: url.pathname.slice(1),
+    user: url.username,
+    password: url.password, // This ensures it's treated as a string
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
 
 const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET || "default_access_secret";
 const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || "default_refresh_secret";

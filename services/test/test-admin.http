@@ -1,0 +1,74 @@
+### Admin API Testing
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc2NjQyNDQ0NywiZXhwIjoxNzY2NDI1MzQ3fQ.IMTXkoE3OYCrAmzvvOkzJVkm0relHGag6AHWccu83QA
+
+## 1. Create Admin User (Initial Setup)
+POST http://localhost:4000/api/admin/create-admin
+Content-Type: application/json
+
+{
+  "phoneNumber": "+251900000000",
+  "email": "admin@et-ticket.com",
+  "firstName": "Admin",
+  "lastName": "User"
+}
+
+## 2. Request OTP for Admin
+POST http://localhost:4000/api/auth/otp/request
+Content-Type: application/json
+
+{
+  "phoneNumber": "+251900000000"
+}
+
+## 3. Verify OTP and Login as Admin
+### IMPORTANT: Check the server console for the OTP code, then replace it below
+POST http://localhost:4000/api/auth/otp/verify
+Content-Type: application/json
+
+{
+  "phoneNumber": "+251900000000",
+  "otp": "REPLACE_WITH_OTP_FROM_CONSOLE"
+}
+
+### ⚠️ IMPORTANT: After running step 3 above:
+### 1. Look at the response JSON
+### 2. Copy the "accessToken" value (the long string after "accessToken": "...")
+### 3. Replace YOUR_ADMIN_ACCESS_TOKEN below with that token
+### 
+### Example response from step 3:
+### {
+###   "user": { ... },
+###   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",  <-- COPY THIS
+###   "refreshToken": "..."
+### }
+
+## 4. Get All Users (Admin Only)
+### Replace YOUR_ADMIN_ACCESS_TOKEN with the actual token from step 3
+GET http://localhost:4000/api/admin/users
+Authorization: Bearer {{token}}
+
+## 5. Get Pending Organizers Only
+GET http://localhost:4000/api/admin/users?status=PENDING
+Authorization: Bearer {{token}}
+
+## 6. Approve Organizer
+### First run step 5 to get the user ID, then replace USER_ID below
+PATCH http://localhost:4000/api/admin/users/USER_ID/approve
+Authorization: Bearer {{token}}
+
+## 7. Suspend User (Replace USER_ID)
+PATCH http://localhost:4000/api/admin/users/USER_ID/suspend
+Authorization: Bearer {{token}}
+
+## 8. Activate User (Replace USER_ID)
+PATCH http://localhost:4000/api/admin/users/USER_ID/activate
+Authorization: Bearer {{token}}
+
+## 9. Test Admin-Only Route
+GET http://localhost:4000/api/admin-only
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc2NjQyNDAxNCwiZXhwIjoxNzY2NDI0OTE0fQ.Ey7H17l9Fi7u3NI7DqGudQsszTEC2HJZb_q-MAB2fmk
+
+### Troubleshooting:
+### - If you get "Unauthorized" error: Make sure you copied the FULL accessToken from step 3
+### - If you get "Forbidden" error: The user doesn't have ADMIN role
+### - Token expires in 15 minutes - if expired, repeat steps 2-3 to get a new token

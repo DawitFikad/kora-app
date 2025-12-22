@@ -1,0 +1,60 @@
+### Test Authentication Flow for ET-Ticket API
+### Make sure the server is running on http://localhost:4000
+
+### 1. Health Check
+GET http://localhost:4000/api
+
+### 2. Request OTP for User (B2C - Mobile)
+POST http://localhost:4000/api/auth/otp/request
+Content-Type: application/json
+
+{
+  "phoneNumber": "+251911223344"
+}
+
+###
+
+### 3. Verify OTP and Login/Register User
+### NOTE: Check server console for the OTP code
+POST http://localhost:4000/api/auth/otp/verify
+Content-Type: application/json
+
+{
+  "phoneNumber": "+251911223344",
+  "otp": "255795"
+}
+
+###
+
+### 4. Register Organizer (B2B - Web)
+POST http://localhost:4000/api/auth/organizer/register
+Content-Type: application/json
+
+{
+  "phoneNumber": "+251922334455",
+  "email": "organizer@example.com",
+  "name": "Test Organizer"
+}
+
+###
+
+### 5. Request OTP for Organizer (Should get "Pending Approval")
+POST http://localhost:4000/api/auth/otp/request
+Content-Type: application/json
+
+{
+  "phoneNumber": "+251922334455"
+}
+### 6. Verify OTP for Organizer (Should fail with "Pending Approval")
+POST http://localhost:4000/api/auth/otp/verify
+Content-Type: application/json
+
+{
+  "phoneNumber": "+251922334455",
+  "otp": "REPLACE_WITH_OTP_FROM_CONSOLE"
+}
+### 7. Test Protected Route (Replace TOKEN with accessToken from step 3)
+GET http://localhost:4000/api/protected
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+###
