@@ -28,6 +28,7 @@ model User {
   lastName      String?
   role          Role          @default(USER)
   status        AccountStatus @default(ACTIVE)
+  language      String        @default("en")
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 

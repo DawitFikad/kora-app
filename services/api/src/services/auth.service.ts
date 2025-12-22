@@ -1,6 +1,7 @@
 import { PrismaClient, Role, AccountStatus } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { OtpService } from "./otp.service";
+import { SmsService } from "./sms.service";
 
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
@@ -38,8 +39,10 @@ const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || "default_refresh_
 export class AuthService {
     static async requestOtp(phoneNumber: string) {
         const otp = await OtpService.generateOtp(phoneNumber);
-        // TODO: Integrate SMS provider. For now, log it.
-        console.log(`[MOCK SMS] OTP for ${phoneNumber}: ${otp}`);
+
+        // Send real SMS (or fallback to console based on env)
+        await SmsService.sendOtp(phoneNumber, otp);
+
         return { message: "OTP sent successfully" };
     }
 
@@ -124,6 +127,32 @@ export class AuthService {
         });
 
         return { message: "Organizer registration successful. Pending approval." };
+    }
+
+    static async refreshAccessToken(refreshToken: string) {
+        try {
+            const payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as { userId: number };
+
+            // Check if token exists in DB and is not expired
+            const storedToken = await prisma.refreshToken.findUnique({
+                where: { token: refreshToken },
+                include: { user: true }
+            });
+
+            if (!storedToken || storedToken.expiresAt < new Date()) {
+                if (storedToken) {
+                    await prisma.refreshToken.delete({ where: { id: storedToken.id } });
+                }
+                throw new Error("Invalid or expired refresh token");
+            }
+
+            // Generate new access token
+            const accessToken = this.generateAccessToken(storedToken.user.id, storedToken.user.role);
+
+            return { accessToken };
+        } catch (error) {
+            throw new Error("Invalid refresh token");
+        }
     }
 
     private static generateAccessToken(userId: number, role: Role) {
