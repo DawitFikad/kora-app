@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // URL removed - must be in prisma.config.ts
 }
 
 enum Role {
@@ -19,20 +18,50 @@ enum AccountStatus {
   SUSPENDED
 }
 
-model User {
-  id            Int           @id @default(autoincrement())
-  phoneNumber   String        @unique
-  email         String?       @unique
-  password      String?
-  firstName     String?
-  lastName      String?
-  role          Role          @default(USER)
-  status        AccountStatus @default(ACTIVE)
-  language      String        @default("en")
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+enum OrganizerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
+model User {
+  id            Int            @id @default(autoincrement())
+  phoneNumber   String         @unique
+  email         String?        @unique
+  password      String?
+  role          Role           @default(USER)
+  status        AccountStatus  @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  profile       UserProfile?
+  organizer     OrganizerProfile?
   refreshTokens RefreshToken[]
+}
+
+model UserProfile {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String?
+  language  String   @default("en") // "am" for Amharic, "en" for English
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrganizerProfile {
+  id               Int             @id @default(autoincrement())
+  userId           Int             @unique
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationName String
+  contactPhone     String
+  contactEmail     String?
+  city             String
+  payoutDetails    String // Bank or mobile money details
+  status           OrganizerStatus @default(PENDING)
+  adminNote        String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 }
 
 model RefreshToken {

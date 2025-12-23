@@ -1,0 +1,58 @@
+### User & Organizer Profile Testing
+
+@baseUrl = http://localhost:4000/api
+@userToken = YOUR_USER_ACCESS_TOKEN
+@orgToken = YOUR_ORG_ACCESS_TOKEN
+@adminToken = YOUR_ADMIN_ACCESS_TOKEN
+
+### 1. [USER] Get My User Profile
+# Requires: Any authenticated user token
+GET {{baseUrl}}/profiles/me
+Authorization: Bearer {{userToken}}
+
+### 2. [USER] Update My User Profile
+# Requires: Any authenticated user token
+PUT {{baseUrl}}/profiles/me
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "fullName": "John Doe",
+    "language": "am"
+}
+
+### 3. [ORGANIZER] Get My Organizer Profile
+# Requires: Role ORGANIZER or ADMIN
+GET {{baseUrl}}/profiles/organizer
+Authorization: Bearer {{orgToken}}
+
+### 4. [ORGANIZER] Update My Organizer Profile
+# Requires: Role ORGANIZER
+PUT {{baseUrl}}/profiles/organizer
+Content-Type: application/json
+Authorization: Bearer {{orgToken}}
+
+{
+    "organizationName": "Doe Events Ltd",
+    "city": "Addis Ababa",
+    "payoutDetails": "CBE: 1000123456789",
+    "contactEmail": "contact@doeevents.com"
+}
+
+### 5. [ADMIN] List All Organizer Applications
+# Requires: Role ADMIN
+GET {{baseUrl}}/profiles/admin/organizers
+Authorization: Bearer {{adminToken}}
+
+### 6. [ADMIN] Review/Approve Organizer
+# Requires: Role ADMIN
+# Replace :id with the OrganizerProfile ID from Request #5
+# status can be: APPROVED or REJECTED
+POST {{baseUrl}}/profiles/admin/organizers/1/review
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+    "status": "APPROVED",
+    "adminNote": "Business license verified."
+}

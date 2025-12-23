@@ -1,9 +1,8 @@
-// scripts/verify-auth.ts
+import 'dotenv/config';
 import { AuthService } from "../src/services/auth.service";
 import redis from "../src/utils/redis";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../src/lib/prisma";
+import { Role, AccountStatus, OrganizerStatus } from "@prisma/client";
 
 async function main() {
     console.log("Starting Auth Verification...");
@@ -12,7 +11,11 @@ async function main() {
 
     // 1. Request OTP
     console.log("\n1. Requesting OTP...");
-    await AuthService.requestOtp(phoneNumber);
+    try {
+        await AuthService.requestOtp(phoneNumber);
+    } catch (e: any) {
+        console.log("Note: requestOtp failed (likely due to SMS provider):", e.message);
+    }
 
     // Retrieve OTP from Redis to simulate user receiving it
     const hashedOtp = await redis.get(`otp:${phoneNumber}`);
