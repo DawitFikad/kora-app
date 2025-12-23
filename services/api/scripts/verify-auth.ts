@@ -44,7 +44,12 @@ async function main() {
     console.log("\n3. Registering Organizer...");
     const orgPhone = "+9876543210";
     try {
-        // Cleanup first
+        // Cleanup first (Cascade delete isn't always enough if we don't handle relations)
+        const orgUser = await prisma.user.findUnique({ where: { phoneNumber: orgPhone }, include: { organizer: true } });
+        if (orgUser?.organizer) {
+            await prisma.event.deleteMany({ where: { organizerId: orgUser.organizer.id } });
+            await prisma.organizerProfile.delete({ where: { id: orgUser.organizer.id } });
+        }
         await prisma.user.deleteMany({ where: { phoneNumber: orgPhone } });
 
         const result = await AuthService.registerOrganizer({

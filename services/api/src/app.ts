@@ -5,6 +5,8 @@ import authRoutes from "./routes/auth.routes";
 import testRoutes from "./routes/test.routes";
 import adminRoutes from "./routes/admin.routes";
 import profileRoutes from "./routes/profile.routes";
+import eventRoutes from "./routes/event.routes";
+import ticketingRoutes from "./routes/ticketing.routes";
 
 const app = express();
 
@@ -24,6 +26,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/profiles", profileRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/tickets", ticketingRoutes);
 app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {

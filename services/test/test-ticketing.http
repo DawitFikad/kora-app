@@ -1,0 +1,39 @@
+### Ticketing & Seat Locking Testing
+
+@baseUrl = http://localhost:4000/api
+@userToken = YOUR_USER_ACCESS_TOKEN
+
+### 1. [PUBLIC] Browse Events to get ID and Tier ID
+GET {{baseUrl}}/events
+
+### 2. [USER] Reserve Tickets (Short-lived lock)
+# Use eventId and tierId from Request #1
+POST {{baseUrl}}/tickets/reserve
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "eventId": 1,
+    "tierId": 1,
+    "quantity": 2
+}
+
+### 3. [USER] Confirm Purchase (Simulate Payment)
+# In real flow, this follows payment gateway redirect
+POST {{baseUrl}}/tickets/confirm
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "eventId": 1,
+    "tierId": 1,
+    "quantity": 2
+}
+
+### 4. [USER] View My Tickets
+GET {{baseUrl}}/tickets/me
+Authorization: Bearer {{userToken}}
+
+### 5. [ADMIN/SYSTEM] Mock QR Scan (Use Ticket ID from Request #4)
+# In production, this is called by the scanner app
+# Note: No route for this yet, test via service later or add here if needed.

@@ -21,7 +21,7 @@ Content-Type: application/json
 
 {
   "phoneNumber": "+251911223344",
-  "otp": "255795"
+  "otp": "REPLACE_WITH_OTP_FROM_CONSOLE"
 }
 
 ###

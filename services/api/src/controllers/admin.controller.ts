@@ -1,31 +1,6 @@
 import { Request, Response } from "express";
-import { PrismaClient, AccountStatus, Role } from "@prisma/client";
-import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
-
-// Parse DATABASE_URL and ensure password is a string for SCRAM authentication
-const databaseUrl = process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is not set. Please check your .env file.');
-}
-
-let url: URL;
-try {
-    url = new URL(databaseUrl);
-} catch (error) {
-    throw new Error(`Invalid DATABASE_URL format: ${databaseUrl}`);
-}
-
-const pool = new pg.Pool({
-    host: url.hostname,
-    port: parseInt(url.port),
-    database: url.pathname.slice(1),
-    user: url.username,
-    password: url.password,
-});
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "../lib/prisma";
+import { Role, AccountStatus, OrganizerStatus } from "@prisma/client";
 
 export class AdminController {
     // Get all users with optional filters
@@ -39,16 +14,8 @@ export class AdminController {
 
             const users = await prisma.user.findMany({
                 where: filters,
-                select: {
-                    id: true,
-                    phoneNumber: true,
-                    email: true,
-                    firstName: true,
-                    lastName: true,
-                    role: true,
-                    status: true,
-                    createdAt: true,
-                    updatedAt: true,
+                include: {
+                    profile: true
                 },
                 orderBy: { createdAt: 'desc' }
             });
@@ -59,13 +26,14 @@ export class AdminController {
         }
     }
 
-    // Approve a pending organizer
+    // Approve a pending organizer (Deprecated: Should use ProfileController's reviewOrganizer)
     static async approveOrganizer(req: Request, res: Response) {
         try {
             const { userId } = req.params;
 
             const user = await prisma.user.findUnique({
-                where: { id: parseInt(userId) }
+                where: { id: parseInt(userId) },
+                include: { organizer: true }
             });
 
             if (!user) {
@@ -76,25 +44,20 @@ export class AdminController {
                 return res.status(400).json({ error: "User is not an organizer" });
             }
 
-            if (user.status !== AccountStatus.PENDING) {
-                return res.status(400).json({ error: `User status is already ${user.status}` });
-            }
-
-            const updatedUser = await prisma.user.update({
+            // Update both account status and organizer profile status
+            await prisma.user.update({
                 where: { id: parseInt(userId) },
                 data: { status: AccountStatus.ACTIVE }
             });
 
-            res.json({
-                message: "Organizer approved successfully",
-                user: {
-                    id: updatedUser.id,
-                    phoneNumber: updatedUser.phoneNumber,
-                    email: updatedUser.email,
-                    role: updatedUser.role,
-                    status: updatedUser.status
-                }
-            });
+            if (user.organizer) {
+                await prisma.organizerProfile.update({
+                    where: { id: user.organizer.id },
+                    data: { status: OrganizerStatus.APPROVED }
+                });
+            }
+
+            res.json({ message: "Organizer approved successfully" });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
@@ -146,7 +109,7 @@ export class AdminController {
         }
     }
 
-    // Create admin user (for testing/setup only - should be protected in production)
+    // Create admin user
     static async createAdmin(req: Request, res: Response) {
         try {
             const { phoneNumber, email, firstName, lastName } = req.body;
@@ -167,10 +130,17 @@ export class AdminController {
                 data: {
                     phoneNumber,
                     email,
-                    firstName,
-                    lastName,
                     role: Role.ADMIN,
-                    status: AccountStatus.ACTIVE
+                    status: AccountStatus.ACTIVE,
+                    profile: {
+                        create: {
+                            fullName: `${firstName || ""} ${lastName || ""}`.trim() || null,
+                            language: "en"
+                        }
+                    }
+                },
+                include: {
+                    profile: true
                 }
             });
 

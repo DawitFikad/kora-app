@@ -24,6 +24,25 @@ enum OrganizerStatus {
   REJECTED
 }
 
+enum EventStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum EventType {
+  CAPACITY
+  SEAT_MAP
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  CANCELLED
+}
+
 model User {
   id            Int            @id @default(autoincrement())
   phoneNumber   String         @unique
@@ -37,6 +56,8 @@ model User {
   profile       UserProfile?
   organizer     OrganizerProfile?
   refreshTokens RefreshToken[]
+  tickets       Ticket[]
+  purchases     Purchase[]
 }
 
 model UserProfile {
@@ -62,6 +83,98 @@ model OrganizerProfile {
   adminNote        String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+
+  events           Event[]
+}
+
+model Category {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  slug   String  @unique
+  events Event[]
+}
+
+model City {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  slug   String  @unique
+  events Event[]
+}
+
+model Event {
+  id               Int           @id @default(autoincrement())
+  title            String
+  description      String?
+  venue            String
+  dateTime         DateTime
+  status           EventStatus   @default(PENDING)
+  eventType        EventType     @default(CAPACITY)
+  totalCapacity    Int?          // Used for CAPACITY type
+  
+  coverImage       String?
+  gallery          String[]      @default([])
+  featured         Boolean       @default(false)
+  commission       Decimal       @default(0.0) @db.Decimal(10, 2)
+  
+  organizerId      Int
+  organizer        OrganizerProfile @relation(fields: [organizerId], references: [id])
+  
+  categoryId       Int
+  category         Category      @relation(fields: [categoryId], references: [id])
+  
+  cityId           Int
+  city             City          @relation(fields: [cityId], references: [id])
+  
+  tiers            TicketTier[]
+  tickets          Ticket[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model TicketTier {
+  id          Int      @id @default(autoincrement())
+  name        String   // Regular, VIP, etc.
+  price       Decimal  @db.Decimal(10, 2)
+  capacity    Int
+  eventId     Int
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets     Ticket[]
+}
+
+model Ticket {
+  id           String       @id @default(uuid())
+  qrPayload    String       @unique
+  status       TicketStatus @default(VALID)
+  
+  userId       Int
+  user         User         @relation(fields: [userId], references: [id])
+  
+  eventId      Int
+  event        Event        @relation(fields: [eventId], references: [id])
+  
+  tierId       Int
+  tier         TicketTier   @relation(fields: [tierId], references: [id])
+  
+  seatNumber   String?      // For SEAT_MAP events
+  
+  purchaseId   Int?
+  purchase     Purchase?    @relation(fields: [purchaseId], references: [id])
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Purchase {
+  id             Int      @id @default(autoincrement())
+  totalAmount    Decimal  @db.Decimal(10, 2)
+  paymentRef     String   @unique
+  paymentMethod  String   // e.g., "Chapa", "Telebirr"
+  
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  
+  tickets        Ticket[]
+  createdAt      DateTime @default(now())
 }
 
 model RefreshToken {

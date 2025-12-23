@@ -1,5 +1,5 @@
 ### Admin API Testing
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc2NjQyNDQ0NywiZXhwIjoxNzY2NDI1MzQ3fQ.IMTXkoE3OYCrAmzvvOkzJVkm0relHGag6AHWccu83QA
+@token = YOUR_ADMIN_ACCESS_TOKEN
 
 ## 1. Create Admin User (Initial Setup)
 POST http://localhost:4000/api/admin/create-admin

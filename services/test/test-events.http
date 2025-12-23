@@ -1,0 +1,48 @@
+### Event Management Testing
+
+@baseUrl = http://localhost:4000/api
+@orgToken = YOUR_ORG_ACCESS_TOKEN
+@adminToken = YOUR_ADMIN_ACCESS_TOKEN
+
+### 1. [PUBLIC] Get Event Metadata (Categories & Cities)
+GET {{baseUrl}}/events/meta
+
+### 2. [PUBLIC] List Approved Events
+GET {{baseUrl}}/events
+# Optional: ?categoryId=1&cityId=1&search=Jazz
+
+### 3. [ORGANIZER] Create New Event
+# NOTE: Ensure your organizer profile is APPROVED first!
+POST {{baseUrl}}/events
+Content-Type: application/json
+Authorization: Bearer {{orgToken}}
+
+{
+    "title": "Abyssinia Jazz Night",
+    "description": "An exclusive evening of Ethio-Jazz.",
+    "venue": "Sheraton Addis",
+    "dateTime": "2025-12-30T19:00:00Z",
+    "eventType": "CAPACITY",
+    "totalCapacity": 500,
+    "categoryId": 2,
+    "cityId": 1,
+    "tiers": [
+        { "name": "Regular", "price": 1000, "capacity": 400 },
+        { "name": "VIP", "price": 3000, "capacity": 100 }
+    ]
+}
+
+### 4. [ADMIN] List All Events for Review
+GET {{baseUrl}}/events/admin/list
+Authorization: Bearer {{adminToken}}
+
+### 5. [ADMIN] Review & Approve Event
+# Replace :id with the Event ID from Request #4
+POST {{baseUrl}}/events/1/review
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+    "status": "APPROVED",
+    "commission": 15.0
+}
