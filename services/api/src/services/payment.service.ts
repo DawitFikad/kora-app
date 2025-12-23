@@ -14,8 +14,18 @@ export class PaymentService {
         });
 
         if (!purchase) throw new Error("Purchase not found");
-        if (purchase.status !== PaymentStatus.PENDING) {
-            throw new Error("Purchase is not in PENDING status");
+
+        // Allow re-initialization if PENDING or FAILED (retry)
+        if (purchase.status !== PaymentStatus.PENDING && purchase.status !== PaymentStatus.FAILED) {
+            throw new Error(`Cannot initialize payment for purchase in status: ${purchase.status}`);
+        }
+
+        // If it was FAILED, reset to PENDING for the retry attempt
+        if (purchase.status === PaymentStatus.FAILED) {
+            await prisma.purchase.update({
+                where: { id: purchase.id },
+                data: { status: PaymentStatus.PENDING, failureReason: null }
+            });
         }
 
         const baseUrl = "http://localhost:4000/api/payments/mock-gateways";
@@ -49,20 +59,6 @@ export class PaymentService {
             case "AMOLE":
                 checkoutUrl = `${baseUrl}/amole?ref=${purchase.paymentRef}`;
                 break;
-
-            case "BANK_TRANSFER":
-                // For bank transfers, we provide instructions instead of a checkout URL
-                return {
-                    instructions: "Please transfer the amount to: CBE - 1000123456789 (EtTicket Platform). Use your Payment Reference as the reason.",
-                    bankDetails: {
-                        bankName: "Commercial Bank of Ethiopia",
-                        accountNumber: "1000123456789",
-                        accountName: "EtTicket Platform"
-                    },
-                    paymentRef: purchase.paymentRef,
-                    amount: purchase.totalAmount,
-                    method: purchase.paymentMethod
-                };
 
             default:
                 checkoutUrl = `${baseUrl}/chapa?ref=${purchase.paymentRef}`;
@@ -98,12 +94,6 @@ export class PaymentService {
         if (purchase.paymentMethod === "TELEBIRR" && rawProviderData) {
             console.log("[Mock] Decrypting TeleBirr response...");
             // In real app: decrypt(rawProviderData, telebirrPublicKey)
-        }
-
-        if (purchase.paymentMethod === "BANK_TRANSFER") {
-            console.log(`[Mock] Verifying manual bank reference: ${externalRef}`);
-            // In real app, this might stay PENDING until an Admin approves
-            isValid = !!externalRef;
         }
 
         if (isValid) {

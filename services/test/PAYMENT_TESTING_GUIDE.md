@@ -14,8 +14,10 @@ The system includes a built-in Mock Payment Gateway UI for local development.
 1.  **Reserve**: Call `POST /api/tickets/reserve`. You will get a `purchaseId` and `paymentRef`.
 2.  **Initialize**: Call `POST /api/payments/initialize` with the `purchaseId`.
 3.  **Checkout**: Copy the `checkoutUrl` from the response and open it in your browser.
-4.  **Simulate**: Click **Simulate Success**.
-5.  **Result**: The UI will call the backend `/verify` endpoint. Your tickets are now issued!
+4.  **Simulate FAILURE**: Click **Simulate Failure**. The status in DB will become `FAILED`.
+5.  **Retry**: Call `POST /api/payments/initialize` again. The status resets to `PENDING`.
+6.  **Simulate SUCCESS**: Open the URL again and click **Simulate Success**.
+7.  **Result**: The UI will call the backend `/verify` endpoint. Your tickets are now issued!
 
 ## How to Verify
 - **Database**: Check the `Purchase` table. The status should be `SUCCESS`.

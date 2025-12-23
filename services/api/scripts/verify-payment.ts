@@ -29,15 +29,34 @@ async function runTest(method: string, user: any, event: any) {
     const init = await PaymentService.initializePayment(purchase.id);
     console.log(`- Initialized. Mock Checkout URL: ${init.checkoutUrl.substring(0, 80)}...`);
 
-    // 3. Verify
-    const verify = await PaymentService.verifyPayment(paymentRef, `EXT-${method}-MOCK`);
-    console.log(`- Verification Result: ${verify.status}`);
+    // 3. Verify Payment (Simulate Failure first)
+    console.log(`\n3. Verifying Payment (Simulating initial FAILURE for ${method})...`);
+    await prisma.purchase.update({
+        where: { id: purchase.id },
+        data: { paymentRef: `${paymentRef}-fail` }
+    });
 
-    if (verify.status === PaymentStatus.SUCCESS) {
+    const failResult = await PaymentService.verifyPayment(`${paymentRef}-fail`);
+    console.log(`- Initial Result Status: ${failResult.status}`);
+
+    // 4. Retry Payment
+    console.log("- Retrying Payment...");
+    await PaymentService.initializePayment(purchase.id); // Resets to PENDING
+
+    // Update back to original (valid) ref for success
+    await prisma.purchase.update({
+        where: { id: purchase.id },
+        data: { paymentRef }
+    });
+
+    const finalVerifyResult = await PaymentService.verifyPayment(paymentRef, `EXT-${method}-${Date.now()}`);
+    console.log(`- Final Verification Result: ${finalVerifyResult.status}`);
+
+    if (finalVerifyResult.status === PaymentStatus.SUCCESS) {
         const ticketCount = await prisma.ticket.count({ where: { purchaseId: purchase.id } });
         console.log(`- ✅ Tickets Issued: ${ticketCount}`);
     } else {
-        console.log(`- ❌ FAILED`);
+        console.log(`- ❌ RETRY FAILED`);
     }
 }
 
@@ -55,7 +74,6 @@ async function main() {
     await runTest("TELEBIRR", user, event);
     await runTest("CBE_BIRR", user, event);
     await runTest("AMOLE", user, event);
-    await runTest("BANK_TRANSFER", user, event);
 
     console.log("\nAll Payment Providers Verified Successfully.");
     process.exit(0);
