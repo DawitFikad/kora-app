@@ -85,13 +85,19 @@ export class EventController {
     static async reviewEvent(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const { status, commission } = req.body;
+            const { status, feeType, feeFixed, feePercentage } = req.body;
 
             if (![EventStatus.APPROVED, EventStatus.REJECTED].includes(status)) {
                 return res.status(400).json({ error: "Invalid status" });
             }
 
-            const event = await EventService.reviewEvent(parseInt(id), status, commission);
+            const event = await EventService.reviewEvent(
+                parseInt(id),
+                status,
+                feeType || "PERCENTAGE",
+                feeFixed || 0,
+                feePercentage || 0
+            );
             res.json(event);
         } catch (error: any) {
             res.status(400).json({ error: error.message });

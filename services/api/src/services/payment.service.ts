@@ -107,6 +107,16 @@ export class PaymentService {
 
             // Trigger Ticket Issuance
             await TicketService.completePurchase(updatedPurchase.id);
+
+            // Record Financial Transaction & Update Organizer Wallet
+            try {
+                const { FinancialService } = require("./financial.service");
+                await FinancialService.recordTicketPurchase(updatedPurchase.id);
+            } catch (error) {
+                console.error("[PaymentService] Failed to record financial transaction:", error);
+                // Note: In production, we might want to queue this for retry to ensure ledger consistency
+            }
+
             return updatedPurchase;
         } else {
             return prisma.purchase.update({

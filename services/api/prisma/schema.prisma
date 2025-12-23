@@ -31,6 +31,7 @@ enum EventStatus {
   APPROVED
   REJECTED
   CANCELLED
+  COMPLETED
 }
 
 enum EventType {
@@ -52,6 +53,33 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   CANCELLED
+  REFUNDED
+}
+
+enum FinancialStatus {
+  INITIATED
+  AUTHORIZED
+  CAPTURED
+  SETTLED
+  RELEASED
+  PAID_OUT
+  FAILED
+  REFUNDED
+  DISPUTED
+}
+
+enum TransactionType {
+  TICKET_PURCHASE
+  PLATFORM_FEE
+  ORGANIZER_PAYOUT
+  REFUND
+  ADJUSTMENT
+}
+
+enum PayoutMethod {
+  BANK_TRANSFER
+  MOBILE_MONEY
+  MANUAL
 }
 
 model User {
@@ -96,6 +124,7 @@ model OrganizerProfile {
   updatedAt        DateTime        @updatedAt
 
   events           Event[]
+  wallet           OrganizerWallet?
 }
 
 model Category {
@@ -125,7 +154,11 @@ model Event {
   coverImage       String?
   gallery          String[]      @default([])
   featured         Boolean       @default(false)
-  commission       Decimal       @default(0.0) @db.Decimal(10, 2)
+  
+  // Commission settings for this specific event
+  feeType          String        @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
+  feeFixed         Decimal       @default(0.0) @db.Decimal(10, 2)
+  feePercentage    Decimal       @default(0.0) @db.Decimal(10, 2)
   
   organizerId      Int
   organizer        OrganizerProfile @relation(fields: [organizerId], references: [id])
@@ -138,6 +171,7 @@ model Event {
   
   tiers            TicketTier[]
   tickets          Ticket[]
+  transactions     FinancialTransaction[]
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }
@@ -190,8 +224,98 @@ model Purchase {
   metadata       Json?         // To store eventId, tierId, quantity, seatNumbers
   
   tickets        Ticket[]
+  transactions   FinancialTransaction[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+}
+
+model OrganizerWallet {
+  id               Int             @id @default(autoincrement())
+  organizerId      Int             @unique
+  organizer        OrganizerProfile @relation(fields: [organizerId], references: [id])
+  
+  pendingBalance   Decimal         @default(0.0) @db.Decimal(12, 2)
+  availableBalance Decimal         @default(0.0) @db.Decimal(12, 2)
+  totalWithdrawn   Decimal         @default(0.0) @db.Decimal(12, 2)
+  
+  ledgerEntries    WalletLedger[]
+  payouts          PayoutBatch[]
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model WalletLedger {
+  id               Int             @id @default(autoincrement())
+  walletId         Int
+  wallet           OrganizerWallet @relation(fields: [walletId], references: [id])
+  
+  amount           Decimal         @db.Decimal(12, 2)
+  type             TransactionType
+  description      String?
+  referenceId      String          // ID of related entity (Purchase, PayoutBatch, etc)
+  
+  balanceBefore    Decimal         @db.Decimal(12, 2)
+  balanceAfter     Decimal         @db.Decimal(12, 2)
+  
+  createdAt        DateTime        @default(now())
+}
+
+model FinancialTransaction {
+  id               Int             @id @default(autoincrement())
+  status           FinancialStatus @default(INITIATED)
+  type             TransactionType
+  
+  amount           Decimal         @db.Decimal(10, 2)
+  feeAmount        Decimal         @default(0.0) @db.Decimal(10, 2)
+  netAmount        Decimal         @db.Decimal(10, 2) // amount - feeAmount
+  
+  purchaseId       Int?
+  purchase         Purchase?       @relation(fields: [purchaseId], references: [id])
+  
+  eventId          Int?
+  event            Event?          @relation(fields: [eventId], references: [id])
+  
+  payoutBatchId    Int?
+  payoutBatch      PayoutBatch?    @relation(fields: [payoutBatchId], references: [id])
+  
+  metadata         Json?
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model PayoutBatch {
+  id               Int             @id @default(autoincrement())
+  status           FinancialStatus @default(INITIATED)
+  
+  amount           Decimal         @db.Decimal(12, 2)
+  method           PayoutMethod
+  payoutDetails    String          // Bank/Mobile details used for this payout
+  
+  walletId         Int
+  wallet           OrganizerWallet @relation(fields: [walletId], references: [id])
+  
+  transactions     FinancialTransaction[]
+  
+  processedAt      DateTime?
+  adminId          Int?            // The admin who approved/processed it
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model PlatformFeeConfig {
+  id               Int      @id @default(autoincrement())
+  name             String   // e.g., "Default Global Fee"
+  feeType          String   @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
+  feeFixed         Decimal  @default(0.0) @db.Decimal(10, 2)
+  feePercentage    Decimal  @default(0.0) @db.Decimal(10, 2)
+  isDefault        Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model ScanLog {

@@ -138,12 +138,14 @@ export class EventService {
         });
     }
 
-    static async reviewEvent(eventId: number, status: EventStatus, commission: number) {
+    static async reviewEvent(eventId: number, status: EventStatus, feeType: string, feeFixed: number, feePercentage: number) {
         return prisma.event.update({
             where: { id: eventId },
             data: {
                 status,
-                commission
+                feeType,
+                feeFixed,
+                feePercentage
             }
         });
     }

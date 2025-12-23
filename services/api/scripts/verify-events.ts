@@ -55,7 +55,7 @@ async function main() {
 
     // 3. Admin Review
     console.log("\n3. Reviewing Event (Admin)...");
-    const reviewedEvent = await EventService.reviewEvent(event.id, EventStatus.APPROVED, 10.0);
+    const reviewedEvent = await EventService.reviewEvent(event.id, EventStatus.APPROVED, "PERCENTAGE", 0, 10.0);
     console.log("Event Status after review:", reviewedEvent.status);
 
     // 4. Discovery
