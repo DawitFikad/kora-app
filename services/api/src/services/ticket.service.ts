@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import { TicketStatus, PaymentStatus } from "@prisma/client";
 import { LockService } from "./lock.service";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
 export class TicketService {
     /**
@@ -29,14 +30,26 @@ export class TicketService {
         const { eventId, tierId, quantity, seatNumbers } = metadata;
 
         const ticketsData = [];
+        const secret = process.env.JWT_SECRET || "et-ticket-qr-secret";
+
         for (let i = 0; i < quantity; i++) {
             const seatNumber = seatNumbers ? seatNumbers[i] : null;
+            const ticketId = crypto.randomUUID();
 
-            // Generate secure unique payload for QR
-            const rawPayload = `${purchase.id}-${purchase.userId}-${eventId}-${tierId}-${seatNumber || i}-${crypto.randomBytes(8).toString('hex')}`;
-            const qrPayload = crypto.createHash('sha256').update(rawPayload).digest('hex');
+            // 15. QR Payload (Encrypted / Signed)
+            // Requirements: Ticket ID, Event ID, Seat ID (nullable), Expiry, Nonce
+            const payload = {
+                tid: ticketId,
+                eid: eventId,
+                sid: seatNumber,
+                nonce: crypto.randomBytes(16).toString('hex'),
+                iat: Math.floor(Date.now() / 1000)
+            };
+
+            const qrPayload = jwt.sign(payload, secret);
 
             ticketsData.push({
+                id: ticketId,
                 qrPayload,
                 status: TicketStatus.VALID,
                 userId: purchase.userId,

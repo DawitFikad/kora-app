@@ -1,0 +1,39 @@
+### QR Ticket Validation Testing
+
+@baseUrl = http://localhost:4000/api
+@scannerToken = YOUR_SCANNER_OR_ADMIN_TOKEN
+
+# Note: You can use an ADMIN token for these tests.
+
+### 1. [ADMIN/SCANNER] Download Sync Data (Offline Prep)
+# Replace :eventId with a real one (e.g., 1)
+GET {{baseUrl}}/validate/sync-data/1
+Authorization: Bearer {{scannerToken}}
+
+### 2. [ADMIN/SCANNER] Real-time Scan (Online)
+# Use a qrPayload from a real ticket (see database or issue one)
+POST {{baseUrl}}/validate/scan
+Content-Type: application/json
+Authorization: Bearer {{scannerToken}}
+
+{
+    "qrPayload": "PASTE_QR_JWT_HERE",
+    "gateId": "GATE-01",
+    "deviceId": "SCANNER-MOB-01"
+}
+
+### 3. [ADMIN/SCANNER] Sync Offline Logs
+POST {{baseUrl}}/validate/sync
+Content-Type: application/json
+Authorization: Bearer {{scannerToken}}
+
+{
+    "logs": [
+        {
+            "qrPayload": "PASTE_QR_JWT_HERE",
+            "gateId": "OFFLINE-GATE",
+            "deviceId": "OFFLINE-DEV",
+            "deviceTime": "2023-12-23T14:00:00Z"
+        }
+    ]
+}

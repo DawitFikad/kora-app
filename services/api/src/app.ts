@@ -8,6 +8,8 @@ import profileRoutes from "./routes/profile.routes";
 import eventRoutes from "./routes/event.routes";
 import ticketingRoutes from "./routes/ticketing.routes";
 import paymentRoutes from "./routes/payment.routes";
+import validationRoutes from "./routes/validation.routes";
+import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
 
@@ -30,6 +32,7 @@ app.use("/api/profiles", profileRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/tickets", ticketingRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/validate", validationRoutes);
 app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {
