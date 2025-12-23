@@ -1,0 +1,50 @@
+import { Request, Response } from "express";
+import { prisma } from "../lib/prisma";
+
+export class NotificationController {
+    /**
+     * GET /api/notifications
+     * List my notifications.
+     */
+    static async getMyNotifications(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user.id;
+            const notifications = await prisma.notificationLog.findMany({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                take: 50
+            });
+            res.json({ success: true, data: notifications });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * Internal Template Engine
+     */
+    static getTemplate(key: string, lang: 'en' | 'am', vars: Record<string, string>) {
+        const templates: any = {
+            'confirm_purchase': {
+                'en': 'Success! Your tickets for {eventTitle} have been confirmed. View them in the app.',
+                'am': 'እንኳን ደስ አለዎት! ለ{eventTitle} የገዙት ቲኬት ተረጋግጧል። በሞባይል መተግበሪያው ላይ ማየት ይችላሉ።'
+            },
+            'refund_approved': {
+                'en': 'Your refund of {amount} ETB for {eventTitle} has been approved.',
+                'am': 'ከ{eventTitle} ጋር የተያያዘው {amount} ETB ተመላሽ ተረጋግጧል።'
+            },
+            'event_cancelled': {
+                'en': 'Urgent: {eventTitle} has been cancelled. A refund of {amount} ETB is being processed.',
+                'am': 'አስቸኳይ መረጃ፡ {eventTitle} ተሰርዟል። የ{amount} ብር ተመላሽ እየተሰራ ነው።'
+            }
+        };
+
+        let template = templates[key]?.[lang] || templates[key]?.['en'] || key;
+
+        Object.entries(vars).forEach(([k, v]) => {
+            template = template.replace(`{${k}}`, v);
+        });
+
+        return template;
+    }
+}

@@ -99,14 +99,14 @@ enum FraudType {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  phoneNumber   String         @unique
-  email         String?        @unique
-  password      String?
-  role          Role           @default(USER)
-  status        AccountStatus  @default(ACTIVE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id          Int           @id @default(autoincrement())
+  phoneNumber String        @unique
+  email       String?       @unique
+  password    String?
+  role        Role          @default(USER)
+  status      AccountStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   profile       UserProfile?
   organizer     OrganizerProfile?
@@ -114,6 +114,8 @@ model User {
   tickets       Ticket[]
   purchases     Purchase[]
   fraudAlerts   FraudAlert[]
+  disputes      Dispute[]
+  notifications NotificationLog[]
 }
 
 model UserProfile {
@@ -140,9 +142,10 @@ model OrganizerProfile {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  events           Event[]
-  wallet           OrganizerWallet?
-  fraudAlerts      FraudAlert[]
+  events        Event[]
+  wallet        OrganizerWallet?
+  notifications NotificationLog[]
+  fraudAlerts   FraudAlert[]
 }
 
 model Category {
@@ -160,198 +163,201 @@ model City {
 }
 
 model Event {
-  id               Int           @id @default(autoincrement())
-  title            String
-  description      String?
-  venue            String
-  dateTime         DateTime
-  status           EventStatus   @default(PENDING)
-  eventType        EventType     @default(CAPACITY)
-  totalCapacity    Int?          // Used for CAPACITY type
-  
-  coverImage       String?
-  gallery          String[]      @default([])
-  featured         Boolean       @default(false)
-  
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String?
+  venue         String
+  dateTime      DateTime
+  status        EventStatus @default(PENDING)
+  eventType     EventType   @default(CAPACITY)
+  totalCapacity Int? // Used for CAPACITY type
+
+  coverImage String?
+  gallery    String[] @default([])
+  featured   Boolean  @default(false)
+
   // Commission settings for this specific event
-  feeType          String        @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
-  feeFixed         Decimal       @default(0.0) @db.Decimal(10, 2)
-  feePercentage    Decimal       @default(0.0) @db.Decimal(10, 2)
-  
-  organizerId      Int
-  organizer        OrganizerProfile @relation(fields: [organizerId], references: [id])
-  
-  categoryId       Int
-  category         Category      @relation(fields: [categoryId], references: [id])
-  
-  cityId           Int
-  city             City          @relation(fields: [cityId], references: [id])
-  
-  tiers            TicketTier[]
-  tickets          Ticket[]
-  transactions     FinancialTransaction[]
-  fraudAlerts      FraudAlert[]
-  entryMetrics     EntryMetric[]
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  feeType       String  @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
+  feeFixed      Decimal @default(0.0) @db.Decimal(10, 2)
+  feePercentage Decimal @default(0.0) @db.Decimal(10, 2)
+
+  organizerId Int
+  organizer   OrganizerProfile @relation(fields: [organizerId], references: [id])
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  cityId Int
+  city   City @relation(fields: [cityId], references: [id])
+
+  tiers        TicketTier[]
+  tickets      Ticket[]
+  transactions FinancialTransaction[]
+  fraudAlerts  FraudAlert[]
+  entryMetrics EntryMetric[]
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 }
 
 model TicketTier {
-  id          Int      @id @default(autoincrement())
-  name        String   // Regular, VIP, etc.
-  price       Decimal  @db.Decimal(10, 2)
-  capacity    Int
-  eventId     Int
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  tickets     Ticket[]
+  id       Int      @id @default(autoincrement())
+  name     String // Regular, VIP, etc.
+  price    Decimal  @db.Decimal(10, 2)
+  capacity Int
+  eventId  Int
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets  Ticket[]
 }
 
 model Ticket {
-  id           String       @id @default(uuid())
-  qrPayload    String       @unique
-  status       TicketStatus @default(VALID)
-  
-  userId       Int
-  user         User         @relation(fields: [userId], references: [id])
-  
-  eventId      Int
-  event        Event        @relation(fields: [eventId], references: [id])
-  
-  tierId       Int
-  tier         TicketTier   @relation(fields: [tierId], references: [id])
-  
-  seatNumber   String?      // For SEAT_MAP events
-  
-  purchaseId   Int?
-  purchase     Purchase?    @relation(fields: [purchaseId], references: [id])
-  fraudAlerts  FraudAlert[]
+  id        String       @id @default(uuid())
+  qrPayload String       @unique
+  status    TicketStatus @default(VALID)
 
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  eventId Int
+  event   Event @relation(fields: [eventId], references: [id])
+
+  tierId Int
+  tier   TicketTier @relation(fields: [tierId], references: [id])
+
+  seatNumber String? // For SEAT_MAP events
+
+  purchaseId  Int?
+  purchase    Purchase?    @relation(fields: [purchaseId], references: [id])
+  fraudAlerts FraudAlert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Purchase {
-  id             Int           @id @default(autoincrement())
-  status         PaymentStatus @default(PENDING)
-  totalAmount    Decimal       @db.Decimal(10, 2)
-  paymentRef     String        @unique // Our internal unique ref
-  externalRef    String?       @unique // Provider's ref (Chapa, TeleBirr, etc)
-  paymentMethod  String        // e.g., "CHAPA", "TELEBIRR", "CBE_BIRR", "AMOLE"
-  failureReason  String?
-  
-  userId         Int
-  user           User          @relation(fields: [userId], references: [id])
-  
-  metadata       Json?         // To store eventId, tierId, quantity, seatNumbers
-  
-  tickets        Ticket[]
-  transactions   FinancialTransaction[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id            Int           @id @default(autoincrement())
+  status        PaymentStatus @default(PENDING)
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  paymentRef    String        @unique // Our internal unique ref
+  externalRef   String?       @unique // Provider's ref (Chapa, TeleBirr, etc)
+  paymentMethod String // e.g., "CHAPA", "TELEBIRR", "CBE_BIRR", "AMOLE"
+  failureReason String?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  metadata Json? // To store eventId, tierId, quantity, seatNumbers
+
+  tickets      Ticket[]
+  transactions FinancialTransaction[]
+  refunds      Refund[]
+  disputes     Dispute[]
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 }
 
 model OrganizerWallet {
-  id               Int             @id @default(autoincrement())
-  organizerId      Int             @unique
-  organizer        OrganizerProfile @relation(fields: [organizerId], references: [id])
-  
-  pendingBalance   Decimal         @default(0.0) @db.Decimal(12, 2)
-  availableBalance Decimal         @default(0.0) @db.Decimal(12, 2)
-  totalWithdrawn   Decimal         @default(0.0) @db.Decimal(12, 2)
-  
-  ledgerEntries    WalletLedger[]
-  payouts          PayoutBatch[]
-  
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id          Int              @id @default(autoincrement())
+  organizerId Int              @unique
+  organizer   OrganizerProfile @relation(fields: [organizerId], references: [id])
+
+  pendingBalance   Decimal @default(0.0) @db.Decimal(12, 2)
+  availableBalance Decimal @default(0.0) @db.Decimal(12, 2)
+  totalWithdrawn   Decimal @default(0.0) @db.Decimal(12, 2)
+
+  ledgerEntries WalletLedger[]
+  payouts       PayoutBatch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model WalletLedger {
-  id               Int             @id @default(autoincrement())
-  walletId         Int
-  wallet           OrganizerWallet @relation(fields: [walletId], references: [id])
-  
-  amount           Decimal         @db.Decimal(12, 2)
-  type             TransactionType
-  description      String?
-  referenceId      String          // ID of related entity (Purchase, PayoutBatch, etc)
-  
-  balanceBefore    Decimal         @db.Decimal(12, 2)
-  balanceAfter     Decimal         @db.Decimal(12, 2)
-  
-  createdAt        DateTime        @default(now())
+  id       Int             @id @default(autoincrement())
+  walletId Int
+  wallet   OrganizerWallet @relation(fields: [walletId], references: [id])
+
+  amount      Decimal         @db.Decimal(12, 2)
+  type        TransactionType
+  description String?
+  referenceId String // ID of related entity (Purchase, PayoutBatch, etc)
+
+  balanceBefore Decimal @db.Decimal(12, 2)
+  balanceAfter  Decimal @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
 }
 
 model FinancialTransaction {
-  id               Int             @id @default(autoincrement())
-  status           FinancialStatus @default(INITIATED)
-  type             TransactionType
-  
-  amount           Decimal         @db.Decimal(10, 2)
-  feeAmount        Decimal         @default(0.0) @db.Decimal(10, 2)
-  netAmount        Decimal         @db.Decimal(10, 2) // amount - feeAmount
-  
-  purchaseId       Int?
-  purchase         Purchase?       @relation(fields: [purchaseId], references: [id])
-  
-  eventId          Int?
-  event            Event?          @relation(fields: [eventId], references: [id])
-  
-  payoutBatchId    Int?
-  payoutBatch      PayoutBatch?    @relation(fields: [payoutBatchId], references: [id])
-  
-  metadata         Json?
-  
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id     Int             @id @default(autoincrement())
+  status FinancialStatus @default(INITIATED)
+  type   TransactionType
+
+  amount    Decimal @db.Decimal(10, 2)
+  feeAmount Decimal @default(0.0) @db.Decimal(10, 2)
+  netAmount Decimal @db.Decimal(10, 2) // amount - feeAmount
+
+  purchaseId Int?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
+
+  eventId Int?
+  event   Event? @relation(fields: [eventId], references: [id])
+
+  payoutBatchId Int?
+  payoutBatch   PayoutBatch? @relation(fields: [payoutBatchId], references: [id])
+
+  refund   Refund?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PayoutBatch {
-  id               Int             @id @default(autoincrement())
-  status           FinancialStatus @default(INITIATED)
-  
-  amount           Decimal         @db.Decimal(12, 2)
-  method           PayoutMethod
-  payoutDetails    String          // Bank/Mobile details used for this payout
-  
-  walletId         Int
-  wallet           OrganizerWallet @relation(fields: [walletId], references: [id])
-  
-  transactions     FinancialTransaction[]
-  
-  processedAt      DateTime?
-  adminId          Int?            // The admin who approved/processed it
-  
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id     Int             @id @default(autoincrement())
+  status FinancialStatus @default(INITIATED)
+
+  amount        Decimal      @db.Decimal(12, 2)
+  method        PayoutMethod
+  payoutDetails String // Bank/Mobile details used for this payout
+
+  walletId Int
+  wallet   OrganizerWallet @relation(fields: [walletId], references: [id])
+
+  transactions FinancialTransaction[]
+
+  processedAt DateTime?
+  adminId     Int? // The admin who approved/processed it
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PlatformFeeConfig {
-  id               Int      @id @default(autoincrement())
-  name             String   // e.g., "Default Global Fee"
-  feeType          String   @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
-  feeFixed         Decimal  @default(0.0) @db.Decimal(10, 2)
-  feePercentage    Decimal  @default(0.0) @db.Decimal(10, 2)
-  isDefault        Boolean  @default(false)
-  isActive         Boolean  @default(true)
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id            Int     @id @default(autoincrement())
+  name          String // e.g., "Default Global Fee"
+  feeType       String  @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
+  feeFixed      Decimal @default(0.0) @db.Decimal(10, 2)
+  feePercentage Decimal @default(0.0) @db.Decimal(10, 2)
+  isDefault     Boolean @default(false)
+  isActive      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ScanLog {
-  id            Int      @id @default(autoincrement())
-  ticketId      String
-  eventId       Int
-  gateId        String?
-  deviceId      String?
-  mode          String   // "ONLINE" | "OFFLINE"
-  status        String   // "SUCCESS" | "REJECTED"
-  reason        String?
-  timestamp     DateTime @default(now())
-  deviceTime    DateTime? // Original time from device for offline sync
-  
-  metadata      Json?    // Any extra context (e.g. error details)
+  id         Int       @id @default(autoincrement())
+  ticketId   String
+  eventId    Int
+  gateId     String?
+  deviceId   String?
+  mode       String // "ONLINE" | "OFFLINE"
+  status     String // "SUCCESS" | "REJECTED"
+  reason     String?
+  timestamp  DateTime  @default(now())
+  deviceTime DateTime? // Original time from device for offline sync
+
+  metadata Json? // Any extra context (e.g. error details)
 }
 
 model RefreshToken {
@@ -364,55 +370,155 @@ model RefreshToken {
 }
 
 model FraudAlert {
-  id          Int       @id @default(autoincrement())
-  type        FraudType
-  riskLevel   RiskLevel
-  message     String
-  
+  id        Int       @id @default(autoincrement())
+  type      FraudType
+  riskLevel RiskLevel
+  message   String
+
   // Investigation status
-  isCleared   Boolean   @default(false)
-  resolvedAt  DateTime?
-  adminNote   String?
-  
+  isCleared  Boolean   @default(false)
+  resolvedAt DateTime?
+  adminNote  String?
+
   // Associations (nullable as alerts can be for various entities)
   userId      Int?
-  user        User?     @relation(fields: [userId], references: [id])
+  user        User?             @relation(fields: [userId], references: [id])
   eventId     Int?
-  event       Event?    @relation(fields: [eventId], references: [id])
+  event       Event?            @relation(fields: [eventId], references: [id])
   organizerId Int?
   organizer   OrganizerProfile? @relation(fields: [organizerId], references: [id])
   ticketId    String?
-  ticket      Ticket?   @relation(fields: [ticketId], references: [id])
-  
+  ticket      Ticket?           @relation(fields: [ticketId], references: [id])
+
   // Context metadata
-  metadata    Json?     // IPs, device IDs, timestamps involved
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  metadata Json? // IPs, device IDs, timestamps involved
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model RiskScore {
-  id          Int       @id @default(autoincrement())
-  entityType  String    // "USER", "ORGANIZER", "DEVICE"
-  entityId    String    // ID as string to support device IDs
-  score       Int       @default(0) // 0-100
-  level       RiskLevel @default(LOW)
-  
-  lastUpdated DateTime  @default(now())
-  metadata    Json?     // History of adjustments
+  id         Int       @id @default(autoincrement())
+  entityType String // "USER", "ORGANIZER", "DEVICE"
+  entityId   String // ID as string to support device IDs
+  score      Int       @default(0) // 0-100
+  level      RiskLevel @default(LOW)
+
+  lastUpdated DateTime @default(now())
+  metadata    Json? // History of adjustments
 }
 
 model EntryMetric {
-  id            Int      @id @default(autoincrement())
-  eventId       Int
-  event         Event    @relation(fields: [eventId], references: [id])
-  
-  gateId        String?
-  entryCount    Int      @default(0)
-  failedCount   Int      @default(0)
-  
+  id      Int   @id @default(autoincrement())
+  eventId Int
+  event   Event @relation(fields: [eventId], references: [id])
+
+  gateId      String?
+  entryCount  Int     @default(0)
+  failedCount Int     @default(0)
+
   // Hourly or per-minute buckets
-  timestamp     DateTime // Bucket start time
-  
+  timestamp DateTime // Bucket start time
+
   @@unique([eventId, gateId, timestamp])
+}
+
+model Refund {
+  id          Int          @id @default(autoincrement())
+  status      RefundStatus @default(PENDING)
+  amount      Decimal      @db.Decimal(10, 2)
+  reason      RefundReason @default(OTHER)
+  description String?
+
+  purchaseId Int
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+
+  transactionId Int?                  @unique
+  transaction   FinancialTransaction? @relation(fields: [transactionId], references: [id])
+
+  processedBy   Int? // Admin user ID
+  failureReason String?
+
+  disputes Dispute[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Dispute {
+  id     Int           @id @default(autoincrement())
+  status DisputeStatus @default(OPEN)
+  source DisputeSource
+  reason String
+
+  purchaseId Int?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
+
+  refundId Int?
+  refund   Refund? @relation(fields: [refundId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  metadata Json? // Evidence, communication history
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationLog {
+  id     Int   @id @default(autoincrement())
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+
+  organizerId Int?
+  organizer   OrganizerProfile? @relation(fields: [organizerId], references: [id])
+
+  channel   NotificationChannel
+  recipient String // Phone number or Email
+  title     String?
+  content   String
+
+  status      String // "SENT", "FAILED", "DELIVERED"
+  providerRef String? // External message ID
+
+  metadata Json? // Event identifiers, error logs
+
+  createdAt DateTime @default(now())
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  FAILED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  CLOSED
+}
+
+enum RefundReason {
+  CANCELLATION
+  DUPLICATE_PAYMENT
+  POSTPONEMENT
+  ORGANIZER_APPROVED
+  ADMIN_FORCE
+  OTHER
+}
+
+enum DisputeSource {
+  USER_COMPLAINT
+  ORGANIZER_CHALLENGE
+  BANK_CHARGEBACK
+}
+
+enum NotificationChannel {
+  SMS
+  PUSH
+  EMAIL
 }

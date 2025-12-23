@@ -99,13 +99,25 @@ export class FinancialService {
                 }
             });
 
-            return transaction;
+            return { transaction, purchase, event };
         });
 
         // Trigger Fraud Analysis AFTER commit
         FraudService.analyzePurchase(purchaseId).catch(err => console.error("Purchase fraud analysis failed:", err));
 
-        return transactionResult;
+        // Trigger Notification
+        const { NotificationService } = require("./notification.service");
+        const { NotificationController } = require("../controllers/notification.controller");
+        const { NotificationChannel } = require("@prisma/client");
+
+        NotificationService.notifyUser(transactionResult.purchase.userId, {
+            content: NotificationController.getTemplate('confirm_purchase', 'en', {
+                eventTitle: transactionResult.event.title
+            }),
+            channels: [NotificationChannel.SMS]
+        }).catch(err => console.error("Purchase notification failed:", err));
+
+        return transactionResult.transaction;
     }
 
     /**

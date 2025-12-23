@@ -12,6 +12,10 @@ import validationRoutes from "./routes/validation.routes";
 import financialRoutes from "./routes/financial.routes";
 import payoutRoutes from "./routes/payout.routes";
 import securityRoutes from "./routes/security.routes";
+import organizerRoutes from "./routes/organizer.routes";
+import refundRoutes from "./routes/refund.routes";
+import disputeRoutes from "./routes/dispute.routes";
+import notificationRoutes from "./routes/notification.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
@@ -39,6 +43,10 @@ app.use("/api/validate", validationRoutes);
 app.use("/api/financials", financialRoutes);
 app.use("/api/payouts", payoutRoutes);
 app.use("/api/security", securityRoutes);
+app.use("/api/organizer", organizerRoutes);
+app.use("/api/refunds", refundRoutes);
+app.use("/api/disputes", disputeRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {

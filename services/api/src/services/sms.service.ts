@@ -18,6 +18,10 @@ export class SmsService {
 
     static async sendOtp(phoneNumber: string, otp: string) {
         const message = `Your ET-Ticket verification code is: ${otp}. Valid for 5 minutes.`;
+        return this.sendSms(phoneNumber, message);
+    }
+
+    static async sendSms(phoneNumber: string, message: string) {
         const provider = process.env.SMS_PROVIDER || "console";
 
         if (provider === "afromessage") {
@@ -51,7 +55,7 @@ export class SmsService {
                     throw new Error(`AfroMessage failed: ${errorMsg}`);
                 }
 
-                console.log(`[SMS] OTP successfully queued via AfroMessage to ${phoneNumber}`);
+                console.log(`[SMS] Message successfully queued via AfroMessage to ${phoneNumber}`);
             } catch (error: any) {
                 const errorData = error.response?.data || error.message;
                 console.error("[SMS ERROR] AfroMessage failure:", errorData);
@@ -65,7 +69,7 @@ export class SmsService {
                     from: process.env.TWILIO_PHONE_NUMBER,
                     to: phoneNumber,
                 });
-                console.log(`[SMS] OTP sent via Twilio to ${phoneNumber}`);
+                console.log(`[SMS] Message sent via Twilio to ${phoneNumber}`);
             } catch (error: any) {
                 console.error("[SMS ERROR] Failed to send via Twilio:", error.message);
                 throw new Error("Failed to send SMS via Twilio. Please try again later.");

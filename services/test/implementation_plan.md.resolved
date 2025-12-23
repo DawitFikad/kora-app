@@ -1,0 +1,107 @@
+# Operations & Recovery Implementation Plan
+
+This plan outlines the implementation of the Organizer Live Dashboard, the Refund & Dispute Resolution System, and a robust Notification Engine.
+
+## Proposed Changes
+
+---
+
+### [Database Schema]
+Update the schema to support refunds, disputes, and notification tracking.
+
+#### [MODIFY] [schema.prisma](file:///e:/et-ticket-app/services/api/prisma/schema.prisma)
+- Add `RefundStatus` and `DisputeStatus` enums.
+- Add `Refund` model linked to [Purchase](file:///e:/et-ticket-app/services/api/src/services/fraud.service.ts#89-119) and [Transaction](file:///e:/et-ticket-app/services/api/src/controllers/financial.controller.ts#64-86).
+- Add `Dispute` model for tracking conflicts.
+- Add `NotificationLog` model for audit trails.
+- Add `RefundReason` and `DisputeSource` enums.
+
+---
+
+### [Organizer Dashboard]
+Create a high-performance command center for event operations.
+
+#### [NEW] [EventOperationsService](file:///e:/et-ticket-app/services/api/src/services/event-operations.service.ts)
+- Implement methods for `getLiveSalesMetrics`, `getEntrySnapshot`, and `getPostEventSummary`.
+- Use Redis to cache volatile metrics (entry rates, sales velocity).
+
+#### [NEW] [OrganizerController](file:///e:/et-ticket-app/services/api/src/controllers/organizer.controller.ts)
+- Secure endpoints for organizer-only visibility.
+- Filter out sensitive fraud/security data (Risk Scores).
+
+---
+
+### [Refund & Dispute System]
+Handle financial reversals and conflict resolution.
+
+#### [NEW] [RefundService](file:///e:/et-ticket-app/services/api/src/services/refund.service.ts)
+- `requestRefund`: validates eligibility (window, status).
+- `processRefund`: handles ledger reversals and wallet deductions.
+- `handleAutomaticRefunds`: triggered by event cancellation.
+
+#### [NEW] [DisputeService](file:///e:/et-ticket-app/services/api/src/services/dispute.service.ts)
+- Manages `OPEN`, `UNDER_REVIEW`, `RESOLVED` states.
+
+---
+
+### [Notification Engine]
+A centralized, event-driven communication hub.
+
+#### [MODIFY] [SmsService](file:///e:/et-ticket-app/services/api/src/services/sms.service.ts)
+- Integrate AfroMessage for Ethiopia-specific SMS delivery.
+- Add template support.
+
+#### [NEW] [NotificationService](file:///e:/et-ticket-app/services/api/src/services/notification.service.ts)
+- Abstract provider logic (SMS, Push, Email).
+- Event-driven patterns (`notifyUser`, `alertAdmin`).
+
+## System Architecture & Sequences
+
+### 1. Ticket Purchase Flow
+```mermaid
+sequenceDiagram
+    participant User
+    participant App
+    participant Payment
+    participant Financial
+    participant QR
+    participant Notify
+
+    User->>App: Choose Tickets
+    App->>Payment: Initialize Payment
+    Payment-->>User: Redirect to Gate
+    User->>Payment: Complete Pay
+    Payment->>App: Webhook / Success
+    App->>Financial: Record Purchase
+    Financial->>QR: Generate Signed QR
+    QR-->>Notify: Send Confirmation (SMS)
+    Notify-->>User: OTP/Ticket SMS
+```
+
+### 2. Refund Workflow
+```mermaid
+sequenceDiagram
+    participant User
+    participant Admin
+    participant RefundSvc
+    participant Wallet
+    participant Gateway
+
+    User->>RefundSvc: Request Refund
+    RefundSvc->>RefundSvc: Eligibility Check
+    RefundSvc->>Admin: Review Request
+    Admin->>RefundSvc: Approve
+    RefundSvc->>Gateway: Trigger Gateway Refund
+    RefundSvc->>Wallet: Deduct Organizer
+    Wallet-->>User: Notify
+```
+
+## Verification Plan
+
+### Automated Tests
+- `verify-refunds.ts`: Simulate cancellation and manual refund flows, checking ledger balances.
+- `verify-dashboard.ts`: High-concurrency throughput testing for analytics dashboard.
+
+### Manual Verification
+- Testing SMS delivery via AfroMessage.
+- Validating role-based access for Organizers vs Admins.
