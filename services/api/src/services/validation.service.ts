@@ -1,6 +1,8 @@
 import { prisma } from "../lib/prisma";
 import { TicketStatus } from "@prisma/client";
 import jwt from "jsonwebtoken";
+import { FraudService } from "./fraud.service";
+import { AnalyticsService } from "./analytics.service";
 
 export interface ValidationResult {
     success: boolean;
@@ -22,30 +24,33 @@ export class ValidationService {
             const { tid, eid } = payload;
 
             // 2. Atomic Transaction: Check -> Mark USED -> Log
-            return await prisma.$transaction(async (tx) => {
+            const transactionResult = await prisma.$transaction(async (tx) => {
                 const ticket = await tx.ticket.findUnique({
                     where: { id: tid },
                     include: { event: true, tier: true }
                 });
 
                 if (!ticket) {
-                    await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Ticket not found");
-                    return { success: false, message: "Invalid Ticket: No entry found in database" };
+                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Ticket not found");
+                    return { result: { success: false, message: "Invalid Ticket: No entry found in database" }, log };
                 }
 
                 if (ticket.eventId !== eid) {
-                    await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Event mismatch");
-                    return { success: false, message: "Invalid Ticket: Does not belong to this event" };
+                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Event mismatch");
+                    return { result: { success: false, message: "Invalid Ticket: Does not belong to this event" }, log };
                 }
 
                 if (ticket.status === TicketStatus.USED) {
-                    await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Already scanned", true);
-                    return { success: false, message: "Duplicate Entry: This ticket was already scanned", fraudDetected: true };
+                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Already scanned", true);
+                    return {
+                        result: { success: false, message: "Duplicate Entry: This ticket was already scanned", fraudDetected: true },
+                        log
+                    };
                 }
 
                 if (ticket.status !== TicketStatus.VALID) {
-                    await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", `Status: ${ticket.status}`);
-                    return { success: false, message: `Invalid Status: Ticket is currently ${ticket.status}` };
+                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", `Status: ${ticket.status}`);
+                    return { result: { success: false, message: `Invalid Status: Ticket is currently ${ticket.status}` }, log };
                 }
 
                 // SUCCESS: Mark as used
@@ -54,9 +59,9 @@ export class ValidationService {
                     data: { status: TicketStatus.USED }
                 });
 
-                await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "SUCCESS");
+                const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "SUCCESS");
 
-                return {
+                const result = {
                     success: true,
                     message: "Access Granted",
                     ticket: {
@@ -65,8 +70,37 @@ export class ValidationService {
                         seat: ticket.seatNumber
                     }
                 };
+
+                return { result, log };
             });
+
+            // Trigger Background tasks AFTER transaction commit
+            if (transactionResult.log) {
+                FraudService.analyzeScan(transactionResult.log.id).catch(err => console.error("Fraud analysis failed:", err));
+
+                const status = transactionResult.result.success ? "SUCCESS" as const : "REJECTED" as const;
+                AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch(err => console.error("Analytics failed:", err));
+            }
+
+            return transactionResult.result;
         } catch (error: any) {
+            // Log failed signature verification if device/gate info is available
+            if (gateId || deviceId) {
+                prisma.scanLog.create({
+                    data: {
+                        ticketId: "INVALID",
+                        eventId: 0, // Unknown event
+                        gateId: gateId || null,
+                        deviceId: deviceId || null,
+                        mode: "ONLINE",
+                        status: "REJECTED",
+                        reason: `Signature Error: ${error.message}`
+                    }
+                }).then(log => {
+                    FraudService.analyzeScan(log.id).catch(() => { });
+                    AnalyticsService.recordEntryMetric(0, gateId || null, "REJECTED").catch(() => { });
+                }).catch(() => { });
+            }
             return { success: false, message: `System Error: ${error.message}` };
         }
     }
@@ -78,7 +112,7 @@ export class ValidationService {
     static async getOfflineSyncData(eventId: number) {
         const tickets = await prisma.ticket.findMany({
             where: { eventId, status: TicketStatus.VALID },
-            select: { id: true, qrPayload: true } // We might need payload if app verifies sig locally
+            select: { id: true, qrPayload: true }
         });
         return tickets;
     }
@@ -96,13 +130,16 @@ export class ValidationService {
                 const payload = jwt.verify(qrPayload, this.QR_SECRET) as any;
                 const { tid, eid } = payload;
 
-                const result = await prisma.$transaction(async (tx) => {
+                const syncResult = await prisma.$transaction(async (tx) => {
                     const ticket = await tx.ticket.findUnique({ where: { id: tid } });
 
                     if (!ticket || ticket.status === TicketStatus.USED) {
                         const fraud = ticket?.status === TicketStatus.USED;
-                        await this.logScan(tx, tid, eid, gateId, deviceId, "OFFLINE", "REJECTED", fraud ? "Duplicate during sync" : "Invalid", fraud, deviceTime);
-                        return { tid, status: "CONFLICT", message: fraud ? "Already Used" : "Not Found" };
+                        const log = await this.logScan(tx, tid, eid, gateId, deviceId, "OFFLINE", "REJECTED", fraud ? "Duplicate during sync" : "Invalid", fraud, deviceTime);
+                        return {
+                            res: { tid, status: "CONFLICT", message: fraud ? "Already Used" : "Not Found" },
+                            log
+                        };
                     }
 
                     await tx.ticket.update({
@@ -110,10 +147,18 @@ export class ValidationService {
                         data: { status: TicketStatus.USED }
                     });
 
-                    await this.logScan(tx, tid, eid, gateId, deviceId, "OFFLINE", "SUCCESS", undefined, false, deviceTime);
-                    return { tid, status: "SYNCED" };
+                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "OFFLINE", "SUCCESS", undefined, false, deviceTime);
+                    return { res: { tid, status: "SYNCED" }, log };
                 });
-                results.push(result);
+
+                // Background tasks after commit
+                if (syncResult.log) {
+                    FraudService.analyzeScan(syncResult.log.id).catch(err => console.error("Fraud analysis failed:", err));
+                    const status = syncResult.res.status === "SYNCED" ? "SUCCESS" as const : "REJECTED" as const;
+                    AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch(err => console.error("Analytics failed:", err));
+                }
+
+                results.push(syncResult.res);
             } catch (e: any) {
                 results.push({ status: "ERROR", message: e.message });
             }

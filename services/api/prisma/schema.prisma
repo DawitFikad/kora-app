@@ -82,6 +82,22 @@ enum PayoutMethod {
   MANUAL
 }
 
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum FraudType {
+  REPLAY
+  OFFLINE_ABUSE
+  BOT_PURCHASE
+  INSIDER_ABUSE
+  PAYMENT_FRAUD
+  IP_ANOMALY
+}
+
 model User {
   id            Int            @id @default(autoincrement())
   phoneNumber   String         @unique
@@ -97,6 +113,7 @@ model User {
   refreshTokens RefreshToken[]
   tickets       Ticket[]
   purchases     Purchase[]
+  fraudAlerts   FraudAlert[]
 }
 
 model UserProfile {
@@ -125,6 +142,7 @@ model OrganizerProfile {
 
   events           Event[]
   wallet           OrganizerWallet?
+  fraudAlerts      FraudAlert[]
 }
 
 model Category {
@@ -172,6 +190,8 @@ model Event {
   tiers            TicketTier[]
   tickets          Ticket[]
   transactions     FinancialTransaction[]
+  fraudAlerts      FraudAlert[]
+  entryMetrics     EntryMetric[]
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }
@@ -204,6 +224,7 @@ model Ticket {
   
   purchaseId   Int?
   purchase     Purchase?    @relation(fields: [purchaseId], references: [id])
+  fraudAlerts  FraudAlert[]
 
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -340,4 +361,58 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model FraudAlert {
+  id          Int       @id @default(autoincrement())
+  type        FraudType
+  riskLevel   RiskLevel
+  message     String
+  
+  // Investigation status
+  isCleared   Boolean   @default(false)
+  resolvedAt  DateTime?
+  adminNote   String?
+  
+  // Associations (nullable as alerts can be for various entities)
+  userId      Int?
+  user        User?     @relation(fields: [userId], references: [id])
+  eventId     Int?
+  event       Event?    @relation(fields: [eventId], references: [id])
+  organizerId Int?
+  organizer   OrganizerProfile? @relation(fields: [organizerId], references: [id])
+  ticketId    String?
+  ticket      Ticket?   @relation(fields: [ticketId], references: [id])
+  
+  // Context metadata
+  metadata    Json?     // IPs, device IDs, timestamps involved
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model RiskScore {
+  id          Int       @id @default(autoincrement())
+  entityType  String    // "USER", "ORGANIZER", "DEVICE"
+  entityId    String    // ID as string to support device IDs
+  score       Int       @default(0) // 0-100
+  level       RiskLevel @default(LOW)
+  
+  lastUpdated DateTime  @default(now())
+  metadata    Json?     // History of adjustments
+}
+
+model EntryMetric {
+  id            Int      @id @default(autoincrement())
+  eventId       Int
+  event         Event    @relation(fields: [eventId], references: [id])
+  
+  gateId        String?
+  entryCount    Int      @default(0)
+  failedCount   Int      @default(0)
+  
+  // Hourly or per-minute buckets
+  timestamp     DateTime // Bucket start time
+  
+  @@unique([eventId, gateId, timestamp])
 }

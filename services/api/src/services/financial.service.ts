@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { FinancialStatus, TransactionType, PaymentStatus, Prisma } from "@prisma/client";
+import { FraudService } from "./fraud.service";
 
 export class FinancialService {
     /**
@@ -7,7 +8,7 @@ export class FinancialService {
      * Calculates fees and updates organizer's pending balance.
      */
     static async recordTicketPurchase(purchaseId: number) {
-        return await prisma.$transaction(async (tx) => {
+        const transactionResult = await prisma.$transaction(async (tx) => {
             const purchase = await tx.purchase.findUnique({
                 where: { id: purchaseId },
                 include: {
@@ -100,6 +101,11 @@ export class FinancialService {
 
             return transaction;
         });
+
+        // Trigger Fraud Analysis AFTER commit
+        FraudService.analyzePurchase(purchaseId).catch(err => console.error("Purchase fraud analysis failed:", err));
+
+        return transactionResult;
     }
 
     /**

@@ -37,12 +37,12 @@ async function verifyFinancials() {
         const category = await prisma.category.findFirst() || await prisma.category.create({ data: { name: "Music", slug: "music" } });
         const city = await prisma.city.findFirst() || await prisma.city.create({ data: { name: "Addis Ababa", slug: "addis" } });
 
-        const event = await (prisma.event as any).create({
+        const event = await prisma.event.create({
             data: {
                 title: "Financial Test Event",
                 venue: "Millennium Hall",
                 dateTime: new Date(Date.now() + 86400000),
-                status: "APPROVED",
+                status: EventStatus.APPROVED,
                 organizerId: organizer.id,
                 categoryId: category.id,
                 cityId: city.id,

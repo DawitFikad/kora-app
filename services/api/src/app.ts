@@ -11,6 +11,7 @@ import paymentRoutes from "./routes/payment.routes";
 import validationRoutes from "./routes/validation.routes";
 import financialRoutes from "./routes/financial.routes";
 import payoutRoutes from "./routes/payout.routes";
+import securityRoutes from "./routes/security.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
@@ -37,6 +38,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/validate", validationRoutes);
 app.use("/api/financials", financialRoutes);
 app.use("/api/payouts", payoutRoutes);
+app.use("/api/security", securityRoutes);
 app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {
