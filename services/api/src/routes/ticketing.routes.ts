@@ -8,7 +8,6 @@ const router = Router();
 router.use(authenticate);
 
 router.post("/reserve", TicketingController.reserve);
-router.post("/confirm", TicketingController.confirm);
 router.get("/me", TicketingController.getMyTickets);
 
 export default router;

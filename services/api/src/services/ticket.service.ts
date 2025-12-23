@@ -1,39 +1,45 @@
 import { prisma } from "../lib/prisma";
-import { TicketStatus, EventType } from "@prisma/client";
+import { TicketStatus, PaymentStatus } from "@prisma/client";
 import { LockService } from "./lock.service";
 import crypto from "crypto";
 
 export class TicketService {
     /**
-     * Generates a secure ticket after payment confirmation.
+     * Completes a purchase and issues tickets after payment is verified.
      */
-    static async issueTickets(userId: number, eventId: number, tierId: number, quantity: number, seatNumbers?: string[]) {
-        // 1. Create Purchase record
-        const purchase = await prisma.purchase.create({
-            data: {
-                userId,
-                totalAmount: 0, // Should be calculated based on tier price
-                paymentRef: `MOCK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                paymentMethod: "MOCK_GATEWAY",
-            }
+    static async completePurchase(purchaseId: number) {
+        const purchase = await prisma.purchase.findUnique({
+            where: { id: purchaseId },
+            include: { user: true }
         });
 
-        // 2. Fetch Tier details for pricing
-        const tier = await prisma.ticketTier.findUnique({ where: { id: tierId } });
-        if (!tier) throw new Error("Ticket tier not found");
+        if (!purchase) throw new Error("Purchase not found");
+        if (purchase.status !== PaymentStatus.SUCCESS) {
+            throw new Error(`Cannot issue tickets for purchase in status: ${purchase.status}`);
+        }
+
+        // Check if tickets already exist for this purchase to prevent duplicate issuance
+        const existingTicketsCount = await prisma.ticket.count({ where: { purchaseId } });
+        if (existingTicketsCount > 0) {
+            return { message: "Tickets already issued", purchaseId };
+        }
+
+        // Metadata contains: eventId, tierId, quantity, seatNumbers
+        const metadata = purchase.metadata as any;
+        const { eventId, tierId, quantity, seatNumbers } = metadata;
 
         const ticketsData = [];
         for (let i = 0; i < quantity; i++) {
             const seatNumber = seatNumbers ? seatNumbers[i] : null;
 
             // Generate secure unique payload for QR
-            const rawPayload = `${purchase.id}-${userId}-${eventId}-${tierId}-${seatNumber || i}-${crypto.randomBytes(8).toString('hex')}`;
+            const rawPayload = `${purchase.id}-${purchase.userId}-${eventId}-${tierId}-${seatNumber || i}-${crypto.randomBytes(8).toString('hex')}`;
             const qrPayload = crypto.createHash('sha256').update(rawPayload).digest('hex');
 
             ticketsData.push({
                 qrPayload,
                 status: TicketStatus.VALID,
-                userId,
+                userId: purchase.userId,
                 eventId,
                 tierId,
                 seatNumber,
@@ -41,48 +47,21 @@ export class TicketService {
             });
         }
 
-        // 3. Persist tickets
-        const createdTickets = await prisma.ticket.createMany({
+        // 1. Create tickets
+        await prisma.ticket.createMany({
             data: ticketsData
         });
 
-        // 4. Update purchase amount
-        await prisma.purchase.update({
-            where: { id: purchase.id },
-            data: { totalAmount: tier.price.toNumber() * quantity }
-        });
-
-        // 5. Cleanup Redis Locks
-        if (seatNumbers) {
+        // 2. Cleanup Redis Locks
+        if (seatNumbers && seatNumbers.length > 0) {
             for (const seat of seatNumbers) {
                 await LockService.unlockSeat(eventId, tierId, seat);
             }
         } else {
-            await LockService.releaseCapacity(eventId, tierId, userId);
+            await LockService.releaseCapacity(eventId, tierId, purchase.userId);
         }
 
         return { purchaseId: purchase.id, ticketCount: quantity };
-    }
-
-    /**
-     * Validates a ticket for entry (QR scan).
-     */
-    static async useTicket(ticketId: string) {
-        const ticket = await prisma.ticket.findUnique({
-            where: { id: ticketId },
-            include: { event: true, user: { include: { profile: true } } }
-        });
-
-        if (!ticket) throw new Error("Ticket not found");
-        if (ticket.status !== TicketStatus.VALID) throw new Error(`Ticket is ${ticket.status}`);
-
-        // Mark as used
-        const updatedTicket = await prisma.ticket.update({
-            where: { id: ticketId },
-            data: { status: TicketStatus.USED }
-        });
-
-        return updatedTicket;
     }
 
     /**
@@ -105,6 +84,23 @@ export class TicketService {
                 }
             },
             orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    /**
+     * Validates a ticket for entry (QR scan).
+     */
+    static async useTicket(ticketId: string) {
+        const ticket = await prisma.ticket.findUnique({
+            where: { id: ticketId },
+        });
+
+        if (!ticket) throw new Error("Ticket not found");
+        if (ticket.status !== TicketStatus.VALID) throw new Error(`Ticket is ${ticket.status}`);
+
+        return prisma.ticket.update({
+            where: { id: ticketId },
+            data: { status: TicketStatus.USED }
         });
     }
 }

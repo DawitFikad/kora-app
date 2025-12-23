@@ -2,15 +2,15 @@ import { Request, Response } from "express";
 import { LockService } from "../services/lock.service";
 import { TicketService } from "../services/ticket.service";
 import { prisma } from "../lib/prisma";
-import { EventType } from "@prisma/client";
+import { EventType, PaymentStatus } from "@prisma/client";
 
 export class TicketingController {
     /**
-     * Reserves seats or capacity for a short duration.
+     * Reserves seats or capacity and creates a PENDING purchase.
      */
     static async reserve(req: Request, res: Response) {
         try {
-            const { eventId, tierId, quantity, seatNumbers } = req.body;
+            const { eventId, tierId, quantity, seatNumbers, paymentMethod } = req.body;
             const userId = req.user!.userId;
 
             const event = await prisma.event.findUnique({
@@ -25,53 +25,51 @@ export class TicketingController {
             const tier = event.tiers[0];
             if (!tier) return res.status(404).json({ error: "Ticket tier not found" });
 
+            // 1. Check Availability and Lock (Redis)
             if (event.eventType === EventType.SEAT_MAP) {
                 if (!seatNumbers || seatNumbers.length !== quantity) {
                     return res.status(400).json({ error: "Seat numbers required for this event" });
                 }
-
-                // Attempt to lock each seat
                 const results = await Promise.all(
                     seatNumbers.map((seat: string) => LockService.lockSeat(eventId, tierId, seat, userId))
                 );
-
                 if (results.some(r => !r)) {
-                    // Cleanup partially successful locks? (Optional but good)
                     return res.status(409).json({ error: "One or more seats are already reserved" });
                 }
             } else {
-                // Capacity-based
-                // 1. Calculate sold qty from DB
                 const soldQty = await prisma.ticket.count({ where: { tierId } });
                 const available = tier.capacity - soldQty;
-
                 const success = await LockService.reserveCapacity(eventId, tierId, userId, quantity, available);
                 if (!success) {
                     return res.status(409).json({ error: "Not enough capacity available" });
                 }
             }
 
-            res.json({ message: "Reservation successful. Complete payment within 5 minutes." });
+            // 2. Create PENDING Purchase
+            const purchase = await prisma.purchase.create({
+                data: {
+                    userId,
+                    status: PaymentStatus.PENDING,
+                    totalAmount: tier.price.toNumber() * quantity,
+                    paymentRef: `TX-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    paymentMethod: paymentMethod || "CHAPA", // Default to Chapa
+                    metadata: {
+                        eventId,
+                        tierId,
+                        quantity,
+                        seatNumbers: seatNumbers || []
+                    }
+                }
+            });
+
+            res.json({
+                message: "Reservation successful.",
+                purchaseId: purchase.id,
+                paymentRef: purchase.paymentRef,
+                amount: purchase.totalAmount
+            });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
-        }
-    }
-
-    /**
-     * Confirms purchase after mock payment verification.
-     */
-    static async confirm(req: Request, res: Response) {
-        try {
-            const { eventId, tierId, quantity, seatNumbers } = req.body;
-            const userId = req.user!.userId;
-
-            // In a real app, we would verify payment gateway webhook/API here.
-            // For now, we assume payment is successful.
-
-            const result = await TicketService.issueTickets(userId, eventId, tierId, quantity, seatNumbers);
-            res.json({ message: "Payment confirmed. Tickets issued.", ...result });
-        } catch (error: any) {
-            res.status(400).json({ error: error.message });
         }
     }
 

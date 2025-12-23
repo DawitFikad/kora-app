@@ -43,6 +43,13 @@ enum TicketStatus {
   CANCELLED
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
 model User {
   id            Int            @id @default(autoincrement())
   phoneNumber   String         @unique
@@ -165,16 +172,22 @@ model Ticket {
 }
 
 model Purchase {
-  id             Int      @id @default(autoincrement())
-  totalAmount    Decimal  @db.Decimal(10, 2)
-  paymentRef     String   @unique
-  paymentMethod  String   // e.g., "Chapa", "Telebirr"
+  id             Int           @id @default(autoincrement())
+  status         PaymentStatus @default(PENDING)
+  totalAmount    Decimal       @db.Decimal(10, 2)
+  paymentRef     String        @unique // Our internal unique ref
+  externalRef    String?       @unique // Provider's ref (Chapa, TeleBirr, etc)
+  paymentMethod  String        // e.g., "CHAPA", "TELEBIRR", "CBE_BIRR", "AMOLE"
+  failureReason  String?
   
   userId         Int
-  user           User     @relation(fields: [userId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
+  
+  metadata       Json?         // To store eventId, tierId, quantity, seatNumbers
   
   tickets        Ticket[]
-  createdAt      DateTime @default(now())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model RefreshToken {

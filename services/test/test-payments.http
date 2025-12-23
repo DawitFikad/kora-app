@@ -1,0 +1,45 @@
+### Payment Integration Testing
+
+@baseUrl = http://localhost:4000/api
+@userToken = YOUR_USER_ACCESS_TOKEN
+
+### 1. [USER] Reserve Tickets (Creates PENDING Purchase)
+# @name reserve
+POST {{baseUrl}}/tickets/reserve
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "eventId": 1,
+    "tierId": 1,
+    "quantity": 1,
+    "paymentMethod": "AMOLE"
+}
+
+### 2. [USER] Initialize Payment (Get Mock Checkout URL)
+# Use purchaseId from Request #1
+@purchaseId = {{reserve.response.body.purchaseId}}
+
+POST {{baseUrl}}/payments/initialize
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "purchaseId": {{purchaseId}}
+}
+
+### 3. [USER] Verify Payment (Manual Test)
+# In real flow, the Mock Gateway UI calls this automatically.
+# You can also call it manually to simulate a success.
+POST {{baseUrl}}/payments/verify
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "paymentRef": "{{reserve.response.body.paymentRef}}",
+    "externalRef": "EXT-MANUAL-123456"
+}
+
+### 4. [USER] Check if Tickets were issued
+GET {{baseUrl}}/tickets/me
+Authorization: Bearer {{userToken}}
