@@ -5,8 +5,8 @@ import { OtpService } from "./otp.service";
 import { SmsService } from "./sms.service";
 
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET || "default_access_secret";
-const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || "default_refresh_secret";
+const getAccessTokenSecret = () => process.env.JWT_SECRET || "default_access_secret";
+const getRefreshTokenSecret = () => process.env.JWT_REFRESH_SECRET || "default_refresh_secret";
 // Note: User didn't specify separate refresh secret in env, but good practice. 
 // I'll stick to one secret or I should update env. Let's use env if available.
 
@@ -125,7 +125,7 @@ export class AuthService {
 
     static async refreshAccessToken(refreshToken: string) {
         try {
-            const payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as { userId: number };
+            const payload = jwt.verify(refreshToken, getRefreshTokenSecret()) as { userId: number };
 
             // Check if token exists in DB and is not expired
             const storedToken = await prisma.refreshToken.findUnique({
@@ -150,10 +150,10 @@ export class AuthService {
     }
 
     private static generateAccessToken(userId: number, role: Role) {
-        return jwt.sign({ userId, role }, ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+        return jwt.sign({ userId, role }, getAccessTokenSecret(), { expiresIn: "15m" });
     }
 
     private static generateRefreshToken(userId: number) {
-        return jwt.sign({ userId }, REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
+        return jwt.sign({ userId }, getRefreshTokenSecret(), { expiresIn: "7d" });
     }
 }

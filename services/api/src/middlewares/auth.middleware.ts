@@ -10,7 +10,7 @@ declare global {
     }
 }
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET || "default_access_secret";
+const getAccessTokenSecret = () => process.env.JWT_SECRET || "default_access_secret";
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
@@ -21,7 +21,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     const token = authHeader.split(" ")[1];
 
     try {
-        const payload = jwt.verify(token, ACCESS_TOKEN_SECRET);
+        const payload = jwt.verify(token, getAccessTokenSecret());
         req.user = payload;
         next();
     } catch (error) {
@@ -38,7 +38,7 @@ export const optionalAuthenticate = (req: Request, res: Response, next: NextFunc
     const token = authHeader.split(" ")[1];
 
     try {
-        const payload = jwt.verify(token, ACCESS_TOKEN_SECRET);
+        const payload = jwt.verify(token, getAccessTokenSecret());
         req.user = payload;
         next();
     } catch (error) {

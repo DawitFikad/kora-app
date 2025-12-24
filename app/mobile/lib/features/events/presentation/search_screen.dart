@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../services/event_service.dart';
-import '../models/event.dart';
+import 'package:mobile/features/events/services/event_service.dart';
+import 'package:mobile/features/events/models/event.dart';
 import 'package:intl/intl.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -19,6 +19,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // eventsProvider is imported from event_service.dart
     final eventsAsync = ref.watch(eventsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     

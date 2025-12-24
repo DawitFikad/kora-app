@@ -7,17 +7,14 @@ import 'package:intl/intl.dart';
 import 'dart:ui' as ui; 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import '../../auth/services/auth_service.dart';
-import '../services/event_service.dart';
-import '../models/event.dart';
-import './profile_screen.dart';
-import './search_screen.dart';
-import '../../tickets/presentation/my_tickets_screen.dart';
+import 'package:mobile/features/auth/services/auth_service.dart';
+import 'package:mobile/features/events/services/event_service.dart';
+import 'package:mobile/features/events/models/event.dart';
+import 'package:mobile/features/events/presentation/profile_screen.dart';
+import 'package:mobile/features/events/presentation/search_screen.dart';
+import 'package:mobile/features/tickets/presentation/my_tickets_screen.dart';
 
-final eventsProvider = FutureProvider<List<Event>>((ref) async {
-  final service = ref.read(eventServiceProvider);
-  return service.getEvents();
-});
+
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});

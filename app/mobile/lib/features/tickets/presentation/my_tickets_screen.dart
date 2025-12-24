@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../services/ticket_service.dart';
-import '../models/ticket.dart';
+import 'package:mobile/features/tickets/services/ticket_service.dart';
+import 'package:mobile/features/tickets/models/ticket.dart';
 
 final myTicketsProvider = FutureProvider<List<Ticket>>((ref) async {
   final service = ref.read(ticketServiceProvider);

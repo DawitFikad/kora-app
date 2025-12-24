@@ -1,11 +1,16 @@
 import 'package:dio/dio.dart';
-import '../../../core/constants/api_constants.dart';
-import '../../../core/providers.dart';
-import '../models/event.dart';
+import 'package:mobile/core/constants/api_constants.dart';
+import 'package:mobile/core/providers.dart';
+import 'package:mobile/features/events/models/event.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final eventServiceProvider = Provider<EventService>((ref) {
   return EventService(ref.read(dioProvider));
+});
+
+final eventsProvider = FutureProvider<List<Event>>((ref) async {
+  final service = ref.read(eventServiceProvider);
+  return service.getEvents();
 });
 
 class EventService {
