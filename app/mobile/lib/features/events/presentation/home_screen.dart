@@ -11,6 +11,8 @@ import '../../auth/services/auth_service.dart';
 import '../services/event_service.dart';
 import '../models/event.dart';
 import './profile_screen.dart';
+import './search_screen.dart';
+import '../../tickets/presentation/my_tickets_screen.dart';
 
 final eventsProvider = FutureProvider<List<Event>>((ref) async {
   final service = ref.read(eventServiceProvider);
@@ -34,8 +36,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _pages = [
       const _HomeBody(),
-      const _PlaceholderScreen(title: "Search"),
-      const _PlaceholderScreen(title: "My Tickets"),
+      const SearchScreen(),
+      const MyTicketsScreen(),
       const ProfileScreen(),
     ];
   }
@@ -471,25 +473,4 @@ class _TrendingCard extends StatelessWidget {
   }
 }
 
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  const _PlaceholderScreen({required this.title});
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
-      body: Center(
-        child: Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
-          ),
-        ),
-      ),
-    );
-  }
-}

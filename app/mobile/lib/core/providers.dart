@@ -11,6 +11,17 @@ final localStorageProvider = Provider<LocalStorage>((ref) {
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio();
-  // Add interceptors here if needed (e.g. for Auth header)
+  final storage = ref.watch(localStorageProvider);
+  
+  dio.interceptors.add(InterceptorsWrapper(
+    onRequest: (options, handler) {
+      final token = storage.authToken;
+      if (token != null) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
+      return handler.next(options);
+    },
+  ));
+  
   return dio;
 });
