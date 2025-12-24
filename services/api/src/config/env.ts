@@ -7,16 +7,11 @@ const requiredEnv = [
     'DATABASE_URL',
     'JWT_SECRET',
     'REDIS_URL',
-    // Payment provider keys (example placeholders)
-    'TELEBIRR_MERCHANT_APP_ID',
-    'TELEBIRR_FABRIC_APP_ID',
-    'TELEBIRR_SHORT_CODE',
-    'TELEBIRR_APP_SECRET',
-    'TELEBIRR_PRIVATE_KEY',
-    'CBE_BIRR_API_KEY',
-    'AMOLE_API_KEY',
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'REDIS_URL',
     'CHAPA_SECRET_KEY',
-    'SMS_PROVIDER_API_KEY',
+    // 'SMS_PROVIDER_API_KEY', 
 ];
 
 const missing = requiredEnv.filter((k) => !process.env[k]);

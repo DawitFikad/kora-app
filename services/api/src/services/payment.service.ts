@@ -38,40 +38,13 @@ export class PaymentService {
 
         switch (purchase.paymentMethod) {
             case "TELEBIRR":
-                // TeleBirr usually requires an encrypted/signed payload
-                providerPayload = {
-                    appid: env.teleBirrMerchantAppId,
-                    fabricAppId: env.teleBirrFabricAppId,
-                    shortCode: env.teleBirrShortCode,
-                    outTradeNo: purchase.paymentRef,
-                    receiver: "PLATFORM_MERCHANT_ID", // This might also come from env if it varies
-                    nonce: crypto.randomBytes(16).toString("hex"),
-                    timestamp: Date.now().toString(),
-                    // In a real implementation, you would sign this payload using your private key (env.teleBirrPrivateKey)
-                };
-                checkoutUrl = `${baseUrl}/telebirr?ref=${purchase.paymentRef}&payload=${Buffer.from(JSON.stringify(providerPayload)).toString('base64')}`;
-                break;
-
             case "CBE_BIRR":
-                // CBE Birr often uses a different merchant ID and callback structure
-                providerPayload = {
-                    merchantId: "CBE_MOCK_123",
-                    orderId: purchase.paymentRef,
-                    amount: purchase.totalAmount.toString(),
-                    currency: "ETB"
-                };
-                checkoutUrl = `${baseUrl}/cbe?ref=${purchase.paymentRef}&data=${Buffer.from(JSON.stringify(providerPayload)).toString('base64')}`;
-                break;
-
             case "AMOLE":
-                checkoutUrl = `${baseUrl}/amole?ref=${purchase.paymentRef}`;
-                break;
-
             case "CHAPA":
-                // Real Chapa Integration
+                // Real Chapa Integration (Aggregator for all)
                 try {
                     const tx_ref = purchase.paymentRef;
-                    const return_url = `http://localhost:4000/api/payments/verify-callback?ref=${tx_ref}`; // We will add this route
+                    const return_url = `http://localhost:4000/api/payments/verify-callback?ref=${tx_ref}`;
 
                     const chapaPayload = {
                         amount: purchase.totalAmount.toString(),
@@ -83,12 +56,12 @@ export class PaymentService {
                         callback_url: `http://localhost:4000/api/payments/webhook`,
                         return_url: return_url,
                         customization: {
-                            title: "Ticket Purchase",
+                            title: `Ticket Purchase (${purchase.paymentMethod})`,
                             description: `Payment for Purchase #${purchase.id}`
                         }
                     };
 
-                    logger.info({ tx_ref }, "Initializing Chapa payment");
+                    logger.info({ tx_ref, method: purchase.paymentMethod }, "Initializing Chapa payment");
                     const response = await axios.post("https://api.chapa.co/v1/transaction/initialize", chapaPayload, {
                         headers: {
                             Authorization: `Bearer ${env.chapaSecretKey}`,
@@ -104,11 +77,6 @@ export class PaymentService {
                     }
                 } catch (error: any) {
                     logger.error("Chapa Error:", error.response?.data || error.message);
-                    // Fallback to mock if real fails (or just throw? User asked for real so let's throw if config is wrong but maybe fallback for safety if key is invalid? No, explicit failure is better for debugging)
-                    // throw new Error("Payment Provider Error");
-
-                    // For smoother dev experience if key is invalid, we could revert to mock... 
-                    // But user said "mock to real", so let's stick to real.
                     throw new Error(`Payment initialization failed: ${error.response?.data?.message || error.message}`);
                 }
                 break;
@@ -150,7 +118,7 @@ export class PaymentService {
             // In real app: decrypt(rawProviderData, telebirrPublicKey)
         }
 
-        if (purchase.paymentMethod === "CHAPA") {
+        if (["CHAPA", "TELEBIRR", "CBE_BIRR", "AMOLE"].includes(purchase.paymentMethod)) {
             try {
                 const response = await axios.get(`https://api.chapa.co/v1/transaction/verify/${paymentRef}`, {
                     headers: { Authorization: `Bearer ${env.chapaSecretKey}` }
