@@ -16,6 +16,9 @@ import 'package:mobile/features/tickets/presentation/my_tickets_screen.dart';
 import 'package:mobile/features/events/presentation/notification_screen.dart';
 import 'package:mobile/features/events/presentation/favorites_screen.dart';
 
+final selectedCategoryProvider = StateProvider<String>((ref) => "All");
+import 'package:mobile/features/events/presentation/favorites_screen.dart';
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -106,6 +109,7 @@ class _HomeBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final selectedCategory = ref.watch(selectedCategoryProvider);
     final eventsAsync = ref.watch(eventsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
@@ -121,11 +125,11 @@ class _HomeBody extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, textColor, mutedColor),
+              _buildHeader(context, ref, textColor, mutedColor),
               const SizedBox(height: 24),
-              _buildSearchBar(cardColor, mutedColor),
+              _buildSearchBar(context, cardColor, mutedColor),
               const SizedBox(height: 24),
-              _buildCategories(isDark),
+              _buildCategories(ref, isDark),
               const SizedBox(height: 32),
               RichText(
                 text: TextSpan(
@@ -158,12 +162,16 @@ class _HomeBody extends ConsumerWidget {
                 height: 380,
                 child: eventsAsync.when(
                   data: (events) {
-                     if (events.isEmpty) return const Center(child: Text("No events found"));
-                     return ListView.separated(
+                    final filteredFeatured = selectedCategory == "All" 
+                        ? events 
+                        : events.where((e) => e.description.toLowerCase().contains(selectedCategory.toLowerCase())).toList();
+
+                    if (filteredFeatured.isEmpty) return const Center(child: Text("No events in this category", style: TextStyle(color: Colors.white54)));
+                    return ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: events.take(3).length,
+                      itemCount: filteredFeatured.take(3).length,
                       separatorBuilder: (_, __) => const SizedBox(width: 16),
-                      itemBuilder: (context, index) => _FeaturedCard(event: events[index]),
+                      itemBuilder: (context, index) => _FeaturedCard(event: filteredFeatured[index]),
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
@@ -194,12 +202,16 @@ class _HomeBody extends ConsumerWidget {
               const SizedBox(height: 16),
               eventsAsync.when(
                 data: (events) {
+                  final filteredTrending = selectedCategory == "All" 
+                      ? events 
+                      : events.where((e) => e.description.toLowerCase().contains(selectedCategory.toLowerCase())).toList();
+
                    return ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: events.length,
+                    itemCount: filteredTrending.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) => _TrendingCard(event: events[index], isDark: isDark),
+                    itemBuilder: (context, index) => _TrendingCard(event: filteredTrending[index], isDark: isDark),
                   );
                 },
                 loading: () => const SizedBox.shrink(),
@@ -213,24 +225,33 @@ class _HomeBody extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, Color textColor, Color mutedColor) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref, Color textColor, Color mutedColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
-              ),
-              child: const CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.person, color: Colors.white),
-              ),
+        GestureDetector(
+          onTap: () {
+            // Find the HomeScreen's state and change index to 3 (Profile)
+            final state = context.findAncestorStateOfType<_HomeScreenState>();
+            state?.setState(() {
+              state._selectedIndex = 3;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
             ),
+            child: const CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.grey,
+              child: Icon(Icons.person, color: Colors.white),
+            ),
+          ),
+        ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,58 +293,76 @@ class _HomeBody extends ConsumerWidget {
     );
   }
 
-  Widget _buildSearchBar(Color cardColor, Color mutedColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      height: 52,
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+  Widget _buildSearchBar(BuildContext context, Color cardColor, Color mutedColor) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SearchScreen()),
       ),
-      child: Row(
-        children: [
-          Icon(Icons.search, color: mutedColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search events, azmari...",
-                hintStyle: TextStyle(color: mutedColor),
-                border: InputBorder.none,
-              ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: 52,
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.search, color: mutedColor),
+            const SizedBox(width: 12),
+            Text(
+              "Search events, artists...",
+              style: TextStyle(color: mutedColor),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCategories(bool isDark) {
+  Widget _buildCategories(WidgetRef ref, bool isDark) {
     final categories = ["All", "Cultural", "Live Music", "Art", "Food"];
+    final selectedCategory = ref.watch(selectedCategoryProvider);
+
     return SizedBox(
-      height: 36,
+      height: 38,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
-          final isSelected = index == 0;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: isSelected 
-                  ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)])
-                  : null,
-              color: isSelected ? null : (isDark ? const Color(0xFF2E2B3A) : Colors.grey[200]),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              categories[index],
-              style: TextStyle(
-                color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
+          final category = categories[index];
+          final isSelected = selectedCategory == category;
+          
+          return GestureDetector(
+            onTap: () => ref.read(selectedCategoryProvider.notifier).state = category,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: isSelected 
+                    ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)])
+                    : null,
+                color: isSelected ? null : (isDark ? const Color(0xFF2E2B3A) : Colors.grey[200]),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: isSelected ? [
+                  BoxShadow(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ] : null,
+              ),
+              child: Center(
+                child: Text(
+                  category,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
               ),
             ),
           );
