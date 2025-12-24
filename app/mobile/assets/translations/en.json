@@ -1,0 +1,37 @@
+{
+    "onboarding": {
+        "step1_title": "Discover Events",
+        "step1_desc": "Browse the best events in your city easily.",
+        "step2_title": "Secure Tickets",
+        "step2_desc": "Pay safely via Telebirr or CBE and get instant digital tickets.",
+        "step3_title": "Scan & Enter",
+        "step3_desc": "Just show your QR code at the gate. Works offline!",
+        "get_started": "Get Started",
+        "skip": "Skip"
+    },
+    "auth": {
+        "phone_label": "Phone Number",
+        "enter_phone": "Enter your phone number",
+        "send_code": "Send Code",
+        "verify_title": "Internal Validation",
+        "enter_otp": "Enter the code sent to {}",
+        "verify_btn": "Verify & Login",
+        "resend": "Resend Code"
+    },
+    "home": {
+        "title": "Discover",
+        "search": "Search events...",
+        "featured": "Featured",
+        "upcoming": "Upcoming Events"
+    },
+    "settings": {
+        "language": "Language",
+        "logout": "Logout",
+        "profile": "Profile"
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "Something went wrong",
+        "retry": "Retry"
+    }
+}

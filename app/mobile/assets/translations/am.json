@@ -1,0 +1,37 @@
+{
+    "onboarding": {
+        "step1_title": "ዝግጅቶችን ያግኙ",
+        "step1_desc": "በከተማዎ ውስጥ ያሉ ምርጥ ዝግጅቶችን በቀላሉ ያስሱ።",
+        "step2_title": "ታማኝ ትኬቶች",
+        "step2_desc": "በቴሌብር ወይም በንግድ ባንክ በሰላም ይክፈሉ።",
+        "step3_title": "ስካን እና መግባት",
+        "step3_desc": "በመግቢያው ላይ የQR ኮድዎን ብቻ ያሳዩ። ያለ ኢንተርኔት ይሰራል።",
+        "get_started": "ጀምር",
+        "skip": "ለማለፍ"
+    },
+    "auth": {
+        "phone_label": "ስልክ ቁጥር",
+        "enter_phone": "ስልክ ቁጥርዎን ያስገቡ",
+        "send_code": "ኮድ ላክ",
+        "verify_title": "ማረጋገጫ",
+        "enter_otp": "ወደ {} የተላከውን ኮድ ያስገቡ",
+        "verify_btn": "አረጋግጥ እና ግባ",
+        "resend": "እንደገና ላክ"
+    },
+    "home": {
+        "title": "ያስሱ",
+        "search": "ዝግጅቶችን ይፈልጉ...",
+        "featured": "ተመራጭ",
+        "upcoming": "ቀጣይ ዝግጅቶች"
+    },
+    "settings": {
+        "language": "ቋንቋ",
+        "logout": "ውጣ",
+        "profile": "መገለጫ"
+    },
+    "common": {
+        "loading": "በመጫን ላይ...",
+        "error": "ችግር ተፈጥሯል",
+        "retry": "እንደገና ሞክር"
+    }
+}
