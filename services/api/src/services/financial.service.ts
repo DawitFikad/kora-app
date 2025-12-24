@@ -115,7 +115,7 @@ export class FinancialService {
                 eventTitle: transactionResult.event.title
             }),
             channels: [NotificationChannel.SMS]
-        }).catch(err => console.error("Purchase notification failed:", err));
+        }).catch((err: any) => console.error("Purchase notification failed:", err));
 
         return transactionResult.transaction;
     }

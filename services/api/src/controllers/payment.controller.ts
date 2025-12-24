@@ -90,4 +90,40 @@ export class PaymentController {
             </html>
         `);
     }
+
+    /**
+     * Handles the return redirect from Payment Providers.
+     */
+    static async verifyCallback(req: Request, res: Response) {
+        try {
+            const { ref } = req.query;
+
+            if (!ref) {
+                res.status(400).send("<h1>Missing Payment Reference</h1>");
+                return;
+            }
+
+            const result = await PaymentService.verifyPayment(ref as string);
+
+            if (result.status === 'SUCCESS') {
+                res.send(`
+                    <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+                        <h1 style="color: green;">Payment Successful!</h1>
+                        <p>Your ticket has been issued.</p>
+                        <p>You can close this window and return to the app.</p>
+                    </div>
+                `);
+            } else {
+                res.send(`
+                    <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+                        <h1 style="color: red;">Payment Failed</h1>
+                        <p>Status: ${result.status}</p>
+                        <p>Reason: ${result.failureReason || 'Unknown error'}</p>
+                    </div>
+                `);
+            }
+        } catch (error: any) {
+            res.status(400).send(`<h1>Error</h1><p>${error.message}</p>`);
+        }
+    }
 }

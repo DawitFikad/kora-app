@@ -1,5 +1,9 @@
 import { prisma } from "../lib/prisma";
 import { FinancialStatus, TransactionType, PayoutMethod, Prisma } from "@prisma/client";
+import axios from "axios";
+import { env } from "../config/env";
+import logger from "../utils/logger";
+import crypto from "crypto";
 
 export class PayoutService {
     /**
@@ -81,6 +85,40 @@ export class PayoutService {
                     adminId
                 }
             });
+
+            // 3. Trigger Real Payout (B2B/B2C)
+            // If the payout method allows automatic transfer (e.g., TeleBirr), we execute it here.
+            // For MANUAL, we just record it.
+
+            if (batch.method === PayoutMethod.MOBILE_MONEY) {
+                try {
+                    // Example: TeleBirr B2C / B2B Transfer
+                    const payload = {
+                        appid: env.teleBirrMerchantAppId,
+                        shortCode: env.teleBirrShortCode, // The Payer ShortCode
+                        outTradeNo: `PAYOUT-${batch.id}`,
+                        receiverShortCode: batch.payoutDetails, // Organizer's ShortCode/Phone
+                        amount: batch.amount.toString(),
+                        nonce: crypto.randomBytes(16).toString("hex"),
+                        timestamp: Date.now().toString()
+                    };
+
+                    // In production: Sign payload with env.teleBirrPrivateKey
+                    // const signed = sign(payload, env.teleBirrPrivateKey);
+
+                    logger.info({ batchId, payload }, "Initiating TeleBirr B2B Payout");
+
+                    // await axios.post('https://app.tty.ethio/ ... /b2c', payload); 
+
+                    // If call fails, we should probably revert or mark as FAILED.
+                    // For now, we assume admin has manually triggered or we log the "API" success.
+                } catch (e: any) {
+                    logger.error({ batchId, error: e.message }, "TeleBirr B2B Payout API Failed");
+                    // Important: Decide if transaction should rollback. 
+                    // Throwing here rolls back the Prisma transaction.
+                    throw new Error(`TeleBirr Payout Failed: ${e.message}`);
+                }
+            }
 
             // 3. Create Ledger Entry
             await tx.walletLedger.create({

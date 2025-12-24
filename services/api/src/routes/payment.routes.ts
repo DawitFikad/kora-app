@@ -6,6 +6,7 @@ const router = Router();
 
 // Public Mock Gateways (Simulated Provider Pages)
 router.get("/mock-gateways/:provider", PaymentController.mockGateway);
+router.get("/verify-callback", PaymentController.verifyCallback);
 
 // Webhook (Public, but should be signature-verified in production)
 router.post("/webhook", PaymentController.webhook);
