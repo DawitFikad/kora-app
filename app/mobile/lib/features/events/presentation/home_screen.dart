@@ -13,8 +13,7 @@ import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/presentation/profile_screen.dart';
 import 'package:mobile/features/events/presentation/search_screen.dart';
 import 'package:mobile/features/tickets/presentation/my_tickets_screen.dart';
-
-
+import 'package:mobile/features/events/presentation/notification_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -121,7 +120,7 @@ class _HomeBody extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(textColor, mutedColor),
+              _buildHeader(context, textColor, mutedColor),
               const SizedBox(height: 24),
               _buildSearchBar(cardColor, mutedColor),
               const SizedBox(height: 24),
@@ -213,7 +212,7 @@ class _HomeBody extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(Color textColor, Color mutedColor) {
+  Widget _buildHeader(BuildContext context, Color textColor, Color mutedColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -253,14 +252,20 @@ class _HomeBody extends ConsumerWidget {
             ),
           ],
         ),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF232030),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white10),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NotificationScreen()),
           ),
-          child: const Icon(Icons.notifications_none, color: Colors.white, size: 24),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF232030),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white10),
+            ),
+            child: const Icon(Icons.notifications_none, color: Colors.white, size: 24),
+          ),
         ),
       ],
     );
@@ -469,5 +474,3 @@ class _TrendingCard extends StatelessWidget {
     );
   }
 }
-
-
