@@ -13,7 +13,32 @@ class AppRouter {
   AppRouter(this.storage);
 
   late final GoRouter router = GoRouter(
-    initialLocation: _getInitialRoute(),
+    refreshListenable: storage,
+    initialLocation: '/login',
+    redirect: (context, state) {
+      final isFirstLaunch = storage.isFirstLaunch;
+      final isAuthenticated = storage.authToken != null;
+      final isGoingToLanguage = state.matchedLocation == '/language';
+      final isGoingToOnboarding = state.matchedLocation == '/onboarding';
+      final isGoingToLogin = state.matchedLocation == '/login';
+
+      if (isFirstLaunch) {
+        if (!isGoingToLanguage && !isGoingToOnboarding) return '/language';
+        return null; // Let them stay in language/onboarding
+      }
+
+      if (!isAuthenticated) {
+        if (!isGoingToLogin) return '/login';
+        return null;
+      }
+
+      // If authenticated and going to login/onboarding, send to home
+      if (isAuthenticated && (isGoingToLogin || isGoingToOnboarding || isGoingToLanguage)) {
+        return '/home';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/language',
@@ -37,14 +62,4 @@ class AppRouter {
       ),
     ],
   );
-
-  String _getInitialRoute() {
-    if (storage.isFirstLaunch) {
-      return '/language';
-    }
-    if (storage.authToken == null) {
-      return '/login';
-    }
-    return '/home';
-  }
 }

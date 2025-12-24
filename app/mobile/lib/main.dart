@@ -33,20 +33,15 @@ class EtTicketApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    
-    
-    // We need to keep router alive or recreate it. 
-    // Usually defining it in a provider is better, but since AppRouter depends on storage which is available now:
-    final storage = ref.watch(localStorageProvider);
-    final themeMode = ref.watch(themeModeProvider); // Watch Theme
-    final appRouter = AppRouter(storage);
+    final themeMode = ref.watch(themeModeProvider);
+    final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
       title: 'EtTicket',
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
-      locale: context.locale, // This is key for dynamic switching
-      routerConfig: appRouter.router,
+      locale: context.locale,
+      routerConfig: router,
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

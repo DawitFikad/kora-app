@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import 'storage/local_storage.dart';
+import 'router/app_router.dart';
 
 export 'theme/app_theme.dart';
 
@@ -24,4 +26,9 @@ final dioProvider = Provider<Dio>((ref) {
   ));
   
   return dio;
+});
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final storage = ref.watch(localStorageProvider);
+  return AppRouter(storage).router;
 });
