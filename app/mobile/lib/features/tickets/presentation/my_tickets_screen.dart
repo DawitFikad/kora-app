@@ -16,72 +16,77 @@ class MyTicketsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ticketsAsync = ref.watch(myTicketsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
-    final mutedColor = isDark ? Colors.white60 : Colors.black54;
-
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0F0D15),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            "My Tickets",
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 22,
+            ),
+          ),
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.tune, color: Colors.white, size: 20),
+                onPressed: () {},
+              ),
+            ),
+          ],
+        ),
+        body: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Text(
-                "My Tickets",
-                style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: TabBar(
+                isScrollable: true,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFF8B5CF6),
                 ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white60,
+                labelStyle: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                tabAlignment: TabAlignment.start,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 24),
+                tabs: const [
+                  Tab(height: 38, text: "Upcoming"),
+                  Tab(height: 38, text: "Past"),
+                  Tab(height: 38, text: "Archived"),
+                ],
               ),
             ),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async => ref.refresh(myTicketsProvider),
-                child: ticketsAsync.when(
-                  data: (tickets) {
-                    if (tickets.isEmpty) {
-                      return ListView(
-                        children: [
-                          const SizedBox(height: 100),
-                          Center(
-                            child: Column(
-                              children: [
-                                Icon(Icons.confirmation_num_outlined, size: 64, color: mutedColor),
-                                const SizedBox(height: 16),
-                                Text(
-                                  "You don't have any tickets yet",
-                                  style: TextStyle(color: mutedColor, fontSize: 16),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "Purchased tickets will appear here",
-                                  style: TextStyle(color: mutedColor.withOpacity(0.5), fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-
-                    return ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      itemCount: tickets.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        return _TicketCard(ticket: tickets[index], isDark: isDark);
-                      },
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Center(
-                    child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
-                  ),
-                ),
+              child: TabBarView(
+                children: [
+                  _TicketsListView(ref: ref),
+                  _buildEmptyState("No past tickets"),
+                  _buildEmptyState("No archived tickets"),
+                ],
               ),
             ),
           ],
@@ -89,239 +94,389 @@ class MyTicketsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Text(
+        message,
+        style: GoogleFonts.poppins(color: Colors.white54),
+      ),
+    );
+  }
 }
 
-class _TicketCard extends StatelessWidget {
-  final Ticket ticket;
-  final bool isDark;
-
-  const _TicketCard({required this.ticket, required this.isDark});
+class _TicketsListView extends StatelessWidget {
+  final WidgetRef ref;
+  const _TicketsListView({required this.ref});
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = ticket.status == 'VALID' ? Colors.green : Colors.grey;
+    final ticketsAsync = ref.watch(myTicketsProvider);
 
-    return GestureDetector(
-      onTap: () => _showTicketDetails(context),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF232030) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: IntrinsicHeight(
-          child: Row(
+    return RefreshIndicator(
+      onRefresh: () async => ref.refresh(myTicketsProvider),
+      child: ticketsAsync.when(
+        data: (tickets) {
+          if (tickets.isEmpty) {
+            return const Center(child: Text("No upcoming tickets", style: TextStyle(color: Colors.white54)));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            itemCount: tickets.length,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: _LargeTicketCard(ticket: tickets[index]),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _CompactTicketCard(ticket: tickets[index]),
+              );
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+      ),
+    );
+  }
+}
+
+class _LargeTicketCard extends StatelessWidget {
+  final Ticket ticket;
+  const _LargeTicketCard({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final eventDate = DateTime.parse(ticket.event.dateTime);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1D192B),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        children: [
+          // Image and Status Badge
+          Stack(
             children: [
-              // Left side status bar
-              Container(
-                width: 6,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    bottomLeft: Radius.circular(20),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              ticket.status,
-                              style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Text(
-                            DateFormat('MMM d, y').format(ticket.createdAt),
-                            style: const TextStyle(color: Colors.grey, fontSize: 10),
-                          ),
-                        ],
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                child: ticket.event.coverImage != null
+                    ? Image.network(
+                        ticket.event.coverImage!,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        height: 200,
+                        width: double.infinity,
+                        color: Colors.purple.withOpacity(0.2),
+                        child: const Icon(Icons.celebration, color: Colors.white30, size: 64),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        ticket.event.title,
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
+              ),
+              Positioned(
+                top: 16,
+                left: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            ticket.event.venue,
-                            style: const TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            DateFormat('E, MMM d • h:mm a').format(DateTime.parse(ticket.event.dateTime)),
-                            style: const TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
-                        ],
+                      const SizedBox(width: 6),
+                      Text(
+                        "Active",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Icon(Icons.qr_code, size: 40, color: Color(0xFF8B5CF6)),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ticket.event.title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "${ticket.event.venue} • ${DateFormat('MMM d, y').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white54,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Section Info
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildTicketDetail("SECTION", "B"),
+                    _buildTicketDetail("ROW", "4"),
+                    _buildTicketDetail("SEAT", ticket.seatNumber ?? "12"),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Dashed Line
+          Row(
+            children: [
+              Container(
+                height: 20,
+                width: 10,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F0D15),
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(10),
+                    bottomRight: Radius.circular(10),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Flex(
+                      direction: Axis.horizontal,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(
+                        (constraints.constrainWidth() / 15).floor(),
+                        (index) => const SizedBox(
+                          width: 8,
+                          height: 1,
+                          child: DecoratedBox(decoration: BoxDecoration(color: Colors.white24)),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Container(
+                height: 20,
+                width: 10,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F0D15),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    bottomLeft: Radius.circular(10),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Text(
+                  "ENTRY CODE",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white38,
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  ticket.id.length > 6 
+                    ? "${ticket.id.substring(0, 3)} - ${ticket.id.substring(3, 6)}".toUpperCase()
+                    : ticket.id.toUpperCase(),
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // QR Code
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: QrImageView(
+                    data: ticket.qrPayload,
+                    version: QrVersions.auto,
+                    size: 140.0,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Apple Wallet Button
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.wallet, size: 20),
+                  label: const Text("Add to Apple Wallet"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Available Offline",
+                          style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: Text(
+                        "Details",
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFF8B5CF6),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  void _showTicketDetails(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _TicketModal(ticket: ticket),
+  Widget _buildTicketDetail(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }
 
-class _TicketModal extends StatelessWidget {
+class _CompactTicketCard extends StatelessWidget {
   final Ticket ticket;
-  const _TicketModal({required this.ticket});
+  const _CompactTicketCard({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final eventDate = DateTime.parse(ticket.event.dateTime);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
+      height: 100,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF15131C) : Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(32),
-          topRight: Radius.circular(32),
-        ),
+        color: const Color(0xFF1D192B),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
+      child: Row(
         children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              bottomLeft: Radius.circular(16),
             ),
+            child: ticket.event.coverImage != null
+                ? Image.network(
+                    ticket.event.coverImage!,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  )
+                : Container(width: 100, color: Colors.purple.withOpacity(0.1)),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Ticket Details",
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
+                    "${DateFormat('MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}".toUpperCase(),
+                    style: GoogleFonts.poppins(color: const Color(0xFF8B5CF6), fontSize: 11, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 32),
-                  // Ticket Card Visual
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF232030) : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          ticket.event.title,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          ticket.event.venue,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        const SizedBox(height: 24),
-                        // QR Code
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: QrImageView(
-                            data: ticket.qrPayload,
-                            version: QrVersions.auto,
-                            size: 200.0,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          ticket.id.substring(0, 8).toUpperCase(),
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            letterSpacing: 4,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF8B5CF6),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "SCAN AT ENTRY",
-                          style: TextStyle(color: Colors.grey, fontSize: 10, letterSpacing: 2),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    ticket.event.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: const Text("Close"),
+                  const SizedBox(height: 2),
+                  Text(
+                    ticket.event.venue,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
                   ),
                 ],
               ),
             ),
+          ),
+          // Vertical Dashed Divider
+          Container(
+            width: 1,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              children: List.generate(
+                5,
+                (index) => Expanded(
+                  child: Container(
+                    width: 1,
+                    color: index % 2 == 0 ? Colors.white12 : Colors.transparent,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Icon(Icons.qr_code_2, color: Colors.white54, size: 24),
           ),
         ],
       ),
