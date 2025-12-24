@@ -264,13 +264,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   child: Row(
                                     children: [
                                       const Icon(
-                                        Icons.flag,
+                                        Icons.eth,
                                         size: 20,
                                         color: AppColors.primaryLight,
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        '+1',
+                                        '+251',
                                         style: GoogleFonts.poppins(
                                           fontWeight: FontWeight.w600,
                                           color: isDark 

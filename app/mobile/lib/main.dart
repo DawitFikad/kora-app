@@ -34,6 +34,7 @@ class EtTicketApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     
+    
     // We need to keep router alive or recreate it. 
     // Usually defining it in a provider is better, but since AppRouter depends on storage which is available now:
     final storage = ref.watch(localStorageProvider);
@@ -49,6 +50,7 @@ class EtTicketApp extends ConsumerWidget {
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      debugShowCheckedModeBanner: false,
     );
   }
 }
