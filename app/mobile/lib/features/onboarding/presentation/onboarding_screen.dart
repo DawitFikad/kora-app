@@ -22,19 +22,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       'title': 'Discover the',
       'highlight': 'Night',
       'desc': 'Find the best concerts, festivals, and local gigs happening near you.',
-      'image': 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=1000',
+      'image': 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=1000',
     },
     {
       'title': 'Secure Your',
       'highlight': 'Tickets',
       'desc': 'Fast, secure, and hassle-free ticket booking for all your favorite events.',
-      'image': 'https://images.unsplash.com/photo-1514525253361-b83a859b1da8?auto=format&fit=crop&q=80&w=1000',
+      'image': 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=1000',
     },
     {
       'title': 'Scan &',
       'highlight': 'Enter',
       'desc': 'Your phone is your ticket. Just scan it at the gate and enjoy the show.',
-      'image': 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=1000',
+      'image': 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000',
     },
   ];
 
@@ -81,25 +81,63 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Stack(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.2),
-                      shape: BoxShape.circle,
+                   // Branding (Centered)
+                  Align(
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.auto_awesome, color: Color(0xFF8B5CF6), size: 18),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "ET-TICKETS",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.auto_awesome, color: Color(0xFF8B5CF6), size: 18),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "ET-TICKETS",
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
+
+                  // Language Switcher (Top Right)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (context.locale.languageCode == 'en') {
+                          context.setLocale(const Locale('am'));
+                        } else {
+                          context.setLocale(const Locale('en'));
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Text(
+                          context.locale.languageCode == 'en' ? " አማ " : " EN ",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
