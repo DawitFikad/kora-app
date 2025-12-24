@@ -264,7 +264,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   child: Row(
                                     children: [
                                       const Icon(
-                                        Icons.eth,
+                                        Icons.flag,
                                         size: 20,
                                         color: AppColors.primaryLight,
                                       ),

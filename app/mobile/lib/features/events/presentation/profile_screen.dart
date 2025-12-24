@@ -107,7 +107,7 @@ class ProfileScreen extends ConsumerWidget {
                   onPressed: () async {
                     // Logic to logout
                      final storage = ref.read(localStorageProvider);
-                     await storage.clearAuthToken();
+                     await storage.clearAuth();
                      if(context.mounted) context.go('/login');
                   },
                   style: TextButton.styleFrom(
