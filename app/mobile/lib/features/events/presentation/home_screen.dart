@@ -14,6 +14,7 @@ import 'package:mobile/features/events/presentation/profile_screen.dart';
 import 'package:mobile/features/events/presentation/search_screen.dart';
 import 'package:mobile/features/tickets/presentation/my_tickets_screen.dart';
 import 'package:mobile/features/events/presentation/notification_screen.dart';
+import 'package:mobile/features/events/presentation/favorites_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -32,7 +33,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _pages = [
       const _HomeBody(),
-      const SearchScreen(),
+      const FavoritesScreen(),
       const MyTicketsScreen(),
       const ProfileScreen(),
     ];
@@ -74,12 +75,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   text: 'Home',
                 ),
                 GButton(
-                  icon: Icons.search_rounded,
-                  text: 'Search',
+                  icon: Icons.favorite_rounded,
+                  text: 'Favorites',
                 ),
                 GButton(
-                  icon: Icons.confirmation_num_rounded,
-                  text: 'Tickets',
+                  icon: Icons.local_activity,
+                  text: 'MyTickets',
                 ),
                 GButton(
                   icon: Icons.person_rounded,
