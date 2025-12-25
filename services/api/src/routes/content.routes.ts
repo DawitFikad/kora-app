@@ -8,7 +8,9 @@ const router = Router();
 
 // Routes for both Public and Admin
 router.get("/categories", ContentController.getCategories);
+router.get("/categories/:id", ContentController.getCategoryDetail);
 router.get("/cities", ContentController.getCities);
+router.get("/cities/:id", ContentController.getCityDetail);
 
 // Admin Only Routes
 router.post("/categories", authenticate, authorize([Role.ADMIN]), ContentController.addCategory);

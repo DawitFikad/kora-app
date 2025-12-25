@@ -59,4 +59,24 @@ export class ContentController {
             res.status(400).json({ error: error.message });
         }
     }
+
+    static async getCategoryDetail(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const detail = await ContentService.getCategoryDetails(parseInt(id));
+            res.json(detail);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async getCityDetail(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const detail = await ContentService.getCityDetails(parseInt(id));
+            res.json(detail);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }

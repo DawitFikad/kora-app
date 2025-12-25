@@ -40,4 +40,40 @@ export class ContentService {
             where: { id }
         });
     }
+
+    static async getCategoryDetails(id: number) {
+        return prisma.category.findUnique({
+            where: { id },
+            include: {
+                events: {
+                    select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        dateTime: true,
+                        venue: true,
+                        organizer: { select: { organizationName: true } }
+                    }
+                }
+            }
+        });
+    }
+
+    static async getCityDetails(id: number) {
+        return prisma.city.findUnique({
+            where: { id },
+            include: {
+                events: {
+                    select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        dateTime: true,
+                        venue: true,
+                        organizer: { select: { organizationName: true } }
+                    }
+                }
+            }
+        });
+    }
 }
