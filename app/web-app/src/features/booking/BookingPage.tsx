@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-    bookingService,
+import { bookingService } from '../../core/api/booking.service';
+import type {
     EventForBooking,
     PriceBreakdown,
     SeatStatus
@@ -32,7 +32,6 @@ const BookingPage: React.FC = () => {
     const [promoApplied, setPromoApplied] = useState(false);
     const [lockExpiry, setLockExpiry] = useState<Date | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [step, setStep] = useState<'select' | 'review' | 'payment'>('select');
 
     // Load event data
     useEffect(() => {
@@ -166,7 +165,6 @@ const BookingPage: React.FC = () => {
 
             if (response.success) {
                 setLockExpiry(response.lockExpiry ? new Date(response.lockExpiry) : null);
-                setStep('payment');
                 showToast('Reservation created! Please complete payment.', 'success');
 
                 // Navigate to payment with purchase details
@@ -335,7 +333,6 @@ const BookingPage: React.FC = () => {
                                         expiry={lockExpiry}
                                         onExpire={() => {
                                             showToast('Reservation expired', 'warning');
-                                            setStep('select');
                                         }}
                                     />
                                 )}

@@ -143,7 +143,7 @@ export const bookingService = {
         promoCode?: string;
     }): Promise<BookingResponse> => {
         const response: any = await api.post('/booking/reserve', data);
-        return response;
+        return response.data;
     },
 
     /**
