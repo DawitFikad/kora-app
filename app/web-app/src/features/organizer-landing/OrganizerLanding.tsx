@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const Navbar = () => {
+import { LoginModal } from '../auth/LoginModal';
+import { useAuth } from '../../core/context/AuthContext';
+
+const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
     const [scrolled, setScrolled] = useState(false);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -29,13 +31,9 @@ const Navbar = () => {
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{
-                        width: '36px',
-                        height: '36px',
+                        width: '36px', height: '36px',
                         background: 'linear-gradient(135deg, #8B5CF6, #D946EF)',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
                         <Ticket color="white" size={20} />
                     </div>
@@ -44,8 +42,8 @@ const Navbar = () => {
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
                     <a href="#how-it-works" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>How it works</a>
                     <a href="#features" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Features</a>
-                    <button onClick={() => navigate('/dashboard')} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>Login</button>
-                    <button onClick={() => navigate('/dashboard')} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>Create Account</button>
+                    <button onClick={onAuthClick} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>Login</button>
+                    <button onClick={onAuthClick} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>Create Account</button>
                 </div>
             </div>
         </nav>
@@ -89,8 +87,17 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
 
 const OrganizerLanding = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [revenue, setRevenue] = useState(24.5);
     const [tickets, setTickets] = useState(842);
+
+    useEffect(() => {
+        if (user) {
+            if (user.role === 'ADMIN') navigate('/admin');
+            else navigate('/dashboard');
+        }
+    }, [user, navigate]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -103,7 +110,9 @@ const OrganizerLanding = () => {
     return (
         <div>
             <div className="mesh-bg" />
-            <Navbar />
+            <Navbar onAuthClick={() => setIsLoginOpen(true)} />
+
+            <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
 
             {/* 1. Hero Section */}
             <section style={{ paddingTop: '10rem', paddingBottom: '6rem' }}>
@@ -136,10 +145,10 @@ const OrganizerLanding = () => {
                             Built for Ethiopian events — from concerts and conferences to sports and church gatherings. Scale your reach effortlessly with our industry-leading tools.
                         </p>
                         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
-                            <button onClick={() => navigate('/dashboard')} className="btn btn-primary" style={{ padding: '1.25rem 2.5rem' }}>
+                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-primary" style={{ padding: '1.25rem 2.5rem' }}>
                                 Create Organizer Account <ArrowRight size={20} />
                             </button>
-                            <button onClick={() => navigate('/dashboard')} className="btn btn-secondary" style={{ padding: '1.25rem 2.5rem' }}>
+                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-secondary" style={{ padding: '1.25rem 2.5rem' }}>
                                 Organizer Login
                             </button>
                         </div>
@@ -287,7 +296,7 @@ const OrganizerLanding = () => {
                         <div>
                             <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1.5rem', lineHeight: 1.1, letterSpacing: '-0.02em' }}>Trust built on <br />Compliance.</h2>
                             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem', marginBottom: '2.5rem', lineHeight: 1.6 }}>We operate with full transparency to ensure every event is a success. Our automated settlement system ensures you get paid on time, every time.</p>
-                            <button onClick={() => navigate('/dashboard')} className="btn btn-secondary" style={{ padding: '1rem 2rem' }}>Learn About Payouts</button>
+                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-secondary" style={{ padding: '1rem 2rem' }}>Learn About Payouts</button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
                             {[

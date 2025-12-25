@@ -65,4 +65,14 @@ export class AuthController {
             res.status(401).json({ error: error.message });
         }
     }
+
+    static async getMe(req: Request, res: Response) {
+        try {
+            const userId = req.user!.userId;
+            const user = await AuthService.getMe(userId);
+            res.json({ user });
+        } catch (error: any) {
+            res.status(401).json({ error: error.message });
+        }
+    }
 }

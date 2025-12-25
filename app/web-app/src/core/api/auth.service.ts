@@ -15,7 +15,7 @@ export const AuthService = {
     refreshToken: (refreshToken: string) => api.post('/auth/refresh', { refreshToken }),
 
     // Session status
-    getMe: () => api.get('/auth/me'),
+    getMe: () => api.get('/auth/me').then(res => res as any),
 
     logout: () => {
         localStorage.removeItem('token');

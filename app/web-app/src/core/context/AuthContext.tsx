@@ -32,8 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initAuth();
     }, [token]);
 
-    const login = async (credentials: any) => {
-        const data: any = await AuthService.login(credentials);
+    const login = async (data: { accessToken: string, user: any }) => {
         localStorage.setItem('token', data.accessToken);
         setToken(data.accessToken);
         setUser(data.user);

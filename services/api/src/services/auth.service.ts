@@ -156,4 +156,20 @@ export class AuthService {
     private static generateRefreshToken(userId: number) {
         return jwt.sign({ userId }, getRefreshTokenSecret(), { expiresIn: "7d" });
     }
+
+    static async getMe(userId: number) {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                profile: true,
+                organizer: true,
+            },
+        });
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        return user;
+    }
 }
