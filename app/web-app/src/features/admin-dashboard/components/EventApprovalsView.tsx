@@ -26,11 +26,11 @@ export const EventApprovalsView = () => {
         fetchEvents();
     }, []);
 
-    const handleReview = async (id: number, status: 'APPROVED' | 'REJECTED') => {
+    const handleReview = async (id: number, status: 'APPROVED' | 'REJECTED', commission?: any) => {
         try {
             setProcessingId(id);
-            // Default commission 10%
-            await AdminService.reviewEvent(id, status, {
+            // Default commission 10% if not provided
+            await AdminService.reviewEvent(id, status, commission || {
                 feeType: 'PERCENTAGE',
                 feePercentage: 10
             });
@@ -107,21 +107,43 @@ export const EventApprovalsView = () => {
                                 <span className="pill" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', fontWeight: 800 }}>{event.status}</span>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                <button
-                                    disabled={processingId === event.id}
-                                    onClick={() => handleReview(event.id, 'APPROVED')}
-                                    style={{ background: '#10B981', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
-                                >
-                                    {processingId === event.id ? '...' : 'Approve'}
-                                </button>
-                                <button
-                                    disabled={processingId === event.id}
-                                    onClick={() => handleReview(event.id, 'REJECTED')}
-                                    style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '10px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
-                                >
-                                    Reject
-                                </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                    <input
+                                        type="number"
+                                        placeholder="Comm %"
+                                        defaultValue={10}
+                                        id={`comm-${event.id}`}
+                                        style={{ width: '70px', background: '#0B0E14', border: '1px solid var(--border)', padding: '6px', borderRadius: '6px', fontSize: '0.75rem', color: 'white' }}
+                                    />
+                                    <input
+                                        type="number"
+                                        placeholder="Conv Fee"
+                                        defaultValue={0}
+                                        id={`conv-${event.id}`}
+                                        style={{ width: '70px', background: '#0B0E14', border: '1px solid var(--border)', padding: '6px', borderRadius: '6px', fontSize: '0.75rem', color: 'white' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                    <button
+                                        disabled={processingId === event.id}
+                                        onClick={() => {
+                                            const comm = (document.getElementById(`comm-${event.id}`) as HTMLInputElement).value;
+                                            const conv = (document.getElementById(`conv-${event.id}`) as HTMLInputElement).value;
+                                            handleReview(event.id, 'APPROVED', { feePercentage: Number(comm), feeFixed: Number(conv) });
+                                        }}
+                                        style={{ background: '#10B981', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
+                                    >
+                                        {processingId === event.id ? '...' : 'Approve'}
+                                    </button>
+                                    <button
+                                        disabled={processingId === event.id}
+                                        onClick={() => handleReview(event.id, 'REJECTED')}
+                                        style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '10px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
+                                    >
+                                        Reject
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))

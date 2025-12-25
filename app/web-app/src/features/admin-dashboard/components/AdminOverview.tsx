@@ -4,7 +4,6 @@ import {
     DollarSign,
     TrendingUp,
     CheckCircle2,
-    Calendar,
     Download,
     UserPlus,
     Activity,
@@ -22,7 +21,8 @@ export const AdminOverview = () => {
         totalGMV: 0,
         totalPayouts: 0,
         platformCommission: 0,
-        totalTicketsSold: 0
+        totalTicketsSold: 0,
+        activeUsers: 0
     });
 
     useEffect(() => {
@@ -43,7 +43,8 @@ export const AdminOverview = () => {
                     totalGMV: kpis.totalGMV,
                     totalPayouts: 0, // Payout logic needed later
                     platformCommission: kpis.platformCommission,
-                    totalTicketsSold: kpis.totalTicketsSold
+                    totalTicketsSold: kpis.totalTicketsSold,
+                    activeUsers: kpis.activeUsers
                 });
             } catch (err) {
                 console.error('Failed to fetch dashboard data', err);
@@ -123,11 +124,11 @@ export const AdminOverview = () => {
 
                 <div className="admin-stat-card-main">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Event Approvals</p>
-                        <Calendar size={18} color="#F59E0B" />
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Active Users</p>
+                        <UserPlus size={18} color="#A78BFA" />
                     </div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>{stats.pendingEvents}</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#F59E0B', fontWeight: 700 }}>Pending Review</p>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>{stats.activeUsers.toLocaleString()}</h2>
+                    <p style={{ fontSize: '0.8rem', color: '#A78BFA', fontWeight: 700 }}>Registered & Active</p>
                 </div>
             </div>
 

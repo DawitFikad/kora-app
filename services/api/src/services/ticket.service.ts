@@ -116,4 +116,17 @@ export class TicketService {
             data: { status: TicketStatus.USED }
         });
     }
+
+    /**
+     * Admin: Manually invalidates a ticket (e.g., due to fraud or refund).
+     */
+    static async invalidateTicket(ticketId: string, reason: string) {
+        return prisma.ticket.update({
+            where: { id: ticketId },
+            data: {
+                status: TicketStatus.CANCELLED,
+                // We could log the reason in an audit table later
+            }
+        });
+    }
 }

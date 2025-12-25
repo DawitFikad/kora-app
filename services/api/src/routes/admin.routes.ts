@@ -28,4 +28,7 @@ router.patch("/users/:userId/suspend", authenticate, authorize([Role.ADMIN]), Ad
 // Activate user
 router.patch("/users/:userId/activate", authenticate, authorize([Role.ADMIN]), AdminController.activateUser);
 
+// Feature Event
+router.patch("/events/:eventId/featured", authenticate, authorize([Role.ADMIN]), AdminController.toggleEventFeatured);
+
 export default router;

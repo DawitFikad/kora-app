@@ -42,6 +42,10 @@ export class AdminAnalyticsService {
             where: { status: EventStatus.PENDING }
         });
 
+        const activeUsers = await prisma.user.count({
+            where: { status: 'ACTIVE' }
+        });
+
         // 3. Ticket Sales
         const totalTicketsSold = await prisma.ticket.count({
             where: { status: { in: ['SOLD', 'VALID', 'USED'] } }
@@ -76,7 +80,8 @@ export class AdminAnalyticsService {
                 activeOrganizers,
                 totalTicketsSold,
                 pendingOrganizers,
-                pendingEvents
+                pendingEvents,
+                activeUsers
             },
             recentPurchases,
             systemHealth

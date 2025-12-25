@@ -16,10 +16,15 @@ export const AdminService = {
     // Financials
     getFinancialTransactions: () => api.get('/financials/admin/transactions'),
     getFinancialMetrics: () => api.get('/financials/admin/dashboard'),
+    // Content & Discovery
+    getCategories: () => api.get('/content/categories'),
+    getCities: () => api.get('/content/cities'),
+    toggleFeaturedEvent: (eventId: number, featured: boolean) => api.patch(`/admin/events/${eventId}/featured`, { featured }),
     getPendingPayouts: () => api.get('/payouts/pending'),
     approvePayout: (batchId: number) => api.post(`/payouts/${batchId}/approve`),
 
-    // Fraud & Security
+    // Security & Tickets
+    invalidateTicket: (ticketId: string, reason: string) => api.post(`/tickets/${ticketId}/invalidate`, { reason }),
     getFraudAlerts: () => api.get('/security/fraud/alerts'),
     getFraudMetrics: () => api.get('/security/fraud/metrics'),
 

@@ -85,4 +85,18 @@ export class TicketingController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    /**
+     * Admin: Manually invalidates a ticket.
+     */
+    static async invalidate(req: Request, res: Response) {
+        try {
+            const { ticketId } = req.params;
+            const { reason } = req.body;
+            const ticket = await TicketService.invalidateTicket(ticketId, reason);
+            res.json({ success: true, data: ticket });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }

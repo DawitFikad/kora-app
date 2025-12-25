@@ -59,6 +59,34 @@ export const FraudMonitoringView = () => {
                 </div>
             </div>
 
+            <div className="admin-card" style={{ padding: '24px', marginBottom: '32px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '16px', color: '#EF4444' }}>Manual Security Override</h3>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <input
+                        id="manual-ticket-id"
+                        placeholder="Enter Ticket ID or Reference to invalidate..."
+                        style={{ flex: 1, background: '#0B0E14', border: '1px solid var(--border)', padding: '12px 16px', borderRadius: '8px', color: 'white' }}
+                    />
+                    <button
+                        onClick={async () => {
+                            const id = (document.getElementById('manual-ticket-id') as HTMLInputElement).value;
+                            if (!id) return;
+                            if (confirm(`Are you sure you want to PERMANENTLY INVALIDATE ticket ${id}?`)) {
+                                try {
+                                    await AdminService.invalidateTicket(id, 'Manual Admin Force Invalidation');
+                                    alert('Ticket invalidated successfully');
+                                    (document.getElementById('manual-ticket-id') as HTMLInputElement).value = '';
+                                } catch (e) { alert('Failed to invalidate'); }
+                            }
+                        }}
+                        style={{ background: '#EF4444', color: 'white', border: 'none', padding: '0 24px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                        Invalidate Ticket
+                    </button>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '12px' }}>Use this to manually blacklist a ticket due to physical theft, chargebacks, or verified abuse reports.</p>
+            </div>
+
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Live Security Log</h3>

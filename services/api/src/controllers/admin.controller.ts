@@ -176,4 +176,21 @@ export class AdminController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // Toggle Event Featured status
+    static async toggleEventFeatured(req: Request, res: Response) {
+        try {
+            const { eventId } = req.params;
+            const { featured } = req.body;
+
+            const updatedEvent = await prisma.event.update({
+                where: { id: parseInt(eventId) },
+                data: { featured: !!featured }
+            });
+
+            res.json({ success: true, featured: updatedEvent.featured });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }

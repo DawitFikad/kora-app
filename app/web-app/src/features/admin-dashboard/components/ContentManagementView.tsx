@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, MapPin, Tag, Loader2, X, ExternalLink, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, MapPin, Tag, Loader2, X, Calendar as CalendarIcon } from 'lucide-react';
 import { AdminPageHeader } from './AdminPageHeader';
 import { ContentService } from '../../../core/api/content.service';
+import { AdminService } from '../../../core/api/admin.service';
 
 export const ContentManagementView = () => {
     const [categories, setCategories] = useState<any[]>([]);
@@ -202,6 +203,25 @@ export const ContentManagementView = () => {
                 </div>
             </div>
 
+            {/* Featured Events Control */}
+            <div className="admin-card" style={{ padding: '24px', marginTop: '32px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                    <Plus color="var(--primary)" />
+                    <h3 style={{ fontWeight: 800 }}>Featured Programming</h3>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                    {/* Actually, we need to fetch all approved events to toggle them.
+                        For now, I'll show a combined list or instructions.
+                    */}
+                    <div style={{ gridColumn: 'span 3', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            To feature an event on the homepage banner, go to the <strong>Event Approvals</strong> tab and toggle the "Featured" status during review or from the event details.
+                            Currently, all approved events are listed in the category/city details below where you can monitor their status.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* Selection Detail Panel (Modal style) */}
             <AnimatePresence>
                 {selectedItem && (
@@ -251,8 +271,26 @@ export const ContentManagementView = () => {
                                                     <MapPin size={14} />
                                                     {evt.venue}
                                                 </div>
-                                                <div style={{ marginTop: '8px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)' }}>
-                                                    By {evt.organizer?.organizationName}
+                                                <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)' }}>
+                                                        By {evt.organizer?.organizationName}
+                                                    </span>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            try {
+                                                                await AdminService.toggleFeaturedEvent(evt.id, !evt.featured);
+                                                                handleFetchDetail(selectedItem.type, selectedItem.data.id);
+                                                            } catch (err) { alert('Failed to update'); }
+                                                        }}
+                                                        style={{
+                                                            background: evt.featured ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                                                            color: 'white', border: '1px solid var(--border)',
+                                                            padding: '4px 10px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        {evt.featured ? '★ Featured' : '☆ Feature'}
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
