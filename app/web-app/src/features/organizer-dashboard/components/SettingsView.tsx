@@ -7,6 +7,7 @@ import { OrganizerService } from '../../../core/api/organizer.service';
 export const SettingsView = () => {
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -22,6 +23,19 @@ export const SettingsView = () => {
 
         fetchSettings();
     }, []);
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            await OrganizerService.updateSettings(profile);
+            alert("Settings saved successfully!");
+        } catch (error) {
+            console.error("Failed to save settings", error);
+            alert("Error saving settings.");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -66,21 +80,28 @@ export const SettingsView = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Organization Name</label>
-                            <input type="text" defaultValue={profile?.organizationName} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white' }} />
+                            <input type="text" value={profile?.organizationName || ''} onChange={e => setProfile({ ...profile, organizationName: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white' }} />
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Contact Email</label>
-                            <input type="email" defaultValue={profile?.contactEmail || profile?.user?.email} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white' }} />
+                            <input type="email" value={profile?.contactEmail || ''} onChange={e => setProfile({ ...profile, contactEmail: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white' }} />
                         </div>
                     </div>
 
                     <div style={{ marginBottom: '32px' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Payout Details (Bank/Mobile Money)</label>
+                        <input type="text" placeholder="e.g. CBE - 1000123456789" value={profile?.payoutDetails || ''} onChange={e => setProfile({ ...profile, payoutDetails: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white' }} />
+                    </div>
+
+                    <div style={{ marginBottom: '32px' }}>
                         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>About the Organizer</label>
-                        <textarea rows={4} defaultValue={profile?.adminNote || "Event organization specializing in cultural and entertainment events."} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', resize: 'none' }} />
+                        <textarea rows={4} value={profile?.adminNote || ''} onChange={e => setProfile({ ...profile, adminNote: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', resize: 'none' }} />
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <button className="btn-blue" style={{ padding: '14px 28px' }}>Save Changes</button>
+                        <button onClick={handleSave} disabled={saving} className="btn-blue" style={{ padding: '14px 28px' }}>
+                            {saving ? <Loader2 className="animate-spin" size={20} /> : 'Save Changes'}
+                        </button>
                     </div>
                 </div>
             </div>

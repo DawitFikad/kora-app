@@ -174,4 +174,109 @@ export class OrganizerController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+
+    /**
+     * PATCH /api/organizer/settings
+     */
+    static async updateSettings(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const { organizationName, contactEmail, contactPhone, city, payoutDetails, adminNote } = req.body;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const profile = await prisma.organizerProfile.update({
+                where: { id: organizerId },
+                data: {
+                    organizationName,
+                    contactEmail,
+                    contactPhone,
+                    city,
+                    payoutDetails,
+                    adminNote
+                }
+            });
+
+            res.json({ success: true, data: profile });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/events
+     */
+    static async createEvent(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const { title, description, venue, dateTime, categoryId, cityId, tiers, coverImage, refundPolicy } = req.body;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const event = await prisma.event.create({
+                data: {
+                    title,
+                    description,
+                    venue,
+                    dateTime: new Date(dateTime),
+                    organizerId,
+                    categoryId: parseInt(categoryId),
+                    cityId: parseInt(cityId),
+                    coverImage,
+                    refundPolicy,
+                    tiers: {
+                        create: tiers.map((tier: any) => ({
+                            name: tier.name,
+                            price: parseFloat(tier.price),
+                            capacity: parseInt(tier.capacity)
+                        }))
+                    }
+                },
+                include: { tiers: true }
+            });
+
+            res.json({ success: true, data: event });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/promos
+     */
+    static async createPromoCode(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const { code, discount, type, expiresAt, maxUses, eventId } = req.body;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Security check: organizer must own the event
+            const event = await prisma.event.findUnique({
+                where: { id: parseInt(eventId) }
+            });
+
+            if (!event || event.organizerId !== organizerId) {
+                return res.status(403).json({ success: false, message: "You don't own this event." });
+            }
+
+            const promo = await prisma.promoCode.create({
+                data: {
+                    code,
+                    discount: parseFloat(discount),
+                    type,
+                    expiresAt: expiresAt ? new Date(expiresAt) : null,
+                    maxUses: maxUses ? parseInt(maxUses) : null,
+                    eventId: parseInt(eventId)
+                }
+            });
+
+            res.json({ success: true, data: promo });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }

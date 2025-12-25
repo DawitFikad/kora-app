@@ -11,7 +11,9 @@ import {
     PlusCircle,
     Users,
     Layout,
-    DollarSign
+    DollarSign,
+    Megaphone,
+    Maximize
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -23,6 +25,9 @@ import { ReportsView } from './components/ReportsView';
 import { AttendeesView } from './components/AttendeesView';
 import { SupportView } from './components/SupportView';
 import { SettingsView } from './components/SettingsView';
+import { CreateEventView } from './components/CreateEventView';
+import { PromotionsView } from './components/PromotionsView';
+import { ScannerView } from './components/ScannerView';
 import { PendingApprovalView } from './components/PendingApprovalView';
 
 // --- Main Application Component ---
@@ -37,6 +42,8 @@ const OrganizerDashboard = () => {
         { icon: Ticket, label: 'Tickets' },
         { icon: DollarSign, label: 'Payments' },
         { icon: Users, label: 'Attendees' },
+        { icon: Megaphone, label: 'Promotions' },
+        { icon: Maximize, label: 'Scanner' },
         { icon: HelpCircle, label: 'Support' },
         { icon: Settings, label: 'Settings' },
     ];
@@ -84,8 +91,11 @@ const OrganizerDashboard = () => {
             case 'Tickets': return <TicketsView />;
             case 'Payments': return <ReportsView />;
             case 'Attendees': return <AttendeesView />;
+            case 'Promotions': return <PromotionsView />;
+            case 'Scanner': return <ScannerView />;
             case 'Support': return <SupportView />;
             case 'Settings': return <SettingsView />;
+            case 'CreateEvent': return <CreateEventView onComplete={() => setActiveTab('Events')} />;
             default: return <DashboardView />;
         }
     };
@@ -118,7 +128,11 @@ const OrganizerDashboard = () => {
                 </nav>
 
                 <div className="sidebar-footer" style={{ padding: '24px', marginTop: 'auto' }}>
-                    <button className="btn-blue" style={{ width: '100%', padding: '14px', borderRadius: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <button
+                        onClick={() => setActiveTab('CreateEvent')}
+                        className="btn-blue"
+                        style={{ width: '100%', padding: '14px', borderRadius: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
                         <PlusCircle size={20} /> Create Event
                     </button>
                 </div>

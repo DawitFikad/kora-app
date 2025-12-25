@@ -38,12 +38,37 @@ export const ReportsView = () => {
         { label: 'Available Balance', value: `ETB ${data?.availableBalance.toLocaleString()}`, icon: Package, color: '#FBBF24' },
     ];
 
+    const handleExportCSV = () => {
+        if (!data?.transactions) return;
+
+        const headers = ['Order ID', 'Customer', 'Date', 'Amount', 'Status'];
+        const csvContent = [
+            headers.join(','),
+            ...data.transactions.map((tx: any) => [
+                tx.id,
+                `"${tx.name}"`,
+                new Date(tx.date).toLocaleDateString(),
+                tx.amount,
+                tx.status
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `financial_report_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader
                 title="Financial Reports"
                 subtitle="Detailed breakdown of sales, taxes, and payouts."
-                actions={<button className="btn-blue" style={{ background: '#161B22', color: 'white' }}><Download size={18} /> Export CSV</button>}
+                actions={<button onClick={handleExportCSV} className="btn-blue" style={{ background: '#161B22', color: 'white' }}><Download size={18} /> Export CSV</button>}
             />
 
             <div className="stats-grid">

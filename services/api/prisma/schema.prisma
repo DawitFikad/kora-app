@@ -197,8 +197,29 @@ model Event {
   transactions FinancialTransaction[]
   fraudAlerts  FraudAlert[]
   entryMetrics EntryMetric[]
+  promoCodes   PromoCode[]
+  
+  refundPolicy String @default("No refunds within 24 hours of event.")
+  
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
+}
+
+model PromoCode {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  discount  Decimal  @db.Decimal(10, 2)
+  type      String   @default("PERCENTAGE") // PERCENTAGE, FIXED
+  expiresAt DateTime?
+  maxUses   Int?
+  usedCount Int      @default(0)
+  isActive  Boolean  @default(true)
+
+  eventId Int
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TicketTier {

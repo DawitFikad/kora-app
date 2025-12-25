@@ -22,6 +22,10 @@ export const OrganizerService = {
     getAttendees: () => api.get('/organizer/attendees'),
     getEventAttendees: (eventId: string) => api.get(`/organizer/events/${eventId}/attendees`),
 
+    // Promotions
+    createPromoCode: (data: any) => api.post('/organizer/promos', data),
+
     // Settings
     getSettings: () => api.get('/organizer/settings'),
+    updateSettings: (data: any) => api.patch('/organizer/settings', data),
 };
