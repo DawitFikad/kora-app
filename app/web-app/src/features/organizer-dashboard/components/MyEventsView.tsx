@@ -4,9 +4,10 @@ import { Plus, Filter, Calendar, Globe, Pencil, BarChart3, Loader2 } from 'lucid
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 
-export const MyEventsView = () => {
+export const MyEventsView = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeFilter, setActiveFilter] = useState('All Events');
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -23,6 +24,14 @@ export const MyEventsView = () => {
         fetchEvents();
     }, []);
 
+    const filteredEvents = events.filter(event => {
+        if (activeFilter === 'All Events') return true;
+        if (activeFilter === 'Published') return event.status === 'PUBLISHED' || event.status === 'APPROVED';
+        if (activeFilter === 'Drafts') return event.status === 'DRAFT' || event.status === 'PENDING';
+        if (activeFilter === 'Past Events') return new Date(event.dateTime) < new Date();
+        return true;
+    });
+
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -38,7 +47,11 @@ export const MyEventsView = () => {
                 subtitle="Manage and track all your scheduled events."
                 actions={
                     <>
-                        <button className="btn-blue" style={{ padding: '10px 20px', fontSize: '0.9rem' }}>
+                        <button
+                            onClick={() => onNavigate?.('CreateEvent')}
+                            className="btn-blue"
+                            style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+                        >
                             <Plus size={18} /> Create New Event
                         </button>
                     </>
@@ -46,11 +59,15 @@ export const MyEventsView = () => {
             />
 
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                {['All Events', 'Published', 'Drafts', 'Past Events'].map((filter, i) => (
-                    <button key={filter} style={{
-                        padding: '8px 16px', borderRadius: '100px', background: i === 0 ? 'var(--bg-active)' : 'rgba(255,255,255,0.05)',
-                        border: 'none', color: i === 0 ? 'white' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer'
-                    }}>
+                {['All Events', 'Published', 'Drafts', 'Past Events'].map((filter) => (
+                    <button
+                        key={filter}
+                        onClick={() => setActiveFilter(filter)}
+                        style={{
+                            padding: '8px 16px', borderRadius: '100px', background: activeFilter === filter ? 'var(--bg-active)' : 'rgba(255,255,255,0.05)',
+                            border: 'none', color: activeFilter === filter ? 'white' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer'
+                        }}
+                    >
                         {filter}
                     </button>
                 ))}
@@ -60,7 +77,7 @@ export const MyEventsView = () => {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
-                {events.map((event) => {
+                {filteredEvents.map((event) => {
                     const salesPercent = event.totalCapacity > 0
                         ? (event._count.tickets / event.totalCapacity) * 100
                         : 0;

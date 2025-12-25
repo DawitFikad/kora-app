@@ -5,7 +5,7 @@ import { CreditCardIcon } from './CustomIcons';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 
-export const DashboardView = () => {
+export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
     const [stats, setStats] = useState<any[]>([]);
     const [velocity, setVelocity] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -34,6 +34,15 @@ export const DashboardView = () => {
 
         fetchStats();
     }, []);
+
+    const handleQuickAction = (action: string) => {
+        switch (action) {
+            case 'Promotions': onNavigate?.('Promotions'); break;
+            case 'Ticket Types': onNavigate?.('Tickets'); break;
+            case 'Set Capacity': onNavigate?.('Tickets'); break;
+            case 'Gen. Report': onNavigate?.('Payments'); break;
+        }
+    };
 
     if (loading) {
         return (
@@ -103,11 +112,14 @@ export const DashboardView = () => {
                             { label: 'Set Capacity', icon: Users },
                             { label: 'Gen. Report', icon: Download },
                         ].map((action) => (
-                            <div key={action.label} className="quick-action-btn" style={{
-                                background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
-                                borderRadius: '16px', padding: '24px 12px', textAlign: 'center', cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}>
+                            <div
+                                key={action.label}
+                                onClick={() => handleQuickAction(action.label)}
+                                className="quick-action-btn" style={{
+                                    background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                                    borderRadius: '16px', padding: '24px 12px', textAlign: 'center', cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}>
                                 <div style={{ width: '42px', height: '42px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <action.icon size={20} color="#8E9BAE" />
                                 </div>

@@ -29,6 +29,7 @@ export class AuthService {
         // Check if user exists
         let user = await prisma.user.findUnique({
             where: { phoneNumber },
+            include: { organizer: true }
         });
 
         if (!user) {
@@ -45,6 +46,7 @@ export class AuthService {
                         }
                     }
                 },
+                include: { organizer: true }
             });
         }
 
@@ -52,8 +54,11 @@ export class AuthService {
             throw new Error("Account is suspended");
         }
 
+        // Get organizerId if user is an organizer
+        const organizerId = user.organizer?.id;
+
         // Generate tokens
-        const accessToken = this.generateAccessToken(user.id, user.role);
+        const accessToken = this.generateAccessToken(user.id, user.role, organizerId);
         const refreshToken = this.generateRefreshToken(user.id);
 
         // Store refresh token in DB
@@ -117,10 +122,14 @@ export class AuthService {
                     }
                 }
             },
+            include: { organizer: true }
         });
 
+        // Get the organizerId from the newly created organizer profile
+        const organizerId = user.organizer?.id;
+
         // Generate tokens
-        const accessToken = this.generateAccessToken(user.id, user.role);
+        const accessToken = this.generateAccessToken(user.id, user.role, organizerId);
         const refreshToken = this.generateRefreshToken(user.id);
 
         // Store refresh token
@@ -142,7 +151,7 @@ export class AuthService {
             // Check if token exists in DB and is not expired
             const storedToken = await prisma.refreshToken.findUnique({
                 where: { token: refreshToken },
-                include: { user: true }
+                include: { user: { include: { organizer: true } } }
             });
 
             if (!storedToken || storedToken.expiresAt < new Date()) {
@@ -152,8 +161,11 @@ export class AuthService {
                 throw new Error("Invalid or expired refresh token");
             }
 
+            // Get organizerId if user is an organizer
+            const organizerId = storedToken.user.organizer?.id;
+
             // Generate new access token
-            const accessToken = this.generateAccessToken(storedToken.user.id, storedToken.user.role);
+            const accessToken = this.generateAccessToken(storedToken.user.id, storedToken.user.role, organizerId);
 
             return { accessToken };
         } catch (error) {
@@ -161,8 +173,8 @@ export class AuthService {
         }
     }
 
-    private static generateAccessToken(userId: number, role: Role) {
-        return jwt.sign({ userId, role }, getAccessTokenSecret(), { expiresIn: "15m" });
+    private static generateAccessToken(userId: number, role: Role, organizerId?: number) {
+        return jwt.sign({ userId, role, organizerId }, getAccessTokenSecret(), { expiresIn: "15m" });
     }
 
     private static generateRefreshToken(userId: number) {

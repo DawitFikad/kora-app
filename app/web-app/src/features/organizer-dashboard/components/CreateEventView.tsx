@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Calendar,
@@ -44,8 +44,9 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     ContentService.getCategories(),
                     ContentService.getCities()
                 ]);
-                setCategories(catRes.data);
-                setCities(cityRes.data);
+
+                if (catRes?.data) setCategories(catRes.data);
+                if (cityRes?.data) setCities(cityRes.data);
             } catch (error) {
                 console.error("Failed to fetch categories/cities", error);
             }
@@ -72,15 +73,44 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         setForm({ ...form, tiers: newTiers });
     };
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setForm({ ...form, coverImage: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Basic Validation
+        if (!form.categoryId || !form.cityId) {
+            alert("Please select a category and city.");
+            return;
+        }
+
         setLoading(true);
         try {
-            await OrganizerService.createEvent(form);
+            // Clean tiers data (convert strings to numbers)
+            const cleanForm = {
+                ...form,
+                tiers: form.tiers.map(t => ({
+                    ...t,
+                    price: parseFloat(t.price as string) || 0,
+                    capacity: parseInt(t.capacity as string) || 0
+                }))
+            };
+
+            await OrganizerService.createEvent(cleanForm);
             onComplete();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to create event", error);
-            alert("Error creating event. Please check all fields.");
+            const msg = error?.message || "Error creating event. Please check all fields.";
+            alert(msg);
         } finally {
             setLoading(false);
         }
@@ -265,24 +295,45 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                             <ImageIcon size={20} color="#EC4899" /> Event Media
                         </h3>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '12px' }}>Cover Image URL</label>
-                            <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(255,255,255,0.02)', border: '2px dashed var(--border)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+                            <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(255,255,255,0.02)', border: '2px dashed var(--border)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', marginBottom: '16px' }}>
                                 {form.coverImage ? (
                                     <img src={form.coverImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
                                     <div style={{ textAlign: 'center' }}>
                                         <ImageIcon size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Image Preview Area</p>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Image Preview</p>
                                     </div>
                                 )}
                             </div>
-                            <input
-                                type="text"
-                                placeholder="Paste image URL here..."
-                                value={form.coverImage}
-                                onChange={e => setForm({ ...form, coverImage: e.target.value })}
-                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'white', marginTop: '16px' }}
-                            />
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Paste image URL here..."
+                                    value={form.coverImage.startsWith('data:') ? '' : form.coverImage}
+                                    onChange={e => setForm({ ...form, coverImage: e.target.value })}
+                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'white' }}
+                                />
+
+                                <div style={{ textAlign: 'center' }}>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>OR</span>
+                                </div>
+
+                                <input
+                                    type="file"
+                                    id="local-image"
+                                    hidden
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => document.getElementById('local-image')?.click()}
+                                    style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
+                                >
+                                    Upload Local Image
+                                </button>
+                            </div>
                         </div>
                     </div>
 

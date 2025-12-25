@@ -13,7 +13,8 @@ import {
     Layout,
     DollarSign,
     Megaphone,
-    Maximize
+    Maximize,
+    LogOut
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -86,17 +87,17 @@ const OrganizerDashboard = () => {
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'Dashboard': return <DashboardView />;
-            case 'Events': return <MyEventsView />;
-            case 'Tickets': return <TicketsView />;
-            case 'Payments': return <ReportsView />;
-            case 'Attendees': return <AttendeesView />;
-            case 'Promotions': return <PromotionsView />;
-            case 'Scanner': return <ScannerView />;
-            case 'Support': return <SupportView />;
-            case 'Settings': return <SettingsView />;
-            case 'CreateEvent': return <CreateEventView onComplete={() => setActiveTab('Events')} />;
-            default: return <DashboardView />;
+            case 'Dashboard': return <DashboardView key="dashboard" onNavigate={setActiveTab} />;
+            case 'Events': return <MyEventsView key="events" onNavigate={setActiveTab} />;
+            case 'Tickets': return <TicketsView key="tickets" />;
+            case 'Payments': return <ReportsView key="payments" />;
+            case 'Attendees': return <AttendeesView key="attendees" />;
+            case 'Promotions': return <PromotionsView key="promotions" />;
+            case 'Scanner': return <ScannerView key="scanner" />;
+            case 'Support': return <SupportView key="support" />;
+            case 'Settings': return <SettingsView key="settings" />;
+            case 'CreateEvent': return <CreateEventView key="create-event" onComplete={() => setActiveTab('Events')} />;
+            default: return <DashboardView key="default" onNavigate={setActiveTab} />;
         }
     };
 
@@ -127,13 +128,33 @@ const OrganizerDashboard = () => {
                     ))}
                 </nav>
 
-                <div className="sidebar-footer" style={{ padding: '24px', marginTop: 'auto' }}>
+                <div className="sidebar-footer" style={{ padding: '24px', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <button
                         onClick={() => setActiveTab('CreateEvent')}
                         className="btn-blue"
                         style={{ width: '100%', padding: '14px', borderRadius: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                     >
                         <PlusCircle size={20} /> Create Event
+                    </button>
+                    <button
+                        onClick={logout}
+                        style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '14px',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: '#EF4444',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <LogOut size={18} /> Sign Out
                     </button>
                 </div>
             </aside>
@@ -142,7 +163,11 @@ const OrganizerDashboard = () => {
             <main className="main-content">
                 <header className="top-header" style={{ padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{activeTab === 'Dashboard' ? 'Dashboard Overview' : activeTab}</h2>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
+                            {activeTab === 'Dashboard' ? 'Dashboard Overview' :
+                                activeTab === 'CreateEvent' ? 'Create New Event' :
+                                    activeTab}
+                        </h2>
                     </div>
 
                     <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -161,7 +186,10 @@ const OrganizerDashboard = () => {
 
                         <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                        <div
+                            onClick={() => setActiveTab('Settings')}
+                            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                        >
                             <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '2px' }}>
                                 <img src={`https://ui-avatars.com/api/?name=${user?.phoneNumber}&background=11141B&color=fff`} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} alt="Avatar" />
                             </div>

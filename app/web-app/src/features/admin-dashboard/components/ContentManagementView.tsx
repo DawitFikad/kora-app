@@ -20,12 +20,12 @@ export const ContentManagementView = () => {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [cats, cts] = await Promise.all([
+            const [catRes, cityRes] = await Promise.all([
                 ContentService.getCategories(),
                 ContentService.getCities()
             ]);
-            setCategories(cats as any);
-            setCities(cts as any);
+            if (catRes?.success) setCategories(catRes.data);
+            if (cityRes?.success) setCities(cityRes.data);
         } catch (err) {
             console.error(err);
         } finally {
@@ -43,7 +43,7 @@ export const ContentManagementView = () => {
             const detail = type === 'category'
                 ? await ContentService.getCategoryDetail(id)
                 : await ContentService.getCityDetail(id);
-            setSelectedItem({ type, data: detail });
+            setSelectedItem({ type, data: detail.data });
         } catch (err) {
             console.error('Failed to fetch detail', err);
         } finally {

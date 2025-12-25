@@ -5,18 +5,18 @@ export class ContentController {
     static async getCategories(req: Request, res: Response) {
         try {
             const categories = await ContentService.listCategories();
-            res.json(categories);
+            res.json({ success: true, data: categories });
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ success: false, message: error.message });
         }
     }
 
     static async getCities(req: Request, res: Response) {
         try {
             const cities = await ContentService.listCities();
-            res.json(cities);
+            res.json({ success: true, data: cities });
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ success: false, message: error.message });
         }
     }
 
@@ -64,9 +64,9 @@ export class ContentController {
         try {
             const { id } = req.params;
             const detail = await ContentService.getCategoryDetails(parseInt(id));
-            res.json(detail);
+            res.json({ success: true, data: detail });
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ success: false, message: error.message });
         }
     }
 
@@ -74,9 +74,9 @@ export class ContentController {
         try {
             const { id } = req.params;
             const detail = await ContentService.getCityDetails(parseInt(id));
-            res.json(detail);
+            res.json({ success: true, data: detail });
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ success: false, message: error.message });
         }
     }
 }
