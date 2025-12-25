@@ -1,19 +1,51 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MoreHorizontal, Ticket, Eye, Building2, TrendingUp, Megaphone, Users, Download } from 'lucide-react';
+import { MoreHorizontal, Ticket, Eye, Building2, TrendingUp, Megaphone, Users, Download, Loader2 } from 'lucide-react';
 import { CreditCardIcon } from './CustomIcons';
 import { PageHeader } from './PageHeader';
+import { OrganizerService } from '../../../core/api/organizer.service';
 
 export const DashboardView = () => {
-    const stats = [
-        { label: 'Total Revenue', value: '$12,450', change: '+12% vs last week', icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
-        { label: 'Tickets Sold', value: '450 / 600', change: '+5% new sales', icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
-        { label: 'Page Views', value: '1,200', change: '+8% traffic increase', icon: Eye, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' },
-        { label: 'Next Payout', value: '$3,200', change: 'Scheduled: Sept 15', icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },
-    ];
+    const [stats, setStats] = useState<any[]>([]);
+    const [velocity, setVelocity] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await OrganizerService.getOverview();
+                const data = response.data.data;
+
+                const formattedStats = [
+                    { label: 'Total Revenue', value: `ETB ${data.totalRevenue.toLocaleString()}`, change: 'Released funds', icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
+                    { label: 'Tickets Sold', value: `${data.ticketsSold} / ${data.totalCapacity}`, change: `${data.totalCapacity > 0 ? ((data.ticketsSold / data.totalCapacity) * 100).toFixed(1) : 0}% sold`, icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
+                    { label: 'Page Views', value: '1,200', change: '+8% traffic increase', icon: Eye, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' }, // Mocked for now
+                    { label: 'Available Payout', value: `ETB ${data.nextPayout.toLocaleString()}`, change: 'Ready for withdrawal', icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },
+                ];
+
+                setStats(formattedStats);
+                setVelocity(data.salesVelocity);
+            } catch (error) {
+                console.error("Failed to fetch dashboard stats", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Loader2 className="animate-spin" size={48} color="var(--bg-active)" />
+            </div>
+        );
+    }
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <PageHeader title="Welcome back, Alex" subtitle="Here is what’s happening with your events today." />
+            <PageHeader title="Welcome back" subtitle="Here is what’s happening with your events today." />
 
             <div className="stats-grid">
                 {stats.map((stat, i) => (
@@ -37,7 +69,7 @@ export const DashboardView = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Ticket Sales Velocity</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Real-time sales performance</p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Last 7 days performance</p>
                         </div>
                         <div style={{ position: 'relative' }}>
                             <select style={{ background: '#161B22', border: '1px solid var(--border)', color: 'white', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, appearance: 'none', cursor: 'pointer', paddingRight: '40px' }}>
@@ -47,10 +79,16 @@ export const DashboardView = () => {
                         </div>
                     </div>
                     <div style={{ height: '220px', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 20px' }}>
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
-                            <div key={day} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', flex: 1 }}>
-                                <div style={{ width: '1px', height: '180px', background: 'rgba(255,255,255,0.03)' }} />
-                                <span style={{ fontSize: '0.8rem', color: i === 4 ? 'white' : 'var(--text-muted)', fontWeight: 700 }}>{day}</span>
+                        {velocity.map((v, i) => (
+                            <div key={v.day} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', flex: 1 }}>
+                                <div style={{
+                                    width: '12px',
+                                    height: `${Math.max((v.count / (Math.max(...velocity.map(val => val.count)) || 1)) * 180, 5)}px`,
+                                    background: 'var(--bg-active)',
+                                    borderRadius: '4px 4px 0 0',
+                                    opacity: 0.8
+                                }} />
+                                <span style={{ fontSize: '0.8rem', color: i === 6 ? 'white' : 'var(--text-muted)', fontWeight: 700 }}>{v.day}</span>
                             </div>
                         ))}
                     </div>

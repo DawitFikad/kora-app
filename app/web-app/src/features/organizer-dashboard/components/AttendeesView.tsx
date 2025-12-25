@@ -1,8 +1,36 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Download } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
+import { OrganizerService } from '../../../core/api/organizer.service';
 
 export const AttendeesView = () => {
+    const [attendees, setAttendees] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAttendees = async () => {
+            try {
+                const response = await OrganizerService.getAttendees();
+                setAttendees(response.data.data);
+            } catch (error) {
+                console.error("Failed to fetch attendees", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAttendees();
+    }, []);
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Loader2 className="animate-spin" size={48} color="var(--bg-active)" />
+            </div>
+        );
+    }
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader title="Attendees" subtitle="Track and manage all ticket holders for your events." />
@@ -14,33 +42,35 @@ export const AttendeesView = () => {
                         <button className="btn-blue" style={{ background: '#161B22', color: 'white', padding: '8px 16px' }}><Download size={16} /> Export List</button>
                     </div>
                 </div>
-                <table className="event-table">
-                    <thead>
-                        <tr>
-                            <th>Attendee Name</th>
-                            <th>Event</th>
-                            <th>Ticket Type</th>
-                            <th>Purchase Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {[
-                            { name: 'Dawit Solomon', event: 'Summer Music Fest', type: 'VIP', date: 'Dec 12, 2024', status: 'Checked In' },
-                            { name: 'Helen Tilahun', event: 'Tech Networking', type: 'GA', date: 'Dec 14, 2024', status: 'Pending' },
-                            { name: 'Yonas Gebre', event: 'Summer Music Fest', type: 'GA', date: 'Dec 15, 2024', status: 'Checked In' },
-                            { name: 'Marta Alemu', event: 'Gospel Concert', type: 'VIP', date: 'Dec 18, 2024', status: 'Pending' },
-                        ].map((person, i) => (
-                            <tr key={i}>
-                                <td style={{ fontWeight: 800 }}>{person.name}</td>
-                                <td style={{ fontWeight: 600 }}>{person.event}</td>
-                                <td style={{ color: 'var(--text-muted)' }}>{person.type}</td>
-                                <td style={{ color: 'var(--text-muted)' }}>{person.date}</td>
-                                <td><span className={`pill ${person.status === 'Checked In' ? 'pill-green' : 'pill-blue'}`}>{person.status}</span></td>
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="event-table">
+                        <thead>
+                            <tr>
+                                <th>Attendee Name</th>
+                                <th>Event</th>
+                                <th>Ticket Type</th>
+                                <th>Purchase Date</th>
+                                <th>Status</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {attendees.map((person) => (
+                                <tr key={person.id}>
+                                    <td style={{ fontWeight: 800 }}>{person.name}</td>
+                                    <td style={{ fontWeight: 600 }}>{person.event}</td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{person.type}</td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{new Date(person.date).toLocaleDateString()}</td>
+                                    <td><span className={`pill ${person.status === 'Checked In' ? 'pill-green' : 'pill-blue'}`}>{person.status}</span></td>
+                                </tr>
+                            ))}
+                            {attendees.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No attendees found yet.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </motion.div>
     );

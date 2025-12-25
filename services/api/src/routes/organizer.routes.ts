@@ -9,7 +9,9 @@ const router = Router();
 router.use(authenticate);
 router.use(authorize([Role.ORGANIZER, Role.ADMIN])); // Admins can also see dashboards for support
 
+router.get("/overview", OrganizerController.getOverview);
 router.get("/events", OrganizerController.getMyEvents);
+router.get("/attendees", OrganizerController.getAttendees);
 router.get("/events/:id/dashboard", OrganizerController.getDashboard);
 
 export default router;

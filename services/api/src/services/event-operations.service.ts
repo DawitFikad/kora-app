@@ -118,4 +118,68 @@ export class EventOperationsService {
         // Real-world: Check for logs where deviceTime is significantly older than createdAt but recently pushed
         return 0; // Placeholder for sync logic
     }
+
+    /**
+     * Gets aggregated stats for an organizer across all their events.
+     */
+    static async getOrganizerSummary(organizerId: number) {
+        const [events, wallet, recentSales] = await Promise.all([
+            prisma.event.findMany({
+                where: { organizerId },
+                include: {
+                    _count: {
+                        select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
+                    },
+                    tiers: true
+                }
+            }),
+            prisma.organizerWallet.findUnique({
+                where: { organizerId }
+            }),
+            prisma.ticket.groupBy({
+                by: ['createdAt'],
+                _count: true,
+                where: {
+                    event: { organizerId },
+                    status: { in: ["SOLD", "USED", "VALID"] },
+                    createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+                }
+            })
+        ]);
+
+        const totalTicketsSold = events.reduce((sum, event) => sum + event._count.tickets, 0);
+        const totalCapacity = events.reduce((sum, event) => {
+            return sum + event.tiers.reduce((tSum, tier) => tSum + tier.capacity, 0);
+        }, 0);
+
+        // Calculate total revenue from released transactions
+        const totalRevenue = await prisma.financialTransaction.aggregate({
+            where: {
+                event: { organizerId },
+                status: "RELEASED"
+            },
+            _sum: { netAmount: true }
+        });
+
+        // Calculate daily sales for velocity chart
+        const salesVelocity = new Array(7).fill(0).map((_, i) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (6 - i));
+            const dateString = date.toISOString().split('T')[0];
+
+            const count = recentSales
+                .filter(s => s.createdAt.toISOString().split('T')[0] === dateString)
+                .reduce((sum, s) => sum + s._count, 0);
+
+            return { day: date.toLocaleDateString('en-US', { weekday: 'short' }), count };
+        });
+
+        return {
+            totalRevenue: Number(totalRevenue._sum.netAmount || 0),
+            ticketsSold: totalTicketsSold,
+            totalCapacity,
+            nextPayout: Number(wallet?.availableBalance || 0),
+            salesVelocity
+        };
+    }
 }
