@@ -279,4 +279,112 @@ export class OrganizerController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+
+    /**
+     * GET /api/organizer/events/:id
+     * Get a single event for editing
+     */
+    static async getEventById(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const eventId = parseInt(req.params.id);
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const event = await prisma.event.findUnique({
+                where: { id: eventId },
+                include: {
+                    tiers: true,
+                    category: true,
+                    city: true
+                }
+            });
+
+            if (!event) {
+                return res.status(404).json({ success: false, message: "Event not found" });
+            }
+
+            if (event.organizerId !== organizerId) {
+                return res.status(403).json({ success: false, message: "You don't own this event" });
+            }
+
+            res.json({ success: true, data: event });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * PATCH /api/organizer/events/:id
+     * Update an existing event
+     */
+    static async updateEvent(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const eventId = parseInt(req.params.id);
+            const { title, description, venue, dateTime, categoryId, cityId, coverImage, refundPolicy, tiers } = req.body;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Security check: organizer must own the event
+            const existingEvent = await prisma.event.findUnique({
+                where: { id: eventId },
+                include: { tiers: true }
+            });
+
+            if (!existingEvent) {
+                return res.status(404).json({ success: false, message: "Event not found" });
+            }
+
+            if (existingEvent.organizerId !== organizerId) {
+                return res.status(403).json({ success: false, message: "You don't own this event" });
+            }
+
+            // Update basic event data
+            const updateData: any = {};
+            if (title) updateData.title = title;
+            if (description !== undefined) updateData.description = description;
+            if (venue) updateData.venue = venue;
+            if (dateTime) updateData.dateTime = new Date(dateTime);
+            if (categoryId) updateData.categoryId = parseInt(categoryId);
+            if (cityId) updateData.cityId = parseInt(cityId);
+            if (coverImage !== undefined) updateData.coverImage = coverImage;
+            if (refundPolicy !== undefined) updateData.refundPolicy = refundPolicy;
+
+            const updatedEvent = await prisma.event.update({
+                where: { id: eventId },
+                data: updateData,
+                include: { tiers: true }
+            });
+
+            // Handle tiers update if provided
+            if (tiers && Array.isArray(tiers)) {
+                // Delete existing tiers and recreate
+                await prisma.ticketTier.deleteMany({
+                    where: { eventId }
+                });
+
+                await prisma.ticketTier.createMany({
+                    data: tiers.map((tier: any) => ({
+                        eventId,
+                        name: tier.name,
+                        price: parseFloat(tier.price),
+                        capacity: parseInt(tier.capacity)
+                    }))
+                });
+            }
+
+            // Fetch the final result with new tiers
+            const finalEvent = await prisma.event.findUnique({
+                where: { id: eventId },
+                include: { tiers: true, category: true, city: true }
+            });
+
+            res.json({ success: true, data: finalEvent });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }

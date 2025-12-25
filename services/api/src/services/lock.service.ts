@@ -1,5 +1,10 @@
 import redis from "../utils/redis";
 
+interface LockedSeatInfo {
+    userId: string;
+    ttl: number;
+}
+
 export class LockService {
     private static SEAT_LOCK_TTL = 300; // 5 minutes in seconds
     private static CAPACITY_LOCK_TTL = 300;
@@ -10,6 +15,13 @@ export class LockService {
      */
     static async lockSeat(eventId: number, tierId: number, seatNumber: string, userId: number): Promise<boolean> {
         const key = `lock:event:${eventId}:tier:${tierId}:seat:${seatNumber}`;
+        // First check if user already has this seat locked
+        const existing = await redis.get(key);
+        if (existing === userId.toString()) {
+            // Refresh the lock
+            await redis.expire(key, this.SEAT_LOCK_TTL);
+            return true;
+        }
         const result = await redis.set(key, userId.toString(), "EX", this.SEAT_LOCK_TTL, "NX");
         return result === "OK";
     }
@@ -28,6 +40,28 @@ export class LockService {
     static async getSeatLock(eventId: number, tierId: number, seatNumber: string): Promise<string | null> {
         const key = `lock:event:${eventId}:tier:${tierId}:seat:${seatNumber}`;
         return redis.get(key);
+    }
+
+    /**
+     * Gets all locked seats for an event tier with their TTL
+     */
+    static async getLockedSeats(eventId: number, tierId: number): Promise<Record<string, LockedSeatInfo>> {
+        const pattern = `lock:event:${eventId}:tier:${tierId}:seat:*`;
+        const keys = await redis.keys(pattern);
+
+        const lockedSeats: Record<string, LockedSeatInfo> = {};
+
+        for (const key of keys) {
+            const seatNumber = key.split(':').pop()!;
+            const userId = await redis.get(key);
+            const ttl = await redis.ttl(key);
+
+            if (userId && ttl > 0) {
+                lockedSeats[seatNumber] = { userId, ttl };
+            }
+        }
+
+        return lockedSeats;
     }
 
     /**
@@ -69,5 +103,44 @@ export class LockService {
             await redis.decrby(lockedKey, parseInt(qty));
             await redis.del(userLockKey);
         }
+    }
+
+    /**
+     * Refreshes the lock TTL for a user's capacity reservation
+     */
+    static async refreshCapacityLock(eventId: number, tierId: number, userId: number): Promise<boolean> {
+        const userLockKey = `lock:event:${eventId}:tier:${tierId}:user:${userId}:qty`;
+        const exists = await redis.exists(userLockKey);
+
+        if (exists) {
+            await redis.expire(userLockKey, this.CAPACITY_LOCK_TTL);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Gets the current reserved capacity count for a tier
+     */
+    static async getReservedCapacity(eventId: number, tierId: number): Promise<number> {
+        const lockedKey = `lock:event:${eventId}:tier:${tierId}:capacity:reserved`;
+        const reserved = await redis.get(lockedKey);
+        return reserved ? parseInt(reserved) : 0;
+    }
+
+    /**
+     * Gets a user's current capacity reservation
+     */
+    static async getUserCapacityLock(eventId: number, tierId: number, userId: number): Promise<{ quantity: number; ttl: number } | null> {
+        const userLockKey = `lock:event:${eventId}:tier:${tierId}:user:${userId}:qty`;
+        const qty = await redis.get(userLockKey);
+        const ttl = await redis.ttl(userLockKey);
+
+        if (qty && ttl > 0) {
+            return { quantity: parseInt(qty), ttl };
+        }
+
+        return null;
     }
 }

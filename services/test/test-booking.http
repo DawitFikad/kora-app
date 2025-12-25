@@ -1,0 +1,100 @@
+### Booking API Tests
+
+@baseUrl = http://localhost:4000/api
+@token = YOUR_AUTH_TOKEN_HERE
+@eventId = 1
+@tierId = 1
+
+### 1. Get Event for Booking (Public)
+GET {{baseUrl}}/booking/events/{{eventId}}
+
+### 2. Get Seat Status (SEAT_MAP events only)
+GET {{baseUrl}}/booking/events/{{eventId}}/tiers/{{tierId}}/seats
+
+### 3. Calculate Price (without promo)
+POST {{baseUrl}}/booking/calculate-price
+Content-Type: application/json
+
+{
+    "eventId": {{eventId}},
+    "tierId": {{tierId}},
+    "quantity": 2
+}
+
+### 4. Calculate Price (with promo)
+POST {{baseUrl}}/booking/calculate-price
+Content-Type: application/json
+
+{
+    "eventId": {{eventId}},
+    "tierId": {{tierId}},
+    "quantity": 2,
+    "promoCode": "SAVE10"
+}
+
+### 5. Validate Promo Code
+POST {{baseUrl}}/booking/validate-promo
+Content-Type: application/json
+
+{
+    "code": "SAVE10",
+    "eventId": {{eventId}}
+}
+
+### 6. Lock Seats (SEAT_MAP events)
+POST {{baseUrl}}/booking/lock-seats
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "eventId": {{eventId}},
+    "tierId": {{tierId}},
+    "seatNumbers": ["S1", "S2"]
+}
+
+### 7. Release Seats
+POST {{baseUrl}}/booking/release-seats
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "eventId": {{eventId}},
+    "tierId": {{tierId}},
+    "seatNumbers": ["S1", "S2"]
+}
+
+### 8. Create Reservation (CAPACITY event)
+POST {{baseUrl}}/booking/reserve
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "eventId": {{eventId}},
+    "tierId": {{tierId}},
+    "quantity": 2,
+    "paymentMethod": "CHAPA"
+}
+
+### 9. Create Reservation (SEAT_MAP event with promo)
+POST {{baseUrl}}/booking/reserve
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "eventId": {{eventId}},
+    "tierId": {{tierId}},
+    "quantity": 2,
+    "seatNumbers": ["S1", "S2"],
+    "paymentMethod": "CHAPA",
+    "promoCode": "SAVE10"
+}
+
+### 10. Extend Lock Time
+# Replace 1 with actual purchaseId
+POST {{baseUrl}}/booking/1/extend
+Authorization: Bearer {{token}}
+
+### 11. Cancel Reservation
+# Replace 1 with actual purchaseId
+POST {{baseUrl}}/booking/1/cancel
+Authorization: Bearer {{token}}

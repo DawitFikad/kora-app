@@ -6,8 +6,9 @@ export const OrganizerService = {
 
     // Event Management
     getMyEvents: () => api.get('/organizer/events'),
+    getEventById: (id: number) => api.get(`/organizer/events/${id}`),
     createEvent: (data: any) => api.post('/organizer/events', data),
-    updateEvent: (id: string, data: any) => api.patch(`/organizer/events/${id}`, data),
+    updateEvent: (id: number, data: any) => api.patch(`/organizer/events/${id}`, data),
 
     // Financials
     getWalletBalance: () => api.get('/organizer/wallet'),

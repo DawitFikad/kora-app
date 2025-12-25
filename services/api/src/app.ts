@@ -17,6 +17,7 @@ import refundRoutes from "./routes/refund.routes";
 import disputeRoutes from "./routes/dispute.routes";
 import notificationRoutes from "./routes/notification.routes";
 import contentRoutes from "./routes/content.routes";
+import bookingRoutes from "./routes/booking.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
@@ -50,6 +51,7 @@ app.use("/api/refunds", refundRoutes);
 app.use("/api/disputes", disputeRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/content", contentRoutes);
+app.use("/api/booking", bookingRoutes);
 app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {

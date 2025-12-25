@@ -1,0 +1,109 @@
+.quantity-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: rgba(26, 29, 41, 0.8);
+    border-radius: 16px;
+    padding: 0.25rem;
+    border: 1px solid rgba(138, 99, 210, 0.2);
+}
+
+.qty-btn {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #8a63d2;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+}
+
+.qty-btn:hover:not(:disabled) {
+    background: rgba(138, 99, 210, 0.15);
+    color: #a78bfa;
+}
+
+.qty-btn:disabled {
+    color: rgba(255, 255, 255, 0.2);
+    cursor: not-allowed;
+}
+
+.qty-input {
+    width: 80px;
+    height: 48px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: transparent;
+    border: none;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quick-select {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.quick-btn {
+    min-width: 44px;
+    height: 36px;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(138, 99, 210, 0.1);
+    border: 1px solid rgba(138, 99, 210, 0.2);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-btn:hover {
+    background: rgba(138, 99, 210, 0.2);
+    border-color: rgba(138, 99, 210, 0.4);
+    color: #ffffff;
+}
+
+.quick-btn.active {
+    background: linear-gradient(135deg, #8a63d2, #6c4ab6);
+    border-color: #8a63d2;
+    color: #ffffff;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    .qty-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .qty-input {
+        width: 60px;
+        height: 40px;
+        font-size: 1.25rem;
+    }
+}

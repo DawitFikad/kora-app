@@ -1,0 +1,239 @@
+.seat-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(26, 29, 41, 0.6);
+    border-radius: 16px;
+    border: 1px solid rgba(138, 99, 210, 0.1);
+}
+
+/* Stage Indicator */
+.stage-indicator {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.stage {
+    padding: 0.75rem 4rem;
+    background: linear-gradient(180deg, rgba(138, 99, 210, 0.2), rgba(138, 99, 210, 0.05));
+    border-radius: 8px 8px 40px 40px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* Legend */
+.seat-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.legend-seat {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+}
+
+.legend-seat.available {
+    background: rgba(138, 99, 210, 0.15);
+    border: 2px solid rgba(138, 99, 210, 0.5);
+}
+
+.legend-seat.selected {
+    background: linear-gradient(135deg, #8a63d2, #6c4ab6);
+    border: 2px solid #8a63d2;
+}
+
+.legend-seat.locked {
+    background: rgba(245, 158, 11, 0.15);
+    border: 2px solid rgba(245, 158, 11, 0.5);
+}
+
+.legend-seat.sold {
+    background: rgba(107, 114, 128, 0.3);
+    border: 2px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Seat Grid */
+.seat-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+}
+
+.seat-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.row-label {
+    width: 24px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.row-seats {
+    display: flex;
+    gap: 0.25rem;
+}
+
+/* Individual Seat */
+.seat {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.seat.available {
+    background: rgba(138, 99, 210, 0.1);
+    border-color: rgba(138, 99, 210, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.seat.available:hover {
+    background: rgba(138, 99, 210, 0.25);
+    border-color: rgba(138, 99, 210, 0.6);
+    transform: scale(1.1);
+}
+
+.seat.selected {
+    background: linear-gradient(135deg, #8a63d2, #6c4ab6);
+    border-color: #a78bfa;
+    color: #ffffff;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(138, 99, 210, 0.4);
+}
+
+.seat.locked {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: rgba(245, 158, 11, 0.6);
+    cursor: not-allowed;
+}
+
+.seat.locked-by-me {
+    background: rgba(138, 99, 210, 0.2);
+    border-color: rgba(138, 99, 210, 0.4);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.seat.sold {
+    background: rgba(107, 114, 128, 0.2);
+    border-color: rgba(107, 114, 128, 0.2);
+    color: rgba(107, 114, 128, 0.5);
+    cursor: not-allowed;
+}
+
+.seat:disabled {
+    cursor: not-allowed;
+}
+
+/* Selected Seats Summary */
+.selected-summary {
+    padding-top: 1rem;
+    border-top: 1px solid rgba(138, 99, 210, 0.1);
+}
+
+.selected-summary h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 0.75rem 0;
+}
+
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.seat-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: linear-gradient(135deg, rgba(138, 99, 210, 0.2), rgba(108, 74, 182, 0.2));
+    border: 1px solid rgba(138, 99, 210, 0.3);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a78bfa;
+}
+
+.remove-seat {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: #ef4444;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.remove-seat:hover {
+    background: rgba(239, 68, 68, 0.4);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .seat-selector {
+        padding: 1rem;
+    }
+
+    .seat {
+        width: 28px;
+        height: 28px;
+        font-size: 0.65rem;
+    }
+
+    .row-label {
+        font-size: 0.75rem;
+        width: 18px;
+    }
+
+    .seat-legend {
+        gap: 1rem;
+    }
+
+    .legend-item {
+        font-size: 0.75rem;
+    }
+
+    .legend-seat {
+        width: 18px;
+        height: 18px;
+    }
+}

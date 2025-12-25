@@ -27,6 +27,7 @@ import { AttendeesView } from './components/AttendeesView';
 import { SupportView } from './components/SupportView';
 import { SettingsView } from './components/SettingsView';
 import { CreateEventView } from './components/CreateEventView';
+import { EditEventView } from './components/EditEventView';
 import { PromotionsView } from './components/PromotionsView';
 import { ScannerView } from './components/ScannerView';
 import { PendingApprovalView } from './components/PendingApprovalView';
@@ -36,6 +37,12 @@ import { PendingApprovalView } from './components/PendingApprovalView';
 const OrganizerDashboard = () => {
     const { user, logout } = useAuth();
     const [activeTab, setActiveTab] = useState('Dashboard');
+    const [editingEventId, setEditingEventId] = useState<number | null>(null);
+
+    const handleEditEvent = (eventId: number) => {
+        setEditingEventId(eventId);
+        setActiveTab('EditEvent');
+    };
 
     const navItems = [
         { icon: Layout, label: 'Dashboard' },
@@ -88,7 +95,7 @@ const OrganizerDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'Dashboard': return <DashboardView key="dashboard" onNavigate={setActiveTab} />;
-            case 'Events': return <MyEventsView key="events" onNavigate={setActiveTab} />;
+            case 'Events': return <MyEventsView key="events" onNavigate={setActiveTab} onEditEvent={handleEditEvent} />;
             case 'Tickets': return <TicketsView key="tickets" />;
             case 'Payments': return <ReportsView key="payments" />;
             case 'Attendees': return <AttendeesView key="attendees" />;
@@ -97,6 +104,7 @@ const OrganizerDashboard = () => {
             case 'Support': return <SupportView key="support" />;
             case 'Settings': return <SettingsView key="settings" />;
             case 'CreateEvent': return <CreateEventView key="create-event" onComplete={() => setActiveTab('Events')} />;
+            case 'EditEvent': return editingEventId ? <EditEventView key={`edit-${editingEventId}`} eventId={editingEventId} onComplete={() => { setEditingEventId(null); setActiveTab('Events'); }} /> : <DashboardView key="fallback" onNavigate={setActiveTab} />;
             default: return <DashboardView key="default" onNavigate={setActiveTab} />;
         }
     };

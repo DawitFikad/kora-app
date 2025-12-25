@@ -19,5 +19,7 @@ router.get("/settings", OrganizerController.getSettings);
 router.patch("/settings", OrganizerController.updateSettings);
 router.post("/promos", OrganizerController.createPromoCode);
 router.get("/events/:id/dashboard", OrganizerController.getDashboard);
+router.get("/events/:id", OrganizerController.getEventById);
+router.patch("/events/:id", OrganizerController.updateEvent);
 
 export default router;

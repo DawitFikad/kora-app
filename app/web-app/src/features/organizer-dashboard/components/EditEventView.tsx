@@ -15,13 +15,15 @@ import { OrganizerService } from '../../../core/api/organizer.service';
 import { ContentService } from '../../../core/api/content.service';
 import { useToast } from '../../../core/components/Toast';
 
-interface CreateEventViewProps {
+interface EditEventViewProps {
+    eventId: number;
     onComplete: () => void;
 }
 
-export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
+export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
     const toast = useToast();
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
 
@@ -33,28 +35,47 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         categoryId: '',
         cityId: '',
         coverImage: '',
-        refundPolicy: 'No refunds within 24 hours of event.',
-        tiers: [
-            { name: 'General Admission', price: '', capacity: '' }
-        ]
+        refundPolicy: '',
+        tiers: [{ name: '', price: '', capacity: '' }]
     });
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [catRes, cityRes] = await Promise.all([
+                const [catRes, cityRes, eventRes] = await Promise.all([
                     ContentService.getCategories(),
-                    ContentService.getCities()
+                    ContentService.getCities(),
+                    OrganizerService.getEventById(eventId)
                 ]);
 
                 if (catRes?.data) setCategories(catRes.data);
                 if (cityRes?.data) setCities(cityRes.data);
+
+                if (eventRes?.data) {
+                    const event = eventRes.data;
+                    setForm({
+                        title: event.title || '',
+                        description: event.description || '',
+                        venue: event.venue || '',
+                        dateTime: event.dateTime ? new Date(event.dateTime).toISOString().slice(0, 16) : '',
+                        categoryId: String(event.categoryId) || '',
+                        cityId: String(event.cityId) || '',
+                        coverImage: event.coverImage || '',
+                        refundPolicy: event.refundPolicy || '',
+                        tiers: event.tiers?.length > 0
+                            ? event.tiers.map((t: any) => ({ name: t.name, price: String(t.price), capacity: String(t.capacity) }))
+                            : [{ name: '', price: '', capacity: '' }]
+                    });
+                }
             } catch (error) {
-                console.error("Failed to fetch categories/cities", error);
+                console.error("Failed to fetch data", error);
+                toast.error("Failed to load event data");
+            } finally {
+                setLoading(false);
             }
         };
         fetchData();
-    }, []);
+    }, [eventId]);
 
     const handleAddTier = () => {
         setForm({
@@ -89,15 +110,13 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Basic Validation
         if (!form.categoryId || !form.cityId) {
             toast.warning("Please select a category and city.");
             return;
         }
 
-        setLoading(true);
+        setSaving(true);
         try {
-            // Clean tiers data (convert strings to numbers)
             const cleanForm = {
                 ...form,
                 tiers: form.tiers.map(t => ({
@@ -107,17 +126,25 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                 }))
             };
 
-            await OrganizerService.createEvent(cleanForm);
-            toast.success("Event created successfully!");
+            await OrganizerService.updateEvent(eventId, cleanForm);
+            toast.success("Event updated successfully!");
             onComplete();
         } catch (error: any) {
-            console.error("Failed to create event", error);
-            const msg = error?.message || "Error creating event. Please check all fields.";
+            console.error("Failed to update event", error);
+            const msg = error?.message || "Error updating event. Please check all fields.";
             toast.error(msg);
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '100px' }}>
+                <Loader2 className="animate-spin" size={48} color="var(--primary)" />
+            </div>
+        );
+    }
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -129,8 +156,8 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>Create New Event</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Fill in the details to publish your event to ET-Ticket.</p>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>Edit Event</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>Update your event details.</p>
                 </div>
             </div>
 
@@ -148,7 +175,6 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                 <input
                                     required
                                     type="text"
-                                    placeholder="e.g. Summer Music Festival 2025"
                                     value={form.title}
                                     onChange={e => setForm({ ...form, title: e.target.value })}
                                     style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white' }}
@@ -187,7 +213,6 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                 <textarea
                                     required
                                     rows={5}
-                                    placeholder="Tell your audience what the event is about..."
                                     value={form.description}
                                     onChange={e => setForm({ ...form, description: e.target.value })}
                                     style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white', resize: 'none' }}
@@ -207,7 +232,6 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                 <input
                                     required
                                     type="text"
-                                    placeholder="e.g. Millennium Hall"
                                     value={form.venue}
                                     onChange={e => setForm({ ...form, venue: e.target.value })}
                                     style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white' }}
@@ -249,7 +273,6 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                         <input
                                             required
                                             type="text"
-                                            placeholder="VIP, Early Bird, etc."
                                             value={tier.name}
                                             onChange={e => handleTierChange(index, 'name', e.target.value)}
                                             style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'white' }}
@@ -260,7 +283,6 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                         <input
                                             required
                                             type="number"
-                                            placeholder="0.00"
                                             value={tier.price}
                                             onChange={e => handleTierChange(index, 'price', e.target.value)}
                                             style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'white' }}
@@ -271,7 +293,6 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                         <input
                                             required
                                             type="number"
-                                            placeholder="100"
                                             value={tier.capacity}
                                             onChange={e => handleTierChange(index, 'capacity', e.target.value)}
                                             style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'white' }}
@@ -324,14 +345,14 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
 
                                 <input
                                     type="file"
-                                    id="local-image"
+                                    id="local-image-edit"
                                     hidden
                                     accept="image/*"
                                     onChange={handleImageUpload}
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => document.getElementById('local-image')?.click()}
+                                    onClick={() => document.getElementById('local-image-edit')?.click()}
                                     style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
                                 >
                                     Upload Local Image
@@ -360,18 +381,18 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={saving}
                             className="btn-blue"
                             style={{ width: '100%', justifyContent: 'center', padding: '18px', fontSize: '1.1rem', fontWeight: 900 }}
                         >
-                            {loading ? <Loader2 className="animate-spin" size={24} /> : 'Publish Event'}
+                            {saving ? <Loader2 className="animate-spin" size={24} /> : 'Save Changes'}
                         </button>
                         <button
                             type="button"
                             onClick={onComplete}
                             style={{ width: '100%', padding: '16px', background: 'transparent', border: '1px solid var(--border)', color: 'white', borderRadius: '16px', cursor: 'pointer', fontWeight: 700 }}
                         >
-                            Discard Draft
+                            Cancel
                         </button>
                     </div>
                 </div>

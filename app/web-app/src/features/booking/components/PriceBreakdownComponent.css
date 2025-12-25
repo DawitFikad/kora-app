@@ -1,0 +1,112 @@
+.price-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 0;
+}
+
+.breakdown-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.breakdown-line span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.breakdown-line span:last-child {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.breakdown-line.fee span:first-child {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.breakdown-line.fee span:last-child {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+}
+
+.info-tooltip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 0.7rem;
+    color: rgba(138, 99, 210, 0.6);
+    cursor: help;
+    transition: color 0.2s ease;
+}
+
+.info-tooltip:hover {
+    color: #8a63d2;
+}
+
+.breakdown-line.discount span:first-child {
+    color: #10b981;
+}
+
+.discount-amount {
+    color: #10b981 !important;
+    font-weight: 600 !important;
+}
+
+.promo-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #10b981;
+    text-transform: uppercase;
+    margin-left: 0.5rem;
+}
+
+.breakdown-divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(138, 99, 210, 0.3),
+            transparent);
+    margin: 0.5rem 0;
+}
+
+.breakdown-line.total {
+    padding-top: 0.5rem;
+}
+
+.breakdown-line.total span:first-child {
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.total-amount {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    background: linear-gradient(135deg, #ffffff, #8a63d2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    .breakdown-line {
+        font-size: 0.85rem;
+    }
+
+    .total-amount {
+        font-size: 1.1rem !important;
+    }
+}
