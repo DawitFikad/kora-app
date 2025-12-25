@@ -15,7 +15,7 @@ import {
     Calendar,
     LogOut
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Sub-Pages ---
 import { AdminOverview } from './components/AdminOverview';
