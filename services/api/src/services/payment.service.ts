@@ -42,42 +42,63 @@ export class PaymentService {
             case "AMOLE":
             case "CHAPA":
                 // Real Chapa Integration (Aggregator for all)
-                try {
-                    const tx_ref = purchase.paymentRef;
-                    const return_url = `http://localhost:4000/api/payments/verify-callback?ref=${tx_ref}`;
+                const tx_ref = purchase.paymentRef;
+                const return_url = `http://localhost:4000/api/payments/verify-callback?ref=${tx_ref}`;
 
-                    const chapaPayload = {
-                        amount: purchase.totalAmount.toString(),
-                        currency: "ETB",
-                        email: purchase.user.email || "no-email@et-ticket.com",
-                        first_name: purchase.user.profile?.fullName?.split(" ")[0] || "Customer",
-                        last_name: purchase.user.profile?.fullName?.split(" ").slice(1).join(" ") || "Valued",
-                        tx_ref: tx_ref,
-                        callback_url: `http://localhost:4000/api/payments/webhook`,
-                        return_url: return_url,
-                        customization: {
-                            title: `Ticket Purchase (${purchase.paymentMethod})`,
-                            description: `Payment for Purchase #${purchase.id}`
-                        }
-                    };
-
-                    logger.info({ tx_ref, method: purchase.paymentMethod }, "Initializing Chapa payment");
-                    const response = await axios.post("https://api.chapa.co/v1/transaction/initialize", chapaPayload, {
-                        headers: {
-                            Authorization: `Bearer ${env.chapaSecretKey}`,
-                            "Content-Type": "application/json"
-                        }
-                    });
-
-                    if (response.data.status === 'success') {
-                        checkoutUrl = response.data.data.checkout_url;
-                        providerPayload = chapaPayload;
-                    } else {
-                        throw new Error("Chapa initialization failed: " + response.data.message);
+                const chapaPayload = {
+                    amount: purchase.totalAmount.toString(),
+                    currency: "ETB",
+                    email: purchase.user.email || "no-email@et-ticket.com",
+                    first_name: purchase.user.profile?.fullName?.split(" ")[0] || "Customer",
+                    last_name: purchase.user.profile?.fullName?.split(" ").slice(1).join(" ") || "Valued",
+                    tx_ref: tx_ref,
+                    callback_url: `http://localhost:4000/api/payments/webhook`,
+                    return_url: return_url,
+                    customization: {
+                        title: `Ticket Purchase (${purchase.paymentMethod})`,
+                        description: `Payment for Purchase #${purchase.id}`
                     }
-                } catch (error: any) {
-                    logger.error("Chapa Error:", error.response?.data || error.message);
-                    throw new Error(`Payment initialization failed: ${error.response?.data?.message || error.message}`);
+                };
+
+                logger.info({ tx_ref, method: purchase.paymentMethod }, "Initializing Chapa payment");
+
+                const isMockMode = !env.chapaSecretKey || env.chapaSecretKey.includes("mock") || env.chapaSecretKey === "your_chapa_secret_key_or_mock";
+
+                if (isMockMode) {
+                    logger.warn("Using MOCK Chapa Gateway (Key not configured for live)");
+                    checkoutUrl = `${baseUrl}/mock?ref=${tx_ref}`;
+                    providerPayload = chapaPayload;
+                } else {
+                    try {
+                        const response = await axios.post("https://api.chapa.co/v1/transaction/initialize", chapaPayload, {
+                            headers: {
+                                Authorization: `Bearer ${env.chapaSecretKey}`,
+                                "Content-Type": "application/json"
+                            }
+                        });
+
+                        if (response.data.status === 'success') {
+                            checkoutUrl = response.data.data.checkout_url;
+                            providerPayload = chapaPayload;
+                        } else {
+                            throw new Error("Chapa initialization failed: " + response.data.message);
+                        }
+                    } catch (error: any) {
+                        logger.error("Chapa Error:", error.response?.data || error.message);
+
+                        // Fallback to Mock if Dev/Test and Auth/Net error
+                        // 'development' or 'test' env, or just assume if status is 401
+                        const isDev = process.env.NODE_ENV !== 'production';
+                        const isAuthOrNetError = error.response?.status === 401 || !error.response || error.code === 'ENOTFOUND';
+
+                        if (isDev && isAuthOrNetError) {
+                            logger.warn("Chapa Initialization Failed (Network/Auth). Falling back to MOCK mode.");
+                            checkoutUrl = `${baseUrl}/mock?ref=${tx_ref}`;
+                            providerPayload = chapaPayload;
+                        } else {
+                            throw new Error(`Payment initialization failed: ${error.response?.data?.message || error.message}`);
+                        }
+                    }
                 }
                 break;
 
@@ -118,7 +139,8 @@ export class PaymentService {
             // In real app: decrypt(rawProviderData, telebirrPublicKey)
         }
 
-        if (["CHAPA", "TELEBIRR", "CBE_BIRR", "AMOLE"].includes(purchase.paymentMethod)) {
+        // Check for Mock Mode (Key missing or mock, OR ref indicates mock)
+        if (env.chapaSecretKey && !env.chapaSecretKey.includes("mock") && env.chapaSecretKey !== "your_chapa_secret_key_or_mock" && ["CHAPA", "TELEBIRR", "CBE_BIRR", "AMOLE"].includes(purchase.paymentMethod)) {
             try {
                 const response = await axios.get(`https://api.chapa.co/v1/transaction/verify/${paymentRef}`, {
                     headers: { Authorization: `Bearer ${env.chapaSecretKey}` }
@@ -134,9 +156,25 @@ export class PaymentService {
                 }
             } catch (error: any) {
                 logger.error(`Chapa verification error for ${paymentRef}`, error.message);
-                // If network error, maybe don't fail immediately? But for now, safe to fail.
-                isValid = false;
+
+                // Fallback to Mock if Dev/Test and Auth/Net error
+                const isDev = process.env.NODE_ENV !== 'production';
+                const isAuthOrNetError = error.response?.status === 401 || !error.response || error.code === 'ENOTFOUND';
+
+                if (isDev && isAuthOrNetError) {
+                    logger.warn("Chapa Verification Failed (Network/Auth). Falling back to MOCK verification.");
+                    // Mock Verification Logic: Success unless ref contains 'fail'
+                    isValid = !paymentRef.includes("fail") && !paymentRef.includes("FAIL");
+                } else {
+                    isValid = false;
+                }
             }
+        } else {
+            // Mock Verification Logic
+            // If manual mock or key is mock, usage simple logic:
+            // If ref contains 'fail', it fails. Else success.
+            isValid = !paymentRef.includes("fail") && !paymentRef.includes("FAIL");
+            if (isValid) logger.info(`Mock verification success for ${paymentRef}`);
         }
 
         if (isValid) {

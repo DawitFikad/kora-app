@@ -25,6 +25,7 @@ export const OrganizerService = {
 
     // Promotions
     createPromoCode: (data: any) => api.post('/organizer/promos', data),
+    getPromoCodes: () => api.get('/organizer/promos'),
 
     // Settings
     getSettings: () => api.get('/organizer/settings'),

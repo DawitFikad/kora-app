@@ -54,6 +54,7 @@ export class PaymentController {
     static async mockGateway(req: Request, res: Response) {
         const { ref } = req.query;
         const provider = req.path.split("/").pop(); // chapa, telebirr, etc.
+        const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
 
         res.send(`
             <html>
@@ -70,20 +71,16 @@ export class PaymentController {
                     </div>
 
                     <script>
-                        async function pay(status) {
+                        function pay(status) {
                             const ref = "${ref}";
                             if (status === 'SUCCESS') {
-                                // Simulate calling our verify endpoint
-                                await fetch('/api/payments/verify', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ paymentRef: ref, externalRef: 'EXT-MOCK-' + Date.now() })
-                                });
-                                alert('Payment Successful! You can close this window.');
+                                // Redirect to Backend Verify Callback
+                                window.location.href = '/api/payments/verify-callback?ref=' + ref;
                             } else {
-                                alert('Payment Failed.');
+                                // Redirect to Frontend Callback with Failure
+                                // Note: Purchase stays PENDING in DB, which is fine (abandoned)
+                                window.location.href = "${clientUrl}/payment/callback?status=failed&ref=" + ref + "&reason=Simulated+Failure"; 
                             }
-                            window.close();
                         }
                     </script>
                 </body>
@@ -91,9 +88,6 @@ export class PaymentController {
         `);
     }
 
-    /**
-     * Handles the return redirect from Payment Providers.
-     */
     /**
      * Handles the return redirect from Payment Providers.
      */

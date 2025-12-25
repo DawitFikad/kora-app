@@ -281,6 +281,29 @@ export class OrganizerController {
     }
 
     /**
+     * GET /api/organizer/promos
+     */
+    static async getPromoCodes(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const promos = await prisma.promoCode.findMany({
+                where: {
+                    event: { organizerId }
+                },
+                orderBy: { createdAt: 'desc' }
+            });
+
+            res.json({ success: true, data: promos });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
      * GET /api/organizer/events/:id
      * Get a single event for editing
      */

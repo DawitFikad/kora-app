@@ -84,7 +84,7 @@ const PaymentCallbackPage: React.FC = () => {
     };
 
     const handleDone = () => {
-        navigate('/dashboard/tickets');
+        navigate('/');
     };
 
     if (verifying) {
@@ -117,7 +117,7 @@ const PaymentCallbackPage: React.FC = () => {
                     <div className="success-actions">
                         <p>Receive your tickets via email/SMS shortly.</p>
                         <button onClick={handleDone} className="btn-primary">
-                            View My Tickets
+                            Return to Home
                         </button>
                     </div>
                 )}

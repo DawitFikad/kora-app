@@ -22,13 +22,12 @@ export const PromotionsView = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [eventsRes] = await Promise.all([
-                    OrganizerService.getMyEvents()
+                const [eventsRes, promosRes] = await Promise.all([
+                    OrganizerService.getMyEvents(),
+                    OrganizerService.getPromoCodes()
                 ]);
                 setEvents(eventsRes.data);
-                // In a real app, we'd have a getPromos() endpoint. 
-                // For now, let's mock it or assume it's empty.
-                setPromos([]);
+                setPromos(promosRes.data);
             } catch (error) {
                 console.error("Failed to fetch promotions data", error);
             } finally {
