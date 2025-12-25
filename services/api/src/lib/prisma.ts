@@ -18,7 +18,7 @@ try {
 
 const pool = new pg.Pool({
     host: url.hostname,
-    port: parseInt(url.port),
+    port: parseInt(url.port || "5432"),
     database: url.pathname.slice(1),
     user: url.username,
     password: url.password,
