@@ -12,7 +12,7 @@ export const AttendeesView = () => {
         const fetchAttendees = async () => {
             try {
                 const response = await OrganizerService.getAttendees();
-                setAttendees(response.data.data);
+                setAttendees(response.data);
             } catch (error) {
                 console.error("Failed to fetch attendees", error);
             } finally {

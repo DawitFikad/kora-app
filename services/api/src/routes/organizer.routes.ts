@@ -12,6 +12,9 @@ router.use(authorize([Role.ORGANIZER, Role.ADMIN])); // Admins can also see dash
 router.get("/overview", OrganizerController.getOverview);
 router.get("/events", OrganizerController.getMyEvents);
 router.get("/attendees", OrganizerController.getAttendees);
+router.get("/financials", OrganizerController.getFinancials);
+router.get("/ticket-stats", OrganizerController.getTicketStats);
+router.get("/settings", OrganizerController.getSettings);
 router.get("/events/:id/dashboard", OrganizerController.getDashboard);
 
 export default router;

@@ -12,7 +12,7 @@ export const MyEventsView = () => {
         const fetchEvents = async () => {
             try {
                 const response = await OrganizerService.getMyEvents();
-                setEvents(response.data.data);
+                setEvents(response.data);
             } catch (error) {
                 console.error("Failed to fetch events", error);
             } finally {

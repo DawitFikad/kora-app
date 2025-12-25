@@ -14,7 +14,7 @@ export const DashboardView = () => {
         const fetchStats = async () => {
             try {
                 const response = await OrganizerService.getOverview();
-                const data = response.data.data;
+                const data = response.data;
 
                 const formattedStats = [
                     { label: 'Total Revenue', value: `ETB ${data.totalRevenue.toLocaleString()}`, change: 'Released funds', icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },

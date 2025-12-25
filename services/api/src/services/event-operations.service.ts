@@ -182,4 +182,92 @@ export class EventOperationsService {
             salesVelocity
         };
     }
+
+    /**
+     * Gets a detailed financial history for the organizer.
+     */
+    static async getOrganizerFinancials(organizerId: number) {
+        const [transactions, wallet] = await Promise.all([
+            prisma.financialTransaction.findMany({
+                where: { event: { organizerId } },
+                include: {
+                    purchase: {
+                        include: { user: { include: { profile: true } } }
+                    },
+                    event: { select: { title: true } }
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 50
+            }),
+            prisma.organizerWallet.findUnique({
+                where: { organizerId }
+            })
+        ]);
+
+        const grossSales = await prisma.financialTransaction.aggregate({
+            where: { event: { organizerId }, type: "TICKET_PURCHASE" },
+            _sum: { amount: true }
+        });
+
+        const totalFees = await prisma.financialTransaction.aggregate({
+            where: { event: { organizerId }, type: "PLATFORM_FEE" },
+            _sum: { amount: true }
+        });
+
+        return {
+            grossSales: Number(grossSales._sum.amount || 0),
+            totalPayouts: Number(wallet?.totalWithdrawn || 0),
+            processingFees: Number(totalFees._sum.amount || 0),
+            availableBalance: Number(wallet?.availableBalance || 0),
+            transactions: transactions.map(t => ({
+                id: `#ORD-${t.id}`,
+                name: t.purchase?.user.profile?.fullName || t.purchase?.user.phoneNumber || "System",
+                date: t.createdAt,
+                amount: Number(t.amount),
+                status: t.status === "RELEASED" ? "Completed" : "Processing"
+            }))
+        };
+    }
+
+    /**
+     * Gets ticket tier performance across all events.
+     */
+    static async getOrganizerTicketStats(organizerId: number) {
+        const events = await prisma.event.findMany({
+            where: { organizerId },
+            include: {
+                tiers: {
+                    include: {
+                        _count: {
+                            select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
+                        }
+                    }
+                }
+            }
+        });
+
+        const allTiers = events.flatMap(e => e.tiers.map(t => ({
+            name: t.name,
+            eventName: e.title,
+            price: Number(t.price),
+            sold: t._count.tickets,
+            capacity: t.capacity,
+            status: t._count.tickets >= t.capacity ? 'Sold Out' : (t._count.tickets > t.capacity * 0.8 ? 'Few Left' : 'Active')
+        })));
+
+        const totalCapacity = allTiers.reduce((sum, t) => sum + t.capacity, 0);
+        const totalSold = allTiers.reduce((sum, t) => sum + t.sold, 0);
+
+        return {
+            tiers: allTiers,
+            totalCapacity,
+            totalSold,
+            checkedIn: await prisma.ticket.count({
+                where: { event: { organizerId }, status: "USED" }
+            }),
+            reserved: await prisma.ticket.count({
+                where: { event: { organizerId }, status: "VALID" } // Valid but not used
+            })
+        };
+    }
 }

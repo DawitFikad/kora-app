@@ -124,4 +124,54 @@ export class OrganizerController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+
+    /**
+     * GET /api/organizer/financials
+     */
+    static async getFinancials(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const financials = await EventOperationsService.getOrganizerFinancials(organizerId);
+            res.json({ success: true, data: financials });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * GET /api/organizer/ticket-stats
+     */
+    static async getTicketStats(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const stats = await EventOperationsService.getOrganizerTicketStats(organizerId);
+            res.json({ success: true, data: stats });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * GET /api/organizer/settings
+     */
+    static async getSettings(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const profile = await prisma.organizerProfile.findUnique({
+                where: { id: organizerId },
+                include: { user: { select: { email: true, phoneNumber: true } } }
+            });
+
+            res.json({ success: true, data: profile });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }
