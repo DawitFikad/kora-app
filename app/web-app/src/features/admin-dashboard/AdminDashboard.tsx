@@ -22,7 +22,8 @@ import { AdminOverview } from './components/AdminOverview';
 import { EventApprovalsView } from './components/EventApprovalsView';
 import { FraudMonitoringView } from './components/FraudMonitoringView';
 import { OrganizerApprovalsView } from './components/OrganizerApprovalsView';
-import { FinancialsView } from './components/FinancialsView';
+import { CommissionsView } from './components/CommissionsView';
+import { PayoutsManagementView } from './components/PayoutManagementView';
 import { AdminSettingsView } from './components/AdminSettingsView';
 import { ContentManagementView } from './components/ContentManagementView';
 import { AnalyticsView } from './components/AnalyticsView';
@@ -77,8 +78,8 @@ const AdminDashboard = () => {
             case 'Organizer Approvals': return <OrganizerApprovalsView />;
             case 'Event Approvals': return <EventApprovalsView />;
             case 'Fraud': return <FraudMonitoringView />;
-            case 'Commissions':
-            case 'GMV': return <FinancialsView />;
+            case 'Commissions': return <CommissionsView />;
+            case 'GMV': return <PayoutsManagementView />;
             case 'Content': return <ContentManagementView />;
             case 'Analytics': return <AnalyticsView />;
             case 'Settings': return <AdminSettingsView />;

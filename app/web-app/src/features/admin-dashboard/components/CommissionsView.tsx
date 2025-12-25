@@ -4,7 +4,7 @@ import { Download, Loader2, DollarSign, Wallet, ArrowUpRight } from 'lucide-reac
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
 
-export const FinancialsView = () => {
+export const CommissionsView = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -16,10 +16,12 @@ export const FinancialsView = () => {
                 AdminService.getFinancialTransactions(),
                 AdminService.getFinancialMetrics()
             ]);
+            // Filter for only platform fee transactions in the table if desired?
+            // Actually, keep the ledger but focus the title.
             setTransactions(txResponse.data || []);
             setMetrics(metricsResponse.data || null);
         } catch (err) {
-            console.error('Failed to fetch financial data', err);
+            console.error('Failed to fetch commission data', err);
         } finally {
             setIsLoading(false);
         }
@@ -39,7 +41,7 @@ export const FinancialsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader title="Financial Oversight" subtitle="Platform commission, GMV tracking, and organizer payout settlement." />
+            <AdminPageHeader title="Commissions & Revenue" subtitle="Detailed audit of platform fees, commission rates, and real-time revenue collection." />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main">

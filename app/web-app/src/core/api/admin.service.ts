@@ -16,6 +16,8 @@ export const AdminService = {
     // Financials
     getFinancialTransactions: () => api.get('/financials/admin/transactions'),
     getFinancialMetrics: () => api.get('/financials/admin/dashboard'),
+    getPendingPayouts: () => api.get('/payouts/pending'),
+    approvePayout: (batchId: number) => api.post(`/payouts/${batchId}/approve`),
 
     // Fraud & Security
     getFraudAlerts: () => api.get('/security/fraud/alerts'),

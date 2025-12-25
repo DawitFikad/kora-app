@@ -1,7 +1,7 @@
 const { PrismaClient, Role } = require('@prisma/client');
 require('dotenv').config();
 
-// Direct override to ensure it finds the DB
+
 const prisma = new PrismaClient({
     datasourceUrl: process.env.DATABASE_URL
 });
