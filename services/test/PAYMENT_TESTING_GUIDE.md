@@ -1,30 +1,68 @@
-# Payment Integration Testing Guide
+# Payment Flow Testing Guide
 
-This module handles the transition from a **Reservation** to a **Finalized Ticket**.
+This guide covers testing the end-to-end payment flow, including redirection, verification, and retries.
 
-## Supported Methods
-- **TeleBirr**
-- **CBE Birr**
-- **Amole**
-- **Chapa** (Default)
+## Prerequisites
 
-## Testing the Mock Gateway
-The system includes a built-in Mock Payment Gateway UI for local development.
+1.  Start Backend: `cd services/api && npm run dev`
+2.  Start Frontend: `cd app/web-app && npm run dev`
+    - Ensure frontend runs on port `5173` (or update `CLIENT_URL` in backend `.env`).
+3.  Redis must be running.
 
-1.  **Reserve**: Call `POST /api/tickets/reserve`. You will get a `purchaseId` and `paymentRef`.
-2.  **Initialize**: Call `POST /api/payments/initialize` with the `purchaseId`.
-3.  **Checkout**: Copy the `checkoutUrl` from the response and open it in your browser.
-4.  **Simulate FAILURE**: Click **Simulate Failure**. The status in DB will become `FAILED`.
-5.  **Retry**: Call `POST /api/payments/initialize` again. The status resets to `PENDING`.
-6.  **Simulate SUCCESS**: Open the URL again and click **Simulate Success**.
-7.  **Result**: The UI will call the backend `/verify` endpoint. Your tickets are now issued!
+## Configuration
 
-## How to Verify
-- **Database**: Check the `Purchase` table. The status should be `SUCCESS`.
-- **Tickets**: Check `GET /api/tickets/me`. Your new tickets should appear there.
-- **Redis**: The inventory locks should have been automatically cleaned up.
+Ensure your `.env` in `services/api` has:
+```env
+CHAPA_SECRET_KEY=your_chapa_secret_key_or_mock
+CLIENT_URL=http://localhost:5173
+```
 
----
+## Testing Steps
 
-## Technical Note: Webhooks
-In production, we use the `POST /api/payments/webhook` endpoint. Providers call this to notify our system of successful payments even if the user closes their browser/app.
+### 1. Booking & Payment Initiation
+
+1.  Navigate to `http://localhost:5173/book/:eventId` (use ID of an active event).
+2.  Select tickets and click "Reserve".
+3.  You will be redirected to the **Payment Page** (`/payment/:purchaseId`).
+4.  Verify the Order Summary matches your selection.
+5.  Click **"Pay ETB..."**.
+6.  You should be redirected to the Chapa Checkout page (or Mock Gateway if configured).
+
+### 2. Successful Payment
+
+1.  On the Mock Gateway/Chapa, complete the payment (for Mock: click "Simulate Success").
+2.  You will be redirected back to the Backend (`/api/payments/verify-callback`).
+3.  The Backend verifies the transaction with Chapa.
+4.  You are redirected to the Frontend Callback Page (`/payment/callback?status=success...`).
+5.  You should see a **"Payment Successful!"** message.
+6.  Clicking "View My Tickets" should take you to your dashboard.
+
+### 3. Failed Payment & Retry
+
+1.  Start a new booking or use an existing one.
+2.  On the Payment Page, click "Pay".
+3.  On the Mock Gateway, click **"Simulate Failure"** (or cancel/fail in Chapa).
+4.  You are redirected to the Frontend Callback Page with failure status.
+5.  You should see a **"Payment Failed"** message with a reason.
+6.  Click **"Retry Payment"**.
+7.  You should be taken back to the Payment Page.
+8.  Click "Pay" again to generate a NEW payment reference and try again.
+
+### 4. Page Refresh / State Recovery
+
+1.  Go to the Payment Page (`/payment/:purchaseId`).
+2.  Refresh the browser.
+3.  Verify that order details (Event Title, Price, etc.) are **re-fetched** and displayed correctly.
+    - *Note: If this fails, ensure you are logged in (status 401 will redirect to home).*
+
+## Troubleshooting
+
+-   **"Session Info Missing" on Payment Page**: Means `location.state` was lost and the fetch fallback failed (likely auth issue or invalid ID).
+-   **Verification Failed**: Check backend logs (`npm run dev` output) for Chapa error messages.
+-   **Redirect to wrong URL**: Check `CLIENT_URL` in backend `.env`.
+
+## API Endpoints Used
+
+-   `GET /api/booking/:purchaseId` - Fetch purchase details (Protected)
+-   `POST /api/payments/initialize` - Start payment (Protected)
+-   `GET /api/payments/verify-callback` - Handle provider return (Public)

@@ -51,6 +51,45 @@ export class BookingService {
     private static readonly MAX_TICKETS_PER_PURCHASE = 10;
 
     /**
+     * Gets purchase details for payment page
+     */
+    static async getPurchaseDetails(purchaseId: number, userId: number) {
+        const purchase = await prisma.purchase.findUnique({
+            where: { id: purchaseId },
+            include: {
+                tickets: true
+            }
+        });
+
+        if (!purchase || purchase.userId !== userId) {
+            throw new Error("Purchase not found");
+        }
+
+        // Parse metadata to reconstruct useful info
+        const metadata = purchase.metadata as any;
+        const eventId = metadata.eventId;
+
+        const event = await prisma.event.findUnique({
+            where: { id: eventId },
+            select: {
+                title: true,
+                dateTime: true,
+                venue: true
+            }
+        });
+
+        return {
+            id: purchase.id,
+            totalAmount: purchase.totalAmount.toNumber(),
+            status: purchase.status,
+            paymentRef: purchase.paymentRef,
+            priceBreakdown: metadata.priceBreakdown,
+            event,
+            lockExpiry: new Date(Date.now() + 5 * 60 * 1000) // Estimate remaining time or store creation time and calc
+        };
+    }
+
+    /**
      * Gets event details with tier information for booking display
      */
     static async getEventForBooking(eventId: number) {

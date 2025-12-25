@@ -147,6 +147,14 @@ export const bookingService = {
     },
 
     /**
+     * Get purchase details
+     */
+    getPurchase: async (purchaseId: number): Promise<any> => {
+        const response: any = await api.get(`/booking/${purchaseId}`);
+        return response.data;
+    },
+
+    /**
      * Extend lock time for a pending reservation
      */
     extendLock: async (purchaseId: number): Promise<{ newExpiry: string }> => {

@@ -31,6 +31,9 @@ router.post("/release-seats", authenticate, BookingController.releaseSeats);
 // Create reservation
 router.post("/reserve", authenticate, BookingController.createReservation);
 
+// Get purchase details
+router.get("/:purchaseId", authenticate, BookingController.getPurchase);
+
 // Extend lock time
 router.post("/:purchaseId/extend", authenticate, BookingController.extendLock);
 

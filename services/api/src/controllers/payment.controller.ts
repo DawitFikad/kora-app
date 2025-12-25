@@ -94,36 +94,29 @@ export class PaymentController {
     /**
      * Handles the return redirect from Payment Providers.
      */
+    /**
+     * Handles the return redirect from Payment Providers.
+     */
     static async verifyCallback(req: Request, res: Response) {
         try {
             const { ref } = req.query;
+            const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
 
             if (!ref) {
-                res.status(400).send("<h1>Missing Payment Reference</h1>");
+                res.redirect(`${clientUrl}/payment/callback?status=error&message=Missing+Payment+Reference`);
                 return;
             }
 
             const result = await PaymentService.verifyPayment(ref as string);
 
             if (result.status === 'SUCCESS') {
-                res.send(`
-                    <div style="font-family: sans-serif; text-align: center; padding: 50px;">
-                        <h1 style="color: green;">Payment Successful!</h1>
-                        <p>Your ticket has been issued.</p>
-                        <p>You can close this window and return to the app.</p>
-                    </div>
-                `);
+                res.redirect(`${clientUrl}/payment/callback?status=success&ref=${ref}&purchaseId=${result.id}`);
             } else {
-                res.send(`
-                    <div style="font-family: sans-serif; text-align: center; padding: 50px;">
-                        <h1 style="color: red;">Payment Failed</h1>
-                        <p>Status: ${result.status}</p>
-                        <p>Reason: ${result.failureReason || 'Unknown error'}</p>
-                    </div>
-                `);
+                res.redirect(`${clientUrl}/payment/callback?status=failed&ref=${ref}&reason=${encodeURIComponent(result.failureReason || 'Verification failed')}&purchaseId=${result.id}`);
             }
         } catch (error: any) {
-            res.status(400).send(`<h1>Error</h1><p>${error.message}</p>`);
+            const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+            res.redirect(`${clientUrl}/payment/callback?status=error&message=${encodeURIComponent(error.message)}`);
         }
     }
 }

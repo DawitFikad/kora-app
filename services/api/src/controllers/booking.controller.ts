@@ -183,6 +183,25 @@ export class BookingController {
     }
 
     /**
+     * Get purchase details for payment page
+     */
+    static async getPurchase(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user!.userId;
+            const purchaseId = parseInt(req.params.purchaseId);
+
+            if (isNaN(purchaseId)) {
+                return res.status(400).json({ success: false, error: "Invalid purchase ID" });
+            }
+
+            const purchase = await BookingService.getPurchaseDetails(purchaseId, userId);
+            res.json({ success: true, data: purchase });
+        } catch (error: any) {
+            res.status(404).json({ success: false, error: error.message });
+        }
+    }
+
+    /**
      * Extend lock time for a pending reservation
      */
     static async extendLock(req: Request, res: Response) {
