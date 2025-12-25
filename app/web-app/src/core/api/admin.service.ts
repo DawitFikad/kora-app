@@ -3,6 +3,7 @@ import api from './client';
 export const AdminService = {
     // Organizer Management
     getPendingOrganizers: () => api.get('/profiles/admin/organizers?status=PENDING'),
+    getApprovedOrganizers: () => api.get('/profiles/admin/organizers?status=APPROVED'),
 
     reviewOrganizer: (id: number, status: 'APPROVED' | 'REJECTED', adminNote?: string) =>
         api.post(`/profiles/admin/organizers/${id}/review`, { status, adminNote }),
