@@ -100,7 +100,7 @@ export class AdminAnalyticsService {
             }
         });
 
-        return organizers.map(org => ({
+        return organizers.map((org: any) => ({
             id: org.id,
             name: org.organizationName,
             status: org.status,
@@ -108,5 +108,56 @@ export class AdminAnalyticsService {
             // Sum up successful purchase amounts related to this organizer's events
             // Note: This matches simple logic, for production we'd use better joins
         }));
+    }
+    static async getDetailedAnalytics() {
+        // 1. Sales by month (Last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        // Simple aggregation for now
+        const sales: any[] = await prisma.financialTransaction.findMany({
+            where: {
+                type: 'TICKET_PURCHASE',
+                status: 'SETTLED',
+                createdAt: { gte: sixMonthsAgo }
+            },
+            select: {
+                amount: true,
+                createdAt: true
+            }
+        });
+
+        // Group by month name (simple version)
+        const monthlyStats: Record<string, number> = {};
+        sales.forEach((s: any) => {
+            const month = s.createdAt.toLocaleString('default', { month: 'short' });
+            monthlyStats[month] = (monthlyStats[month] || 0) + Number(s.amount);
+        });
+
+        // 2. Sales by Category
+        const categorySales: any[] = await prisma.category.findMany({
+            include: {
+                events: {
+                    include: {
+                        transactions: {
+                            where: { type: 'TICKET_PURCHASE', status: 'SETTLED' },
+                            select: { amount: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        const categoryDistribution = categorySales.map((cat: any) => {
+            const total = cat.events.reduce((sum: number, evt: any) => {
+                return sum + evt.transactions.reduce((s: number, tx: any) => s + Number(tx.amount), 0);
+            }, 0);
+            return { name: cat.name, value: total };
+        });
+
+        return {
+            monthlySales: Object.entries(monthlyStats).map(([name, amount]) => ({ name, amount })),
+            categoryDistribution
+        };
     }
 }

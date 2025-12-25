@@ -12,6 +12,15 @@ export class AdminController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    static async getDetailedStats(req: Request, res: Response) {
+        try {
+            const stats = await AdminAnalyticsService.getDetailedAnalytics();
+            res.json(stats);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
     // Get all users with optional filters
     static async getAllUsers(req: Request, res: Response) {
         try {

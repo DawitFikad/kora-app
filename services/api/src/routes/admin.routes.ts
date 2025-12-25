@@ -14,6 +14,7 @@ router.post("/create-admin", AdminController.createAdmin);
 
 // Get platform stats
 router.get("/stats", authenticate, authorize([Role.ADMIN]), AdminController.getStats);
+router.get("/analytics", authenticate, authorize([Role.ADMIN]), AdminController.getDetailedStats);
 
 // Get all users (with optional filters)
 router.get("/users", authenticate, authorize([Role.ADMIN]), AdminController.getAllUsers);
