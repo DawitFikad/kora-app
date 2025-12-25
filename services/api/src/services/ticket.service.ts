@@ -31,10 +31,16 @@ export class TicketService {
 
         const ticketsData = [];
         const secret = process.env.JWT_SECRET || "et-ticket-qr-secret";
+        const generatedCodes: string[] = [];
 
         for (let i = 0; i < quantity; i++) {
             const seatNumber = seatNumbers ? seatNumbers[i] : null;
             const ticketId = crypto.randomUUID();
+            // Generate short human-readable code (Backup OTP)
+            // Format: ET-XXXX (Alphanumeric)
+            const randomSuffix = crypto.randomBytes(3).toString('hex').toUpperCase();
+            const ticketCode = `ET-${randomSuffix}`;
+            generatedCodes.push(ticketCode);
 
             // 15. QR Payload (Encrypted / Signed)
             // Requirements: Ticket ID, Event ID, Seat ID (nullable), Expiry, Nonce
@@ -42,6 +48,7 @@ export class TicketService {
                 tid: ticketId,
                 eid: eventId,
                 sid: seatNumber,
+                code: ticketCode,
                 nonce: crypto.randomBytes(16).toString('hex'),
                 iat: Math.floor(Date.now() / 1000)
             };
@@ -50,6 +57,7 @@ export class TicketService {
 
             ticketsData.push({
                 id: ticketId,
+                ticketCode, // Override default cuid
                 qrPayload,
                 status: TicketStatus.VALID,
                 userId: purchase.userId,
@@ -74,7 +82,21 @@ export class TicketService {
             await LockService.releaseCapacity(eventId, tierId, purchase.userId);
         }
 
-        return { purchaseId: purchase.id, ticketCount: quantity };
+        // 3. Send Confirmation SMS
+        try {
+            const { NotificationService } = require("./notification.service");
+            const { NotificationChannel } = require("@prisma/client");
+
+            await NotificationService.notifyUser(purchase.userId, {
+                title: "Tickets Issued",
+                content: `Your tickets are ready! Codes: ${generatedCodes.join(', ')}. Use these codes or the QR in app for entry.`,
+                channels: [NotificationChannel.SMS]
+            });
+        } catch (error) {
+            console.error("Failed to send ticket confirmation SMS:", error);
+        }
+
+        return { purchaseId: purchase.id, ticketCount: quantity, codes: generatedCodes };
     }
 
     /**
