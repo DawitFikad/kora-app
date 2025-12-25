@@ -11,7 +11,7 @@ export class TicketingController {
     static async reserve(req: Request, res: Response) {
         try {
             const { eventId, tierId, quantity, seatNumbers, paymentMethod } = req.body;
-            const userId = req.user!.userId;
+            const userId = (req as any).user!.userId;
 
             const event = await prisma.event.findUnique({
                 where: { id: eventId },
@@ -78,7 +78,7 @@ export class TicketingController {
      */
     static async getMyTickets(req: Request, res: Response) {
         try {
-            const userId = req.user!.userId;
+            const userId = (req as any).user!.userId;
             const tickets = await TicketService.getUserTickets(userId);
             res.json(tickets);
         } catch (error: any) {

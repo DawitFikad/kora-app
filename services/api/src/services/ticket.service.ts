@@ -124,7 +124,7 @@ export class TicketService {
         return prisma.ticket.update({
             where: { id: ticketId },
             data: {
-                status: TicketStatus.CANCELLED,
+                status: "CANCELLED" as any,
                 // We could log the reason in an audit table later
             }
         });

@@ -62,15 +62,17 @@ const AdminDashboard = () => {
     };
 
     const navItems = [
-        { icon: Layout, label: 'Dashboard' as AdminTab },
+        { icon: Layout, label: 'Dashboard' as AdminTab, display: 'Dashboard Overview' },
         { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined },
         { icon: Calendar, label: 'Event Approvals' as AdminTab, count: eventPendingCount > 0 ? eventPendingCount : undefined },
-        { icon: BarChart3, label: 'Commissions' as AdminTab },
-        { icon: DollarSign, label: 'GMV' as AdminTab },
-        { icon: ShieldAlert, label: 'Fraud' as AdminTab },
-        { icon: FileText, label: 'Content' as AdminTab },
-        { icon: Activity, label: 'Analytics' as AdminTab },
+        { icon: BarChart3, label: 'Commissions' as AdminTab, display: 'Commissions & Fees' },
+        { icon: DollarSign, label: 'GMV' as AdminTab, display: 'GMV & Payouts' },
+        { icon: ShieldAlert, label: 'Fraud' as AdminTab, display: 'Fraud Monitoring' },
+        { icon: FileText, label: 'Content' as AdminTab, display: 'Content Management' },
+        { icon: Activity, label: 'Analytics' as AdminTab, display: 'Detailed Analytics' },
     ];
+
+    const currentNavItem = navItems.find(n => n.label === activeTab) || (activeTab === 'Settings' ? { display: 'Account Settings' } : null);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -109,7 +111,7 @@ const AdminDashboard = () => {
                             onClick={() => setActiveTab(item.label)}
                         >
                             <item.icon size={18} />
-                            <span style={{ fontSize: '0.9rem' }}>{item.label === 'Commissions' ? 'Commissions & Fees' : item.label === 'GMV' ? 'GMV & Payouts' : item.label === 'Fraud' ? 'Fraud Monitoring' : item.label === 'Content' ? 'Content Management' : item.label}</span>
+                            <span style={{ fontSize: '0.9rem' }}>{item.display || item.label}</span>
                             {item.count && (
                                 <span style={{ marginLeft: 'auto', background: activeTab === item.label ? 'rgba(255,255,255,0.2)' : 'rgba(59, 130, 246, 0.1)', color: activeTab === item.label ? 'white' : '#3B82F6', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
                                     {item.count}
@@ -134,7 +136,7 @@ const AdminDashboard = () => {
             {/* 🔵 Admin Main Content */}
             <main className="main-content" style={{ padding: '32px 40px' }}>
                 <header className="top-header" style={{ marginBottom: '32px' }}>
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{activeTab === 'Dashboard' ? 'Dashboard Overview' : activeTab}</h2>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{(currentNavItem as any)?.display || activeTab}</h2>
 
                     <div className="search-pill" style={{ width: '400px', background: '#12171F' }}>
                         <Search size={18} color="#57606A" />
