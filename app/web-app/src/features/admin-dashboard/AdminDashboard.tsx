@@ -37,6 +37,7 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState<AdminTab>('Dashboard');
     const [pendingCount, setPendingCount] = useState(0);
     const [eventPendingCount, setEventPendingCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     useEffect(() => {
         const fetchCounts = async () => {
@@ -140,14 +141,35 @@ const AdminDashboard = () => {
 
                     <div className="search-pill" style={{ width: '400px', background: '#12171F' }}>
                         <Search size={18} color="#57606A" />
-                        <input type="text" placeholder="Search event ID, user, or email..." style={{ fontSize: '0.85rem' }} />
+                        <input
+                            type="text"
+                            placeholder="Search event ID, user, or email..."
+                            style={{ fontSize: '0.85rem' }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    alert(`Searching for: ${e.currentTarget.value}`);
+                                    // Global search logic could be integrated here
+                                }
+                            }}
+                        />
                     </div>
 
                     <div className="header-actions">
-                        <div className="action-icon" style={{ background: 'rgba(255,255,255,0.03)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div
+                            className="action-icon"
+                            onClick={() => alert('No new notifications')}
+                            style={{ background: 'rgba(255,255,255,0.03)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                        >
                             <Bell size={18} />
+                            {(pendingCount + eventPendingCount) > 0 && (
+                                <span style={{ position: 'absolute', top: 0, right: 0, width: '10px', height: '10px', background: '#EF4444', borderRadius: '50%', border: '2px solid #0B0E14' }} />
+                            )}
                         </div>
-                        <div className="action-icon" style={{ background: 'rgba(255,255,255,0.03)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div
+                            className="action-icon"
+                            onClick={() => setActiveTab('Settings')}
+                            style={{ background: 'rgba(255,255,255,0.03)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                        >
                             <Settings size={18} />
                         </div>
                     </div>
