@@ -154,10 +154,10 @@ const AdminDashboard = () => {
                         />
                     </div>
 
-                    <div className="header-actions">
+                    <div className="header-actions" style={{ position: 'relative' }}>
                         <div
                             className="action-icon"
-                            onClick={() => alert('No new notifications')}
+                            onClick={() => setShowNotifications(!showNotifications)}
                             style={{ background: 'rgba(255,255,255,0.03)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                         >
                             <Bell size={18} />
@@ -165,6 +165,75 @@ const AdminDashboard = () => {
                                 <span style={{ position: 'absolute', top: 0, right: 0, width: '10px', height: '10px', background: '#EF4444', borderRadius: '50%', border: '2px solid #0B0E14' }} />
                             )}
                         </div>
+
+                        <AnimatePresence>
+                            {showNotifications && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    style={{
+                                        position: 'absolute', top: '50px', right: 0, width: '320px',
+                                        background: '#161B22', border: '1px solid var(--border)',
+                                        borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                                        zIndex: 1000, overflow: 'hidden'
+                                    }}
+                                >
+                                    <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 800 }}>Notifications</h4>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{pendingCount + eventPendingCount} Pending</span>
+                                    </div>
+                                    <div style={{ padding: '8px' }}>
+                                        {pendingCount > 0 && (
+                                            <div
+                                                onClick={() => { setActiveTab('Organizer Approvals'); setShowNotifications(false); }}
+                                                style={{ padding: '12px', borderRadius: '12px', cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'center', transition: 'background 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <Users size={16} color="#3B82F6" />
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>Organizer Review</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{pendingCount} applications waiting</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {eventPendingCount > 0 && (
+                                            <div
+                                                onClick={() => { setActiveTab('Event Approvals'); setShowNotifications(false); }}
+                                                style={{ padding: '12px', borderRadius: '12px', cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'center', transition: 'background 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <Calendar size={16} color="#F59E0B" />
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>Event Moderation</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{eventPendingCount} events pending</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {pendingCount === 0 && eventPendingCount === 0 && (
+                                            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                                <p style={{ fontSize: '0.85rem' }}>All caught up! 🎉</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
+                                        <button
+                                            onClick={() => setShowNotifications(false)}
+                                            style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                                        >
+                                            Dismiss All
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         <div
                             className="action-icon"
                             onClick={() => setActiveTab('Settings')}
