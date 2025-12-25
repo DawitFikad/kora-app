@@ -8,7 +8,7 @@ export const AuthService = {
     verifyOtp: (phoneNumber: string, otp: string) => api.post('/auth/otp/verify', { phoneNumber, otp }).then(res => res as any),
 
     // Phase 3: Registration (only if needed after verification)
-    registerOrganizer: (data: { phoneNumber: string, email: string, name: string }) =>
+    registerOrganizer: (data: { phoneNumber: string, email?: string, name: string }) =>
         api.post('/auth/organizer/register', data).then(res => res as any),
 
     // Token Refresh

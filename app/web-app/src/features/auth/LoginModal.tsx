@@ -203,7 +203,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                                 </div>
                             </div>
                             <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Email Address</label>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Email Address <span style={{ fontWeight: 400, opacity: 0.7 }}>(Optional)</span></label>
                                 <div style={{ position: 'relative' }}>
                                     <Mail size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                                     <input
@@ -211,7 +211,6 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                                         placeholder="contact@org.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        required
                                         style={{
                                             width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
                                             padding: '16px 16px 16px 48px', borderRadius: '14px', color: 'white'

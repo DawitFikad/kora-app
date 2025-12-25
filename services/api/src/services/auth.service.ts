@@ -68,7 +68,7 @@ export class AuthService {
         return { user, accessToken, refreshToken };
     }
 
-    static async registerOrganizer(data: { phoneNumber: string; email: string; name: string }) {
+    static async registerOrganizer(data: { phoneNumber: string; email?: string | null; name: string }) {
         // TODO: Add OTP verification step for registration too, or assume verified before calling this?
         // The plan said "Verify OTP first". 
         // For simplicity in this step, let's assume the client verifies OTP and then calls register within a short window, 
@@ -85,6 +85,8 @@ export class AuthService {
 
         // Let's assume `registerOrganizer` creates the Pending user.
 
+        const email = data.email && data.email.trim() !== '' ? data.email.trim() : null;
+
         const existingUser = await prisma.user.findUnique({
             where: { phoneNumber: data.phoneNumber },
         });
@@ -96,7 +98,7 @@ export class AuthService {
         const user = await prisma.user.create({
             data: {
                 phoneNumber: data.phoneNumber,
-                email: data.email,
+                email: email,
                 role: Role.ORGANIZER,
                 status: AccountStatus.PENDING,
                 profile: {
@@ -108,7 +110,7 @@ export class AuthService {
                     create: {
                         organizationName: data.name,
                         contactPhone: data.phoneNumber,
-                        contactEmail: data.email,
+                        contactEmail: email,
                         city: "TBD", // To be updated by organizer
                         payoutDetails: "TBD", // To be updated by organizer
                         status: "PENDING",
