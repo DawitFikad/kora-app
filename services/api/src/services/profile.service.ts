@@ -75,8 +75,9 @@ export class ProfileService {
 
     // --- Admin Actions ---
 
-    static async listAllOrganizers() {
+    static async listAllOrganizers(status?: OrganizerStatus) {
         return prisma.organizerProfile.findMany({
+            where: status ? { status } : undefined,
             include: {
                 user: {
                     select: {
@@ -90,6 +91,7 @@ export class ProfileService {
     }
 
     static async reviewOrganizer(organizerProfileId: number, status: OrganizerStatus, adminNote?: string) {
+        console.log(`[AdminReview] ID: ${organizerProfileId}, New Status: ${status}, Note: ${adminNote}`);
         const organizer = await prisma.organizerProfile.findUnique({
             where: { id: organizerProfileId }
         });

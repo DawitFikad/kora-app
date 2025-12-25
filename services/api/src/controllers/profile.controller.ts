@@ -52,7 +52,8 @@ export class ProfileController {
 
     static async listOrganizers(req: Request, res: Response) {
         try {
-            const organizers = await ProfileService.listAllOrganizers();
+            const { status } = req.query;
+            const organizers = await ProfileService.listAllOrganizers(status as OrganizerStatus);
             res.json(organizers);
         } catch (error: any) {
             res.status(500).json({ error: error.message });
