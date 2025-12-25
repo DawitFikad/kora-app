@@ -1,3 +1,3 @@
-import redis from '../../utils/redis';
+import redis from '../utils/redis';
 
 export default redis;

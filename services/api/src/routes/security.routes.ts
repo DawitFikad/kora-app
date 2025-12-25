@@ -7,6 +7,7 @@ import { Role } from "@prisma/client";
 const router = Router();
 
 // --- Fraud Admin Routes ---
+router.get("/fraud/metrics", authenticate, authorize([Role.ADMIN]), FraudController.getSecurityMetrics);
 router.get("/fraud/alerts", authenticate, authorize([Role.ADMIN]), FraudController.listAlerts);
 router.get("/fraud/alerts/:id", authenticate, authorize([Role.ADMIN]), FraudController.getAlertDetails);
 router.post("/fraud/alerts/:id/resolve", authenticate, authorize([Role.ADMIN]), FraudController.resolveAlert);

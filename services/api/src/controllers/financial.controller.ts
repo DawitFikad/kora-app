@@ -9,37 +9,10 @@ export class FinancialController {
      */
     static async getAdminDashboard(req: Request, res: Response) {
         try {
-            // GMV (Total Sales)
-            const gmv = await prisma.financialTransaction.aggregate({
-                where: { type: "TICKET_PURCHASE", status: { in: ["SETTLED", "RELEASED", "PAID_OUT"] } },
-                _sum: { amount: true }
-            });
-
-            // Platform Revenue (Total Fees)
-            const revenue = await prisma.financialTransaction.aggregate({
-                where: { type: "TICKET_PURCHASE", status: { in: ["SETTLED", "RELEASED", "PAID_OUT"] } },
-                _sum: { feeAmount: true }
-            });
-
-            // Organizer Liabilities (Pending + Available in wallets)
-            const liabilities = await prisma.organizerWallet.aggregate({
-                _sum: { pendingBalance: true, availableBalance: true }
-            });
-
-            // Payout Statistics
-            const payouts = await prisma.payoutBatch.aggregate({
-                where: { status: "PAID_OUT" },
-                _sum: { amount: true }
-            });
-
+            const metrics = await FinancialService.getFinancialMetrics();
             res.json({
                 success: true,
-                data: {
-                    totalGMV: gmv._sum.amount || 0,
-                    platformRevenue: revenue._sum.feeAmount || 0,
-                    totalLiabilities: (liabilities._sum.pendingBalance || new Prisma.Decimal(0)).add(liabilities._sum.availableBalance || new Prisma.Decimal(0)),
-                    totalPaidOut: payouts._sum.amount || 0
-                }
+                data: metrics
             });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });

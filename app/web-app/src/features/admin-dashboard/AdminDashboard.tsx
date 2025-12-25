@@ -35,12 +35,17 @@ type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commi
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState<AdminTab>('Dashboard');
     const [pendingCount, setPendingCount] = useState(0);
+    const [eventPendingCount, setEventPendingCount] = useState(0);
 
     useEffect(() => {
         const fetchCounts = async () => {
             try {
-                const orgs: any = await AdminService.getPendingOrganizers();
+                const [orgs, stats]: any = await Promise.all([
+                    AdminService.getPendingOrganizers(),
+                    AdminService.getStats()
+                ]);
                 setPendingCount(orgs.filter((o: any) => o.status === 'PENDING').length);
+                setEventPendingCount(stats.kpis.pendingEvents);
             } catch (err) {
                 console.error('Failed to fetch admin counts', err);
             }
@@ -58,7 +63,7 @@ const AdminDashboard = () => {
     const navItems = [
         { icon: Layout, label: 'Dashboard' as AdminTab },
         { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined },
-        { icon: Calendar, label: 'Event Approvals' as AdminTab, count: 34 },
+        { icon: Calendar, label: 'Event Approvals' as AdminTab, count: eventPendingCount > 0 ? eventPendingCount : undefined },
         { icon: BarChart3, label: 'Commissions' as AdminTab },
         { icon: DollarSign, label: 'GMV' as AdminTab },
         { icon: ShieldAlert, label: 'Fraud' as AdminTab },

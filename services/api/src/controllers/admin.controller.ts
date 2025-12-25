@@ -1,8 +1,17 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { Role, AccountStatus, OrganizerStatus } from "@prisma/client";
+import { AdminAnalyticsService } from "../services/admin-analytics.service";
 
 export class AdminController {
+    static async getStats(req: Request, res: Response) {
+        try {
+            const stats = await AdminAnalyticsService.getPlatformStats();
+            res.json(stats);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
     // Get all users with optional filters
     static async getAllUsers(req: Request, res: Response) {
         try {

@@ -76,10 +76,10 @@ export class ValidationService {
 
             // Trigger Background tasks AFTER transaction commit
             if (transactionResult.log) {
-                FraudService.analyzeScan(transactionResult.log.id).catch(err => console.error("Fraud analysis failed:", err));
+                FraudService.analyzeScan(transactionResult.log.id).catch((err: any) => console.error("Fraud analysis failed:", err));
 
                 const status = transactionResult.result.success ? "SUCCESS" as const : "REJECTED" as const;
-                AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch(err => console.error("Analytics failed:", err));
+                AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch((err: any) => console.error("Analytics failed:", err));
             }
 
             return transactionResult.result;
@@ -153,9 +153,9 @@ export class ValidationService {
 
                 // Background tasks after commit
                 if (syncResult.log) {
-                    FraudService.analyzeScan(syncResult.log.id).catch(err => console.error("Fraud analysis failed:", err));
+                    FraudService.analyzeScan(syncResult.log.id).catch((err: any) => console.error("Fraud analysis failed:", err));
                     const status = syncResult.res.status === "SYNCED" ? "SUCCESS" as const : "REJECTED" as const;
-                    AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch(err => console.error("Analytics failed:", err));
+                    AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch((err: any) => console.error("Analytics failed:", err));
                 }
 
                 results.push(syncResult.res);

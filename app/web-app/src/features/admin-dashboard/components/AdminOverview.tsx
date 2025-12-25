@@ -11,7 +11,6 @@ import {
     ShieldAlert,
     Loader2
 } from 'lucide-react';
-import { CreditCard } from './CustomIcons';
 import { AdminService } from '../../../core/api/admin.service';
 
 export const AdminOverview = () => {
@@ -19,21 +18,33 @@ export const AdminOverview = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState({
         pendingOrganizers: 0,
-        pendingEvents: 34, // Mock for now
-        totalGMV: 1240500,
-        totalPayouts: 980000
+        pendingEvents: 0,
+        totalGMV: 0,
+        totalPayouts: 0,
+        platformCommission: 0,
+        totalTicketsSold: 0
     });
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 setIsLoading(true);
-                const orgs: any = await AdminService.getPendingOrganizers();
-                setOrganizers(orgs.slice(0, 5)); // Just show recent 5 in table
-                setStats(prev => ({
-                    ...prev,
-                    pendingOrganizers: orgs.filter((o: any) => o.status === 'PENDING').length
-                }));
+                const [orgsResponse, statsResponse]: any = await Promise.all([
+                    AdminService.getPendingOrganizers(),
+                    AdminService.getStats()
+                ]);
+
+                setOrganizers(orgsResponse.slice(0, 5));
+                const kpis = statsResponse.kpis;
+
+                setStats({
+                    pendingOrganizers: kpis.pendingOrganizers,
+                    pendingEvents: kpis.pendingEvents,
+                    totalGMV: kpis.totalGMV,
+                    totalPayouts: 0, // Payout logic needed later
+                    platformCommission: kpis.platformCommission,
+                    totalTicketsSold: kpis.totalTicketsSold
+                });
             } catch (err) {
                 console.error('Failed to fetch dashboard data', err);
             } finally {
@@ -82,7 +93,7 @@ export const AdminOverview = () => {
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total GMV</p>
                         <DollarSign size={18} color="var(--text-muted)" />
                     </div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>${stats.totalGMV.toLocaleString()}</h2>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>ETB {stats.totalGMV.toLocaleString()}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10B981', fontSize: '0.8rem', fontWeight: 700 }}>
                         <TrendingUp size={14} /> +12% vs last month
                     </div>
@@ -90,11 +101,11 @@ export const AdminOverview = () => {
 
                 <div className="admin-stat-card-main">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Payouts</p>
-                        <CreditCard size={18} color="var(--text-muted)" />
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Platform Commission</p>
+                        <DollarSign size={18} color="#10B981" />
                     </div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>${stats.totalPayouts.toLocaleString()}</h2>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>Net disbursed</p>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>ETB {stats.platformCommission.toLocaleString()}</h2>
+                    <p style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 700 }}>Total Earned</p>
                 </div>
 
                 <div className="admin-stat-card-main">

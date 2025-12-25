@@ -1,8 +1,18 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { RiskLevel } from "@prisma/client";
+import { FraudService } from "../services/fraud.service";
 
 export class FraudController {
+    static async getSecurityMetrics(req: Request, res: Response) {
+        try {
+            const metrics = await FraudService.getSecurityMetrics();
+            res.json(metrics);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     static async listAlerts(req: Request, res: Response) {
         try {
             const alerts = await prisma.fraudAlert.findMany({
