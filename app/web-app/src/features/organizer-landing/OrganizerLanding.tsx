@@ -94,8 +94,13 @@ const OrganizerLanding = () => {
 
     useEffect(() => {
         if (user) {
-            if (user.role === 'ADMIN') navigate('/admin');
-            else navigate('/dashboard');
+            console.log('Landing: User logged in, redirecting based on role:', user.role);
+            if (user.role === 'ADMIN') {
+                navigate('/admin');
+            } else if (user.role === 'ORGANIZER') {
+                navigate('/dashboard');
+            }
+            // Regular USERS stay on landing or go to a different profile page
         }
     }, [user, navigate]);
 

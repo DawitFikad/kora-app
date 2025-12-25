@@ -1,17 +1,12 @@
 import api from './client';
 
 export const AdminService = {
-    // Organizer Approvals
-    getPendingOrganizers: () => api.get('/admin/organizers/pending'),
-    approveOrganizer: (id: string) => api.patch(`/admin/organizers/${id}/approve`),
-    rejectOrganizer: (id: string, reason: string) => api.patch(`/admin/organizers/${id}/reject`, { reason }),
+    // Organizer Management
+    getPendingOrganizers: () => api.get('/profiles/admin/organizers'),
 
-    // Event Approvals
-    getPendingEvents: () => api.get('/admin/events/pending'),
-    approveEvent: (id: string) => api.patch(`/admin/events/${id}/approve`),
-    rejectEvent: (id: string, reason: string) => api.patch(`/admin/events/${id}/reject`, { reason }),
+    reviewOrganizer: (id: number, status: 'APPROVED' | 'REJECTED', adminNote?: string) =>
+        api.post(`/profiles/admin/organizers/${id}/review`, { status, adminNote }),
 
-    // Analytics
-    getPlatformStats: () => api.get('/admin/stats/overview'),
-    getFraudAlerts: () => api.get('/admin/fraud/alerts'),
+    // Potential future endpoints
+    getStats: () => api.get('/admin/stats'), // We might need to implement this
 };

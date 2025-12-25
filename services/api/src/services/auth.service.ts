@@ -48,10 +48,7 @@ export class AuthService {
             });
         }
 
-        if (user.status !== AccountStatus.ACTIVE) {
-            if (user.status === AccountStatus.PENDING) {
-                throw new Error("Account is pending approval");
-            }
+        if (user.status === AccountStatus.SUSPENDED) {
             throw new Error("Account is suspended");
         }
 
@@ -120,7 +117,20 @@ export class AuthService {
             },
         });
 
-        return { message: "Organizer registration successful. Pending approval." };
+        // Generate tokens
+        const accessToken = this.generateAccessToken(user.id, user.role);
+        const refreshToken = this.generateRefreshToken(user.id);
+
+        // Store refresh token
+        await prisma.refreshToken.create({
+            data: {
+                token: refreshToken,
+                userId: user.id,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            },
+        });
+
+        return { user, accessToken, refreshToken };
     }
 
     static async refreshAccessToken(refreshToken: string) {

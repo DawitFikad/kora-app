@@ -21,10 +21,12 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     }
 
     if (!user) {
+        console.log('ProtectRoute: No user, redirecting');
         return <Navigate to="/" replace />;
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
+        console.log('ProtectRoute: Role mismatch', { userRole: user.role, allowedRoles });
         return <Navigate to="/" replace />;
     }
 

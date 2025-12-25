@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { AuthService } from '../../core/api/auth.service';
+import { AdminService } from '../../core/api/admin.service';
 import {
     BarChart3,
     Layout,
@@ -32,10 +34,30 @@ type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commi
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState<AdminTab>('Dashboard');
+    const [pendingCount, setPendingCount] = useState(0);
+
+    useEffect(() => {
+        const fetchCounts = async () => {
+            try {
+                const orgs: any = await AdminService.getPendingOrganizers();
+                setPendingCount(orgs.filter((o: any) => o.status === 'PENDING').length);
+            } catch (err) {
+                console.error('Failed to fetch admin counts', err);
+            }
+        };
+        fetchCounts();
+        // Refresh every 30s
+        const interval = setInterval(fetchCounts, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleLogout = () => {
+        AuthService.logout();
+    };
 
     const navItems = [
         { icon: Layout, label: 'Dashboard' as AdminTab },
-        { icon: Users, label: 'Organizer Approvals' as AdminTab, count: 12 },
+        { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined },
         { icon: Calendar, label: 'Event Approvals' as AdminTab, count: 34 },
         { icon: BarChart3, label: 'Commissions' as AdminTab },
         { icon: DollarSign, label: 'GMV' as AdminTab },
@@ -96,7 +118,7 @@ const AdminDashboard = () => {
                         <Settings size={18} />
                         <span>Settings</span>
                     </div>
-                    <div className="nav-item" style={{ color: '#EF4444' }}>
+                    <div className="nav-item" style={{ color: '#EF4444' }} onClick={handleLogout}>
                         <LogOut size={18} />
                         <span>Logout</span>
                     </div>

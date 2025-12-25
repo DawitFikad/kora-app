@@ -4,8 +4,8 @@ import { AuthController } from "../controllers/auth.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 5, // Limit each IP to 5 requests per window (strict for OTP)
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
     message: { error: "Too many authentication attempts, please try again in 15 minutes." }
 });
 
