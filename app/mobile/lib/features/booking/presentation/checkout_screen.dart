@@ -138,6 +138,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       }
 
     } catch (e) {
+      debugPrint('Payment Process error: $e');
       if (mounted) {
         String errorMessage = e.toString().replaceAll('Exception: ', '');
         
@@ -177,9 +178,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Payment Failed: $errorMessage"), 
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
+            content: Text(errorMessage), 
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 10),
             action: SnackBarAction(label: 'Dismiss', textColor: Colors.white, onPressed: () {}),
           ),
         );

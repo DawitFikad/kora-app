@@ -45,10 +45,14 @@ class AuthService {
     await _storage.clearAuth();
   }
 
-  String _handleError(DioException e) {
-    if (e.response != null) {
-      return e.response?.data['error'] ?? 'Server Error';
+  Exception _handleError(DioException e) {
+    final code = e.response?.statusCode;
+    final data = e.response?.data;
+    String? serverMessage;
+    if (data is Map) {
+      serverMessage = data['error']?.toString() ?? data['message']?.toString();
     }
-    return 'Connection Error';
+    final msg = serverMessage ?? e.message;
+    return Exception('Auth Error [$code]: $msg');
   }
 }

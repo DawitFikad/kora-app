@@ -35,6 +35,15 @@ final dioProvider = Provider<Dio>((ref) {
       return handler.next(options);
     },
   ));
+
+  // Add logging for easier debugging of 'DETAILS'
+  dio.interceptors.add(LogInterceptor(
+    requestHeader: true,
+    requestBody: true,
+    responseHeader: false,
+    responseBody: true,
+    error: true,
+  ));
   
   return dio;
 });
