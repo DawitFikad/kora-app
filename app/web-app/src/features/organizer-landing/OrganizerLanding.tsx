@@ -41,8 +41,38 @@ const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
                 <div className="desktop-nav" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
                     <a href="#how-it-works" className="nav-link">How it works</a>
                     <a href="#features" className="nav-link">Features</a>
-                    <button onClick={onAuthClick} className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem' }}>Login</button>
-                    <button onClick={onAuthClick} className="btn btn-primary" style={{ padding: '0.5rem 1.5rem' }}>Start Selling</button>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button 
+                            onClick={onAuthClick} 
+                            style={{
+                                padding: '0.5rem 1.5rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'transparent',
+                                color: 'white',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            Organizer Login
+                        </button>
+                        <button 
+                            onClick={onAuthClick}
+                            style={{
+                                padding: '0.5rem 1.5rem',
+                                borderRadius: '8px',
+                                border: 'none',
+                                background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)',
+                                color: 'white',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            Create Organizer Account
+                        </button>
+                    </div>
                 </div>
 
                 {/* Mobile Toggle */}
@@ -67,9 +97,54 @@ const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
                         <div style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem 2rem', gap: '1.5rem' }}>
                             <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ color: 'white', textDecoration: 'none', fontWeight: 700 }}>How it works</a>
                             <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: 'white', textDecoration: 'none', fontWeight: 700 }}>Features</a>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <button onClick={() => { onAuthClick(); setMobileMenuOpen(false); }} className="btn btn-secondary">Login</button>
-                                <button onClick={() => { onAuthClick(); setMobileMenuOpen(false); }} className="btn btn-primary">Join</button>
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                <button 
+                                    onClick={() => { onAuthClick(); setMobileMenuOpen(false); }} 
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.7rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        background: 'transparent',
+                                        color: 'white',
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap',
+                                        '&:hover': {
+                                            background: 'rgba(255, 255, 255, 0.05)',
+                                            borderColor: 'rgba(255, 255, 255, 0.3)'
+                                        }
+                                    }}
+                                >
+                                    Organizer Login
+                                </button>
+                                <button 
+                                    onClick={() => { onAuthClick(); setMobileMenuOpen(false); }} 
+                                    style={{
+                                        padding: '0.6rem 1.2rem',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)',
+                                        color: 'white',
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        boxShadow: '0 2px 10px rgba(139, 92, 246, 0.3)',
+                                        whiteSpace: 'nowrap',
+                                        '&:hover': {
+                                            transform: 'translateY(-1px)',
+                                            boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)'
+                                        },
+                                        '&:active': {
+                                            transform: 'translateY(0)'
+                                        }
+                                    }}
+                                >
+                                    Create Organizer Account
+                                </button>
                             </div>
                         </div>
                     </motion.div>
@@ -339,12 +414,49 @@ const OrganizerLanding = () => {
                             Built for Ethiopian events — from concerts and conferences to sports and church gatherings. Scale your reach effortlessly with our industry-leading tools.
                         </p>
                         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-primary" style={{ padding: '1.25rem 2.5rem' }}>
-                                Create Organizer Account <ArrowRight size={20} />
-                            </button>
-                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-secondary" style={{ padding: '1.25rem 2.5rem' }}>
+                            <motion.button 
+                                onClick={() => setIsLoginOpen(true)}
+                                whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(139, 92, 246, 0.4)' }}
+                                whileTap={{ scale: 0.98 }}
+                                style={{
+                                    padding: '1.1rem 2.5rem',
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    fontSize: '1.1rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
+                                    transition: 'all 0.3s ease',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                <span>Create Organizer Account</span>
+                                <ArrowRight size={20} />
+                            </motion.button>
+                            <motion.button 
+                                onClick={() => setIsLoginOpen(true)}
+                                whileHover={{ background: 'rgba(255, 255, 255, 0.1)' }}
+                                whileTap={{ scale: 0.98 }}
+                                style={{
+                                    padding: '1.1rem 2.5rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    fontSize: '1.1rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
                                 Organizer Login
-                            </button>
+                            </motion.button>
                         </div>
                     </motion.div>
                 </div>

@@ -1,16 +1,14 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'core/providers.dart';
-import 'core/router/app_router.dart';
 import 'core/storage/local_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
-  
+
   final localStorage = await LocalStorage.init();
 
   runApp(
@@ -19,9 +17,7 @@ void main() async {
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
       child: ProviderScope(
-        overrides: [
-          localStorageProvider.overrideWithValue(localStorage),
-        ],
+        overrides: [localStorageProvider.overrideWithValue(localStorage)],
         child: const EtTicketApp(),
       ),
     ),
