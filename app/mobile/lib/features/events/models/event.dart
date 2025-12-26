@@ -1,3 +1,7 @@
+import 'package:mobile/features/events/models/ticket_tier.dart';
+import 'package:mobile/features/events/models/category.dart';
+import 'package:mobile/features/events/models/city.dart';
+
 class Event {
   final int id;
   final String title;
@@ -5,6 +9,12 @@ class Event {
   final String venue;
   final String dateTime;
   final String? coverImage;
+  final bool featured;
+  
+  // Relations
+  final List<TicketTier> tiers;
+  final Category? category;
+  final City? city;
 
   Event({
     required this.id,
@@ -13,6 +23,10 @@ class Event {
     required this.venue,
     required this.dateTime,
     this.coverImage,
+    this.featured = false,
+    this.tiers = const [],
+    this.category,
+    this.city,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -23,6 +37,12 @@ class Event {
       venue: json['venue'],
       dateTime: json['dateTime'],
       coverImage: json['coverImage'],
+      featured: json['featured'] ?? false,
+      tiers: (json['tiers'] as List<dynamic>?)
+          ?.map((e) => TicketTier.fromJson(e))
+          .toList() ?? [],
+      category: json['category'] != null ? Category.fromJson(json['category']) : null,
+      city: json['city'] != null ? City.fromJson(json['city']) : null,
     );
   }
 }

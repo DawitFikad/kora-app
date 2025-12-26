@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/features/events/models/event.dart';
+import 'package:mobile/features/events/models/ticket_tier.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Event event;
@@ -12,30 +13,37 @@ class EventDetailsScreen extends StatefulWidget {
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
-  final Map<String, int> _ticketQuantities = {
-    'General Admission': 0,
-    'VIP Experience': 0,
-    'Group Bundle (4+)': 0,
-    'Super Fan Pit': 0,
-  };
+  // Store quantities by TicketTier ID
+  final Map<int, int> _ticketQuantities = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize quantities to 0
+    for (var tier in widget.event.tiers) {
+      _ticketQuantities[tier.id] = 0;
+    }
+  }
 
   double _calculateTotal() {
     double total = 0;
-    total += (_ticketQuantities['General Admission'] ?? 0) * 850;
-    total += (_ticketQuantities['VIP Experience'] ?? 0) * 2500;
-    total += (_ticketQuantities['Group Bundle (4+)'] ?? 0) * 750;
-    total += (_ticketQuantities['Super Fan Pit'] ?? 0) * 5000;
+    for (var tier in widget.event.tiers) {
+      total += (_ticketQuantities[tier.id] ?? 0) * tier.price;
+    }
     return total;
   }
 
   int _totalTickets() {
-    return _ticketQuantities.values.reduce((a, b) => a + b);
+    return _ticketQuantities.values.fold(0, (a, b) => a + b);
   }
 
   @override
   Widget build(BuildContext context) {
     final eventDate = DateTime.parse(widget.event.dateTime);
     
+    // Sort tiers by price ascending
+    final sortedTiers = List<TicketTier>.from(widget.event.tiers)..sort((a, b) => a.price.compareTo(b.price));
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0D15),
       appBar: AppBar(
@@ -92,45 +100,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               
               const SizedBox(height: 32),
               
+              if (sortedTiers.isEmpty)
+                const Center(child: Text("No tickets available", style: TextStyle(color: Colors.white54))),
+
               // Ticket Tiers
-              _TicketTierTile(
-                title: "General Admission",
-                desc: "Standing room only • Main floor access",
-                price: 850,
-                badge: "Selling Fast",
-                badgeColor: const Color(0xFFFF9F0A).withOpacity(0.1),
-                badgeTextColor: const Color(0xFFFF9F0A),
-                quantity: _ticketQuantities['General Admission']!,
-                onChanged: (val) => setState(() => _ticketQuantities['General Admission'] = val),
-              ),
-              
-              _TicketTierTile(
-                title: "VIP Experience",
-                desc: "Skip the line • Private bar access • Lanyard",
-                price: 2500,
-                quantity: _ticketQuantities['VIP Experience']!,
-                onChanged: (val) => setState(() => _ticketQuantities['VIP Experience'] = val),
-              ),
-              
-              _TicketTierTile(
-                title: "Group Bundle (4+)",
-                desc: "Discount applied automatically",
-                price: 750,
-                badge: "Save 15%",
-                badgeColor: Colors.green.withOpacity(0.1),
-                badgeTextColor: Colors.green,
-                quantity: _ticketQuantities['Group Bundle (4+)']!,
-                onChanged: (val) => setState(() => _ticketQuantities['Group Bundle (4+)'] = val),
-              ),
-              
-              _TicketTierTile(
-                title: "Super Fan Pit",
-                desc: "Front row access • Meet & Greet",
-                price: 5000,
-                isSoldOut: true,
-                quantity: _ticketQuantities['Super Fan Pit']!,
-                onChanged: (val) {},
-              ),
+              ...sortedTiers.map((tier) {
+                final isSoldOut = tier.sold >= tier.capacity;
+                final quantity = _ticketQuantities[tier.id] ?? 0;
+                
+                return _TicketTierTile(
+                  title: tier.name,
+                  desc: "Includes access to event", // Descriptions could be added to backend model later
+                  price: tier.price,
+                  badge: isSoldOut ? "SOLD OUT" : (tier.capacity - tier.sold < 20 ? "Running Low" : null),
+                  badgeColor: isSoldOut ? Colors.red.withOpacity(0.1) : const Color(0xFFFF9F0A).withOpacity(0.1),
+                  badgeTextColor: isSoldOut ? Colors.red : const Color(0xFFFF9F0A),
+                  isSoldOut: isSoldOut,
+                  quantity: quantity,
+                  onChanged: (val) => setState(() => _ticketQuantities[tier.id] = val),
+                 );
+              }).toList(),
               
               const SizedBox(height: 24),
               _buildExpandableSection("Event Policies"),

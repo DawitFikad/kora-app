@@ -12,12 +12,26 @@ import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/presentation/profile_screen.dart';
 import 'package:mobile/features/events/presentation/search_screen.dart';
+import 'package:mobile/features/events/models/category.dart';
+import 'package:mobile/features/events/models/city.dart';
 import 'package:mobile/features/tickets/presentation/my_tickets_screen.dart';
 import 'package:mobile/features/events/presentation/notification_screen.dart';
 import 'package:mobile/features/events/presentation/favorites_screen.dart';
 import 'package:mobile/features/events/presentation/event_details_screen.dart';
 
-final selectedCategoryProvider = StateProvider<String>((ref) => "All");
+final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
+final selectedCityProvider = StateProvider<City?>((ref) => null);
+
+final filteredEventsProvider = FutureProvider<List<Event>>((ref) async {
+  final service = ref.read(eventServiceProvider);
+  final category = ref.watch(selectedCategoryProvider);
+  final city = ref.watch(selectedCityProvider);
+  
+  return service.getEvents(
+    categoryId: category?.id,
+    cityId: city?.id,
+  );
+});
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -28,7 +42,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
-
   late List<Widget> _pages;
 
   @override
@@ -73,29 +86,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               tabBackgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
               color: isDark ? Colors.white54 : Colors.black54,
               tabs: const [
-                GButton(
-                  icon: Icons.home_rounded,
-                  text: 'Home',
-                ),
-                GButton(
-                  icon: Icons.favorite_rounded,
-                  text: 'Favorites',
-                ),
-                GButton(
-                  icon: Icons.local_activity,
-                  text: 'MyTickets',
-                ),
-                GButton(
-                  icon: Icons.person_rounded,
-                  text: 'Profile',
-                ),
+                GButton(icon: Icons.home_rounded, text: 'Home'),
+                GButton(icon: Icons.favorite_rounded, text: 'Favorites'),
+                GButton(icon: Icons.local_activity, text: 'MyTickets'),
+                GButton(icon: Icons.person_rounded, text: 'Profile'),
               ],
               selectedIndex: _selectedIndex,
-              onTabChange: (index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
+              onTabChange: (index) => setState(() => _selectedIndex = index),
             ),
           ),
         ),
@@ -109,166 +106,214 @@ class _HomeBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedCategory = ref.watch(selectedCategoryProvider);
-    final eventsAsync = ref.watch(eventsProvider);
+    final eventsAsync = ref.watch(filteredEventsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
-    final cardColor = isDark ? const Color(0xFF232030) : Colors.white;
 
     return SafeArea(
       child: RefreshIndicator(
-        onRefresh: () async => ref.refresh(eventsProvider),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, ref, textColor, mutedColor),
-              const SizedBox(height: 24),
-              _buildSearchBar(context, cardColor, mutedColor),
-              const SizedBox(height: 24),
-              _buildCategories(ref, isDark),
-              const SizedBox(height: 32),
-              RichText(
-                text: TextSpan(
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-                    color: textColor,
-                  ),
-                  children: [
-                    const TextSpan(text: 'Discover the pulse of \n'),
-                    TextSpan(
-                      text: 'Addis nightlife.',
-                      style: TextStyle(
-                        color: const Color(0xFF8B5CF6),
-                        shadows: [
-                          Shadow(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
+        onRefresh: () async => ref.refresh(filteredEventsProvider),
+        child: CustomScrollView(
+          slivers: [
+             SliverPadding(
+               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+               sliver: SliverList(
+                 delegate: SliverChildListDelegate([
+                    _buildHeader(context, ref, textColor, mutedColor),
+                    const SizedBox(height: 24),
+                    _buildSearchBar(context, isDark ? const Color(0xFF232030) : Colors.white, mutedColor),
+                    const SizedBox(height: 24),
+                    _buildCategories(ref, isDark),
+                    const SizedBox(height: 32),
+                    RichText(
+                      text: TextSpan(
+                        style: GoogleFonts.poppins(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                          color: textColor,
+                        ),
+                        children: [
+                          const TextSpan(text: 'Discover the pulse of \n'),
+                          TextSpan(
+                            text: 'Events.',
+                            style: TextStyle(
+                              color: const Color(0xFF8B5CF6),
+                              shadows: [
+                                Shadow(
+                                  color: const Color(0xFF8B5CF6).withOpacity(0.4),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 380,
-                child: eventsAsync.when(
-                  data: (events) {
-                    final filteredFeatured = selectedCategory == "All" 
-                        ? events 
-                        : events.where((e) => e.description.toLowerCase().contains(selectedCategory.toLowerCase())).toList();
+                    const SizedBox(height: 24),
+                 ]),
+               ),
+             ),
+             
+             // Content or Loading
+             eventsAsync.when(
+               data: (events) {
+                 if (events.isEmpty) {
+                   return SliverToBoxAdapter(
+                     child: Center(
+                       child: Padding(
+                         padding: const EdgeInsets.all(32.0),
+                         child: Text("No events found", style: TextStyle(color: mutedColor)),
+                       ),
+                     ),
+                   );
+                 }
+                 
+                 return SliverList(
+                   delegate: SliverChildBuilderDelegate(
+                     (context, index) {
+                        // First item could be Featured if we want, but simpler to just list trending for now similar to design
+                        // Or we can separate sections again.
+                        // Let's keep the Featured Carousel + Vertical list pattern
+                        if (index == 0) {
+                          // Featured Section (Horizontal)
+                          final featured = events.take(3).toList();
+                          if (featured.isEmpty) return const SizedBox.shrink();
 
-                    if (filteredFeatured.isEmpty) return const Center(child: Text("No events in this category", style: TextStyle(color: Colors.white54)));
-                    return ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: filteredFeatured.take(3).length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 16),
-                      itemBuilder: (context, index) => _FeaturedCard(event: filteredFeatured[index]),
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Center(child: Text('Error: $err')),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Trending Now',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      'See All',
-                      style: TextStyle(color: const Color(0xFF8B5CF6).withOpacity(0.8)),
-                    ),
-                  )
-                ],
-              ),
-              const SizedBox(height: 16),
-              eventsAsync.when(
-                data: (events) {
-                  final filteredTrending = selectedCategory == "All" 
-                      ? events 
-                      : events.where((e) => e.description.toLowerCase().contains(selectedCategory.toLowerCase())).toList();
-
-                   return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filteredTrending.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) => _TrendingCard(event: filteredTrending[index], isDark: isDark),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                height: 380,
+                                child: ListView.separated(
+                                  physics: const BouncingScrollPhysics(),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: featured.length,
+                                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                                  itemBuilder: (context, i) => _FeaturedCard(event: featured[i]),
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Trending Now',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {},
+                                      child: Text(
+                                        'See All',
+                                        style: TextStyle(color: const Color(0xFF8B5CF6).withOpacity(0.8)),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        }
+                        
+                        // Vertical List items (minus the featured ones to avoid dupes? or just all)
+                        // For simplicity, showing all as vertical list below header
+                        final event = events[index - 1]; // Offset by 1 for the header
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          child: _TrendingCard(event: event, isDark: isDark),
+                        );
+                     },
+                     childCount: events.length + 1, // +1 for the featured header section logic
+                   ),
+                 );
+               },
+               loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
+               error: (e, s) => SliverToBoxAdapter(child: Center(child: Text("Error: $e"))),
+             ),
+             
+             const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, Color textColor, Color mutedColor) {
+    final citiesAsync = ref.watch(citiesProvider);
+    final selectedCity = ref.watch(selectedCityProvider);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-        GestureDetector(
-          onTap: () {
-            // Find the HomeScreen's state and change index to 3 (Profile)
-            final state = context.findAncestorStateOfType<_HomeScreenState>();
-            state?.setState(() {
-              state._selectedIndex = 3;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+            GestureDetector(
+              onTap: () {
+                final state = context.findAncestorStateOfType<_HomeScreenState>();
+                state?.setState(() => state._selectedIndex = 3);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+                ),
+                child: const CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.grey,
+                  child: Icon(Icons.person, color: Colors.white),
+                ),
+              ),
             ),
-            child: const CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey,
-              child: Icon(Icons.person, color: Colors.white),
-            ),
-          ),
-        ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text("Location", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                Row(
-                  children: [
-                    Text(
-                      "Addis Ababa, ET",
-                      style: GoogleFonts.poppins(
-                        color: textColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                PopupMenuButton<City>(
+                  color: const Color(0xFF1D192B),
+                  onSelected: (city) {
+                    ref.read(selectedCityProvider.notifier).state = city;
+                  },
+                  itemBuilder: (context) {
+                    return citiesAsync.when(
+                      data: (cities) => [
+                        const PopupMenuItem<City>(
+                           value: null, 
+                           child: Text("All Cities", style: TextStyle(color: Colors.white)),
+                        ),
+                        ...cities.map((c) => PopupMenuItem<City>(
+                          value: c,
+                          child: Text(c.name, style: const TextStyle(color: Colors.white)),
+                        ))
+                      ],
+                      loading: () => [],
+                      error: (_,__) => [],
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        selectedCity?.name ?? "All Cities",
+                        style: GoogleFonts.poppins(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                    const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 18),
-                  ],
+                      const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 18),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -322,51 +367,61 @@ class _HomeBody extends ConsumerWidget {
   }
 
   Widget _buildCategories(WidgetRef ref, bool isDark) {
-    final categories = ["All", "Cultural", "Live Music", "Art", "Food"];
+    final categoriesAsync = ref.watch(categoriesProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
 
     return SizedBox(
       height: 38,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          final isSelected = selectedCategory == category;
-          
-          return GestureDetector(
-            onTap: () => ref.read(selectedCategoryProvider.notifier).state = category,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: isSelected 
-                    ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)])
-                    : null,
-                color: isSelected ? null : (isDark ? const Color(0xFF2E2B3A) : Colors.grey[200]),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: isSelected ? [
-                  BoxShadow(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ] : null,
-              ),
-              child: Center(
-                child: Text(
-                  category,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 13,
+      child: categoriesAsync.when(
+        data: (categories) {
+           final allCategories = [Category(id: 0, name: "All"), ...categories];
+           return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: allCategories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final category = allCategories[index];
+              // Check if selected (if null, 'All' (id 0) is default UI wise, but logically null)
+              final isSelected = selectedCategory?.id == category.id || (selectedCategory == null && category.id == 0);
+              
+              return GestureDetector(
+                onTap: () {
+                   ref.read(selectedCategoryProvider.notifier).state = category.id == 0 ? null : category;
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: isSelected 
+                        ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)])
+                        : null,
+                    color: isSelected ? null : (isDark ? const Color(0xFF2E2B3A) : Colors.grey[200]),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: isSelected ? [
+                      BoxShadow(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ] : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      category.name,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
+        loading: () => const Center(child: LinearProgressIndicator()), 
+        error: (_,__) => const SizedBox.shrink()
       ),
     );
   }
