@@ -1,22 +1,38 @@
 {
     "onboarding": {
-        "step1_title": "Discover Events",
-        "step1_desc": "Browse the best events in your city easily.",
-        "step2_title": "Secure Tickets",
-        "step2_desc": "Pay safely via Telebirr or CBE and get instant digital tickets.",
-        "step3_title": "Scan & Enter",
-        "step3_desc": "Just show your QR code at the gate. Works offline!",
+        "slide1_title": "Discover the",
+        "slide1_highlight": "Night",
+        "slide1_desc": "Find the best concerts, festivals, and local gigs happening near you.",
+        "slide2_title": "Secure Your",
+        "slide2_highlight": "Tickets",
+        "slide2_desc": "Fast, secure, and hassle-free ticket booking for all your favorite events.",
+        "slide3_title": "Scan &",
+        "slide3_highlight": "Enter",
+        "slide3_desc": "Your phone is your ticket. Just scan it at the gate and enjoy the show.",
         "get_started": "Get Started",
-        "skip": "Skip"
+        "continue": "Continue",
+        "skip": "Skip",
+        "login": "Log In",
+        "terms": "By continuing, you agree to our Terms & Privacy Policy"
     },
-    "auth": {
+    "login": {
+        "title": "Let's get you in.",
+        "subtitle": "Enter your phone number to find events and manage your bookings.",
         "phone_label": "Phone Number",
-        "enter_phone": "Enter your phone number",
-        "send_code": "Send Code",
-        "verify_title": "Internal Validation",
-        "enter_otp": "Enter the code sent to {}",
-        "verify_btn": "Verify & Login",
-        "resend": "Resend Code"
+        "hint_phone": "(555) 000-0000",
+        "send_otp": "Send OTP",
+        "verification_code": "Verification Code",
+        "resend_in": "Resend in",
+        "didnt_receive": "Didn't receive the code?",
+        "or": "OR",
+        "continue_email": "Continue with Email",
+        "terms_prefix": "By clicking \"Send OTP\", you agree to our ",
+        "terms_tos": "Terms of Service",
+        "terms_and": " and ",
+        "terms_privacy": "Privacy Policy",
+        "terms_suffix": ".",
+        "done": "Done",
+        "country_code": "+251"
     },
     "home": {
         "title": "Discover",

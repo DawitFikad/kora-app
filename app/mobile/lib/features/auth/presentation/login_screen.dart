@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
+import 'package:easy_localization/easy_localization.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -108,7 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         const SizedBox(height: 20),
                         Text(
-                          "Let's get you in.",
+                          "login.title".tr(),
                           style: GoogleFonts.poppins(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -117,7 +118,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          "Enter your phone number to find events and manage your bookings.",
+                          "login.subtitle".tr(),
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             color: Colors.white60,
@@ -129,7 +130,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         
                         // Phone Input
                         Text(
-                          "Phone Number",
+                          "login.phone_label".tr(),
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 14,
@@ -154,9 +155,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     width: 24,
                                   ),
                                   const SizedBox(width: 8),
-                                  const Text(
-                                    "+251",
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  Text(
+                                    "login.country_code".tr(),
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                   ),
                                   const Icon(Icons.keyboard_arrow_down, color: Colors.white54, size: 18),
                                 ],
@@ -176,10 +177,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   keyboardType: TextInputType.phone,
                                   style: const TextStyle(color: Colors.white, fontSize: 18),
                                   cursorColor: Colors.white,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     border: InputBorder.none,
-                                    hintText: "(555) 000-0000",
-                                    hintStyle: TextStyle(color: Colors.white24),
+                                    hintText: "login.hint_phone".tr(),
+                                    hintStyle: const TextStyle(color: Colors.white24),
                                   ),
                                 ),
                               ),
@@ -210,7 +211,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    "Send OTP",
+                                    "login.send_otp".tr(),
                                     style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(width: 12),
@@ -224,65 +225,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const SizedBox(height: 32),
                         
                         // Verification Code Section (Only if OTP is sent)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Verification Code",
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
+                        if (_isOtpSent) ...[
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "login.verification_code".tr(),
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  "Resend in 00:${_resendTimer.toString().padLeft(2, '0')}",
-                                  style: GoogleFonts.poppins(
-                                    color: const Color(0xFF8B5CF6),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
+                                  Text(
+                                    "${"login.resend_in".tr()} 00:${_resendTimer.toString().padLeft(2, '0')}",
+                                    style: GoogleFonts.poppins(
+                                      color: const Color(0xFF8B5CF6),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: List.generate(6, (index) => _buildOtpBox(index)),
-                            ),
-                            const SizedBox(height: 24),
-                            Center(
-                              child: TextButton(
-                                onPressed: () {},
-                                child: Text(
-                                  "Didn't receive the code?",
-                                  style: GoogleFonts.poppins(color: Colors.white54, fontSize: 14),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: List.generate(6, (index) => _buildOtpBox(index)),
+                              ),
+                              const SizedBox(height: 24),
+                              Center(
+                                child: TextButton(
+                                  onPressed: () {},
+                                  child: Text(
+                                    "login.didnt_receive".tr(),
+                                    style: GoogleFonts.poppins(color: Colors.white54, fontSize: 14),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 32),
+                            ],
+                          ),
+                          const SizedBox(height: 32),
+                        ] else ...[
+                          // Hide Code Section if not sent
+                          // Keep spacer if needed
+                        ],
                         
                         // OR Section
                         Row(
-                          children: const [
-                            Expanded(child: Divider(color: Colors.white10)),
+                          children: [
+                            const Expanded(child: Divider(color: Colors.white10)),
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              child: Text("OR", style: TextStyle(color: Colors.white24, fontSize: 12)),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text("login.or".tr(), style: const TextStyle(color: Colors.white24, fontSize: 12)),
                             ),
-                            Expanded(child: Divider(color: Colors.white10)),
+                            const Expanded(child: Divider(color: Colors.white10)),
                           ],
                         ),
                         
                         const SizedBox(height: 32),
                         
-                        // Continue with Email
+                        // Continue with Email (Hidden for now as confusing, optional email will be post-login)
+                        /*
                         OutlinedButton(
                           onPressed: () {},
                           style: OutlinedButton.styleFrom(
@@ -297,13 +303,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               const Icon(Icons.email_outlined, size: 20),
                               const SizedBox(width: 12),
                               Text(
-                                "Continue with Email",
+                                "login.continue_email".tr(),
                                 style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
                         ),
-                        
+                        */
                         const SizedBox(height: 32),
                         
                         // Footer
@@ -315,17 +321,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               text: TextSpan(
                                 style: GoogleFonts.poppins(color: Colors.white24, fontSize: 12, height: 1.6),
                                 children: [
-                                  const TextSpan(text: "By clicking \"Send OTP\", you agree to our "),
+                                  TextSpan(text: "login.terms_prefix".tr()),
                                   TextSpan(
-                                    text: "Terms of Service",
+                                    text: "login.terms_tos".tr(),
                                     style: TextStyle(color: Colors.white.withOpacity(0.4), decoration: TextDecoration.underline),
                                   ),
-                                  const TextSpan(text: " and "),
+                                  TextSpan(text: "login.terms_and".tr()),
                                   TextSpan(
-                                    text: "Privacy Policy",
+                                    text: "login.terms_privacy".tr(),
                                     style: TextStyle(color: Colors.white.withOpacity(0.4), decoration: TextDecoration.underline),
                                   ),
-                                  const TextSpan(text: "."),
+                                  TextSpan(text: "login.terms_suffix".tr()),
                                 ],
                               ),
                             ),
@@ -349,7 +355,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextButton(
                         onPressed: _isOtpSent ? _verifyOtp : null,
                         child: Text(
-                          "Done",
+                          "login.done".tr(),
                           style: GoogleFonts.poppins(
                             color: _isOtpSent ? const Color(0xFF8B5CF6) : Colors.white24,
                             fontSize: 18,

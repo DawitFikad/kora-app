@@ -1,22 +1,38 @@
 {
     "onboarding": {
-        "step1_title": "ዝግጅቶችን ያግኙ",
-        "step1_desc": "በከተማዎ ውስጥ ያሉ ምርጥ ዝግጅቶችን በቀላሉ ያስሱ።",
-        "step2_title": "ታማኝ ትኬቶች",
-        "step2_desc": "በቴሌብር ወይም በንግድ ባንክ በሰላም ይክፈሉ።",
-        "step3_title": "ስካን እና መግባት",
-        "step3_desc": "በመግቢያው ላይ የQR ኮድዎን ብቻ ያሳዩ። ያለ ኢንተርኔት ይሰራል።",
+        "slide1_title": "የምሽቱን ድባብ",
+        "slide1_highlight": "ይለማመዱ",
+        "slide1_desc": "ምርጥ ኮንሰርቶችን፣ ፌስቲቫሎችን እና ዝግጅቶችን በአቅራቢያዎ ያግኙ።",
+        "slide2_title": "ቲኬቶችን",
+        "slide2_highlight": "በፍጥነት",
+        "slide2_desc": "ለሚወዷቸው ዝግጅቶች አስተማማኝ እና ቀላል የቲኬት ግዢ።",
+        "slide3_title": "ስካን አድርገው",
+        "slide3_highlight": "ይግቡ",
+        "slide3_desc": "ስልክዎ ቲኬትዎ ነው። በመግቢያው ላይ ስካን አድርገው ይግቡ።",
         "get_started": "ጀምር",
-        "skip": "ለማለፍ"
+        "continue": "ቀጥል",
+        "skip": "ለማለፍ",
+        "login": "ግባ",
+        "terms": "በመቀጠልዎ በእኛ ደንቦች እና ግላዊነት መመሪያ ይስማማሉ"
     },
-    "auth": {
+    "login": {
+        "title": "ወደ ውስጥ እንግባ።",
+        "subtitle": "ዝግጅቶችን ለማግኘት እና ትኬቶችን ለማስተዳደር ስልክ ቁጥርዎን ያስገቡ።",
         "phone_label": "ስልክ ቁጥር",
-        "enter_phone": "ስልክ ቁጥርዎን ያስገቡ",
-        "send_code": "ኮድ ላክ",
-        "verify_title": "ማረጋገጫ",
-        "enter_otp": "ወደ {} የተላከውን ኮድ ያስገቡ",
-        "verify_btn": "አረጋግጥ እና ግባ",
-        "resend": "እንደገና ላክ"
+        "hint_phone": "091 100 0000",
+        "send_otp": "ኮድ ላክ",
+        "verification_code": "የማረጋገጫ ኮድ",
+        "resend_in": "በድጋሚ ለመላክ",
+        "didnt_receive": "ኮዱ አልደረስዎትም?",
+        "or": "ወይም",
+        "continue_email": "በኢሜይል ቀጥል",
+        "terms_prefix": "\"ኮድ ላክ\" የሚለውን ሲጫኑ በእኛ ",
+        "terms_tos": "የአገልግሎት ውል",
+        "terms_and": " እና ",
+        "terms_privacy": "የግላዊነት መመሪያ",
+        "terms_suffix": " ይስማማሉ።",
+        "done": "ጨርስ",
+        "country_code": "+251"
     },
     "home": {
         "title": "ያስሱ",

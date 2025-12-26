@@ -17,23 +17,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<Map<String, String>> _onboardingData = [
+  List<Map<String, String>> get _onboardingData => [
     {
-      'title': 'Discover the',
-      'highlight': 'Night',
-      'desc': 'Find the best concerts, festivals, and local gigs happening near you.',
+      'title': 'onboarding.slide1_title'.tr(),
+      'highlight': 'onboarding.slide1_highlight'.tr(),
+      'desc': 'onboarding.slide1_desc'.tr(),
       'image': 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=1000',
     },
     {
-      'title': 'Secure Your',
-      'highlight': 'Tickets',
-      'desc': 'Fast, secure, and hassle-free ticket booking for all your favorite events.',
+      'title': 'onboarding.slide2_title'.tr(),
+      'highlight': 'onboarding.slide2_highlight'.tr(),
+      'desc': 'onboarding.slide2_desc'.tr(),
       'image': 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=1000',
     },
     {
-      'title': 'Scan &',
-      'highlight': 'Enter',
-      'desc': 'Your phone is your ticket. Just scan it at the gate and enjoy the show.',
+      'title': 'onboarding.slide3_title'.tr(),
+      'highlight': 'onboarding.slide3_highlight'.tr(),
+      'desc': 'onboarding.slide3_desc'.tr(),
       'image': 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000',
     },
   ];
@@ -234,7 +234,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              _currentPage == _onboardingData.length - 1 ? 'Get Started' : 'Continue',
+                              _currentPage == _onboardingData.length - 1 
+                                  ? 'onboarding.get_started'.tr() 
+                                  : 'onboarding.continue'.tr(),
                               style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(width: 8),
@@ -252,7 +254,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         child: Text(
-                          'Log In',
+                          'onboarding.login'.tr(),
                           style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -262,7 +264,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
                   // Footer
                   Text(
-                    'By continuing, you agree to our Terms & Privacy Policy',
+                    'onboarding.terms'.tr(),
                     style: GoogleFonts.poppins(
                       color: Colors.white24,
                       fontSize: 11,
