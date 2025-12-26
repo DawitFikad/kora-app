@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/core/providers.dart';
 
 final paymentServiceProvider = Provider<PaymentService>((ref) {
-  return PaymentService(ref.read(dioProvider));
+  return PaymentService(ref.watch(dioProvider));
 });
 
 class PaymentService {
@@ -35,8 +35,12 @@ class PaymentService {
     if (error is DioException) {
       final code = error.response?.statusCode;
       final data = error.response?.data;
-      final msg = error.message;
-      return Exception('Payment Error: $msg\nCode: $code\nData: $data');
+      String? serverMessage;
+      if (data is Map) {
+        serverMessage = data['error']?.toString() ?? data['message']?.toString();
+      }
+      final msg = serverMessage ?? error.message;
+      return Exception('Payment Error [$code]: $msg');
     }
     return Exception(error.toString());
   }

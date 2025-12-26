@@ -7,8 +7,8 @@ import '../../../core/storage/local_storage.dart';
 import '../models/ticket.dart';
 
 final ticketServiceProvider = Provider<TicketService>((ref) {
-  final dio = ref.read(dioProvider);
-  final storage = ref.read(localStorageProvider);
+  final dio = ref.watch(dioProvider);
+  final storage = ref.watch(localStorageProvider);
   return TicketService(dio, storage);
 });
 

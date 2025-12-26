@@ -4,7 +4,7 @@ import 'package:mobile/core/constants/api_constants.dart';
 import 'package:mobile/core/providers.dart';
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
-  return BookingService(ref.read(dioProvider));
+  return BookingService(ref.watch(dioProvider));
 });
 
 class BookingService {
@@ -74,8 +74,12 @@ class BookingService {
     if (error is DioException) {
       final code = error.response?.statusCode;
       final data = error.response?.data;
-      final msg = error.message;
-      return Exception('DioError: $msg\nCode: $code\nData: $data');
+      String? serverMessage;
+      if (data is Map) {
+        serverMessage = data['error']?.toString() ?? data['message']?.toString();
+      }
+      final msg = serverMessage ?? error.message;
+      return Exception('DioError [$code]: $msg');
     }
     return Exception(error.toString());
   }

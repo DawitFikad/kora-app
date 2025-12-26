@@ -8,7 +8,7 @@ import 'constants/api_constants.dart';
 export 'theme/app_theme.dart';
 
 // Will be overridden in main.dart
-final localStorageProvider = Provider<LocalStorage>((ref) {
+final localStorageProvider = ChangeNotifierProvider<LocalStorage>((ref) {
   throw UnimplementedError();
 });
 

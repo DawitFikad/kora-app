@@ -5,7 +5,7 @@ import '../../../core/providers.dart';
 import '../models/app_notification.dart';
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService(ref.read(dioProvider));
+  return NotificationService(ref.watch(dioProvider));
 });
 
 class NotificationService {

@@ -17,7 +17,7 @@ void main() async {
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
       child: ProviderScope(
-        overrides: [localStorageProvider.overrideWithValue(localStorage)],
+        overrides: [localStorageProvider.overrideWith((ref) => localStorage)],
         child: const EtTicketApp(),
       ),
     ),

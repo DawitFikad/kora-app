@@ -5,7 +5,7 @@ import '../../../core/providers.dart';
 import '../models/user_profile.dart';
 
 final profileServiceProvider = Provider<ProfileService>((ref) {
-  return ProfileService(ref.read(dioProvider));
+  return ProfileService(ref.watch(dioProvider));
 });
 
 final userProfileProvider = FutureProvider<UserProfile>((ref) async {

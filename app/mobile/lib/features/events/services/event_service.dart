@@ -7,7 +7,7 @@ import 'package:mobile/features/events/models/city.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final eventServiceProvider = Provider<EventService>((ref) {
-  return EventService(ref.read(dioProvider));
+  return EventService(ref.watch(dioProvider));
 });
 
 final eventsProvider = FutureProvider<List<Event>>((ref) async {

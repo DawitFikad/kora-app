@@ -445,8 +445,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       debugPrint('OTP Verified Successfully');
       if (mounted) {
         setState(() => _isLoading = false);
-        debugPrint('Navigating to Home');
-        context.go('/home');
+        debugPrint('Login success. checking if can pop');
+        if (GoRouter.of(context).canPop()) {
+           context.pop(true);
+        } else {
+           context.go('/home');
+        }
       }
     } catch (e) {
       debugPrint('OTP Verification Failed: $e');

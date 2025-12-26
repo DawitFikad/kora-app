@@ -37,7 +37,7 @@ class AppRouter {
         return null;
       }
 
-      if (isAuthenticated && (isGoingToLogin || isGoingToOnboarding)) {
+      if (isAuthenticated && isGoingToOnboarding) {
         return '/home';
       }
 

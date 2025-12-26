@@ -154,9 +154,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     child: const Text("Cancel"),
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                        Navigator.pop(ctx);
-                       context.push('/login');
+                       final result = await context.push<bool>('/login');
+                       if (result == true && mounted) {
+                         _processPayment();
+                       }
                     }, 
                     child: const Text("Login"),
                   ),

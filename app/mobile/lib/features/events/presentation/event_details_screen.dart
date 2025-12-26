@@ -6,6 +6,8 @@ import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/models/ticket_tier.dart';
 import 'package:mobile/features/booking/presentation/checkout_screen.dart';
 import 'package:mobile/features/events/services/event_service.dart';
+import 'package:mobile/core/providers.dart';
+import 'package:go_router/go_router.dart';
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final int eventId;
@@ -41,6 +43,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   void _onCheckout(Event event) {
+    // 0. Check Auth
+    final isAuthenticated = ref.read(localStorageProvider).authToken != null;
+    if (!isAuthenticated) {
+      context.push('/login');
+      return;
+    }
+
     // 1. Filter selected tiers
     final selectedEntries = _ticketQuantities.entries.where((e) => e.value > 0).toList();
 

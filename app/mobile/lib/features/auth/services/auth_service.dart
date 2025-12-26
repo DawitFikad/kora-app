@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/local_storage.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService(ref.read(dioProvider), ref.read(localStorageProvider));
+  return AuthService(ref.watch(dioProvider), ref.watch(localStorageProvider));
 });
 
 class AuthService {
