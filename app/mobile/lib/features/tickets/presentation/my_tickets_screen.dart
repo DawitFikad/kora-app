@@ -83,8 +83,8 @@ class MyTicketsScreen extends ConsumerWidget {
             Expanded(
               child: TabBarView(
                 children: [
-                  _TicketsListView(ref: ref),
-                  _buildEmptyState("No past tickets"),
+                  _TicketsListView(ref: ref, isPast: false),
+                  _TicketsListView(ref: ref, isPast: true),
                   _buildEmptyState("No archived tickets"),
                 ],
               ),
@@ -107,7 +107,9 @@ class MyTicketsScreen extends ConsumerWidget {
 
 class _TicketsListView extends StatelessWidget {
   final WidgetRef ref;
-  const _TicketsListView({required this.ref});
+  final bool isPast;
+  
+  const _TicketsListView({required this.ref, this.isPast = false});
 
   @override
   Widget build(BuildContext context) {
@@ -117,23 +119,33 @@ class _TicketsListView extends StatelessWidget {
       onRefresh: () async => ref.refresh(myTicketsProvider),
       child: ticketsAsync.when(
         data: (tickets) {
-          if (tickets.isEmpty) {
-            return const Center(child: Text("No upcoming tickets", style: TextStyle(color: Colors.white54)));
+          final now = DateTime.now();
+          final filteredTickets = tickets.where((ticket) {
+            // Check status first
+            if (isPast) {
+               return ticket.status != 'VALID' || DateTime.parse(ticket.event.dateTime).isBefore(now);
+            } else {
+               return ticket.status == 'VALID' && DateTime.parse(ticket.event.dateTime).isAfter(now);
+            }
+          }).toList();
+
+          if (filteredTickets.isEmpty) {
+            return Center(child: Text(isPast ? "No past tickets" : "No upcoming tickets", style: const TextStyle(color: Colors.white54)));
           }
 
           return ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            itemCount: tickets.length,
+            itemCount: filteredTickets.length,
             itemBuilder: (context, index) {
-              if (index == 0) {
+              if (index == 0 && !isPast) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 24),
-                  child: _LargeTicketCard(ticket: tickets[index]),
+                  child: _LargeTicketCard(ticket: filteredTickets[index]),
                 );
               }
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: _CompactTicketCard(ticket: tickets[index]),
+                child: _CompactTicketCard(ticket: filteredTickets[index]),
               );
             },
           );
@@ -307,9 +319,11 @@ class _LargeTicketCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  ticket.id.length > 6 
-                    ? "${ticket.id.substring(0, 3)} - ${ticket.id.substring(3, 6)}".toUpperCase()
-                    : ticket.id.toUpperCase(),
+                  ticket.ticketCode != null 
+                    ? ticket.ticketCode!.toUpperCase() 
+                    : (ticket.id.length > 8 
+                        ? "${ticket.id.substring(0, 4)} - ${ticket.id.substring(4, 8)}".toUpperCase()
+                        : ticket.id.toUpperCase()),
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 32,

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocalStorage extends ChangeNotifier {
   static const String keyIsFirstLaunch = 'is_first_launch';
   static const String keyAuthToken = 'auth_token';
+  static const String keyCachedTickets = 'cached_tickets';
 
   final SharedPreferences _prefs;
 
@@ -43,5 +44,12 @@ class LocalStorage extends ChangeNotifier {
   Future<void> clearAuth() async {
     await _prefs.remove(keyAuthToken);
     notifyListeners();
+  }
+
+  String? get cachedTickets => _prefs.getString(keyCachedTickets);
+
+  Future<void> setCachedTickets(String jsonString) async {
+    await _prefs.setString(keyCachedTickets, jsonString);
+    notifyListeners(); // Optional: if we want reactive UI based on cache update
   }
 }

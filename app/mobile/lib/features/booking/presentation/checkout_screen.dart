@@ -5,6 +5,7 @@ import 'package:mobile/features/booking/services/booking_service.dart';
 import 'package:mobile/features/booking/services/payment_service.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   final Event event;
@@ -138,8 +139,46 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     } catch (e) {
       if (mounted) {
+        String errorMessage = e.toString().replaceAll('Exception: ', '');
+        
+        // Handle 401 Unauthorized
+        if (errorMessage.contains('401') || errorMessage.toLowerCase().contains('unauthorized')) {
+             showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text("Authentication Required", style: TextStyle(color: Colors.black)),
+                content: const Text("You need to login to book tickets.", style: TextStyle(color: Colors.black87)),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text("Cancel"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                       Navigator.pop(ctx);
+                       context.push('/login');
+                    }, 
+                    child: const Text("Login"),
+                  ),
+                ],
+              ),
+            );
+            return; // Exit function so snackbar doesn't show
+        }
+
+        if (errorMessage.contains('DioError')) {
+           // Parse custom error format if it matches the one we added to BookingService
+           // But actually PaymentService might need the same error handler.
+           // For now, just show the raw message which is helpful for debugging.
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${e.toString().replaceAll('Exception: ', '')}"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Payment Failed: $errorMessage"), 
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(label: 'Dismiss', textColor: Colors.white, onPressed: () {}),
+          ),
         );
       }
     } finally {

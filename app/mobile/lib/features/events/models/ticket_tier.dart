@@ -22,4 +22,13 @@ class TicketTier {
       sold: json['sold'] ?? 0,
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price': price,
+      'capacity': capacity,
+      'sold': sold,
+    };
+  }
 }

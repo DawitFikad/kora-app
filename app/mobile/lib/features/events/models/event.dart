@@ -45,4 +45,18 @@ class Event {
       city: json['city'] != null ? City.fromJson(json['city']) : null,
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'venue': venue,
+      'dateTime': dateTime,
+      'coverImage': coverImage,
+      'featured': featured,
+      'tiers': tiers.map((e) => e.toJson()).toList(),
+      'category': category?.toJson(),
+      'city': city?.toJson(),
+    };
+  }
 }

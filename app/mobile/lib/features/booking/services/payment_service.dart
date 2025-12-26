@@ -24,8 +24,6 @@ class PaymentService {
         },
       );
       
-      // Assuming response structure: { success: true, data: { paymentUrl: '...' } }
-      // Or checking backend controller... let's assume it returns checkoutUrl
       final data = response.data['data'];
       return data['checkoutUrl'] ?? data['paymentUrl'] ?? ''; 
     } catch (e) {
@@ -35,7 +33,10 @@ class PaymentService {
 
   Exception _handleError(dynamic error) {
     if (error is DioException) {
-      return Exception(error.response?.data['error'] ?? 'Payment initialization failed');
+      final code = error.response?.statusCode;
+      final data = error.response?.data;
+      final msg = error.message;
+      return Exception('Payment Error: $msg\nCode: $code\nData: $data');
     }
     return Exception(error.toString());
   }
