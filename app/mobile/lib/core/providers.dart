@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import 'storage/local_storage.dart';
 import 'router/app_router.dart';
+import 'constants/api_constants.dart';
 
 export 'theme/app_theme.dart';
 
@@ -11,8 +12,18 @@ final localStorageProvider = Provider<LocalStorage>((ref) {
   throw UnimplementedError();
 });
 
+
+
 final dioProvider = Provider<Dio>((ref) {
-  final dio = Dio();
+  final dio = Dio(BaseOptions(
+    baseUrl: ApiConstants.baseUrl,
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+  ));
   final storage = ref.watch(localStorageProvider);
   
   dio.interceptors.add(InterceptorsWrapper(

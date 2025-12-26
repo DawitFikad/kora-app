@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/models/ticket_tier.dart';
+import 'package:mobile/features/booking/presentation/checkout_screen.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Event event;
@@ -35,6 +36,37 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   int _totalTickets() {
     return _ticketQuantities.values.fold(0, (a, b) => a + b);
+  }
+
+  void _onCheckout() {
+    // 1. Filter selected tiers
+    final selectedEntries = _ticketQuantities.entries.where((e) => e.value > 0).toList();
+
+    if (selectedEntries.isEmpty) return;
+
+    // 2. Enforce single tier selection for MVP (due to API limitation)
+    if (selectedEntries.length > 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select only one ticket type per order.")),
+      );
+      return;
+    }
+
+    final entry = selectedEntries.first;
+    final tier = widget.event.tiers.firstWhere((t) => t.id == entry.key);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CheckoutScreen(
+          event: widget.event,
+          tierId: tier.id,
+          tierName: tier.name,
+          unitPrice: tier.price,
+          quantity: entry.value,
+        ),
+      ),
+    );
   }
 
   @override
@@ -304,7 +336,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             const SizedBox(width: 24),
             Expanded(
               child: ElevatedButton(
-                onPressed: count > 0 ? () {} : null,
+                onPressed: count > 0 ? _onCheckout : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
                   disabledBackgroundColor: Colors.white10,
