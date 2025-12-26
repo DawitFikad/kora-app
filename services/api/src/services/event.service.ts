@@ -57,8 +57,7 @@ export class EventService {
             throw new Error("Event not found or unauthorized");
         }
 
-        // Business Rule: If editing a sensitive field, status might reset to PENDING
-        // For simplicity, we'll assume any update re-triggers review if already approved
+        const oldStatus = event.status;
         const reReview = event.status === EventStatus.APPROVED;
 
         const updatedEvent = await prisma.event.update({
@@ -69,7 +68,78 @@ export class EventService {
             }
         });
 
+        // Notify Ticket Holders if Critical Details changed or Cancelled
+        // Note: For 'reReview', we might not notify yet until approved/rejected. 
+        // But if organizer explicitly CANCELS (if we allowed that transition via update), we should notify.
+
+        // Check if critical info changed while it was APPROVED
+        if (oldStatus === EventStatus.APPROVED) {
+            const dateChanged = data.dateTime && new Date(data.dateTime).getTime() !== new Date(event.dateTime).getTime();
+            const venueChanged = data.venue && data.venue !== event.venue;
+
+            if (dateChanged || venueChanged) {
+                await EventService.notifyTicketHolders(id, "Event Update",
+                    `Important update for ${event.title}: The event ` +
+                    (dateChanged ? `date has been moved to ${new Date(data.dateTime).toDateString()} ` : "") +
+                    (venueChanged ? `venue has changed to ${data.venue}` : "")
+                );
+            }
+        }
+
         return updatedEvent;
+    }
+
+    static async notifyTicketHolders(eventId: number, title: string, content: string) {
+        try {
+            const { NotificationService } = require("./notification.service");
+            const { NotificationChannel } = require("@prisma/client");
+
+            // Find all users with valid tickets for this event
+            const tickets = await prisma.ticket.findMany({
+                where: { eventId, status: "VALID" },
+                select: { userId: true },
+                distinct: ['userId']
+            });
+
+            for (const ticket of tickets) {
+                await NotificationService.notifyUser(ticket.userId, {
+                    title,
+                    content,
+                    channels: [NotificationChannel.SMS] // In real app, prefer Push/Email
+                });
+            }
+        } catch (error) {
+            console.error(`Failed to notify ticket holders for event ${eventId}:`, error);
+        }
+    }
+
+    /**
+     * Called by Cron Job every hour
+     */
+    static async sendReminders() {
+        // Find events starting in the next 24 hours
+        const next24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const now = new Date();
+
+        const events = await prisma.event.findMany({
+            where: {
+                dateTime: {
+                    gte: now,
+                    lte: next24Hours
+                },
+                status: EventStatus.APPROVED
+            }
+        });
+
+        for (const event of events) {
+            // Check if we already sent reminder (Optimization: Use a flag or Redis)
+            // For now, simple logic: just send
+            await EventService.notifyTicketHolders(
+                event.id,
+                "Event Reminder",
+                `Reminder: ${event.title} is happening tomorrow at ${event.venue}!`
+            );
+        }
     }
 
     // --- Users: Discovery ---

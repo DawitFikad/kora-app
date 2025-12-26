@@ -3,7 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../../auth/services/auth_service.dart';
+import '../services/event_service.dart';
+import '../../profile/services/profile_service.dart';
 import '../../../core/providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -14,51 +15,58 @@ class ProfileScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final cardColor = isDark ? const Color(0xFF232030) : Colors.white;
+    
+    final profileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              // Profile Header
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+        child: profileAsync.when(
+          data: (profile) => SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                // Profile Header
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+                        ),
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey,
+                          backgroundImage: profile.avatarUrl != null 
+                              ? NetworkImage(profile.avatarUrl!) 
+                              : null,
+                          child: profile.avatarUrl == null 
+                              ? const Icon(Icons.person, size: 50, color: Colors.white)
+                              : null,
+                        ),
                       ),
-                      child: const CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey,
-                        child: Icon(Icons.person, size: 50, color: Colors.white),
-                        // backgroundImage: NetworkImage("..."), // TODO: User Image
+                      const SizedBox(height: 16),
+                      Text(
+                        profile.fullName ?? "User",
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "User Name", // TODO: Fetch from provider
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
+                      Text(
+                        profile.phoneNumber,
+                        style: TextStyle(
+                          color: isDark ? Colors.white54 : Colors.grey[600],
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                    Text(
-                      "+251 911 22 33 44", // TODO: Fetch
-                      style: TextStyle(
-                        color: isDark ? Colors.white54 : Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 40),
 
               // Menu Items
@@ -68,7 +76,7 @@ class ProfileScreen extends ConsumerWidget {
                 title: "My Tickets",
                 color: cardColor,
                 textColor: textColor,
-                onTap: () {},
+                onTap: () => context.push('/my-tickets'),
               ),
               const SizedBox(height: 16),
               _buildMenuItem(
@@ -77,7 +85,7 @@ class ProfileScreen extends ConsumerWidget {
                 title: "Favorites",
                  color: cardColor,
                 textColor: textColor,
-                onTap: () {},
+                onTap: () => context.go('/favorites'),
               ),
               const SizedBox(height: 16),
               _buildMenuItem(
@@ -86,7 +94,9 @@ class ProfileScreen extends ConsumerWidget {
                 title: "Payment Methods",
                  color: cardColor,
                 textColor: textColor,
-                onTap: () {},
+                onTap: () {
+                    // Placeholder for future feature
+                },
               ),
               const SizedBox(height: 16),
               _buildMenuItem(
@@ -132,6 +142,21 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+        ),
+          loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+          error: (err, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Error: $err', style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(userProfileProvider),
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
           ),
         ),
       ),

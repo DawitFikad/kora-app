@@ -1,84 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/features/notifications/models/app_notification.dart';
+import 'package:mobile/features/notifications/services/notification_service.dart';
 
-class AppNotification {
-  final String id;
-  final String title;
-  final String description;
-  final String type; // 'reminder', 'booking', 'update', 'alert'
-  final DateTime timestamp;
-  final bool isRead;
-  final Map<String, dynamic>? metadata;
+final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
+  final service = ref.read(notificationServiceProvider);
+  return service.getNotifications();
+});
 
-  AppNotification({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.type,
-    required this.timestamp,
-    this.isRead = false,
-    this.metadata,
-  });
-}
-
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock data based on the provided image
-    final todayNotifications = [
-      AppNotification(
-        id: '1',
-        title: 'Event Reminder',
-        description: 'Tomorrow: Jazz Night at The Blue Note. Don\'t forget your tickets!',
-        type: 'reminder',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        isRead: false,
-      ),
-      AppNotification(
-        id: '2',
-        title: 'Booking Confirmed!',
-        description: 'You have 2 tickets for Neon Light Show.',
-        type: 'booking',
-        timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-        isRead: false,
-        metadata: {
-          'orderId': '#8492',
-          'eventTitle': 'Neon Light Show 2024',
-          'eventTime': 'Fri, Oct 24 • 8:00 PM',
-          'imageUrl': 'https://placeholder.com/neon', // Replace with real or generated image
-        },
-      ),
-    ];
-
-    final earlierNotifications = [
-      AppNotification(
-        id: '3',
-        title: 'Early Access Started',
-        description: 'Early Bird access for \'Summer Fest\' starts now. Get your passes before they run out!',
-        type: 'update',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        isRead: true,
-      ),
-      AppNotification(
-        id: '4',
-        title: 'Security Alert',
-        description: 'Your password was successfully changed from a new device.',
-        type: 'alert',
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-        isRead: true,
-      ),
-      AppNotification(
-        id: '5',
-        title: 'Welcome to Events App',
-        description: 'Thanks for joining! Explore events near you.',
-        type: 'update',
-        timestamp: DateTime.now().subtract(const Duration(days: 7)),
-        isRead: true,
-      ),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notificationsAsync = ref.watch(notificationsProvider);
 
     return DefaultTabController(
       length: 3,
@@ -102,7 +39,9 @@ class NotificationScreen extends StatelessWidget {
           centerTitle: true,
           actions: [
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                // Mark all read logic here if API supports it
+              },
               child: Text(
                 "Mark all read",
                 style: GoogleFonts.poppins(
@@ -140,15 +79,39 @@ class NotificationScreen extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: TabBarView(
-                children: [
-                  _NotificationListView(
-                    today: todayNotifications,
-                    earlier: earlierNotifications,
-                  ),
-                  const Center(child: Text("Booking Notifications", style: TextStyle(color: Colors.white54))),
-                  const Center(child: Text("Updates Notifications", style: TextStyle(color: Colors.white54))),
-                ],
+              child: notificationsAsync.when(
+                data: (notifications) {
+                    if (notifications.isEmpty) {
+                        return Center(child: Text("No notifications", style: GoogleFonts.poppins(color: Colors.white54)));
+                    }
+                    
+                    final now = DateTime.now();
+                    final today = notifications.where((n) {
+                        final diff = now.difference(n.timestamp);
+                        return diff.inHours < 24;
+                    }).toList();
+                    
+                    final earlier = notifications.where((n) {
+                         final diff = now.difference(n.timestamp);
+                        return diff.inHours >= 24;
+                    }).toList();
+
+                    return TabBarView(
+                        children: [
+                        _NotificationListView(today: today, earlier: earlier),
+                        _NotificationListView(
+                            today: today.where((n) => n.type == 'booking').toList(), 
+                            earlier: earlier.where((n) => n.type == 'booking').toList()
+                        ),
+                        _NotificationListView(
+                             today: today.where((n) => n.type == 'update' || n.type == 'alert').toList(), 
+                            earlier: earlier.where((n) => n.type == 'update' || n.type == 'alert').toList()
+                        ),
+                        ],
+                    );
+                },
+                loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+                error: (err, stack) => Center(child: Text("Error: $err", style: const TextStyle(color: Colors.red))),
               ),
             ),
           ],
@@ -166,6 +129,10 @@ class _NotificationListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (today.isEmpty && earlier.isEmpty) {
+         return Center(child: Text("No notifications", style: GoogleFonts.poppins(color: Colors.white54)));
+    }
+  
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
@@ -226,14 +193,14 @@ class _NotificationTile extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        Expanded(child: Text(
                           notification.title,
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
-                        ),
+                        )),
                         if (!notification.isRead)
                           Container(
                             width: 8,
@@ -343,6 +310,11 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      // Basic fallback if metadata is missing expected keys
+      final orderId = metadata['orderId'] ?? '---';
+      final eventTitle = metadata['eventTitle'] ?? 'Event';
+      final eventTime = metadata['eventTime'] ?? '';
+
     return Container(
       margin: const EdgeInsets.only(left: 64),
       decoration: BoxDecoration(
@@ -363,7 +335,7 @@ class _BookingCard extends StatelessWidget {
                     const Icon(Icons.confirmation_num, color: Color(0xFF8B5CF6), size: 14),
                     const SizedBox(width: 8),
                     Text(
-                      "ORDER ${metadata['orderId']}".toUpperCase(),
+                      "ORDER $orderId".toUpperCase(),
                       style: GoogleFonts.poppins(
                         color: Colors.white38,
                         fontSize: 11,
@@ -375,7 +347,7 @@ class _BookingCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  metadata['eventTitle'],
+                  eventTitle,
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 15,
@@ -384,43 +356,13 @@ class _BookingCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  metadata['eventTime'],
+                  eventTime,
                   style: GoogleFonts.poppins(
                     color: Colors.white54,
                     fontSize: 12,
                   ),
                 ),
               ],
-            ),
-          ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              height: 120,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                image: const DecorationImage(
-                  image: NetworkImage("https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=500"),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.airplane_ticket, size: 18),
-              label: const Text("View Ticket"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8B5CF6),
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
             ),
           ),
         ],

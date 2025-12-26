@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -140,68 +141,71 @@ class _SearchResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF232030) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: CachedNetworkImage(
-              imageUrl: event.coverImage ?? 'https://picsum.photos/200',
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF232030) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CachedNetworkImage(
+                imageUrl: event.coverImage ?? 'https://picsum.photos/200',
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 12, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      DateFormat('MMM d, y').format(DateTime.parse(event.dateTime)),
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 12, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        event.venue,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        DateFormat('MMM d, y').format(DateTime.parse(event.dateTime)),
                         style: const TextStyle(color: Colors.grey, fontSize: 12),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on, size: 12, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          event.venue,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        ],
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
       ),
     );
   }

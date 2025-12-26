@@ -434,12 +434,7 @@ class _FeaturedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EventDetailsScreen(event: event),
-        ),
-      ),
+      onTap: () => context.push('/event/${event.id}'),
       child: Container(
         width: 280,
         decoration: BoxDecoration(
@@ -531,12 +526,7 @@ class _TrendingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EventDetailsScreen(event: event),
-        ),
-      ),
+      onTap: () => context.push('/event/${event.id}'),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

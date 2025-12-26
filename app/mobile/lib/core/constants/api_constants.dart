@@ -9,4 +9,6 @@ class ApiConstants {
   static const String myTickets = '$baseUrl/tickets/me';
   static const String bookTicket = '$baseUrl/tickets/reserve';
   static const String initPayment = '$baseUrl/payments/initialize';
+  static const String notifications = '$baseUrl/notifications';
+  static const String profile = '$baseUrl/profiles/me';
 }

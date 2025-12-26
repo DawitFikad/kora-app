@@ -7,6 +7,11 @@ import '../../features/events/presentation/home_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../storage/local_storage.dart';
 
+import '../../features/events/presentation/event_details_screen.dart';
+import '../../features/tickets/presentation/my_tickets_screen.dart';
+import '../../features/events/presentation/favorites_screen.dart';
+import '../../features/events/presentation/notification_screen.dart';
+
 class AppRouter {
   final LocalStorage storage;
 
@@ -24,7 +29,7 @@ class AppRouter {
 
       if (isFirstLaunch) {
         if (!isGoingToOnboarding) return '/onboarding';
-        return null; // Let them stay in onboarding
+        return null;
       }
 
       if (!isAuthenticated) {
@@ -32,7 +37,6 @@ class AppRouter {
         return null;
       }
 
-      // If authenticated and going to login/onboarding, send to home
       if (isAuthenticated && (isGoingToLogin || isGoingToOnboarding)) {
         return '/home';
       }
@@ -55,6 +59,25 @@ class AppRouter {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/event/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return EventDetailsScreen(eventId: int.parse(id));
+        },
+      ),
+      GoRoute(
+        path: '/my-tickets',
+        builder: (context, state) => const MyTicketsScreen(),
+      ),
+      GoRoute(
+        path: '/favorites',
+        builder: (context, state) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationScreen(),
       ),
     ],
   );

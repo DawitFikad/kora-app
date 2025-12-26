@@ -19,8 +19,16 @@ import notificationRoutes from "./routes/notification.routes";
 import contentRoutes from "./routes/content.routes";
 import bookingRoutes from "./routes/booking.routes";
 import { errorHandler } from "./middlewares/error.middleware";
+import cron from "node-cron";
+import { EventService } from "./services/event.service";
 
 const app = express();
+
+// Scheduler: Send Event Reminders every hour
+cron.schedule("0 * * * *", async () => {
+  console.log("[SCHEDULER] Running Event Reminders...");
+  await EventService.sendReminders();
+});
 
 // Global Rate Limiting
 const globalLimiter = rateLimit({

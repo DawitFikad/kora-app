@@ -15,9 +15,27 @@ final eventsProvider = FutureProvider<List<Event>>((ref) async {
   return service.getEvents();
 });
 
+final eventDetailsProvider = FutureProvider.family<Event, int>((ref, id) async {
+  final service = ref.read(eventServiceProvider);
+  return service.getEventById(id);
+});
+
 class EventService {
   final Dio _dio;
   EventService(this._dio);
+
+  Future<Event> getEventById(int id) async {
+    try {
+      final response = await _dio.get('${ApiConstants.events}/$id');
+      if (response.statusCode == 200) {
+        return Event.fromJson(response.data);
+      } else {
+        throw Exception('Failed to load event details');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 
   Future<List<Event>> getEvents({
     int? categoryId,

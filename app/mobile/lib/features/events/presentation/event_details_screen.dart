@@ -1,34 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/models/ticket_tier.dart';
 import 'package:mobile/features/booking/presentation/checkout_screen.dart';
+import 'package:mobile/features/events/services/event_service.dart';
 
-class EventDetailsScreen extends StatefulWidget {
-  final Event event;
-  const EventDetailsScreen({super.key, required this.event});
+class EventDetailsScreen extends ConsumerStatefulWidget {
+  final int eventId;
+  const EventDetailsScreen({super.key, required this.eventId});
 
   @override
-  State<EventDetailsScreen> createState() => _EventDetailsScreenState();
+  ConsumerState<EventDetailsScreen> createState() => _EventDetailsScreenState();
 }
 
-class _EventDetailsScreenState extends State<EventDetailsScreen> {
+class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   // Store quantities by TicketTier ID
   final Map<int, int> _ticketQuantities = {};
+  bool _initialized = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // Initialize quantities to 0
-    for (var tier in widget.event.tiers) {
+  void _initializeQuantities(Event event) {
+    if (_initialized) return;
+    for (var tier in event.tiers) {
       _ticketQuantities[tier.id] = 0;
     }
+    _initialized = true;
   }
 
-  double _calculateTotal() {
+  double _calculateTotal(Event event) {
     double total = 0;
-    for (var tier in widget.event.tiers) {
+    for (var tier in event.tiers) {
       total += (_ticketQuantities[tier.id] ?? 0) * tier.price;
     }
     return total;
@@ -38,7 +40,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     return _ticketQuantities.values.fold(0, (a, b) => a + b);
   }
 
-  void _onCheckout() {
+  void _onCheckout(Event event) {
     // 1. Filter selected tiers
     final selectedEntries = _ticketQuantities.entries.where((e) => e.value > 0).toList();
 
@@ -53,13 +55,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
 
     final entry = selectedEntries.first;
-    final tier = widget.event.tiers.firstWhere((t) => t.id == entry.key);
+    final tier = event.tiers.firstWhere((t) => t.id == entry.key);
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CheckoutScreen(
-          event: widget.event,
+          event: event,
           tierId: tier.id,
           tierName: tier.name,
           unitPrice: tier.price,
@@ -71,99 +73,112 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final eventDate = DateTime.parse(widget.event.dateTime);
-    
-    // Sort tiers by price ascending
-    final sortedTiers = List<TicketTier>.from(widget.event.tiers)..sort((a, b) => a.price.compareTo(b.price));
+    final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0D15),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Column(
-          children: [
-            Text(
-              widget.event.title,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+    return eventAsync.when(
+      data: (event) {
+        _initializeQuantities(event);
+        final eventDate = DateTime.parse(event.dateTime);
+        final sortedTiers = List<TicketTier>.from(event.tiers)..sort((a, b) => a.price.compareTo(b.price));
+
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0D15),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+              onPressed: () => Navigator.pop(context),
             ),
-            Text(
-              "${DateFormat('E, MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.white54,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            children: [
-              Text(
-                "Select Tickets",
-                style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            title: Column(
+              children: [
+                Text(
+                  event.title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
+                Text(
+                  "${DateFormat('E, MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.white54,
+                  ),
+                ),
+              ],
+            ),
+            centerTitle: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.more_vert, color: Colors.white),
+                onPressed: () {},
               ),
-              const SizedBox(height: 24),
-              
-              // Seat Map Card
-              _buildSeatMapCard(),
-              
-              const SizedBox(height: 32),
-              
-              if (sortedTiers.isEmpty)
-                const Center(child: Text("No tickets available", style: TextStyle(color: Colors.white54))),
-
-              // Ticket Tiers
-              ...sortedTiers.map((tier) {
-                final isSoldOut = tier.sold >= tier.capacity;
-                final quantity = _ticketQuantities[tier.id] ?? 0;
-                
-                return _TicketTierTile(
-                  title: tier.name,
-                  desc: "Includes access to event", // Descriptions could be added to backend model later
-                  price: tier.price,
-                  badge: isSoldOut ? "SOLD OUT" : (tier.capacity - tier.sold < 20 ? "Running Low" : null),
-                  badgeColor: isSoldOut ? Colors.red.withOpacity(0.1) : const Color(0xFFFF9F0A).withOpacity(0.1),
-                  badgeTextColor: isSoldOut ? Colors.red : const Color(0xFFFF9F0A),
-                  isSoldOut: isSoldOut,
-                  quantity: quantity,
-                  onChanged: (val) => setState(() => _ticketQuantities[tier.id] = val),
-                 );
-              }).toList(),
-              
-              const SizedBox(height: 24),
-              _buildExpandableSection("Event Policies"),
-              _buildExpandableSection("Age Restrictions"),
-              
-              const SizedBox(height: 120), // Spacer for bottom bar
             ],
           ),
-          
-          // Bottom Checkout Bar
-          _buildBottomBar(),
-        ],
+          body: Stack(
+            children: [
+              ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                children: [
+                  Text(
+                    "Select Tickets",
+                    style: GoogleFonts.poppins(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Seat Map Card
+                  _buildSeatMapCard(),
+                  
+                  const SizedBox(height: 32),
+                  
+                  if (sortedTiers.isEmpty)
+                    const Center(child: Text("No tickets available", style: TextStyle(color: Colors.white54))),
+
+                  // Ticket Tiers
+                  ...sortedTiers.map((tier) {
+                    final isSoldOut = tier.sold >= tier.capacity;
+                    final quantity = _ticketQuantities[tier.id] ?? 0;
+                    
+                    return _TicketTierTile(
+                      title: tier.name,
+                      desc: "Includes access to event",
+                      price: tier.price,
+                      badge: isSoldOut ? "SOLD OUT" : (tier.capacity - tier.sold < 20 ? "Running Low" : null),
+                      badgeColor: isSoldOut ? Colors.red.withOpacity(0.1) : const Color(0xFFFF9F0A).withOpacity(0.1),
+                      badgeTextColor: isSoldOut ? Colors.red : const Color(0xFFFF9F0A),
+                      isSoldOut: isSoldOut,
+                      quantity: quantity,
+                      onChanged: (val) => setState(() => _ticketQuantities[tier.id] = val),
+                     );
+                  }).toList(),
+                  
+                  const SizedBox(height: 24),
+                  _buildExpandableSection("Event Policies"),
+                  _buildExpandableSection("Age Restrictions"),
+                  
+                  const SizedBox(height: 120), // Spacer for bottom bar
+                ],
+              ),
+              
+              // Bottom Checkout Bar
+              _buildBottomBar(event),
+            ],
+          ),
+        );
+      },
+      loading: () => const Scaffold(
+        backgroundColor: Color(0xFF0F0D15),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+      ),
+      error: (err, stack) => Scaffold(
+        backgroundColor: Color(0xFF0F0D15),
+        body: Center(child: Text("Error: $err", style: TextStyle(color: Colors.red))),
       ),
     );
   }
@@ -281,8 +296,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
-    final total = _calculateTotal();
+  Widget _buildBottomBar(Event event) {
+    final total = _calculateTotal(event);
     final count = _totalTickets();
     
     return Positioned(
@@ -336,7 +351,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             const SizedBox(width: 24),
             Expanded(
               child: ElevatedButton(
-                onPressed: count > 0 ? _onCheckout : null,
+                onPressed: count > 0 ? () => _onCheckout(event) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
                   disabledBackgroundColor: Colors.white10,

@@ -5,22 +5,34 @@ export class ProfileService {
     // --- User Profile ---
 
     static async getUserProfile(userId: number) {
-        let profile = await prisma.userProfile.findUnique({
-            where: { userId },
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                phoneNumber: true,
+                email: true,
+                role: true,
+                profile: true
+            }
         });
 
-        if (!profile) {
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        if (!user.profile) {
             // Lazy creation if somehow missing
-            profile = await prisma.userProfile.create({
+            const profile = await prisma.userProfile.create({
                 data: {
                     userId,
                     fullName: "",
                     language: "en",
                 }
             });
+            return { ...user, profile };
         }
 
-        return profile;
+        return user;
     }
 
     static async updateUserProfile(userId: number, data: { fullName?: string; language?: string }) {
