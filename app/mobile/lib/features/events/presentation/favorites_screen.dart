@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/services/event_service.dart';
+import 'package:mobile/core/widgets/app_image.dart';
+import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -15,6 +17,8 @@ class FavoritesScreen extends ConsumerWidget {
     // In a real app, you might have a dedicated favorites provider
     // For now, let's filter the main events provider or use mock data
     final eventsAsync = ref.watch(eventsProvider);
+    final storage = ref.watch(localStorageProvider);
+    final favoriteIds = storage.favorites;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0D15),
@@ -38,8 +42,7 @@ class FavoritesScreen extends ConsumerWidget {
       ),
       body: eventsAsync.when(
         data: (events) {
-          // Mocking favorites by just taking a few events
-          final favoriteEvents = events.take(2).toList();
+          final favoriteEvents = events.where((e) => favoriteIds.contains(e.id.toString())).toList();
 
           if (favoriteEvents.isEmpty) {
             return _buildEmptyState();
@@ -110,12 +113,12 @@ class FavoritesScreen extends ConsumerWidget {
   }
 }
 
-class _FavoriteCard extends StatelessWidget {
+class _FavoriteCard extends ConsumerWidget {
   final Event event;
   const _FavoriteCard({required this.event});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final eventDate = DateTime.parse(event.dateTime);
 
     return GestureDetector(
@@ -134,8 +137,8 @@ class _FavoriteCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: CachedNetworkImage(
-                    imageUrl: event.coverImage ?? 'https://picsum.photos/400/200',
+                  child: AppImage(
+                    imageUrl: event.coverImage,
                     height: 180,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -144,13 +147,16 @@ class _FavoriteCard extends StatelessWidget {
                 Positioned(
                   top: 16,
                   right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+                  child: GestureDetector(
+                    onTap: () => ref.read(localStorageProvider).toggleFavorite(event.id.toString()),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.favorite, color: Color(0xFF8B5CF6), size: 20),
                     ),
-                    child: const Icon(Icons.favorite, color: Color(0xFF8B5CF6), size: 20),
                   ),
                 ),
               ],
@@ -213,7 +219,7 @@ class _FavoriteCard extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                              // TODO: Implement remove from favorites logic
+                              ref.read(localStorageProvider).toggleFavorite(event.id.toString());
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,

@@ -5,6 +5,7 @@ import 'package:mobile/features/booking/services/booking_service.dart';
 import 'package:mobile/features/booking/services/payment_service.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:mobile/core/widgets/app_image.dart';
 import 'package:go_router/go_router.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
@@ -227,15 +228,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[800],
-                                borderRadius: BorderRadius.circular(12),
-                                image: widget.event.coverImage != null 
-                                    ? DecorationImage(image: NetworkImage(widget.event.coverImage!), fit: BoxFit.cover) 
-                                    : null,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: AppImage(
+                                imageUrl: widget.event.coverImage,
+                                width: 60,
+                                height: 60,
+                                placeholder: 'https://picsum.photos/200',
                               ),
                             ),
                             const SizedBox(width: 16),

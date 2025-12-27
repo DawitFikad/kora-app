@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/features/events/models/event.dart';
+import 'package:mobile/core/widgets/app_image.dart';
 import 'package:intl/intl.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -153,11 +154,11 @@ class _SearchResultCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: CachedNetworkImage(
-                imageUrl: event.coverImage ?? 'https://picsum.photos/200',
+              child: AppImage(
+                imageUrl: event.coverImage,
                 width: 70,
                 height: 70,
-                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/200',
               ),
             ),
             const SizedBox(width: 16),

@@ -5,6 +5,7 @@ class LocalStorage extends ChangeNotifier {
   static const String keyIsFirstLaunch = 'is_first_launch';
   static const String keyAuthToken = 'auth_token';
   static const String keyCachedTickets = 'cached_tickets';
+  static const String keyFavorites = 'favorites';
 
   final SharedPreferences _prefs;
 
@@ -31,6 +32,20 @@ class LocalStorage extends ChangeNotifier {
     if (value is String) await _prefs.setString(key, value);
     if (value is int) await _prefs.setInt(key, value);
     if (value is double) await _prefs.setDouble(key, value);
+    if (value is List<String>) await _prefs.setStringList(key, value);
+    notifyListeners();
+  }
+
+  List<String> get favorites => _prefs.getStringList(keyFavorites) ?? [];
+
+  Future<void> toggleFavorite(String eventId) async {
+    final current = favorites;
+    if (current.contains(eventId)) {
+      current.remove(eventId);
+    } else {
+      current.add(eventId);
+    }
+    await _prefs.setStringList(keyFavorites, current);
     notifyListeners();
   }
 

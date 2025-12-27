@@ -4,6 +4,7 @@ import 'package:mobile/core/providers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:mobile/core/widgets/app_image.dart';
 import 'package:mobile/features/tickets/services/ticket_service.dart';
 import 'package:mobile/features/tickets/models/ticket.dart';
 
@@ -180,19 +181,12 @@ class _LargeTicketCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                child: ticket.event.coverImage != null
-                    ? Image.network(
-                        ticket.event.coverImage!,
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        height: 200,
-                        width: double.infinity,
-                        color: Colors.purple.withOpacity(0.2),
-                        child: const Icon(Icons.celebration, color: Colors.white30, size: 64),
-                      ),
+                child: AppImage(
+                  imageUrl: ticket.event.coverImage,
+                  height: 200,
+                  width: double.infinity,
+                  placeholder: 'https://picsum.photos/800/400',
+                ),
               ),
               Positioned(
                 top: 16,
@@ -437,14 +431,12 @@ class _CompactTicketCard extends StatelessWidget {
               topLeft: Radius.circular(16),
               bottomLeft: Radius.circular(16),
             ),
-            child: ticket.event.coverImage != null
-                ? Image.network(
-                    ticket.event.coverImage!,
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                  )
-                : Container(width: 100, color: Colors.purple.withOpacity(0.1)),
+            child: AppImage(
+              imageUrl: ticket.event.coverImage,
+              width: 100,
+              height: 100,
+              placeholder: 'https://picsum.photos/200',
+            ),
           ),
           Expanded(
             child: Padding(

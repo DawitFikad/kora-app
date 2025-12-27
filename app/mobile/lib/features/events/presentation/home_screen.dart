@@ -19,6 +19,7 @@ import 'package:mobile/features/tickets/presentation/my_tickets_screen.dart';
 import 'package:mobile/features/events/presentation/notification_screen.dart';
 import 'package:mobile/features/events/presentation/favorites_screen.dart';
 import 'package:mobile/features/events/presentation/event_details_screen.dart';
+import 'package:mobile/core/widgets/app_image.dart';
 
 final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
 final selectedCityProvider = StateProvider<City?>((ref) => null);
@@ -430,12 +431,14 @@ class _HomeBody extends ConsumerWidget {
   }
 }
 
-class _FeaturedCard extends StatelessWidget {
+class _FeaturedCard extends ConsumerWidget {
   final Event event;
   const _FeaturedCard({required this.event});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorited = ref.watch(localStorageProvider).favorites.contains(event.id.toString());
+
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
       child: Container(
@@ -448,10 +451,10 @@ class _FeaturedCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            CachedNetworkImage(
-              imageUrl: event.coverImage ?? 'https://picsum.photos/400/600',
+            AppImage(
+              imageUrl: event.coverImage,
+              placeholder: 'https://picsum.photos/400/600',
               fit: BoxFit.cover,
-              errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image, color: Colors.white54)),
             ),
             Container(
               decoration: BoxDecoration(
@@ -482,6 +485,25 @@ class _FeaturedCard extends StatelessWidget {
               ),
             ),
             Positioned(
+              top: 20,
+              left: 20,
+              child: GestureDetector(
+                onTap: () => ref.read(localStorageProvider).toggleFavorite(event.id.toString()),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isFavorited ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorited ? const Color(0xFF8B5CF6) : Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
               bottom: 20,
               left: 20,
               right: 20,
@@ -505,7 +527,10 @@ class _FeaturedCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.5)),
                         ),
-                        child: const Text("800 ETB", style: TextStyle(color: Color(0xFFD8B4FE), fontWeight: FontWeight.bold, fontSize: 12)),
+                        child: Text(
+                          "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB", 
+                          style: const TextStyle(color: Color(0xFFD8B4FE), fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
                       ),
                     ],
                   ),
@@ -521,13 +546,15 @@ class _FeaturedCard extends StatelessWidget {
   String _formatDate(String date) => DateFormat('MMM d').format(DateTime.parse(date));
 }
 
-class _TrendingCard extends StatelessWidget {
+class _TrendingCard extends ConsumerWidget {
   final Event event;
   final bool isDark;
   const _TrendingCard({required this.event, required this.isDark});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorited = ref.watch(localStorageProvider).favorites.contains(event.id.toString());
+
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
       child: Container(
@@ -540,11 +567,11 @@ class _TrendingCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: CachedNetworkImage(
-                imageUrl: event.coverImage ?? 'https://picsum.photos/200',
+              child: AppImage(
+                imageUrl: event.coverImage,
                 width: 80,
                 height: 80,
-                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/200',
               ),
             ),
             const SizedBox(width: 16),
@@ -571,7 +598,19 @@ class _TrendingCard extends StatelessWidget {
                 ],
               ),
             ),
-            Text("200 ETB", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+            Text(
+              "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB", 
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => ref.read(localStorageProvider).toggleFavorite(event.id.toString()),
+              child: Icon(
+                isFavorited ? Icons.favorite : Icons.favorite_border,
+                color: isFavorited ? const Color(0xFF8B5CF6) : Colors.grey,
+                size: 20,
+              ),
+            ),
           ],
         ),
       ),
