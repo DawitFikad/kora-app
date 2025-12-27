@@ -12,6 +12,11 @@ final localStorageProvider = ChangeNotifierProvider<LocalStorage>((ref) {
   throw UnimplementedError();
 });
 
+final authTokenProvider = Provider<String?>((ref) {
+  final storage = ref.watch(localStorageProvider);
+  return storage.authToken;
+});
+
 
 
 final dioProvider = Provider<Dio>((ref) {

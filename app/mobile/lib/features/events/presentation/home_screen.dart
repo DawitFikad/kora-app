@@ -26,7 +26,7 @@ final selectedCityProvider = StateProvider<City?>((ref) => null);
 
 final filteredEventsProvider = FutureProvider<List<Event>>((ref) async {
   // Watch for auth changes
-  ref.watch(localStorageProvider);
+  ref.watch(authTokenProvider);
   final service = ref.watch(eventServiceProvider);
   final category = ref.watch(selectedCategoryProvider);
   final city = ref.watch(selectedCityProvider);

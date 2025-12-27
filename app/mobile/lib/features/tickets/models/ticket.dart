@@ -23,13 +23,15 @@ class Ticket {
 
   factory Ticket.fromJson(Map<String, dynamic> json) {
     return Ticket(
-      id: json['id'],
+      id: json['id']?.toString() ?? '',
       ticketCode: json['ticketCode'],
-      qrPayload: json['qrPayload'],
-      status: json['status'],
+      qrPayload: json['qrPayload'] ?? '',
+      status: json['status'] ?? 'VALID',
       event: Event.fromJson(json['event']),
       seatNumber: json['seatNumber'],
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : DateTime.now(),
     );
   }
 

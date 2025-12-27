@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
+  
   // Light Theme Colors (based on CSS variables)
-  static const Color backgroundLight = Color(0xFFF8F7FA);
+  static const Color backgroundLight = Color(0xFFF7F4EA);
   static const Color foregroundLight = Color(0xFF3D3C4F);
   static const Color cardLight = Color(0xFFFFFFFF);
   static const Color cardForegroundLight = Color(0xFF3D3C4F);

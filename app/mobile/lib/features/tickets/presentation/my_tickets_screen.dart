@@ -7,10 +7,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile/core/widgets/app_image.dart';
 import 'package:mobile/features/tickets/services/ticket_service.dart';
 import 'package:mobile/features/tickets/models/ticket.dart';
+import 'package:mobile/features/tickets/presentation/ticket_detail_screen.dart';
 
 final myTicketsProvider = FutureProvider<List<Ticket>>((ref) async {
   // Watch for auth changes to refresh ticket list
-  ref.watch(localStorageProvider);
+  ref.watch(authTokenProvider);
   final service = ref.watch(ticketServiceProvider);
   return service.getMyTickets();
 });
@@ -144,12 +145,24 @@ class _TicketsListView extends StatelessWidget {
               if (index == 0 && !isPast) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 24),
-                  child: _LargeTicketCard(ticket: filteredTickets[index]),
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: filteredTickets[index])),
+                    ),
+                    child: _LargeTicketCard(ticket: filteredTickets[index]),
+                  ),
                 );
               }
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: _CompactTicketCard(ticket: filteredTickets[index]),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: filteredTickets[index])),
+                  ),
+                  child: _CompactTicketCard(ticket: filteredTickets[index]),
+                ),
               );
             },
           );

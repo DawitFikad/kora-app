@@ -65,6 +65,7 @@ class LocalStorage extends ChangeNotifier {
 
   Future<void> setCachedTickets(String jsonString) async {
     await _prefs.setString(keyCachedTickets, jsonString);
-    notifyListeners(); // Optional: if we want reactive UI based on cache update
+    // Do NOT notifyListeners() here as it causes infinite loops 
+    // when providers watch storage and call services that update cache.
   }
 }
