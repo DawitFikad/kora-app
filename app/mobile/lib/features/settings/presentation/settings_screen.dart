@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../auth/services/auth_service.dart';
+import '../../profile/services/profile_service.dart';
+import '../../profile/presentation/edit_profile_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -13,6 +15,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final isDark = themeMode == ThemeMode.dark;
+    final profileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -21,32 +24,47 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          // User Card (Mock)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                   CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                    child: Icon(Icons.person, size: 30, color: Theme.of(context).primaryColor),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'John Doe',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        '+251 911 22 33 44',
-                        style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
-                      ),
-                    ],
-                  )
-                ],
+          // User Profile Card
+          profileAsync.when(
+            data: (profile) => Card(
+              child: ListTile(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                ),
+                contentPadding: const EdgeInsets.all(16),
+                leading: CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                  backgroundImage: profile.avatarUrl != null 
+                      ? NetworkImage(profile.avatarUrl!) 
+                      : null,
+                  child: profile.avatarUrl == null 
+                      ? Icon(Icons.person, size: 30, color: Theme.of(context).primaryColor)
+                      : null,
+                ),
+                title: Text(
+                  profile.fullName ?? 'User',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(profile.phoneNumber),
+                trailing: const Icon(Icons.chevron_right),
+              ),
+            ),
+            loading: () => const Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+            error: (e, s) => Card(
+              child: ListTile(
+                title: const Text("Error loading profile"),
+                subtitle: Text(e.toString()),
+                trailing: IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => ref.refresh(userProfileProvider),
+                ),
               ),
             ),
           ),
