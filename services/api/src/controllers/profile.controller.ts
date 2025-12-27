@@ -18,8 +18,16 @@ export class ProfileController {
     static async updateMyProfile(req: Request, res: Response) {
         try {
             const userId = req.user!.userId;
-            const { fullName, language } = req.body;
-            const profile = await ProfileService.updateUserProfile(userId, { fullName, language });
+            const { fullName, avatarUrl, bio, gender, birthDate, language, email } = req.body;
+            const profile = await ProfileService.updateUserProfile(userId, {
+                fullName,
+                avatarUrl,
+                bio,
+                gender,
+                birthDate,
+                language,
+                email
+            });
             res.json(profile);
         } catch (error: any) {
             res.status(400).json({ error: error.message });

@@ -4,6 +4,10 @@ class UserProfile {
   final String phoneNumber;
   final String? email;
   final String? avatarUrl;
+  final String? bio;
+  final String? gender;
+  final DateTime? birthDate;
+  final String language;
 
   UserProfile({
     required this.id,
@@ -11,17 +15,48 @@ class UserProfile {
     required this.phoneNumber,
     this.email,
     this.avatarUrl,
+    this.bio,
+    this.gender,
+    this.birthDate,
+    this.language = 'en',
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    // Assuming the backend returns the profile under 'profile' or directly
     final profile = json['profile'] ?? {};
     return UserProfile(
-      id: json['id'],
-      fullName: profile['fullName'],
-      phoneNumber: json['phoneNumber'],
-      email: json['email'],
-      avatarUrl: profile['avatarUrl'],
+      id: (json['id'] ?? 0) as int,
+      fullName: profile['fullName'] as String?,
+      phoneNumber: (json['phoneNumber'] ?? '') as String,
+      email: json['email'] as String?,
+      avatarUrl: profile['avatarUrl'] as String?,
+      bio: profile['bio'] as String?,
+      gender: profile['gender'] as String?,
+      birthDate: profile['birthDate'] != null ? DateTime.tryParse(profile['birthDate'].toString()) : null,
+      language: (profile['language'] ?? 'en').toString(),
+    );
+  }
+
+  UserProfile copyWith({
+    int? id,
+    String? fullName,
+    String? phoneNumber,
+    String? email,
+    String? avatarUrl,
+    String? bio,
+    String? gender,
+    DateTime? birthDate,
+    String? language,
+  }) {
+    return UserProfile(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      email: email ?? this.email,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      bio: bio ?? this.bio,
+      gender: gender ?? this.gender,
+      birthDate: birthDate ?? this.birthDate,
+      language: language ?? this.language,
     );
   }
 }

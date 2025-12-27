@@ -11,7 +11,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:mobile/features/auth/services/auth_service.dart';
 import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/features/events/models/event.dart';
-import 'package:mobile/features/events/presentation/profile_screen.dart';
+import 'package:mobile/features/profile/presentation/profile_screen.dart';
 import 'package:mobile/features/events/presentation/search_screen.dart';
 import 'package:mobile/features/events/models/category.dart';
 import 'package:mobile/features/events/models/city.dart';

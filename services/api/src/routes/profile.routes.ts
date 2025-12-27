@@ -8,11 +8,11 @@ const router = Router();
 
 // User Profiles (Available to all authenticated users)
 router.get("/me", authenticate, ProfileController.getMyProfile);
-router.put("/me", authenticate, ProfileController.updateMyProfile);
+router.patch("/me", authenticate, ProfileController.updateMyProfile);
 
 // Organizer Profiles (Organizer Only)
 router.get("/organizer", authenticate, authorize([Role.ORGANIZER, Role.ADMIN]), ProfileController.getMyOrganizerProfile);
-router.put("/organizer", authenticate, authorize([Role.ORGANIZER]), ProfileController.updateMyOrganizerProfile);
+router.patch("/organizer", authenticate, authorize([Role.ORGANIZER]), ProfileController.updateMyOrganizerProfile);
 
 // Admin Actions
 router.get("/admin/organizers", authenticate, authorize([Role.ADMIN]), ProfileController.listOrganizers);

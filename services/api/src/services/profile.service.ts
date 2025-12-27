@@ -35,11 +35,35 @@ export class ProfileService {
         return user;
     }
 
-    static async updateUserProfile(userId: number, data: { fullName?: string; language?: string }) {
-        return prisma.userProfile.update({
+    static async updateUserProfile(userId: number, data: {
+        fullName?: string;
+        avatarUrl?: string;
+        bio?: string;
+        gender?: string;
+        birthDate?: string;
+        language?: string;
+        email?: string;
+    }) {
+        const { email, birthDate, ...profileData } = data;
+
+        // If email is provided, update the User model
+        if (email) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: { email }
+            });
+        }
+
+        await prisma.userProfile.update({
             where: { userId },
-            data,
+            data: {
+                ...profileData,
+                birthDate: birthDate ? new Date(birthDate) : undefined,
+            },
         });
+
+        // Return the full profile structure
+        return this.getUserProfile(userId);
     }
 
     // --- Organizer Profile ---
