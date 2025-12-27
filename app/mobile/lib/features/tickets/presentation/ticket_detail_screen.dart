@@ -13,19 +13,23 @@ class TicketDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final eventDate = DateTime.parse(ticket.event.dateTime);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0D15),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: Icon(Icons.close, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Ticket Details",
-          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(color: textColor, fontWeight: FontWeight.w600),
         ),
       ),
       body: SingleChildScrollView(
@@ -34,8 +38,15 @@ class TicketDetailScreen extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF1D192B),
+                color: cardColor,
                 borderRadius: BorderRadius.circular(32),
+                boxShadow: isDark ? null : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
@@ -58,7 +69,7 @@ class TicketDetailScreen extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: textColor,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -69,7 +80,7 @@ class TicketDetailScreen extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 ticket.event.venue,
-                                style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
+                                style: GoogleFonts.poppins(color: textColor.withOpacity(0.7), fontSize: 14),
                               ),
                             ),
                           ],
@@ -81,7 +92,7 @@ class TicketDetailScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               "${DateFormat('EEEE, MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
-                              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
+                              style: GoogleFonts.poppins(color: textColor.withOpacity(0.7), fontSize: 14),
                             ),
                           ],
                         ),
@@ -89,9 +100,9 @@ class TicketDetailScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildInfoItem("SECTION", "B"),
-                            _buildInfoItem("ROW", "4"),
-                            _buildInfoItem("SEAT", ticket.seatNumber ?? "12"),
+                            _buildInfoItem("SECTION", "B", textColor),
+                            _buildInfoItem("ROW", "4", textColor),
+                            _buildInfoItem("SEAT", ticket.seatNumber ?? "12", textColor),
                           ],
                         ),
                         const SizedBox(height: 32),
@@ -101,7 +112,7 @@ class TicketDetailScreen extends StatelessWidget {
                               Text(
                                 "SCAN THIS QR CODE AT THE ENTRY",
                                 style: GoogleFonts.poppins(
-                                  color: Colors.white38,
+                                  color: textColor.withOpacity(0.38),
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 1.2,
@@ -113,6 +124,13 @@ class TicketDetailScreen extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
                                 child: QrImageView(
                                   data: ticket.qrPayload,
@@ -127,7 +145,7 @@ class TicketDetailScreen extends StatelessWidget {
                                   ? ticket.ticketCode!.toUpperCase() 
                                   : ticket.id.substring(0, 8).toUpperCase(),
                                 style: GoogleFonts.poppins(
-                                  color: Colors.white,
+                                  color: textColor,
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 4,
@@ -148,9 +166,10 @@ class TicketDetailScreen extends StatelessWidget {
               icon: const Icon(Icons.download_rounded),
               label: const Text("Download PDF"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white10,
-                foregroundColor: Colors.white,
+                backgroundColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                foregroundColor: textColor,
                 minimumSize: const Size(double.infinity, 56),
+                shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
@@ -160,18 +179,18 @@ class TicketDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem(String label, String value) {
+  Widget _buildInfoItem(String label, String value, Color textColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(color: textColor.withOpacity(0.38), fontSize: 11, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ],
     );

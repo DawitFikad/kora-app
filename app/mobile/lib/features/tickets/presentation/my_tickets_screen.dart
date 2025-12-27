@@ -21,21 +21,26 @@ class MyTicketsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0F0D15),
+        backgroundColor: backgroundColor,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: textColor),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             "My Tickets",
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: textColor,
               fontWeight: FontWeight.w600,
               fontSize: 22,
             ),
@@ -44,11 +49,11 @@ class MyTicketsScreen extends ConsumerWidget {
             Container(
               margin: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: textColor.withOpacity(0.05),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.tune, color: Colors.white, size: 20),
+                icon: Icon(Icons.tune, color: textColor, size: 20),
                 onPressed: () {},
               ),
             ),
@@ -67,14 +72,14 @@ class MyTicketsScreen extends ConsumerWidget {
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 labelColor: Colors.white,
-                unselectedLabelColor: Colors.white60,
+                unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
                 labelStyle: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                   fontSize: 14,
+                   fontWeight: FontWeight.w600,
                 ),
                 unselectedLabelStyle: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                   fontSize: 14,
+                   fontWeight: FontWeight.w500,
                 ),
                 tabAlignment: TabAlignment.start,
                 labelPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -88,9 +93,9 @@ class MyTicketsScreen extends ConsumerWidget {
             Expanded(
               child: TabBarView(
                 children: [
-                  _TicketsListView(ref: ref, isPast: false),
-                  _TicketsListView(ref: ref, isPast: true),
-                  _buildEmptyState("No archived tickets"),
+                  _TicketsListView(ref: ref, isPast: false, isDark: isDark, textColor: textColor, cardColor: cardColor, backgroundColor: backgroundColor),
+                  _TicketsListView(ref: ref, isPast: true, isDark: isDark, textColor: textColor, cardColor: cardColor, backgroundColor: backgroundColor),
+                  _buildEmptyState("No archived tickets", textColor.withOpacity(0.5)),
                 ],
               ),
             ),
@@ -100,11 +105,11 @@ class MyTicketsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(String message) {
+  Widget _buildEmptyState(String message, Color color) {
     return Center(
       child: Text(
         message,
-        style: GoogleFonts.poppins(color: Colors.white54),
+        style: GoogleFonts.poppins(color: color),
       ),
     );
   }
@@ -113,8 +118,19 @@ class MyTicketsScreen extends ConsumerWidget {
 class _TicketsListView extends StatelessWidget {
   final WidgetRef ref;
   final bool isPast;
+  final bool isDark;
+  final Color textColor;
+  final Color cardColor;
+  final Color backgroundColor;
   
-  const _TicketsListView({required this.ref, this.isPast = false});
+  const _TicketsListView({
+    required this.ref, 
+    this.isPast = false,
+    required this.isDark,
+    required this.textColor,
+    required this.cardColor,
+    required this.backgroundColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -126,16 +142,20 @@ class _TicketsListView extends StatelessWidget {
         data: (tickets) {
           final now = DateTime.now();
           final filteredTickets = tickets.where((ticket) {
-            // Check status first
+            final eventDate = DateTime.parse(ticket.event.dateTime);
+            final isToday = eventDate.year == now.year && eventDate.month == now.month && eventDate.day == now.day;
+            
             if (isPast) {
-               return ticket.status != 'VALID' || DateTime.parse(ticket.event.dateTime).isBefore(now);
+               // Show if status is not valid (used/refunded) OR if it was a previous day
+               return ticket.status != 'VALID' || (eventDate.isBefore(now) && !isToday);
             } else {
-               return ticket.status == 'VALID' && DateTime.parse(ticket.event.dateTime).isAfter(now);
+               // Show in upcoming if it's VALID and (happening today OR in the future)
+               return ticket.status == 'VALID' && (eventDate.isAfter(now) || isToday);
             }
           }).toList();
 
           if (filteredTickets.isEmpty) {
-            return Center(child: Text(isPast ? "No past tickets" : "No upcoming tickets", style: const TextStyle(color: Colors.white54)));
+            return Center(child: Text(isPast ? "No past tickets" : "No upcoming tickets", style: TextStyle(color: textColor.withOpacity(0.5))));
           }
 
           return ListView.builder(
@@ -150,7 +170,7 @@ class _TicketsListView extends StatelessWidget {
                       context,
                       MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: filteredTickets[index])),
                     ),
-                    child: _LargeTicketCard(ticket: filteredTickets[index]),
+                    child: _LargeTicketCard(ticket: filteredTickets[index], isDark: isDark, textColor: textColor, cardColor: cardColor, backgroundColor: backgroundColor),
                   ),
                 );
               }
@@ -161,7 +181,7 @@ class _TicketsListView extends StatelessWidget {
                     context,
                     MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: filteredTickets[index])),
                   ),
-                  child: _CompactTicketCard(ticket: filteredTickets[index]),
+                  child: _CompactTicketCard(ticket: filteredTickets[index], isDark: isDark, textColor: textColor, cardColor: cardColor),
                 ),
               );
             },
@@ -176,7 +196,18 @@ class _TicketsListView extends StatelessWidget {
 
 class _LargeTicketCard extends StatelessWidget {
   final Ticket ticket;
-  const _LargeTicketCard({required this.ticket});
+  final bool isDark;
+  final Color textColor;
+  final Color cardColor;
+  final Color backgroundColor;
+
+  const _LargeTicketCard({
+    required this.ticket,
+    required this.isDark,
+    required this.textColor,
+    required this.cardColor,
+    required this.backgroundColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -184,8 +215,15 @@ class _LargeTicketCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1D192B),
+        color: cardColor,
         borderRadius: BorderRadius.circular(28),
+        boxShadow: isDark ? null : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -246,14 +284,14 @@ class _LargeTicketCard extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "${ticket.event.venue} • ${DateFormat('MMM d, y').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
                   style: GoogleFonts.poppins(
-                    color: Colors.white54,
+                    color: textColor.withOpacity(0.5),
                     fontSize: 13,
                   ),
                 ),
@@ -262,9 +300,9 @@ class _LargeTicketCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildTicketDetail("SECTION", "B"),
-                    _buildTicketDetail("ROW", "4"),
-                    _buildTicketDetail("SEAT", ticket.seatNumber ?? "12"),
+                    _buildTicketDetail("SECTION", "B", textColor),
+                    _buildTicketDetail("ROW", "4", textColor),
+                    _buildTicketDetail("SEAT", ticket.seatNumber ?? "12", textColor),
                   ],
                 ),
               ],
@@ -276,9 +314,9 @@ class _LargeTicketCard extends StatelessWidget {
               Container(
                 height: 20,
                 width: 10,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0F0D15),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
@@ -292,10 +330,10 @@ class _LargeTicketCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(
                         (constraints.constrainWidth() / 15).floor(),
-                        (index) => const SizedBox(
+                        (index) => SizedBox(
                           width: 8,
                           height: 1,
-                          child: DecoratedBox(decoration: BoxDecoration(color: Colors.white24)),
+                          child: DecoratedBox(decoration: BoxDecoration(color: textColor.withOpacity(0.1))),
                         ),
                       ),
                     );
@@ -305,9 +343,9 @@ class _LargeTicketCard extends StatelessWidget {
               Container(
                 height: 20,
                 width: 10,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0F0D15),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
@@ -322,7 +360,7 @@ class _LargeTicketCard extends StatelessWidget {
                 Text(
                   "ENTRY CODE",
                   style: GoogleFonts.poppins(
-                    color: Colors.white38,
+                    color: textColor.withOpacity(0.38),
                     fontSize: 12,
                     letterSpacing: 1.2,
                   ),
@@ -335,7 +373,7 @@ class _LargeTicketCard extends StatelessWidget {
                         ? "${ticket.id.substring(0, 4)} - ${ticket.id.substring(4, 8)}".toUpperCase()
                         : ticket.id.toUpperCase()),
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: textColor,
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 2,
@@ -348,6 +386,13 @@ class _LargeTicketCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: QrImageView(
                     data: ticket.qrPayload,
@@ -380,7 +425,7 @@ class _LargeTicketCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           "Available Offline",
-                          style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+                          style: GoogleFonts.poppins(color: textColor.withOpacity(0.7), fontSize: 13),
                         ),
                       ],
                     ),
@@ -405,18 +450,18 @@ class _LargeTicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTicketDetail(String label, String value) {
+  Widget _buildTicketDetail(String label, String value, Color textColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w500),
+          style: GoogleFonts.poppins(color: textColor.withOpacity(0.38), fontSize: 10, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -425,7 +470,16 @@ class _LargeTicketCard extends StatelessWidget {
 
 class _CompactTicketCard extends StatelessWidget {
   final Ticket ticket;
-  const _CompactTicketCard({required this.ticket});
+  final bool isDark;
+  final Color textColor;
+  final Color cardColor;
+
+  const _CompactTicketCard({
+    required this.ticket,
+    required this.isDark,
+    required this.textColor,
+    required this.cardColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -434,8 +488,15 @@ class _CompactTicketCard extends StatelessWidget {
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: const Color(0xFF1D192B),
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: isDark ? null : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -467,14 +528,14 @@ class _CompactTicketCard extends StatelessWidget {
                     ticket.event.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.poppins(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     ticket.event.venue,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
+                    style: GoogleFonts.poppins(color: textColor.withOpacity(0.53), fontSize: 12),
                   ),
                 ],
               ),
@@ -490,15 +551,15 @@ class _CompactTicketCard extends StatelessWidget {
                 (index) => Expanded(
                   child: Container(
                     width: 1,
-                    color: index % 2 == 0 ? Colors.white12 : Colors.transparent,
+                    color: index % 2 == 0 ? textColor.withOpacity(0.12) : Colors.transparent,
                   ),
                 ),
               ),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Icon(Icons.qr_code_2, color: Colors.white54, size: 24),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Icon(Icons.qr_code_2, color: textColor.withOpacity(0.54), size: 24),
           ),
         ],
       ),
