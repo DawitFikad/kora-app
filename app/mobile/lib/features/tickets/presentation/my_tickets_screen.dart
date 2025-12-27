@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/core/providers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -7,7 +8,9 @@ import 'package:mobile/features/tickets/services/ticket_service.dart';
 import 'package:mobile/features/tickets/models/ticket.dart';
 
 final myTicketsProvider = FutureProvider<List<Ticket>>((ref) async {
-  final service = ref.read(ticketServiceProvider);
+  // Watch for auth changes to refresh ticket list
+  ref.watch(localStorageProvider);
+  final service = ref.watch(ticketServiceProvider);
   return service.getMyTickets();
 });
 

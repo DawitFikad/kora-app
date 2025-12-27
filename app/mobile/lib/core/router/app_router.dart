@@ -27,8 +27,10 @@ class AppRouter {
       final isGoingToOnboarding = state.matchedLocation == '/onboarding';
       final isGoingToLogin = state.matchedLocation == '/login';
 
-      if (isFirstLaunch) {
-        if (!isGoingToOnboarding) return '/onboarding';
+      // If it's the first launch, force onboarding UNLESS they are already authenticated.
+      // An authenticated user should never be stuck in onboarding.
+      if (isFirstLaunch && !isAuthenticated) {
+        if (!isGoingToOnboarding && !isGoingToLogin) return '/onboarding';
         return null;
       }
 
@@ -37,7 +39,7 @@ class AppRouter {
         return null;
       }
 
-      if (isAuthenticated && isGoingToOnboarding) {
+      if (isAuthenticated && (isGoingToLogin || isGoingToOnboarding)) {
         return '/home';
       }
 

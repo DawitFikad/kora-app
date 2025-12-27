@@ -33,6 +33,7 @@ class AuthService {
       final accessToken = response.data['accessToken'];
       if (accessToken != null) {
         await _storage.setAuthToken(accessToken);
+        await _storage.setFirstLaunchComplete();
       } else {
         throw Exception('No access token in response');
       }

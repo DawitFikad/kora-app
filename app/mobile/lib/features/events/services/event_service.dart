@@ -11,12 +11,16 @@ final eventServiceProvider = Provider<EventService>((ref) {
 });
 
 final eventsProvider = FutureProvider<List<Event>>((ref) async {
-  final service = ref.read(eventServiceProvider);
+  // Watch storage so we refresh when user logs in/out
+  ref.watch(localStorageProvider);
+  final service = ref.watch(eventServiceProvider);
   return service.getEvents();
 });
 
 final eventDetailsProvider = FutureProvider.family<Event, int>((ref, id) async {
-  final service = ref.read(eventServiceProvider);
+  // Watch storage so we refresh when user logs in/out
+  ref.watch(localStorageProvider);
+  final service = ref.watch(eventServiceProvider);
   return service.getEventById(id);
 });
 

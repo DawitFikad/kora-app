@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,7 +24,9 @@ final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
 final selectedCityProvider = StateProvider<City?>((ref) => null);
 
 final filteredEventsProvider = FutureProvider<List<Event>>((ref) async {
-  final service = ref.read(eventServiceProvider);
+  // Watch for auth changes
+  ref.watch(localStorageProvider);
+  final service = ref.watch(eventServiceProvider);
   final category = ref.watch(selectedCategoryProvider);
   final city = ref.watch(selectedCityProvider);
   

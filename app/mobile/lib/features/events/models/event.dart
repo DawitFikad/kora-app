@@ -31,11 +31,11 @@ class Event {
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json['id'],
-      title: json['title'],
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      title: json['title'] ?? 'Untitled',
       description: json['description'] ?? '',
-      venue: json['venue'],
-      dateTime: json['dateTime'],
+      venue: json['venue'] ?? 'TBA',
+      dateTime: json['dateTime'] ?? DateTime.now().toIso8601String(),
       coverImage: json['coverImage'],
       featured: json['featured'] ?? false,
       tiers: (json['tiers'] as List<dynamic>?)

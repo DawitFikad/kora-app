@@ -6,8 +6,8 @@ class City {
 
   factory City.fromJson(Map<String, dynamic> json) {
     return City(
-      id: json['id'],
-      name: json['name'],
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      name: json['name'] ?? 'Unknown',
     );
   }
   Map<String, dynamic> toJson() {

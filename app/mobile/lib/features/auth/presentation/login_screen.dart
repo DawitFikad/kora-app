@@ -435,6 +435,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _verifyOtp() async {
+    if (_isLoading) return;
     final otp = _otpControllers.map((c) => c.text).join();
     if (otp.length < 6) return;
 
@@ -445,10 +446,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       debugPrint('OTP Verified Successfully');
       if (mounted) {
         setState(() => _isLoading = false);
-        debugPrint('Login success. checking if can pop');
-        if (GoRouter.of(context).canPop()) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
+
+        final canPop = GoRouter.of(context).canPop();
+        debugPrint('Login success. canPop: $canPop');
+        if (canPop) {
+           debugPrint('Action: Popping back');
            context.pop(true);
         } else {
+           debugPrint('Action: Navigating to /home');
            context.go('/home');
         }
       }

@@ -15,10 +15,10 @@ class TicketTier {
 
   factory TicketTier.fromJson(Map<String, dynamic> json) {
     return TicketTier(
-      id: json['id'],
-      name: json['name'],
-      price: double.parse(json['price'].toString()),
-      capacity: json['capacity'],
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      name: json['name'] ?? 'Regular',
+      price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+      capacity: json['capacity'] ?? 0,
       sold: json['sold'] ?? 0,
     );
   }

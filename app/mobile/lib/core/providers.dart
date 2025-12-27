@@ -24,7 +24,11 @@ final dioProvider = Provider<Dio>((ref) {
       'Accept': 'application/json',
     }
   ));
-  final storage = ref.watch(localStorageProvider);
+  
+  // Use read here for stability. The interceptor below will 
+  // dynamically read the latest token from the storage object
+  // without needing to re-create the entire Dio instance.
+  final storage = ref.read(localStorageProvider);
   
   dio.interceptors.add(InterceptorsWrapper(
     onRequest: (options, handler) {
@@ -36,7 +40,6 @@ final dioProvider = Provider<Dio>((ref) {
     },
   ));
 
-  // Add logging for easier debugging of 'DETAILS'
   dio.interceptors.add(LogInterceptor(
     requestHeader: true,
     requestBody: true,
@@ -49,6 +52,9 @@ final dioProvider = Provider<Dio>((ref) {
 });
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final storage = ref.watch(localStorageProvider);
+  // Use read here! We don't want to re-create the Router instance 
+  // every time storage notifies. GoRouter handles its own refreshes 
+  // via the refreshListenable below.
+  final storage = ref.read(localStorageProvider);
   return AppRouter(storage).router;
 });
