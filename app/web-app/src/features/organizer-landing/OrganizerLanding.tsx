@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from '../auth/LoginModal';
 import { useAuth } from '../../core/context/AuthContext';
 
-const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
+const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => void }) => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -42,8 +42,8 @@ const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
                     <a href="#how-it-works" className="nav-link">How it works</a>
                     <a href="#features" className="nav-link">Features</a>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <button 
-                            onClick={onAuthClick} 
+                        <button
+                            onClick={() => onAuthClick('login')}
                             style={{
                                 padding: '0.5rem 1.5rem',
                                 borderRadius: '8px',
@@ -57,8 +57,8 @@ const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
                         >
                             Organizer Login
                         </button>
-                        <button 
-                            onClick={onAuthClick}
+                        <button
+                            onClick={() => onAuthClick('register')}
                             style={{
                                 padding: '0.5rem 1.5rem',
                                 borderRadius: '8px',
@@ -98,8 +98,8 @@ const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
                             <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ color: 'white', textDecoration: 'none', fontWeight: 700 }}>How it works</a>
                             <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: 'white', textDecoration: 'none', fontWeight: 700 }}>Features</a>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                <button 
-                                    onClick={() => { onAuthClick(); setMobileMenuOpen(false); }} 
+                                <button
+                                    onClick={() => { onAuthClick('login'); setMobileMenuOpen(false); }}
                                     style={{
                                         flex: 1,
                                         padding: '0.7rem',
@@ -111,17 +111,14 @@ const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
                                         fontSize: '0.9rem',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
-                                        whiteSpace: 'nowrap',
-                                        '&:hover': {
-                                            background: 'rgba(255, 255, 255, 0.05)',
-                                            borderColor: 'rgba(255, 255, 255, 0.3)'
-                                        }
+                                        whiteSpace: 'nowrap'
                                     }}
+                                    className="nav-btn-outline"
                                 >
                                     Organizer Login
                                 </button>
-                                <button 
-                                    onClick={() => { onAuthClick(); setMobileMenuOpen(false); }} 
+                                <button
+                                    onClick={() => { onAuthClick('register'); setMobileMenuOpen(false); }}
                                     style={{
                                         padding: '0.6rem 1.2rem',
                                         borderRadius: '8px',
@@ -133,15 +130,9 @@ const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
                                         cursor: 'pointer',
                                         transition: 'all 0.3s ease',
                                         boxShadow: '0 2px 10px rgba(139, 92, 246, 0.3)',
-                                        whiteSpace: 'nowrap',
-                                        '&:hover': {
-                                            transform: 'translateY(-1px)',
-                                            boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)'
-                                        },
-                                        '&:active': {
-                                            transform: 'translateY(0)'
-                                        }
+                                        whiteSpace: 'nowrap'
                                     }}
+                                    className="nav-btn-primary"
                                 >
                                     Create Organizer Account
                                 </button>
@@ -155,6 +146,20 @@ const Navbar = ({ onAuthClick }: { onAuthClick: () => void }) => {
                 .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-weight: 600; fontSize: 0.9rem; transition: color 0.2s; }
                 .nav-link:hover { color: white; }
                 
+                .nav-btn-outline:hover {
+                    background: rgba(255, 255, 255, 0.05) !important;
+                    border-color: rgba(255, 255, 255, 0.3) !important;
+                }
+                
+                .nav-btn-primary:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4) !important;
+                }
+                
+                .nav-btn-primary:active {
+                    transform: translateY(0);
+                }
+
                 @media (max-width: 768px) {
                     .desktop-nav { display: none !important; }
                     .mobile-toggle { display: block !important; cursor: pointer; }
@@ -354,6 +359,7 @@ const OrganizerLanding = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
     const [revenue, setRevenue] = useState(24.5);
     const [tickets, setTickets] = useState(842);
 
@@ -379,9 +385,9 @@ const OrganizerLanding = () => {
     return (
         <div>
             <div className="mesh-bg" />
-            <Navbar onAuthClick={() => setIsLoginOpen(true)} />
+            <Navbar onAuthClick={(mode) => { setAuthMode(mode); setIsLoginOpen(true); }} />
 
-            <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+            <LoginModal isOpen={isLoginOpen} mode={authMode} onClose={() => setIsLoginOpen(false)} />
 
             {/* 1. Hero Section */}
             <section style={{ paddingTop: '10rem', paddingBottom: '6rem' }}>
@@ -414,8 +420,8 @@ const OrganizerLanding = () => {
                             Built for Ethiopian events — from concerts and conferences to sports and church gatherings. Scale your reach effortlessly with our industry-leading tools.
                         </p>
                         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <motion.button 
-                                onClick={() => setIsLoginOpen(true)}
+                            <motion.button
+                                onClick={() => { setAuthMode('register'); setIsLoginOpen(true); }}
                                 whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(139, 92, 246, 0.4)' }}
                                 whileTap={{ scale: 0.98 }}
                                 style={{
@@ -439,8 +445,8 @@ const OrganizerLanding = () => {
                                 <span>Create Organizer Account</span>
                                 <ArrowRight size={20} />
                             </motion.button>
-                            <motion.button 
-                                onClick={() => setIsLoginOpen(true)}
+                            <motion.button
+                                onClick={() => { setAuthMode('login'); setIsLoginOpen(true); }}
                                 whileHover={{ background: 'rgba(255, 255, 255, 0.1)' }}
                                 whileTap={{ scale: 0.98 }}
                                 style={{

@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, ShieldCheck, Mail, User, ArrowRight, Loader2 } from 'lucide-react';
+import { X, Phone, ShieldCheck, Mail, ArrowRight, Loader2, MapPin, Building2 } from 'lucide-react';
 import { AuthService } from '../../core/api/auth.service';
 import { useAuth } from '../../core/context/AuthContext';
 
 interface LoginModalProps {
     isOpen: boolean;
+    mode?: 'login' | 'register';
     onClose: () => void;
 }
 
-export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
+export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps) => {
     const { login } = useAuth();
     const [step, setStep] = useState<'phone' | 'otp' | 'register'>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -20,6 +21,8 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
     // Registration fields
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [city, setCity] = useState('');
+    const [payoutDetails, setPayoutDetails] = useState('');
 
     const handleRequestOtp = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,32 +43,37 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
         setIsLoading(true);
         setError('');
         try {
-            const response: any = await AuthService.verifyOtp(phoneNumber, otp);
+            const verifyRes: any = await AuthService.verifyOtp(phoneNumber, otp);
 
-            if (response.isNewUser) {
-                setStep('register');
+            if (mode === 'register') {
+                // If user is already an organizer, just log them in
+                if (verifyRes.hasOrganizerProfile) {
+                    await login({ accessToken: verifyRes.accessToken, user: verifyRes.user });
+                    onClose();
+                    return;
+                }
+
+                // Otherwise, complete registration with the data from step 1
+                try {
+                    const regRes: any = await AuthService.registerOrganizer({
+                        phoneNumber,
+                        email,
+                        name,
+                        city,
+                        payoutDetails
+                    });
+                    await login({ accessToken: regRes.accessToken, user: regRes.user });
+                    onClose();
+                } catch (regErr: any) {
+                    setError(regErr.response?.data?.error || 'Registration failed after verification.');
+                }
             } else {
-                // Already exists, just log them in
-                await login({ accessToken: response.accessToken, user: response.user });
+                // Regular login mode
+                await login({ accessToken: verifyRes.accessToken, user: verifyRes.user });
                 onClose();
             }
         } catch (err: any) {
-            setError(err.error || 'Invalid OTP. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError('');
-        try {
-            const response: any = await AuthService.registerOrganizer({ phoneNumber, email, name });
-            await login({ accessToken: response.accessToken, user: response.user });
-            onClose();
-        } catch (err: any) {
-            setError(err.error || 'Registration failed.');
+            setError(err.response?.data?.error || err.message || 'Invalid OTP. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -101,19 +109,16 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                         borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         margin: '0 auto 20px'
                     }}>
-                        {step === 'phone' && <Phone size={32} color="var(--primary)" />}
+                        {step === 'phone' && (mode === 'register' ? <Building2 size={32} color="var(--primary)" /> : <Phone size={32} color="var(--primary)" />)}
                         {step === 'otp' && <ShieldCheck size={32} color="var(--primary)" />}
-                        {step === 'register' && <User size={32} color="var(--primary)" />}
                     </div>
                     <h2 style={{ fontSize: '1.75rem', fontWeight: 900 }}>
-                        {step === 'phone' && 'Welcome back'}
-                        {step === 'otp' && 'Verify identity'}
-                        {step === 'register' && 'Complete Profile'}
+                        {step === 'phone' && (mode === 'register' ? 'Apply as Organizer' : 'Welcome Back')}
+                        {step === 'otp' && 'Verify Identity'}
                     </h2>
                     <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>
-                        {step === 'phone' && 'Enter your phone number to continue'}
+                        {step === 'phone' && (mode === 'register' ? 'Fill in your business details to get started' : 'Enter your registered phone number')}
                         {step === 'otp' && `Enter the 6-digit code sent to ${phoneNumber}`}
-                        {step === 'register' && 'Tell us a bit about your organization'}
                     </p>
                 </div>
 
@@ -131,6 +136,78 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                     {step === 'phone' && (
                         <motion.form key="phone" onSubmit={handleRequestOtp}
                             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                            {mode === 'register' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Organization Name</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Building2 size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                                            <input
+                                                type="text"
+                                                placeholder="Legal Entity Name"
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
+                                                required
+                                                style={{
+                                                    width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+                                                    padding: '12px 12px 12px 48px', borderRadius: '12px', color: 'white'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>City</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <MapPin size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Addis Ababa"
+                                                    value={city}
+                                                    onChange={(e) => setCity(e.target.value)}
+                                                    required
+                                                    style={{
+                                                        width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+                                                        padding: '12px 12px 12px 36px', borderRadius: '12px', color: 'white'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Contact Email</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <Mail size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                                                <input
+                                                    type="email"
+                                                    placeholder="gmail/outlook..."
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    required
+                                                    style={{
+                                                        width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+                                                        padding: '12px 12px 12px 36px', borderRadius: '12px', color: 'white'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Payout (Bank / Mobile Account)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="CBE / TeleBirr details..."
+                                            value={payoutDetails}
+                                            onChange={(e) => setPayoutDetails(e.target.value)}
+                                            required
+                                            style={{
+                                                width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+                                                padding: '12px', borderRadius: '12px', color: 'white'
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <div style={{ marginBottom: '24px' }}>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Phone Number</label>
                                 <div style={{ position: 'relative' }}>
@@ -148,8 +225,8 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                                     />
                                 </div>
                             </div>
-                            <button disabled={isLoading} className="btn btn-primary" style={{ width: '100%', padding: '16px', justifyContent: 'center' }}>
-                                {isLoading ? <Loader2 className="animate-spin" /> : <>Continue <ArrowRight size={20} /></>}
+                            <button disabled={isLoading} className="btn-blue" style={{ width: '100%', padding: '16px', justifyContent: 'center', height: 'auto' }}>
+                                {isLoading ? <Loader2 className="animate-spin" /> : <>{mode === 'register' ? 'Apply & Send Verification' : 'Login & Send OTP'} <ArrowRight size={20} /></>}
                             </button>
                         </motion.form>
                     )}
@@ -182,47 +259,6 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                         </motion.form>
                     )}
 
-                    {step === 'register' && (
-                        <motion.form key="register" onSubmit={handleRegister}
-                            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Organization Name</label>
-                                <div style={{ position: 'relative' }}>
-                                    <User size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. Kuriftu Events"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                        style={{
-                                            width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-                                            padding: '16px 16px 16px 48px', borderRadius: '14px', color: 'white'
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Email Address <span style={{ fontWeight: 400, opacity: 0.7 }}>(Optional)</span></label>
-                                <div style={{ position: 'relative' }}>
-                                    <Mail size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                                    <input
-                                        type="email"
-                                        placeholder="contact@org.com"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        style={{
-                                            width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-                                            padding: '16px 16px 16px 48px', borderRadius: '14px', color: 'white'
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <button disabled={isLoading} className="btn btn-primary" style={{ width: '100%', padding: '16px', justifyContent: 'center' }}>
-                                {isLoading ? <Loader2 className="animate-spin" /> : 'Complete Registration'}
-                            </button>
-                        </motion.form>
-                    )}
                 </AnimatePresence>
             </motion.div>
         </div>

@@ -13,8 +13,11 @@ import {
     Loader2
 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
+import { OrganizerService } from '../../../core/api/organizer.service';
+import { useToast } from '../../../core/components/Toast';
 
 export const ScannerView = () => {
+    const toast = useToast();
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [ticketId, setTicketId] = useState('');
     const [status, setStatus] = useState<'idle' | 'validating' | 'success' | 'error'>('idle');
@@ -43,44 +46,55 @@ export const ScannerView = () => {
         setStatus('validating');
 
         if (!isOnline) {
-            const scan = { id, timestamp: new Date().toISOString(), status: 'PENDING_SYNC' };
+            const scan = { qrPayload: id, timestamp: new Date().toISOString(), status: 'PENDING_SYNC' };
             const newQueue = [...offlineQueue, scan];
             setOfflineQueue(newQueue);
             localStorage.setItem('offline_scans', JSON.stringify(newQueue));
 
-            setTimeout(() => {
-                setStatus('success');
-                setScanResult({ name: 'Saved Offline', type: 'Any Tier', message: 'Scan cached for sync' });
-                setHistory([scan, ...history]);
-                setTicketId('');
-            }, 800);
+            setStatus('success');
+            setScanResult({ name: 'Saved Offline', type: 'Caching Mode', message: 'Scan cached for sync' });
+            setHistory([scan, ...history]);
+            setTicketId('');
             return;
         }
 
-        // Simulate API call for validation
-        setTimeout(() => {
-            if (id.startsWith('ERR')) {
-                setStatus('error');
-                setScanResult({ message: 'Ticket already used or invalid.' });
-            } else {
+        try {
+            const res = await OrganizerService.validateTicket(id);
+            if (res.data.success) {
                 setStatus('success');
-                setScanResult({ name: 'Abinet Kebede', type: 'VIP Access', event: 'Summer Fest 2025' });
+                setScanResult({
+                    name: res.data.ticket.userName || 'Attendee',
+                    type: res.data.ticket.tierName,
+                    event: res.data.ticket.eventTitle
+                });
                 const scan = { id, timestamp: new Date().toISOString(), status: 'SUCCESS' };
                 setHistory([scan, ...history]);
                 setTicketId('');
+            } else {
+                setStatus('error');
+                setScanResult({ message: res.data.message || 'Invalid Ticket' });
             }
-        }, 1000);
+        } catch (error: any) {
+            console.error("Validation failed", error);
+            setStatus('error');
+            setScanResult({ message: error.response?.data?.message || 'Validation error. Please try again.' });
+        }
     };
 
-    const syncOffline = () => {
+    const syncOffline = async () => {
         if (offlineQueue.length === 0) return;
         setStatus('validating');
-        setTimeout(() => {
+        try {
+            await OrganizerService.syncLogs(offlineQueue);
             setOfflineQueue([]);
             localStorage.removeItem('offline_scans');
+            toast.success(`${offlineQueue.length} scans synchronized successfully!`);
+        } catch (error) {
+            console.error("Sync failed", error);
+            toast.error("Failed to synchronize scans.");
+        } finally {
             setStatus('idle');
-            alert(`${offlineQueue.length} scans synchronized successfully!`);
-        }, 2000);
+        }
     };
 
     return (

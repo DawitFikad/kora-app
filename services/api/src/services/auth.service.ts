@@ -27,10 +27,12 @@ export class AuthService {
         }
 
         // Check if user exists
-        let user = await prisma.user.findUnique({
+        const existingUser = await prisma.user.findUnique({
             where: { phoneNumber },
             include: { organizer: true }
         });
+
+        let user = existingUser;
 
         if (!user) {
             // Create new user (B2C default)
@@ -70,10 +72,16 @@ export class AuthService {
             },
         });
 
-        return { user, accessToken, refreshToken };
+        return {
+            user,
+            accessToken,
+            refreshToken,
+            isNewUser: !existingUser,
+            hasOrganizerProfile: !!user.organizer
+        };
     }
 
-    static async registerOrganizer(data: { phoneNumber: string; email?: string | null; name: string }) {
+    static async registerOrganizer(data: { phoneNumber: string; email?: string | null; name: string; city: string; payoutDetails: string }) {
         // TODO: Add OTP verification step for registration too, or assume verified before calling this?
         // The plan said "Verify OTP first". 
         // For simplicity in this step, let's assume the client verifies OTP and then calls register within a short window, 
@@ -94,36 +102,67 @@ export class AuthService {
 
         const existingUser = await prisma.user.findUnique({
             where: { phoneNumber: data.phoneNumber },
-        });
-
-        if (existingUser) {
-            throw new Error("User already exists");
-        }
-
-        const user = await prisma.user.create({
-            data: {
-                phoneNumber: data.phoneNumber,
-                email: email,
-                role: Role.ORGANIZER,
-                status: AccountStatus.PENDING,
-                profile: {
-                    create: {
-                        fullName: data.name,
-                    }
-                },
-                organizer: {
-                    create: {
-                        organizationName: data.name,
-                        contactPhone: data.phoneNumber,
-                        contactEmail: email,
-                        city: "TBD", // To be updated by organizer
-                        payoutDetails: "TBD", // To be updated by organizer
-                        status: "PENDING",
-                    }
-                }
-            },
             include: { organizer: true }
         });
+
+        if (existingUser?.organizer) {
+            throw new Error("User is already an organizer or has a pending application.");
+        }
+
+        let user;
+        if (existingUser) {
+            // Update existing user to Organizer role
+            user = await prisma.user.update({
+                where: { id: existingUser.id },
+                data: {
+                    role: Role.ORGANIZER,
+                    status: AccountStatus.PENDING,
+                    email: email || existingUser.email, // Update email if provided, otherwise keep existing
+                    profile: {
+                        update: {
+                            fullName: data.name, // Update profile name
+                        }
+                    },
+                    organizer: {
+                        create: { // Create organizer profile
+                            organizationName: data.name,
+                            contactPhone: data.phoneNumber,
+                            contactEmail: email,
+                            city: data.city,
+                            payoutDetails: data.payoutDetails,
+                            status: "PENDING",
+                        }
+                    }
+                },
+                include: { organizer: true }
+            });
+        } else {
+            // Create brand new user as Organizer
+            user = await prisma.user.create({
+                data: {
+                    phoneNumber: data.phoneNumber,
+                    email: email,
+                    role: Role.ORGANIZER,
+                    status: AccountStatus.PENDING,
+                    profile: {
+                        create: {
+                            fullName: data.name,
+                        }
+                    },
+                    organizer: {
+                        create: {
+                            organizationName: data.name,
+                            contactPhone: data.phoneNumber,
+                            contactEmail: email,
+                            city: data.city,
+                            payoutDetails: data.payoutDetails,
+                            status: "PENDING",
+                        }
+                    }
+                },
+                include: { organizer: true }
+            });
+        }
 
         // Get the organizerId from the newly created organizer profile
         const organizerId = user.organizer?.id;

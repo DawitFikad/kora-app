@@ -3,6 +3,7 @@ import api from './client';
 export const OrganizerService = {
     // Dashboard & Stats
     getOverview: () => api.get('/organizer/overview'),
+    getEventStats: (id: number) => api.get(`/organizer/events/${id}/dashboard`),
 
     // Event Management
     getMyEvents: () => api.get('/organizer/events'),
@@ -30,4 +31,9 @@ export const OrganizerService = {
     // Settings
     getSettings: () => api.get('/organizer/settings'),
     updateSettings: (data: any) => api.patch('/organizer/settings', data),
+
+    // Validation
+    validateTicket: (qrPayload: string, gateId?: string) => api.post('/validate/scan', { qrPayload, gateId }),
+    getSyncData: (eventId: number) => api.get(`/validate/sync/${eventId}`),
+    syncLogs: (logs: any[]) => api.post('/validate/sync', { logs }),
 };

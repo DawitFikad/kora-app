@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import { Plus, Tag, Users, Trash2, Loader2, Megaphone } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
+import { useToast } from '../../../core/components/Toast';
 
 export const PromotionsView = () => {
+    const toast = useToast();
     const [promos, setPromos] = useState<any[]>([]);
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -45,9 +47,10 @@ export const PromotionsView = () => {
             setPromos([res.data, ...promos]);
             setShowForm(false);
             setForm({ code: '', discount: '', type: 'PERCENTAGE', expiresAt: '', maxUses: '', eventId: '' });
+            toast.success("Promo code created successfully!");
         } catch (error) {
             console.error("Failed to create promo", error);
-            alert("Error creating promo code.");
+            toast.error("Error creating promo code.");
         } finally {
             setLoading(false);
         }

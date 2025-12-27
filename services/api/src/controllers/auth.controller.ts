@@ -30,12 +30,12 @@ export class AuthController {
 
     static async registerOrganizer(req: Request, res: Response) {
         try {
-            const { phoneNumber, email, name } = req.body;
-            if (!phoneNumber || !email || !name) {
-                return res.status(400).json({ error: "All fields are required" });
+            const { phoneNumber, email, name, city, payoutDetails } = req.body;
+            if (!phoneNumber || !name || !city || !payoutDetails) {
+                return res.status(400).json({ error: "Required fields missing: phoneNumber, name, city, payoutDetails" });
             }
 
-            const result = await AuthService.registerOrganizer({ phoneNumber, email, name });
+            const result = await AuthService.registerOrganizer({ phoneNumber, email, name, city, payoutDetails });
             res.json(result);
         } catch (error: any) {
             res.status(400).json({ error: error.message });

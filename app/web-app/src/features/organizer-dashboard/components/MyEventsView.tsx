@@ -4,7 +4,7 @@ import { Plus, Filter, Calendar, Globe, Pencil, BarChart3, Loader2 } from 'lucid
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 
-export const MyEventsView = ({ onNavigate, onEditEvent }: { onNavigate?: (tab: string) => void; onEditEvent?: (eventId: number) => void }) => {
+export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavigate?: (tab: string) => void; onEditEvent?: (eventId: number) => void; onViewStats?: (eventId: number) => void }) => {
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('All Events');
@@ -119,7 +119,12 @@ export const MyEventsView = ({ onNavigate, onEditEvent }: { onNavigate?: (tab: s
                                         >
                                             <Pencil size={16} />
                                         </button>
-                                        <button style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}><BarChart3 size={16} /></button>
+                                        <button
+                                            onClick={() => onViewStats?.(event.id)}
+                                            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
+                                        >
+                                            <BarChart3 size={16} />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
