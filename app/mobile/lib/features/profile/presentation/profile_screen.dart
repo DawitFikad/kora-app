@@ -137,7 +137,7 @@ class ProfileScreen extends ConsumerWidget {
                   title: "Favorites",
                   color: cardColor,
                   textColor: textColor,
-                  onTap: () => context.go('/favorites'),
+                  onTap: () => context.push('/favorites'),
                 ),
                 const SizedBox(height: 16),
                 _buildMenuItem(

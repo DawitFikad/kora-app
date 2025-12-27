@@ -20,22 +20,32 @@ class FavoritesScreen extends ConsumerWidget {
     final storage = ref.watch(localStorageProvider);
     final favoriteIds = storage.favorites;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0D15),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: Navigator.canPop(context) 
+            ? IconButton(
+                icon: Icon(Icons.arrow_back, color: textColor),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: Text(
           "My Wishlist",
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: textColor,
             fontWeight: FontWeight.bold,
             fontSize: 24,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: Colors.white),
+            icon: Icon(Icons.more_horiz, color: textColor),
             onPressed: () {},
           ),
         ],
@@ -45,7 +55,7 @@ class FavoritesScreen extends ConsumerWidget {
           final favoriteEvents = events.where((e) => favoriteIds.contains(e.id.toString())).toList();
 
           if (favoriteEvents.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(isDark, textColor);
           }
 
           return ListView.builder(
@@ -65,7 +75,7 @@ class FavoritesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isDark, Color textColor) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -73,16 +83,16 @@ class FavoritesScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF1D192B),
+              color: isDark ? const Color(0xFF1D192B) : Colors.grey[200],
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.favorite_border_rounded, size: 64, color: Colors.white12),
+            child: Icon(Icons.favorite_border_rounded, size: 64, color: textColor.withOpacity(0.1)),
           ),
           const SizedBox(height: 24),
           Text(
             "Nothing here yet",
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: textColor,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -92,7 +102,7 @@ class FavoritesScreen extends ConsumerWidget {
             "Tap the heart on any event to save it for later.",
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-              color: Colors.white54,
+              color: textColor.withOpacity(0.5),
               fontSize: 14,
             ),
           ),
@@ -119,6 +129,9 @@ class _FavoriteCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final eventDate = DateTime.parse(event.dateTime);
 
     return GestureDetector(
@@ -128,8 +141,15 @@ class _FavoriteCard extends ConsumerWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1D192B),
+          color: cardColor,
           borderRadius: BorderRadius.circular(24),
+          boxShadow: isDark ? null : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
@@ -173,7 +193,7 @@ class _FavoriteCard extends ConsumerWidget {
                         child: Text(
                           event.title,
                           style: GoogleFonts.poppins(
-                            color: Colors.white,
+                            color: textColor,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -194,22 +214,22 @@ class _FavoriteCard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today, color: Colors.white38, size: 14),
+                      Icon(Icons.calendar_today, color: textColor.withOpacity(0.4), size: 14),
                       const SizedBox(width: 6),
                       Text(
                         "${DateFormat('E, MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
-                        style: GoogleFonts.poppins(color: Colors.white38, fontSize: 13),
+                        style: GoogleFonts.poppins(color: textColor.withOpacity(0.4), fontSize: 13),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, color: Colors.white38, size: 14),
+                      Icon(Icons.location_on_outlined, color: textColor.withOpacity(0.4), size: 14),
                       const SizedBox(width: 6),
                       Text(
                         event.venue,
-                        style: GoogleFonts.poppins(color: Colors.white38, fontSize: 13),
+                        style: GoogleFonts.poppins(color: textColor.withOpacity(0.4), fontSize: 13),
                       ),
                     ],
                   ),
@@ -222,8 +242,8 @@ class _FavoriteCard extends ConsumerWidget {
                               ref.read(localStorageProvider).toggleFavorite(event.id.toString());
                           },
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white10),
+                            foregroundColor: textColor,
+                            side: BorderSide(color: textColor.withOpacity(0.1)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
