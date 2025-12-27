@@ -12,11 +12,11 @@ router.get("/categories/:id", ContentController.getCategoryDetail);
 router.get("/cities", ContentController.getCities);
 router.get("/cities/:id", ContentController.getCityDetail);
 
-// Admin Only Routes
-router.post("/categories", authenticate, authorize([Role.ADMIN]), ContentController.addCategory);
-router.delete("/categories/:id", authenticate, authorize([Role.ADMIN]), ContentController.removeCategory);
+// Admin and Organizer Routes (allow organizers to manage their own content)
+router.post("/categories", authenticate, authorize([Role.ADMIN, Role.ORGANIZER]), ContentController.addCategory);
+router.delete("/categories/:id", authenticate, authorize([Role.ADMIN, Role.ORGANIZER]), ContentController.removeCategory);
 
-router.post("/cities", authenticate, authorize([Role.ADMIN]), ContentController.addCity);
-router.delete("/cities/:id", authenticate, authorize([Role.ADMIN]), ContentController.removeCity);
+router.post("/cities", authenticate, authorize([Role.ADMIN, Role.ORGANIZER]), ContentController.addCity);
+router.delete("/cities/:id", authenticate, authorize([Role.ADMIN, Role.ORGANIZER]), ContentController.removeCity);
 
 export default router;

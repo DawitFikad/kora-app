@@ -32,6 +32,7 @@ import { PromotionsView } from './components/PromotionsView';
 import { ScannerView } from './components/ScannerView';
 import { PendingApprovalView } from './components/PendingApprovalView';
 import { EventStatsView } from './components/EventStatsView';
+import { ContentManagementView } from './components/ContentManagementView';
 
 // --- Main Application Component ---
 
@@ -58,6 +59,7 @@ const OrganizerDashboard = () => {
         { icon: DollarSign, label: 'Payments' },
         { icon: Users, label: 'Attendees' },
         { icon: Megaphone, label: 'Promotions' },
+        { icon: Layout, label: 'Content' },
         { icon: Maximize, label: 'Scanner' },
         { icon: HelpCircle, label: 'Support' },
         { icon: Settings, label: 'Settings' },
@@ -107,6 +109,7 @@ const OrganizerDashboard = () => {
             case 'Payments': return <ReportsView key="payments" />;
             case 'Attendees': return <AttendeesView key="attendees" />;
             case 'Promotions': return <PromotionsView key="promotions" />;
+            case 'Content': return <ContentManagementView key="content" />;
             case 'Scanner': return <ScannerView key="scanner" />;
             case 'Support': return <SupportView key="support" />;
             case 'Settings': return <SettingsView key="settings" />;
