@@ -285,7 +285,7 @@ class _HomeBody extends ConsumerWidget {
               children: [
                 const Text("Location", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 PopupMenuButton<City>(
-                  color: const Color(0xFF1D192B),
+                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1D192B) : Colors.white,
                   onSelected: (city) {
                     ref.read(selectedCityProvider.notifier).state = city;
                   },
@@ -294,11 +294,11 @@ class _HomeBody extends ConsumerWidget {
                       data: (cities) => [
                         const PopupMenuItem<City>(
                            value: null, 
-                           child: Text("All Cities", style: TextStyle(color: Colors.white)),
+                           child: Text("All Cities"),
                         ),
                         ...cities.map((c) => PopupMenuItem<City>(
                           value: c,
-                          child: Text(c.name, style: const TextStyle(color: Colors.white)),
+                          child: Text(c.name, style: TextStyle(color: textColor)),
                         ))
                       ],
                       loading: () => [],
@@ -331,11 +331,18 @@ class _HomeBody extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF232030),
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF232030) : Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: textColor.withOpacity(0.1)),
+              boxShadow: Theme.of(context).brightness == Brightness.dark ? null : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
             ),
-            child: const Icon(Icons.notifications_none, color: Colors.white, size: 24),
+            child: Icon(Icons.notifications_none, color: textColor, size: 24),
           ),
         ),
       ],
