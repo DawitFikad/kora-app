@@ -16,22 +16,25 @@ class NotificationScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsync = ref.watch(notificationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
 
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0F0D15),
+        backgroundColor: backgroundColor,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: textColor),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             "Notifications",
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: textColor,
               fontWeight: FontWeight.w600,
               fontSize: 18,
             ),
@@ -66,7 +69,7 @@ class NotificationScreen extends ConsumerWidget {
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 labelColor: Colors.white,
-                unselectedLabelColor: Colors.white60,
+                unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
                 labelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
                 unselectedLabelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
                 tabAlignment: TabAlignment.start,
@@ -82,7 +85,7 @@ class NotificationScreen extends ConsumerWidget {
               child: notificationsAsync.when(
                 data: (notifications) {
                     if (notifications.isEmpty) {
-                        return Center(child: Text("No notifications", style: GoogleFonts.poppins(color: Colors.white54)));
+                        return Center(child: Text("No notifications", style: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.black45)));
                     }
                     
                     final now = DateTime.now();
@@ -98,14 +101,18 @@ class NotificationScreen extends ConsumerWidget {
 
                     return TabBarView(
                         children: [
-                        _NotificationListView(today: today, earlier: earlier),
+                        _NotificationListView(today: today, earlier: earlier, isDark: isDark, textColor: textColor),
                         _NotificationListView(
                             today: today.where((n) => n.type == 'booking').toList(), 
-                            earlier: earlier.where((n) => n.type == 'booking').toList()
+                            earlier: earlier.where((n) => n.type == 'booking').toList(),
+                            isDark: isDark,
+                            textColor: textColor,
                         ),
                         _NotificationListView(
                              today: today.where((n) => n.type == 'update' || n.type == 'alert').toList(), 
-                            earlier: earlier.where((n) => n.type == 'update' || n.type == 'alert').toList()
+                            earlier: earlier.where((n) => n.type == 'update' || n.type == 'alert').toList(),
+                            isDark: isDark,
+                            textColor: textColor,
                         ),
                         ],
                     );
@@ -124,28 +131,35 @@ class NotificationScreen extends ConsumerWidget {
 class _NotificationListView extends StatelessWidget {
   final List<AppNotification> today;
   final List<AppNotification> earlier;
+  final bool isDark;
+  final Color textColor;
 
-  const _NotificationListView({required this.today, required this.earlier});
+  const _NotificationListView({
+    required this.today,
+    required this.earlier,
+    required this.isDark,
+    required this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (today.isEmpty && earlier.isEmpty) {
-         return Center(child: Text("No notifications", style: GoogleFonts.poppins(color: Colors.white54)));
+         return Center(child: Text("No notifications", style: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.black45)));
     }
   
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
         if (today.isNotEmpty) ...[
-          _SectionHeader(title: "Today"),
+          _SectionHeader(title: "Today", textColor: textColor),
           const SizedBox(height: 16),
-          ...today.map((n) => _NotificationTile(notification: n)),
+          ...today.map((n) => _NotificationTile(notification: n, textColor: textColor, isDark: isDark)),
         ],
         if (earlier.isNotEmpty) ...[
           const SizedBox(height: 24),
-          _SectionHeader(title: "Earlier"),
+          _SectionHeader(title: "Earlier", textColor: textColor),
           const SizedBox(height: 16),
-          ...earlier.map((n) => _NotificationTile(notification: n)),
+          ...earlier.map((n) => _NotificationTile(notification: n, textColor: textColor, isDark: isDark)),
         ],
         const SizedBox(height: 32),
       ],
@@ -155,14 +169,15 @@ class _NotificationListView extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final Color textColor;
+  const _SectionHeader({required this.title, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       title,
       style: GoogleFonts.poppins(
-        color: Colors.white,
+        color: textColor,
         fontSize: 18,
         fontWeight: FontWeight.bold,
       ),
@@ -172,7 +187,14 @@ class _SectionHeader extends StatelessWidget {
 
 class _NotificationTile extends StatelessWidget {
   final AppNotification notification;
-  const _NotificationTile({required this.notification});
+  final Color textColor;
+  final bool isDark;
+  
+  const _NotificationTile({
+    required this.notification,
+    required this.textColor,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +218,7 @@ class _NotificationTile extends StatelessWidget {
                         Expanded(child: Text(
                           notification.title,
                           style: GoogleFonts.poppins(
-                            color: Colors.white,
+                            color: textColor,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -216,7 +238,7 @@ class _NotificationTile extends StatelessWidget {
                     Text(
                       notification.description,
                       style: GoogleFonts.poppins(
-                        color: Colors.white60,
+                        color: textColor.withOpacity(0.6),
                         fontSize: 13,
                         height: 1.5,
                       ),
@@ -225,7 +247,7 @@ class _NotificationTile extends StatelessWidget {
                     Text(
                       _formatTimestamp(notification.timestamp),
                       style: GoogleFonts.poppins(
-                        color: Colors.white38,
+                        color: textColor.withOpacity(0.38),
                         fontSize: 11,
                       ),
                     ),
@@ -236,7 +258,7 @@ class _NotificationTile extends StatelessWidget {
           ),
           if (notification.metadata != null) ...[
             const SizedBox(height: 16),
-            _BookingCard(metadata: notification.metadata!),
+            _BookingCard(metadata: notification.metadata!, isDark: isDark, textColor: textColor),
           ],
         ],
       ),
@@ -306,7 +328,14 @@ class _NotificationIcon extends StatelessWidget {
 
 class _BookingCard extends StatelessWidget {
   final Map<String, dynamic> metadata;
-  const _BookingCard({required this.metadata});
+  final bool isDark;
+  final Color textColor;
+  
+  const _BookingCard({
+    required this.metadata,
+    required this.isDark,
+    required this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -318,9 +347,9 @@ class _BookingCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(left: 64),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D192B),
+        color: isDark ? const Color(0xFF1D192B) : Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: textColor.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,7 +366,7 @@ class _BookingCard extends StatelessWidget {
                     Text(
                       "ORDER $orderId".toUpperCase(),
                       style: GoogleFonts.poppins(
-                        color: Colors.white38,
+                        color: textColor.withOpacity(0.38),
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -349,7 +378,7 @@ class _BookingCard extends StatelessWidget {
                 Text(
                   eventTitle,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: textColor,
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
@@ -358,7 +387,7 @@ class _BookingCard extends StatelessWidget {
                 Text(
                   eventTime,
                   style: GoogleFonts.poppins(
-                    color: Colors.white54,
+                    color: textColor.withOpacity(0.5),
                     fontSize: 12,
                   ),
                 ),

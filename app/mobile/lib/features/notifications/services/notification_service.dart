@@ -16,11 +16,11 @@ class NotificationService {
   Future<List<AppNotification>> getNotifications() async {
     try {
       final response = await _dio.get(ApiConstants.notifications);
-      final List<dynamic> data = response.data;
+      // Backend returns { success: true, data: [...] }
+      final List<dynamic> data = response.data['data'] ?? [];
       return data.map((json) => AppNotification.fromJson(json)).toList();
     } catch (e) {
-      // Return empty list on error for now, or throw
-       return [];
+      return [];
     }
   }
 }
