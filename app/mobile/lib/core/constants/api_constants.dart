@@ -11,4 +11,5 @@ class ApiConstants {
   static const String initPayment = '$baseUrl/payments/initialize';
   static const String notifications = '$baseUrl/notifications';
   static const String profile = '$baseUrl/profiles/me';
+  static const String paymentMethods = '$baseUrl/profiles/payment-methods';
 }

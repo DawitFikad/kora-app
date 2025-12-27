@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../services/profile_service.dart';
 import '../../../core/providers.dart';
 import 'edit_profile_screen.dart';
+import 'payment_methods_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -145,9 +146,10 @@ class ProfileScreen extends ConsumerWidget {
                   title: "Payment Methods",
                   color: cardColor,
                   textColor: textColor,
-                  onTap: () {
-                      // Placeholder for future feature
-                  },
+                  onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PaymentMethodsScreen()),
+                ),
                 ),
                 const SizedBox(height: 16),
                 _buildMenuItem(

@@ -110,14 +110,27 @@ model User {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  profile       UserProfile?
-  organizer     OrganizerProfile?
-  refreshTokens RefreshToken[]
-  tickets       Ticket[]
-  purchases     Purchase[]
-  fraudAlerts   FraudAlert[]
-  disputes      Dispute[]
-  notifications NotificationLog[]
+  profile               UserProfile?
+  organizer             OrganizerProfile?
+  refreshTokens         RefreshToken[]
+  tickets               Ticket[]
+  purchases             Purchase[]
+  fraudAlerts           FraudAlert[]
+  disputes              Dispute[]
+  notifications         NotificationLog[]
+  savedPaymentMethods   SavedPaymentMethod[]
+}
+
+model SavedPaymentMethod {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider      String   // "TELEBIRR", "CBE_BIRR", "CHAPA", "BANK"
+  accountNumber String   // e.g., phone number or masked card
+  accountName   String?  // Optional name for the account
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model UserProfile {
