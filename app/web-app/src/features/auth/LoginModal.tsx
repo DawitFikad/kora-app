@@ -69,6 +69,10 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                 }
             } else {
                 // Regular login mode
+                if (!verifyRes.hasOrganizerProfile && verifyRes.user.role !== 'ADMIN') {
+                    setError('Organizer account not found. Please click "Create Organizer Account" to apply.');
+                    return;
+                }
                 await login({ accessToken: verifyRes.accessToken, user: verifyRes.user });
                 onClose();
             }
@@ -93,7 +97,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                 className="glass"
                 style={{
                     width: '100%', maxWidth: '450px', padding: '40px', borderRadius: '32px',
-                    position: 'relative', border: '1px solid rgba(255,255,255,0.1)'
+                    position: 'relative', border: '1px solid var(--border)', background: 'var(--bg-card)'
                 }}
             >
                 <button onClick={onClose} style={{
@@ -112,7 +116,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         {step === 'phone' && (mode === 'register' ? <Building2 size={32} color="var(--primary)" /> : <Phone size={32} color="var(--primary)" />)}
                         {step === 'otp' && <ShieldCheck size={32} color="var(--primary)" />}
                     </div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900 }}>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>
                         {step === 'phone' && (mode === 'register' ? 'Apply as Organizer' : 'Welcome Back')}
                         {step === 'otp' && 'Verify Identity'}
                     </h2>
@@ -149,8 +153,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                 onChange={(e) => setName(e.target.value)}
                                                 required
                                                 style={{
-                                                    width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-                                                    padding: '12px 12px 12px 48px', borderRadius: '12px', color: 'white'
+                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                                                    padding: '12px 12px 12px 48px', borderRadius: '12px', color: 'var(--text-main)'
                                                 }}
                                             />
                                         </div>
@@ -167,8 +171,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                     onChange={(e) => setCity(e.target.value)}
                                                     required
                                                     style={{
-                                                        width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-                                                        padding: '12px 12px 12px 36px', borderRadius: '12px', color: 'white'
+                                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                                                        padding: '12px 12px 12px 36px', borderRadius: '12px', color: 'var(--text-main)'
                                                     }}
                                                 />
                                             </div>
@@ -184,8 +188,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     required
                                                     style={{
-                                                        width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-                                                        padding: '12px 12px 12px 36px', borderRadius: '12px', color: 'white'
+                                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                                                        padding: '12px 12px 12px 36px', borderRadius: '12px', color: 'var(--text-main)'
                                                     }}
                                                 />
                                             </div>
@@ -200,8 +204,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                             onChange={(e) => setPayoutDetails(e.target.value)}
                                             required
                                             style={{
-                                                width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-                                                padding: '12px', borderRadius: '12px', color: 'white'
+                                                width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                                                padding: '12px', borderRadius: '12px', color: 'var(--text-main)'
                                             }}
                                         />
                                     </div>
@@ -219,8 +223,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                         onChange={(e) => setPhoneNumber(e.target.value)}
                                         required
                                         style={{
-                                            width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-                                            padding: '16px 16px 16px 48px', borderRadius: '14px', color: 'white', fontSize: '1rem'
+                                            width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                                            padding: '16px 16px 16px 48px', borderRadius: '14px', color: 'var(--text-main)', fontSize: '1rem'
                                         }}
                                     />
                                 </div>
@@ -244,8 +248,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                     onChange={(e) => setOtp(e.target.value)}
                                     required
                                     style={{
-                                        width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-                                        padding: '16px', borderRadius: '14px', color: 'white', fontSize: '1.5rem',
+                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                                        padding: '16px', borderRadius: '14px', color: 'var(--text-main)', fontSize: '1.5rem',
                                         textAlign: 'center', letterSpacing: '8px', fontWeight: 900
                                     }}
                                 />

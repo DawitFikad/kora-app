@@ -10,14 +10,18 @@ import {
     Globe,
     Zap,
     Layers,
-    ChevronDown
+    ChevronDown,
+    Sun,
+    Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { LoginModal } from '../auth/LoginModal';
 import { useAuth } from '../../core/context/AuthContext';
+import { useTheme } from '../../core/context/ThemeContext';
 
 const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => void }) => {
+    const { theme, toggleTheme } = useTheme();
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -34,7 +38,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                     <div className="logo-box">
                         <Ticket color="var(--primary-blue)" size={20} />
                     </div>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.05em' }}>ET-TICKETS</span>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>ET-TICKETS</span>
                 </div>
 
                 {/* Desktop Nav */}
@@ -72,16 +76,40 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                         >
                             Create Organizer Account
                         </button>
+                        <div
+                            onClick={toggleTheme}
+                            style={{
+                                padding: '8px',
+                                borderRadius: '10px',
+                                background: 'var(--bg-subtle)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--text-main)',
+                                border: '1px solid var(--border)'
+                            }}
+                        >
+                            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        </div>
                     </div>
                 </div>
 
                 {/* Mobile Toggle */}
-                <div
-                    className="mobile-toggle"
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    style={{ borderRadius: '10px', background: 'var(--bg-hover)', padding: '8px' }}
-                >
-                    <Zap size={20} color={mobileMenuOpen ? 'var(--primary)' : 'var(--text-main)'} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div
+                        onClick={toggleTheme}
+                        style={{ borderRadius: '10px', background: 'var(--bg-hover)', padding: '8px', cursor: 'pointer', border: '1px solid var(--border)' }}
+                    >
+                        {theme === 'dark' ? <Sun size={20} color="var(--text-main)" /> : <Moon size={20} color="var(--text-main)" />}
+                    </div>
+                    <div
+                        className="mobile-toggle"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        style={{ borderRadius: '10px', background: 'var(--bg-hover)', padding: '8px' }}
+                    >
+                        <Zap size={20} color={mobileMenuOpen ? 'var(--primary)' : 'var(--text-main)'} />
+                    </div>
                 </div>
             </div>
 
@@ -186,9 +214,9 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
             onClick={() => setIsOpen(!isOpen)}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{question}</h4>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>{question}</h4>
                 <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-                    <ChevronDown size={20} color="rgba(255,255,255,0.4)" />
+                    <ChevronDown size={20} color="var(--text-muted)" />
                 </motion.div>
             </div>
             <AnimatePresence>
@@ -236,7 +264,7 @@ const PaymentServices = () => {
                         }}>
                             <Zap size={14} /> I LOVED DIGITAL PAYMENTS
                         </div>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 900, marginBottom: '2rem', lineHeight: 1.1 }}>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 900, marginBottom: '2rem', lineHeight: 1.1, color: 'var(--text-main)' }}>
                             Ethiopia's Most Advanced <br />
                             <span className="gradient-text">Payment Integration.</span>
                         </h2>
@@ -310,7 +338,7 @@ const PaymentServices = () => {
                             }}>
                                 <span style={{ color: 'white', fontWeight: 950, fontSize: '3rem' }}>{p.name[0]}</span>
                             </div>
-                            <h4 style={{ fontWeight: 900, fontSize: '1.4rem' }}>{p.name}</h4>
+                            <h4 style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--text-main)' }}>{p.name}</h4>
                         </motion.div>
                     ))}
                 </div>
@@ -330,7 +358,7 @@ const Testimonials = () => {
         <section style={{ padding: '10rem 0' }}>
             <div className="container">
                 <div style={{ textAlign: 'center', marginBottom: '6rem' }}>
-                    <h2 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '1.5rem' }}>Loved by Organizers</h2>
+                    <h2 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '1.5rem', color: 'var(--text-main)' }}>Loved by Organizers</h2>
                     <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Join hundreds of successful event hosts across Ethiopia.</p>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem' }}>
@@ -339,11 +367,11 @@ const Testimonials = () => {
                             <div style={{ position: 'absolute', top: '2rem', left: '2rem', color: 'var(--primary)', opacity: 0.2 }}>
                                 <Zap size={48} />
                             </div>
-                            <p style={{ fontSize: '1.15rem', fontStyle: 'italic', marginBottom: '2.5rem', lineHeight: 1.7, position: 'relative' }}>"{t.quote}"</p>
+                            <p style={{ fontSize: '1.15rem', fontStyle: 'italic', marginBottom: '2.5rem', lineHeight: 1.7, position: 'relative', color: 'var(--text-main)' }}>"{t.quote}"</p>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(45deg, var(--primary), var(--secondary))' }} />
                                 <div>
-                                    <h5 style={{ fontWeight: 900, fontSize: '1rem' }}>{t.name}</h5>
+                                    <h5 style={{ fontWeight: 900, fontSize: '1rem', color: 'var(--text-main)' }}>{t.name}</h5>
                                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t.role}</p>
                                 </div>
                             </div>
@@ -412,7 +440,7 @@ const OrganizerLanding = () => {
                         }}>
                             <Zap size={14} /> THE GOLD STANDARD FOR EVENT TICKETING
                         </div>
-                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', fontWeight: 900, lineHeight: 1, marginBottom: '2rem', letterSpacing: '-0.03em' }}>
+                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', fontWeight: 900, lineHeight: 1, marginBottom: '2rem', letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
                             Sell Tickets. Manage Events. <br />
                             <span className="gradient-text">Get Paid — All in One Platform.</span>
                         </h1>
@@ -474,7 +502,7 @@ const OrganizerLanding = () => {
             <section id="how-it-works" style={{ background: 'var(--bg-subtle)', padding: '8rem 0' }}>
                 <div className="container">
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.02em' }}>Streamlined Workflow</h2>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>Streamlined Workflow</h2>
                         <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>From creation to validation, we've got you covered.</p>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2.5rem' }}>
@@ -507,7 +535,7 @@ const OrganizerLanding = () => {
                                 }}>
                                     <step.icon color="white" size={32} />
                                 </div>
-                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem' }}>{step.title}</h3>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>{step.title}</h3>
                                 <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.5 }}>{step.desc}</p>
                             </motion.div>
                         ))}
@@ -520,7 +548,7 @@ const OrganizerLanding = () => {
                 <div className="container">
                     <div style={{ display: 'flex', gap: '6rem', alignItems: 'center', flexWrap: 'wrap' }}>
                         <div style={{ flex: '1 1 500px' }}>
-                            <h2 style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1.1, marginBottom: '3rem', letterSpacing: '-0.02em' }}>
+                            <h2 style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1.1, marginBottom: '3rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
                                 Tools designed for <br /><span className="gradient-text">Event Professionals.</span>
                             </h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -539,7 +567,7 @@ const OrganizerLanding = () => {
                                     >
                                         <div style={{ color: 'var(--primary)', paddingTop: '0.25rem' }}><CheckCircle2 size={26} /></div>
                                         <div>
-                                            <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.4rem' }}>{feat.title}</h4>
+                                            <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--text-main)' }}>{feat.title}</h4>
                                             <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: 1.5 }}>{feat.desc}</p>
                                         </div>
                                     </motion.div>
@@ -574,12 +602,12 @@ const OrganizerLanding = () => {
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
                                     <div className="glass" style={{ padding: '1.5rem', borderRadius: '1.5rem' }}>
-                                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>LIVE REVENUE</p>
-                                        <p style={{ fontSize: '1.5rem', fontWeight: 900 }}>ETB {revenue}k</p>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>LIVE REVENUE</p>
+                                        <p style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>ETB {revenue}k</p>
                                     </div>
                                     <div className="glass" style={{ padding: '1.5rem', borderRadius: '1.5rem' }}>
-                                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>LIVE SALES</p>
-                                        <p style={{ fontSize: '1.5rem', fontWeight: 900 }}>{tickets}</p>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>LIVE SALES</p>
+                                        <p style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>{tickets}</p>
                                     </div>
                                 </div>
                                 <div style={{ height: '160px', width: '100%', background: 'rgba(139, 92, 246, 0.05)', borderRadius: '2rem', position: 'relative', overflow: 'hidden' }}>
@@ -611,9 +639,9 @@ const OrganizerLanding = () => {
                 <div className="container">
                     <div className="glass" style={{ padding: '2rem 1rem', borderRadius: '5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '5rem', alignItems: 'center' }}>
                         <div style={{ padding: '3rem' }}>
-                            <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1.5rem', lineHeight: 1.1, letterSpacing: '-0.02em' }}>Trust built on <br />Compliance.</h2>
+                            <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1.5rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>Trust built on <br />Compliance.</h2>
                             <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '2.5rem', lineHeight: 1.6 }}>We operate with full transparency to ensure every event is a success. Our automated settlement system ensures you get paid on time, every time.</p>
-                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-secondary" style={{ padding: '1rem 2rem' }}>Learn About Payouts</button>
+                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-primary" style={{ padding: '1rem 2rem' }}>Learn About Payouts</button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', padding: '3rem' }}>
                             {[
@@ -631,7 +659,7 @@ const OrganizerLanding = () => {
                                         <ShieldCheck color="#A78BFA" size={24} />
                                     </div>
                                     <div>
-                                        <span style={{ display: 'block', fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.2rem' }}>{item.title}</span>
+                                        <span style={{ display: 'block', fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.2rem', color: 'var(--text-main)' }}>{item.title}</span>
                                         <span style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>{item.desc}</span>
                                     </div>
                                 </motion.div>
@@ -645,7 +673,7 @@ const OrganizerLanding = () => {
             <section style={{ padding: '10rem 0' }}>
                 <div className="container" style={{ maxWidth: '800px' }}>
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem' }}>Common Questions</h2>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>Common Questions</h2>
                         <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Everything you need to know about the platform.</p>
                     </div>
                     <FAQItem
@@ -673,8 +701,8 @@ const OrganizerLanding = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '5rem' }}>
                         <div style={{ flex: '1 1 350px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                                <Ticket color="#8B5CF6" size={40} />
-                                <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.05em' }}>ET-TICKETS</span>
+                                <Ticket color="var(--primary)" size={40} />
+                                <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>ET-TICKETS</span>
                             </div>
                             <p style={{ color: 'var(--text-muted)', maxWidth: '350px', fontSize: '1.1rem', lineHeight: 1.6 }}>
                                 Ethiopia's leading digital ticketing platform. Empowering event organizers with technology that works.
@@ -683,7 +711,7 @@ const OrganizerLanding = () => {
 
                         <div style={{ display: 'flex', gap: '5rem', flexWrap: 'wrap' }}>
                             <div>
-                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem' }}>Platform</h5>
+                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>Platform</h5>
                                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Features</a></li>
                                     <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Pricing</a></li>
@@ -691,7 +719,7 @@ const OrganizerLanding = () => {
                                 </ul>
                             </div>
                             <div>
-                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem' }}>Support</h5>
+                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>Support</h5>
                                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Help Center</a></li>
                                     <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Contact Us</a></li>
