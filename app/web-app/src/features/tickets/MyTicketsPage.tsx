@@ -86,7 +86,7 @@ const MyTicketsPage: React.FC = () => {
                                     )}
                                 </div>
                                 <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #2D3748' }}>
-                                    <p style={{ fontSize: '0.8rem', color: '#718096' }}>Ticket ID: {ticket.ticketCode}</p>
+                                    <p style={{ fontSize: '0.8rem', color: '#718096' }}>Ticket ID: {ticket.ticketCode || ticket.id?.substring(0, 8).toUpperCase()}</p>
                                 </div>
                             </div>
 

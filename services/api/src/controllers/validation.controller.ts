@@ -8,20 +8,22 @@ export class ValidationController {
     static async scan(req: Request, res: Response) {
         try {
             const { qrPayload, gateId, deviceId } = req.body;
+            console.log("Validating Ticket:", qrPayload);
 
             if (!qrPayload) {
-                return res.status(400).json({ error: "QR payload is required" });
+                return res.status(400).json({ message: "QR payload is required" }); // Key changed
             }
 
             const result = await ValidationService.validateOnline(qrPayload, gateId, deviceId);
 
             if (!result.success) {
-                return res.status(400).json(result);
+                return res.status(400).json(result); // Result has 'message'
             }
 
             res.json(result);
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            console.error("Validation Controller Error:", error);
+            res.status(500).json({ message: error.message }); // Key changed
         }
     }
 

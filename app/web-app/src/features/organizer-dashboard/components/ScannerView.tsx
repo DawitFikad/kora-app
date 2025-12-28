@@ -59,25 +59,27 @@ export const ScannerView = () => {
         }
 
         try {
-            const res = await OrganizerService.validateTicket(id);
-            if (res.data.success) {
+            const result = await OrganizerService.validateTicket(id) as any;
+            if (result && result.success) {
                 setStatus('success');
                 setScanResult({
-                    name: res.data.ticket.userName || 'Attendee',
-                    type: res.data.ticket.tierName,
-                    event: res.data.ticket.eventTitle
+                    name: result.ticket.userName || 'Attendee',
+                    type: result.ticket.tierName,
+                    event: result.ticket.eventTitle || 'Event' // Fallback
                 });
                 const scan = { id, timestamp: new Date().toISOString(), status: 'SUCCESS' };
                 setHistory([scan, ...history]);
                 setTicketId('');
             } else {
                 setStatus('error');
-                setScanResult({ message: res.data.message || 'Invalid Ticket' });
+                setScanResult({ message: result?.message || 'Invalid Ticket Response' });
             }
         } catch (error: any) {
             console.error("Validation failed", error);
             setStatus('error');
-            setScanResult({ message: error.response?.data?.message || 'Validation error. Please try again.' });
+            // Interceptor returns response.data directly as error, or error message
+            const msg = error.message || error.error || (typeof error === 'string' ? error : JSON.stringify(error)) || 'Validation error. Please try again.';
+            setScanResult({ message: msg });
         }
     };
 
@@ -130,8 +132,8 @@ export const ScannerView = () => {
                                     <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '16px' }}>Ready to Scan</h3>
                                     <p style={{ color: 'var(--text-muted)', maxWidth: '300px', margin: '0 auto 32px' }}>Enter ticket ID manually below or use the mobile scanner app for QR codes.</p>
 
-                                    <div style={{ display: 'flex', gap: '12px', maxWidth: '400px', margin: '0 auto' }}>
-                                        <div style={{ position: 'relative', flex: 1 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px', margin: '0 auto' }}>
+                                        <div style={{ position: 'relative', width: '100%' }}>
                                             <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
                                             <input
                                                 type="text"
@@ -139,15 +141,29 @@ export const ScannerView = () => {
                                                 value={ticketId}
                                                 onChange={e => setTicketId(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && handleValidate()}
-                                                style={{ width: '100%', padding: '16px 16px 16px 48px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px', color: 'white', fontSize: '1rem' }}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '54px',
+                                                    padding: '0 16px 0 48px',
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    borderRadius: '12px',
+                                                    color: 'white',
+                                                    fontSize: '1rem',
+                                                    fontWeight: 500,
+                                                    outline: 'none',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                onFocus={(e) => e.target.style.borderColor = 'var(--primary-blue)'}
+                                                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
                                             />
                                         </div>
                                         <button
                                             onClick={() => handleValidate()}
                                             disabled={status === 'validating'}
-                                            className="btn-blue" style={{ height: '54px', padding: '0 24px' }}
+                                            className="btn-blue" style={{ height: '54px', width: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                         >
-                                            {status === 'validating' ? <Loader2 size={24} className="animate-spin" /> : <Zap size={20} />}
+                                            {status === 'validating' ? <Loader2 size={24} className="animate-spin" /> : <><Zap size={20} /> Validate Ticket</>}
                                         </button>
                                     </div>
                                 </motion.div>

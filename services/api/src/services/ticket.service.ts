@@ -57,7 +57,6 @@ export class TicketService {
 
             ticketsData.push({
                 id: ticketId,
-                ticketCode, // Override default cuid
                 qrPayload,
                 status: TicketStatus.VALID,
                 userId: purchase.userId,

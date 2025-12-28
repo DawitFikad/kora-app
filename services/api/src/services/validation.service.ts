@@ -19,9 +19,18 @@ export class ValidationService {
      */
     static async validateOnline(qrPayload: string, gateId?: string, deviceId?: string): Promise<ValidationResult> {
         try {
-            // 1. Verify Signature
-            const payload = jwt.verify(qrPayload, this.QR_SECRET) as any;
-            const { tid, eid } = payload;
+            let tid: string;
+            let enforcedEid: number | undefined;
+
+            try {
+                // 1. Verify Signature
+                const payload = jwt.verify(qrPayload, this.QR_SECRET) as any;
+                tid = payload.tid;
+                enforcedEid = payload.eid;
+            } catch {
+                // Manual Entry (Raw ID)
+                tid = qrPayload.trim(); // Trim whitespace
+            }
 
             // 2. Atomic Transaction: Check -> Mark USED -> Log
             const transactionResult = await prisma.$transaction(async (tx) => {
@@ -30,12 +39,14 @@ export class ValidationService {
                     include: { event: true, tier: true }
                 });
 
+                const eid = ticket?.eventId || enforcedEid || 0;
+
                 if (!ticket) {
                     const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Ticket not found");
                     return { result: { success: false, message: "Invalid Ticket: No entry found in database" }, log };
                 }
 
-                if (ticket.eventId !== eid) {
+                if (enforcedEid && ticket.eventId !== enforcedEid) {
                     const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Event mismatch");
                     return { result: { success: false, message: "Invalid Ticket: Does not belong to this event" }, log };
                 }
@@ -67,7 +78,10 @@ export class ValidationService {
                     ticket: {
                         id: updatedTicket.id,
                         tier: ticket.tier.name,
-                        seat: ticket.seatNumber
+                        seat: ticket.seatNumber,
+                        userName: ticket.userId ? "Attendee" : "Guest", // Fallback name
+                        eventTitle: ticket.event.title,
+                        tierName: ticket.tier.name
                     }
                 };
 
@@ -79,7 +93,8 @@ export class ValidationService {
                 FraudService.analyzeScan(transactionResult.log.id).catch((err: any) => console.error("Fraud analysis failed:", err));
 
                 const status = transactionResult.result.success ? "SUCCESS" as const : "REJECTED" as const;
-                AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch((err: any) => console.error("Analytics failed:", err));
+                // Fix: Ensure we use the log's eventId, not a scoped variable
+                AnalyticsService.recordEntryMetric(transactionResult.log.eventId, gateId || null, status).catch((err: any) => console.error("Analytics failed:", err));
             }
 
             return transactionResult.result;
@@ -94,7 +109,7 @@ export class ValidationService {
                         deviceId: deviceId || null,
                         mode: "ONLINE",
                         status: "REJECTED",
-                        reason: `Signature Error: ${error.message}`
+                        reason: `System Error: ${error.message}`
                     }
                 }).then(log => {
                     FraudService.analyzeScan(log.id).catch(() => { });
@@ -155,6 +170,7 @@ export class ValidationService {
                 if (syncResult.log) {
                     FraudService.analyzeScan(syncResult.log.id).catch((err: any) => console.error("Fraud analysis failed:", err));
                     const status = syncResult.res.status === "SYNCED" ? "SUCCESS" as const : "REJECTED" as const;
+                    // Here we can use eid because it is defined in the loop scope
                     AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch((err: any) => console.error("Analytics failed:", err));
                 }
 
