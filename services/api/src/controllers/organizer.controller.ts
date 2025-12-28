@@ -513,18 +513,35 @@ export class OrganizerController {
             
             // Send to support team (use EMAIL_USER from .env or fallback to support email)
             const supportEmail = process.env.EMAIL_USER || 'support@ettickets.com';
+            const supportHtml = EmailService.createSupportNotificationTemplate({
+                organizationName: organizer.organizationName,
+                organizerId: organizer.id,
+                contactEmail: organizer.contactEmail || undefined,
+                contactPhone: organizer.contactPhone || undefined,
+                subject,
+                message
+            });
+            
             await EmailService.sendEmail(
                 supportEmail,
                 `[Support] ${organizer.organizationName}: ${subject}`,
-                `New support request from ${organizer.organizationName} (ID: ${organizer.id}).\n\nContact: ${organizer.contactEmail || 'N/A'}\nPhone: ${organizer.contactPhone || 'N/A'}\n\nMessage:\n${message}`
+                `New support request from ${organizer.organizationName} (ID: ${organizer.id}).\n\nContact: ${organizer.contactEmail || 'N/A'}\nPhone: ${organizer.contactPhone || 'N/A'}\n\nMessage:\n${message}`,
+                supportHtml
             );
 
             // Send confirmation email to organizer if they have an email
             if (organizer.contactEmail) {
+                const confirmationHtml = EmailService.createConfirmationTemplate({
+                    organizationName: organizer.organizationName,
+                    subject,
+                    message
+                });
+                
                 await EmailService.sendEmail(
                     organizer.contactEmail,
                     `Support Request Confirmation: ${subject}`,
-                    `Dear ${organizer.organizationName},\n\nThank you for contacting ET-Ticket support. We have received your request and will respond within 24 hours.\n\nYour Message:\n${message}\n\nBest regards,\nET-Ticket Support Team`
+                    `Dear ${organizer.organizationName},\n\nThank you for contacting ET-Ticket support. We have received your request and will respond within 24 hours.\n\nYour Message:\n${message}\n\nBest regards,\nET-Ticket Support Team`,
+                    confirmationHtml
                 );
             }
 
