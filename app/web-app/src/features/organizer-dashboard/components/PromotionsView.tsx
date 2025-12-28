@@ -93,36 +93,36 @@ export const PromotionsView = () => {
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Promo Code</label>
-                            <input required type="text" placeholder="SUMMER25" value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                            <input required type="text" placeholder="SUMMER25" value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })} style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)' }} />
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Discount Value</label>
-                            <input required type="number" placeholder="20" value={form.discount} onChange={e => setForm({ ...form, discount: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                            <input required type="number" placeholder="20" value={form.discount} onChange={e => setForm({ ...form, discount: e.target.value })} style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)' }} />
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Type</label>
-                            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }}>
+                            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)' }}>
                                 <option value="PERCENTAGE">Percentage (%)</option>
                                 <option value="FIXED">Fixed Amount (ETB)</option>
                             </select>
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Assign to Event</label>
-                            <select required value={form.eventId} onChange={e => setForm({ ...form, eventId: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }}>
+                            <select required value={form.eventId} onChange={e => setForm({ ...form, eventId: e.target.value })} style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)' }}>
                                 <option value="">Select Event</option>
                                 {events.map(ev => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
                             </select>
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Max Uses (Optional)</label>
-                            <input type="number" placeholder="Unlimited" value={form.maxUses} onChange={e => setForm({ ...form, maxUses: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                            <input type="number" placeholder="Unlimited" value={form.maxUses} onChange={e => setForm({ ...form, maxUses: e.target.value })} style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)' }} />
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Expiry Date</label>
-                            <input type="date" value={form.expiresAt} onChange={e => setForm({ ...form, expiresAt: e.target.value })} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                            <input type="date" value={form.expiresAt} onChange={e => setForm({ ...form, expiresAt: e.target.value })} style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)' }} />
                         </div>
                         <div style={{ gridColumn: 'span 3', display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
-                            <button type="button" onClick={() => setShowForm(false)} style={{ padding: '12px 24px', background: 'transparent', border: '1px solid var(--border)', color: 'white', borderRadius: '10px', cursor: 'pointer' }}>Cancel</button>
+                            <button type="button" onClick={() => setShowForm(false)} style={{ padding: '12px 24px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '10px', cursor: 'pointer' }}>Cancel</button>
                             <button type="submit" className="btn-blue" style={{ padding: '12px 32px' }}>Create Code</button>
                         </div>
                     </form>
@@ -185,7 +185,7 @@ export const PromotionsView = () => {
                         {events.filter(e => e.featured).length > 0 ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {events.filter(e => e.featured).map(e => (
-                                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--bg-subtle)', borderRadius: '10px' }}>
                                         <span style={{ fontWeight: 600 }}>{e.title}</span>
                                         <span className="pill pill-green">Live</span>
                                     </div>
@@ -202,7 +202,7 @@ export const PromotionsView = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {events.filter(e => !e.featured && e.status === 'APPROVED').length > 0 ? (
                                 events.filter(e => !e.featured && e.status === 'APPROVED').map(e => (
-                                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--bg-subtle)', borderRadius: '10px' }}>
                                         <span style={{ fontWeight: 600 }}>{e.title}</span>
                                         {(pendingRequests.includes(e.id) || e.featureStatus === 'PENDING') ? (
                                             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(251, 191, 36, 0.1)', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>

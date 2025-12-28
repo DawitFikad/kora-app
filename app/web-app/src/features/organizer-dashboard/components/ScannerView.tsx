@@ -145,17 +145,17 @@ export const ScannerView = () => {
                                                     width: '100%',
                                                     height: '54px',
                                                     padding: '0 16px 0 48px',
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    background: 'var(--bg-subtle)',
+                                                    border: '1px solid var(--border)',
                                                     borderRadius: '12px',
-                                                    color: 'white',
+                                                    color: 'var(--text-main)',
                                                     fontSize: '1rem',
                                                     fontWeight: 500,
                                                     outline: 'none',
                                                     transition: 'all 0.2s ease'
                                                 }}
                                                 onFocus={(e) => e.target.style.borderColor = 'var(--primary-blue)'}
-                                                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                                                onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                                             />
                                         </div>
                                         <button
@@ -175,13 +175,13 @@ export const ScannerView = () => {
                                     <h3 style={{ fontSize: '2rem', fontWeight: 900, color: '#10B981', marginBottom: '8px' }}>ACCESS GRANTED</h3>
                                     <p style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '24px' }}>{scanResult?.name}</p>
 
-                                    <div style={{ padding: '16px 24px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', display: 'inline-block', textAlign: 'left' }}>
+                                    <div style={{ padding: '16px 24px', background: 'var(--bg-subtle)', borderRadius: '16px', display: 'inline-block', textAlign: 'left' }}>
                                         <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>TICKET TYPE</p>
                                         <p style={{ fontWeight: 800 }}>{scanResult?.type}</p>
                                     </div>
 
                                     <div style={{ marginTop: '32px' }}>
-                                        <button onClick={() => setStatus('idle')} className="btn-blue" style={{ background: '#161B22', color: 'white', padding: '12px 32px' }}>Next Attendee</button>
+                                        <button onClick={() => setStatus('idle')} className="btn-blue" style={{ background: 'var(--bg-sidebar)', color: 'var(--text-main)', padding: '12px 32px' }}>Next Attendee</button>
                                     </div>
                                 </motion.div>
                             ) : (
@@ -192,7 +192,7 @@ export const ScannerView = () => {
                                     <h3 style={{ fontSize: '2rem', fontWeight: 900, color: '#EF4444', marginBottom: '8px' }}>ACCESS DENIED</h3>
                                     <p style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '32px' }}>{scanResult?.message}</p>
 
-                                    <button onClick={() => setStatus('idle')} className="btn-blue" style={{ background: '#161B22', color: 'white', padding: '12px 32px' }}>Try Again</button>
+                                    <button onClick={() => setStatus('idle')} className="btn-blue" style={{ background: 'var(--bg-sidebar)', color: 'var(--text-main)', padding: '12px 32px' }}>Try Again</button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -207,7 +207,7 @@ export const ScannerView = () => {
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {history.map((h, i) => (
-                                <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div key={i} style={{ padding: '16px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>{h.id}</p>
                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(h.timestamp).toLocaleTimeString()}</p>

@@ -66,7 +66,7 @@ export const EventStatsView = ({ eventId, onBack }: EventStatsViewProps) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
                 <button
                     onClick={onBack}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}
+                    style={{ background: 'var(--bg-hover)', border: 'none', color: 'var(--text-main)', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}
                 >
                     <ArrowLeft size={20} />
                 </button>
@@ -102,7 +102,7 @@ export const EventStatsView = ({ eventId, onBack }: EventStatsViewProps) => {
                 <div className="stat-card">
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '12px' }}>TICKETS SOLD</p>
                     <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>{sales.totalTicketsSold} / {sales.totalCapacity}</h3>
-                    <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '6px', background: 'var(--bg-subtle)', borderRadius: '10px', overflow: 'hidden' }}>
                         <div style={{ width: `${soldPercent}%`, height: '100%', background: 'var(--bg-active)' }} />
                     </div>
                     <Ticket size={20} color="#FBBF24" style={{ position: 'absolute', top: 24, right: 24 }} />
@@ -137,7 +137,7 @@ export const EventStatsView = ({ eventId, onBack }: EventStatsViewProps) => {
                                     </div>
                                     <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{tier.occupancy.toFixed(0)}%</span>
                                 </div>
-                                <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden' }}>
+                                <div style={{ width: '100%', height: '10px', background: 'var(--bg-subtle)', borderRadius: '10px', overflow: 'hidden' }}>
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${tier.occupancy}%` }}
@@ -153,7 +153,7 @@ export const EventStatsView = ({ eventId, onBack }: EventStatsViewProps) => {
                 <div className="stat-card" style={{ padding: '32px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Live Entry Flow</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                        <div style={{ padding: '20px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                                 <div style={{ width: '12px', height: '12px', background: '#10B981', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
                                 <span style={{ fontWeight: 700 }}>Active Scanning Stations</span>

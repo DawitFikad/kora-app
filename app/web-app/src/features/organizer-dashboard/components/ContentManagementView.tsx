@@ -150,11 +150,11 @@ export const ContentManagementView = () => {
                             }}
                             style={{
                                 flex: 1,
-                                background: 'rgba(255,255,255,0.02)',
+                                background: 'var(--bg-subtle)',
                                 border: '1px solid var(--border)',
                                 padding: '10px 14px',
                                 borderRadius: '10px',
-                                color: 'white'
+                                color: 'var(--text-main)'
                             }}
                         />
                         <input
@@ -163,11 +163,11 @@ export const ContentManagementView = () => {
                             onChange={e => setNewCat({ ...newCat, slug: e.target.value.toLowerCase() })}
                             style={{
                                 flex: 1,
-                                background: 'rgba(255,255,255,0.02)',
+                                background: 'var(--bg-subtle)',
                                 border: '1px solid var(--border)',
                                 padding: '10px 14px',
                                 borderRadius: '10px',
-                                color: 'white'
+                                color: 'var(--text-main)'
                             }}
                         />
                         <button
@@ -185,7 +185,7 @@ export const ContentManagementView = () => {
                                 textAlign: 'center',
                                 padding: '40px 20px',
                                 color: 'var(--text-muted)',
-                                background: 'rgba(255,255,255,0.02)',
+                                background: 'var(--bg-subtle)',
                                 borderRadius: '12px',
                                 border: '1px dashed var(--border)'
                             }}>
@@ -253,11 +253,11 @@ export const ContentManagementView = () => {
                             }}
                             style={{
                                 flex: 1,
-                                background: 'rgba(255,255,255,0.02)',
+                                background: 'var(--bg-subtle)',
                                 border: '1px solid var(--border)',
                                 padding: '10px 14px',
                                 borderRadius: '10px',
-                                color: 'white'
+                                color: 'var(--text-main)'
                             }}
                         />
                         <input
@@ -266,11 +266,11 @@ export const ContentManagementView = () => {
                             onChange={e => setNewCity({ ...newCity, slug: e.target.value.toLowerCase() })}
                             style={{
                                 flex: 1,
-                                background: 'rgba(255,255,255,0.02)',
+                                background: 'var(--bg-subtle)',
                                 border: '1px solid var(--border)',
                                 padding: '10px 14px',
                                 borderRadius: '10px',
-                                color: 'white'
+                                color: 'var(--text-main)'
                             }}
                         />
                         <button
@@ -298,7 +298,7 @@ export const ContentManagementView = () => {
                                 textAlign: 'center',
                                 padding: '40px 20px',
                                 color: 'var(--text-muted)',
-                                background: 'rgba(255,255,255,0.02)',
+                                background: 'var(--bg-subtle)',
                                 borderRadius: '12px',
                                 border: '1px dashed var(--border)'
                             }}>
@@ -405,7 +405,7 @@ export const ContentManagementView = () => {
                     {/* Add New Seat Map Card */}
                     <div
                         style={{
-                            background: 'rgba(255,255,255,0.02)',
+                            background: 'var(--bg-subtle)',
                             border: '2px dashed var(--border)',
                             borderRadius: '12px',
                             padding: '16px',
@@ -420,11 +420,11 @@ export const ContentManagementView = () => {
                             value={newSeatMap.name}
                             onChange={e => setNewSeatMap({ ...newSeatMap, name: e.target.value })}
                             style={{
-                                background: 'rgba(255,255,255,0.02)',
+                                background: 'var(--bg-subtle)',
                                 border: '1px solid var(--border)',
                                 padding: '8px 10px',
                                 borderRadius: '8px',
-                                color: 'white',
+                                color: 'var(--text-main)',
                                 fontSize: '0.85rem'
                             }}
                         />
@@ -435,11 +435,11 @@ export const ContentManagementView = () => {
                                 value={newSeatMap.rows}
                                 onChange={e => setNewSeatMap({ ...newSeatMap, rows: parseInt(e.target.value) || 0 })}
                                 style={{
-                                    background: 'rgba(255,255,255,0.02)',
+                                    background: 'var(--bg-subtle)',
                                     border: '1px solid var(--border)',
                                     padding: '8px 10px',
                                     borderRadius: '8px',
-                                    color: 'white',
+                                    color: 'var(--text-main)',
                                     fontSize: '0.85rem'
                                 }}
                             />
@@ -449,11 +449,11 @@ export const ContentManagementView = () => {
                                 value={newSeatMap.seatsPerRow}
                                 onChange={e => setNewSeatMap({ ...newSeatMap, seatsPerRow: parseInt(e.target.value) || 0 })}
                                 style={{
-                                    background: 'rgba(255,255,255,0.02)',
+                                    background: 'var(--bg-subtle)',
                                     border: '1px solid var(--border)',
                                     padding: '8px 10px',
                                     borderRadius: '8px',
-                                    color: 'white',
+                                    color: 'var(--text-main)',
                                     fontSize: '0.85rem'
                                 }}
                             />

@@ -151,7 +151,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
                 <button
                     onClick={onComplete}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}
+                    style={{ background: 'var(--bg-hover)', border: 'none', color: 'var(--text-main)', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}
                 >
                     <ArrowLeft size={20} />
                 </button>
@@ -177,7 +177,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                     type="text"
                                     value={form.title}
                                     onChange={e => setForm({ ...form, title: e.target.value })}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
                                 />
                             </div>
 
@@ -188,7 +188,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                         required
                                         value={form.categoryId}
                                         onChange={e => setForm({ ...form, categoryId: e.target.value })}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white' }}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
                                     >
                                         <option value="">Select Category</option>
                                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -200,7 +200,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                         required
                                         value={form.cityId}
                                         onChange={e => setForm({ ...form, cityId: e.target.value })}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white' }}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
                                     >
                                         <option value="">Select City</option>
                                         {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -215,7 +215,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                     rows={5}
                                     value={form.description}
                                     onChange={e => setForm({ ...form, description: e.target.value })}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white', resize: 'none' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
                                 />
                             </div>
                         </div>
@@ -234,7 +234,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                     type="text"
                                     value={form.venue}
                                     onChange={e => setForm({ ...form, venue: e.target.value })}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
                                 />
                             </div>
                             <div>
@@ -244,7 +244,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                     type="datetime-local"
                                     value={form.dateTime}
                                     onChange={e => setForm({ ...form, dateTime: e.target.value })}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'white' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
                                 />
                             </div>
                         </div>
@@ -267,7 +267,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {form.tiers.map((tier, index) => (
-                                <div key={index} style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 40px', gap: '16px', alignItems: 'end' }}>
+                                <div key={index} style={{ padding: '20px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 40px', gap: '16px', alignItems: 'end' }}>
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Name</label>
                                         <input
@@ -275,7 +275,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                             type="text"
                                             value={tier.name}
                                             onChange={e => handleTierChange(index, 'name', e.target.value)}
-                                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'white' }}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
                                         />
                                     </div>
                                     <div>
@@ -285,7 +285,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                             type="number"
                                             value={tier.price}
                                             onChange={e => handleTierChange(index, 'price', e.target.value)}
-                                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'white' }}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
                                         />
                                     </div>
                                     <div>
@@ -295,7 +295,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                             type="number"
                                             value={tier.capacity}
                                             onChange={e => handleTierChange(index, 'capacity', e.target.value)}
-                                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'white' }}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
                                         />
                                     </div>
                                     <button
@@ -319,7 +319,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                             <ImageIcon size={20} color="#EC4899" /> Event Media
                         </h3>
                         <div>
-                            <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(255,255,255,0.02)', border: '2px dashed var(--border)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', marginBottom: '16px' }}>
+                            <div style={{ width: '100%', aspectRatio: '16/9', background: 'var(--bg-subtle)', border: '2px dashed var(--border)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', marginBottom: '16px' }}>
                                 {form.coverImage ? (
                                     <img src={form.coverImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
@@ -336,7 +336,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                     placeholder="Paste image URL here..."
                                     value={form.coverImage.startsWith('data:') ? '' : form.coverImage}
                                     onChange={e => setForm({ ...form, coverImage: e.target.value })}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'white' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'var(--text-main)' }}
                                 />
 
                                 <div style={{ textAlign: 'center' }}>
@@ -353,7 +353,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                 <button
                                     type="button"
                                     onClick={() => document.getElementById('local-image-edit')?.click()}
-                                    style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white', borderRadius: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
+                                    style={{ width: '100%', padding: '12px', background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
                                 >
                                     Upload Local Image
                                 </button>
@@ -372,7 +372,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                 rows={3}
                                 value={form.refundPolicy}
                                 onChange={e => setForm({ ...form, refundPolicy: e.target.value })}
-                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'white', resize: 'none' }}
+                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
                             />
                         </div>
                     </div>
@@ -390,7 +390,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                         <button
                             type="button"
                             onClick={onComplete}
-                            style={{ width: '100%', padding: '16px', background: 'transparent', border: '1px solid var(--border)', color: 'white', borderRadius: '16px', cursor: 'pointer', fontWeight: 700 }}
+                            style={{ width: '100%', padding: '16px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '16px', cursor: 'pointer', fontWeight: 700 }}
                         >
                             Cancel
                         </button>

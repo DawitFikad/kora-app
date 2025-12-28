@@ -49,11 +49,11 @@ export const AttendeesView = () => {
                             placeholder="Search by name or event..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: '10px', color: 'white', fontSize: '0.9rem' }}
+                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
                         />
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
-                        <button className="btn-blue" style={{ background: '#161B22', color: 'white', padding: '10px 20px' }}><Download size={16} /> Export List</button>
+                        <button className="btn-blue" style={{ background: 'var(--bg-active)', color: 'white', padding: '10px 20px' }}><Download size={16} /> Export List</button>
                     </div>
                 </div>
                 <div style={{ overflowX: 'auto' }}>

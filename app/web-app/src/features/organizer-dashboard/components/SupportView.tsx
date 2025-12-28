@@ -70,7 +70,7 @@ export const SupportView = () => {
                                     placeholder="e.g. Payout Delay"
                                     value={subject}
                                     onChange={e => setSubject(e.target.value)}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                 />
                             </div>
                             <div>
@@ -80,7 +80,7 @@ export const SupportView = () => {
                                     placeholder="Describe your issue in detail..."
                                     value={message}
                                     onChange={e => setMessage(e.target.value)}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', resize: 'none', outline: 'none' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', resize: 'none', outline: 'none' }}
                                 />
                             </div>
                             <button
@@ -106,11 +106,11 @@ export const SupportView = () => {
                                 <div
                                     key={i}
                                     onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
-                                    style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.2s' }}
+                                    style={{ padding: '16px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.2s' }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: expandedFaq === i ? 'white' : 'var(--text-muted)' }}>{item.q}</span>
-                                        {expandedFaq === i ? <ChevronDown size={16} color="white" /> : <ChevronRight size={16} color="var(--text-muted)" />}
+                                        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: expandedFaq === i ? 'var(--text-main)' : 'var(--text-muted)' }}>{item.q}</span>
+                                        {expandedFaq === i ? <ChevronDown size={16} color="var(--text-main)" /> : <ChevronRight size={16} color="var(--text-muted)" />}
                                     </div>
                                     <AnimatePresence>
                                         {expandedFaq === i && (
@@ -134,7 +134,7 @@ export const SupportView = () => {
                     <div className="stat-card" style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(29, 144, 245, 0.1), rgba(29, 144, 245, 0.05))', border: '1px solid rgba(29, 144, 245, 0.2)' }}>
                         <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#1D90F5', marginBottom: '8px' }}>Need Urgent Help?</h4>
                         <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Call our support line directly.</p>
-                        <a href="tel:+251911000000" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'white', fontWeight: 700, textDecoration: 'none' }}>
+                        <a href="tel:+251911000000" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)', fontWeight: 700, textDecoration: 'none' }}>
                             📞 +251 911 000 000
                         </a>
                     </div>

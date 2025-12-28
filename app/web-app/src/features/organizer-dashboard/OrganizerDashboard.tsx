@@ -176,7 +176,7 @@ const OrganizerDashboard = () => {
                 <header style={{
                     padding: '24px 80px', display: 'flex', justifyContent: 'space-between',
                     alignItems: 'center', borderBottom: '1px solid var(--border)',
-                    background: 'var(--bg-main)', zIndex: 10
+                    background: 'var(--bg-sidebar)', zIndex: 10
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div className="logo-box">
@@ -296,7 +296,7 @@ const OrganizerDashboard = () => {
                     </div>
 
                     <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                        <div className="search-pill" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-card)', padding: '10px 20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
+                        <div className="search-pill" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-main)', padding: '10px 20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                             <Search size={18} color="var(--text-muted)" />
                             <input type="text" placeholder={`Search...`} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', fontSize: '0.9rem' }} />
                         </div>
@@ -407,7 +407,7 @@ const OrganizerDashboard = () => {
 
                 </header>
 
-                <div style={{ padding: '0 40px 40px' }}>
+                <div style={{ padding: '40px' }}>
                     <AnimatePresence mode="wait">
                         {renderContent()}
                     </AnimatePresence>

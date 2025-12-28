@@ -64,7 +64,7 @@ export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavig
                         key={filter}
                         onClick={() => setActiveFilter(filter)}
                         style={{
-                            padding: '8px 16px', borderRadius: '100px', background: activeFilter === filter ? 'var(--bg-active)' : 'rgba(255,255,255,0.05)',
+                            padding: '8px 16px', borderRadius: '100px', background: activeFilter === filter ? 'var(--bg-active)' : 'var(--bg-hover)',
                             border: 'none', color: activeFilter === filter ? 'white' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer'
                         }}
                     >
@@ -115,13 +115,13 @@ export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavig
                                         <button
                                             onClick={() => onEditEvent?.(event.id)}
                                             title="Edit Event"
-                                            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
+                                            style={{ background: 'var(--bg-hover)', border: 'none', color: 'var(--text-muted)', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
                                         >
                                             <Pencil size={16} />
                                         </button>
                                         <button
                                             onClick={() => onViewStats?.(event.id)}
-                                            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
+                                            style={{ background: 'var(--bg-hover)', border: 'none', color: 'var(--text-muted)', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
                                         >
                                             <BarChart3 size={16} />
                                         </button>
