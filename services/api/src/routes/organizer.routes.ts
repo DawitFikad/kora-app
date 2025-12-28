@@ -23,5 +23,6 @@ router.get("/events/:id/dashboard", OrganizerController.getDashboard);
 router.get("/events/:id", OrganizerController.getEventById);
 router.patch("/events/:id", OrganizerController.updateEvent);
 router.post("/events/:id/feature", OrganizerController.requestFeature);
+router.post("/support", OrganizerController.contactSupport);
 
 export default router;

@@ -33,6 +33,9 @@ export const OrganizerService = {
     getSettings: () => api.get('/organizer/settings'),
     updateSettings: (data: any) => api.patch('/organizer/settings', data),
 
+    // Support
+    contactSupport: (data: { subject: string, message: string }) => api.post('/organizer/support', data),
+
     // Validation
     validateTicket: (qrPayload: string, gateId?: string) => api.post('/validate/scan', { qrPayload, gateId }),
     getSyncData: (eventId: number) => api.get(`/validate/sync/${eventId}`),

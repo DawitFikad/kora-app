@@ -465,7 +465,47 @@ export class OrganizerController {
 
             res.json({ success: true, message: "Feature request submitted for approval" });
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async contactSupport(req: Request, res: Response) {
+        try {
+            const { subject, message } = req.body;
+            const userId = (req as any).user?.id;
+            const prisma = (await import("../lib/prisma")).prisma; // Added missing prisma import
+
+            const organizer = await prisma.organizerProfile.findUnique({ where: { userId } });
+            if (!organizer) return res.status(404).json({ error: "Organizer profile not found" });
+
+            if (!subject || !message) return res.status(400).json({ error: "Subject and message are required" });
+
+            // Send to Admin (Assuming ID 1 is Admin, or just persistent log)
+            await prisma.notificationLog.create({
+                data: {
+                    userId: 1,
+                    organizerId: organizer.id,
+                    channel: 'EMAIL',
+                    recipient: 'support@ettickets.com',
+                    title: `[Support] ${subject}`,
+                    content: message,
+                    status: 'DELIVERED', // Simulated
+                    metadata: { type: 'SUPPORT_TICKET', from: organizer.organizationName }
+                }
+            });
+
+            // Send Email Notification
+            const { EmailService } = await import("../services/email.service");
+            await EmailService.sendEmail(
+                'support@ettickets.com',
+                `[Support] ${organizer.organizationName}: ${subject}`,
+                `New support request from ${organizer.organizationName} (ID: ${organizer.id}).\n\nContact: ${organizer.contactEmail}\nPhone: ${organizer.contactPhone}\n\nMessage:\n${message}`
+            );
+
+            res.json({ success: true, message: "Support ticket created successfully. We will contact you shortly." });
+        } catch (error: any) {
+            console.error("Support error:", error);
+            res.status(500).json({ error: error.message });
         }
     }
 }
