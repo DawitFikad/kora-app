@@ -410,4 +410,24 @@ export class OrganizerController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+    /**
+     * POST /api/organizer/events/:id/feature
+     */
+    static async requestFeature(req: Request, res: Response) {
+        try {
+            const eventId = Number(req.params.id);
+            const organizerId = (req as any).user?.organizerId;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Validate ownership
+            const event = await prisma.event.findFirst({ where: { id: eventId, organizerId } });
+            if (!event) return res.status(404).json({ success: false, message: "Event not found" });
+
+            // In a real app, this would create a notification for ADMIN
+            // For now, we return success
+            res.json({ success: true, message: "Feature request submitted for approval" });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }

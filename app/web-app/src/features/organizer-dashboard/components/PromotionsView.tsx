@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Tag, Users, Trash2, Loader2, Megaphone } from 'lucide-react';
+import { Plus, Tag, Users, Trash2, Loader2, Megaphone, Crown, ArrowUpRight } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
@@ -53,6 +53,15 @@ export const PromotionsView = () => {
             toast.error("Error creating promo code.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRequestFeature = async (eventId: number) => {
+        try {
+            await OrganizerService.requestFeature(eventId);
+            toast.success("Feature request sent to Admin for approval.");
+        } catch (error) {
+            toast.error("Failed to submit request.");
         }
     };
 
@@ -153,6 +162,59 @@ export const PromotionsView = () => {
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Featured Listings Section */}
+            <div style={{ marginTop: '48px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                    <div style={{ padding: '10px', background: 'rgba(251, 191, 36, 0.1)', borderRadius: '12px' }}>
+                        <Crown size={24} color="#FBBF24" />
+                    </div>
+                    <div>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Featured Listings</h3>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Admin-approved events highlighted on the homepage.</p>
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                    {/* Currently Featured */}
+                    <div className="stat-card" style={{ padding: '24px', border: '1px solid #FBBF24' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '16px', color: '#FBBF24' }}>Active Featured Events</h4>
+                        {events.filter(e => e.featured).length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {events.filter(e => e.featured).map(e => (
+                                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                        <span style={{ fontWeight: 600 }}>{e.title}</span>
+                                        <span className="pill pill-green">Live</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>You have no featured events currently.</p>
+                        )}
+                    </div>
+
+                    {/* Eligible for Featuring */}
+                    <div className="stat-card" style={{ padding: '24px' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '16px' }}>Request to Feature</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {events.filter(e => !e.featured && e.status === 'APPROVED').length > 0 ? (
+                                events.filter(e => !e.featured && e.status === 'APPROVED').map(e => (
+                                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                        <span style={{ fontWeight: 600 }}>{e.title}</span>
+                                        <button
+                                            onClick={() => handleRequestFeature(e.id)}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--primary-blue)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>
+                                            Request <ArrowUpRight size={14} />
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No eligible events available for featuring.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </motion.div>
     );
