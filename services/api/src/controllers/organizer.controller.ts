@@ -472,40 +472,67 @@ export class OrganizerController {
     static async contactSupport(req: Request, res: Response) {
         try {
             const { subject, message } = req.body;
-            const userId = (req as any).user?.id;
-            const prisma = (await import("../lib/prisma")).prisma; // Added missing prisma import
+            const userId = (req as any).user?.userId;
+            
+            if (!userId) {
+                return res.status(401).json({ error: "User not authenticated" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
 
             const organizer = await prisma.organizerProfile.findUnique({ where: { userId } });
-            if (!organizer) return res.status(404).json({ error: "Organizer profile not found" });
+            if (!organizer) {
+                return res.status(404).json({ error: "Organizer profile not found. Please complete your organizer profile first." });
+            }
 
-            if (!subject || !message) return res.status(400).json({ error: "Subject and message are required" });
+            if (!subject || !message) {
+                return res.status(400).json({ error: "Subject and message are required" });
+            }
 
-            // Send to Admin (Assuming ID 1 is Admin, or just persistent log)
-            await prisma.notificationLog.create({
-                data: {
-                    userId: 1,
-                    organizerId: organizer.id,
-                    channel: 'EMAIL',
-                    recipient: 'support@ettickets.com',
-                    title: `[Support] ${subject}`,
-                    content: message,
-                    status: 'DELIVERED', // Simulated
-                    metadata: { type: 'SUPPORT_TICKET', from: organizer.organizationName }
-                }
-            });
+            // Try to create notification log (make userId optional if it fails)
+            try {
+                await prisma.notificationLog.create({
+                    data: {
+                        userId: userId, // Use the actual user ID instead of hardcoded 1
+                        organizerId: organizer.id,
+                        channel: 'EMAIL',
+                        recipient: 'support@ettickets.com',
+                        title: `[Support] ${subject}`,
+                        content: message,
+                        status: 'PENDING',
+                        metadata: { type: 'SUPPORT_TICKET', from: organizer.organizationName }
+                    }
+                });
+            } catch (logError: any) {
+                // Log error but don't fail the request
+                console.warn("Failed to create notification log:", logError.message);
+            }
 
             // Send Email Notification
             const { EmailService } = await import("../services/email.service");
+            
+            // Send to support team (use EMAIL_USER from .env or fallback to support email)
+            const supportEmail = process.env.EMAIL_USER || 'support@ettickets.com';
             await EmailService.sendEmail(
-                'support@ettickets.com',
+                supportEmail,
                 `[Support] ${organizer.organizationName}: ${subject}`,
-                `New support request from ${organizer.organizationName} (ID: ${organizer.id}).\n\nContact: ${organizer.contactEmail}\nPhone: ${organizer.contactPhone}\n\nMessage:\n${message}`
+                `New support request from ${organizer.organizationName} (ID: ${organizer.id}).\n\nContact: ${organizer.contactEmail || 'N/A'}\nPhone: ${organizer.contactPhone || 'N/A'}\n\nMessage:\n${message}`
             );
+
+            // Send confirmation email to organizer if they have an email
+            if (organizer.contactEmail) {
+                await EmailService.sendEmail(
+                    organizer.contactEmail,
+                    `Support Request Confirmation: ${subject}`,
+                    `Dear ${organizer.organizationName},\n\nThank you for contacting ET-Ticket support. We have received your request and will respond within 24 hours.\n\nYour Message:\n${message}\n\nBest regards,\nET-Ticket Support Team`
+                );
+            }
 
             res.json({ success: true, message: "Support ticket created successfully. We will contact you shortly." });
         } catch (error: any) {
             console.error("Support error:", error);
-            res.status(500).json({ error: error.message });
+            const errorMessage = error?.message || "An unexpected error occurred. Please try again.";
+            res.status(500).json({ error: errorMessage });
         }
     }
 }

@@ -47,7 +47,7 @@ export class EmailService {
         }
 
         try {
-            await this.transporter.sendMail({
+            const result = await this.transporter.sendMail({
                 from: process.env.EMAIL_FROM || 'support@ettickets.com',
                 to,
                 subject,
@@ -55,13 +55,19 @@ export class EmailService {
                 html: html || text.replace(/\n/g, '<br>'),
             });
 
-            console.log(`📧 User Email sent to ${to}`);
+            console.log(`📧 Email sent successfully to ${to}`);
+            console.log(`   Message ID: ${result.messageId}`);
+            return result;
         } catch (error: any) {
-            console.error(
-                '❌ Email send failed:',
-                error.message
-            );
+            console.error('❌ Email send failed:');
+            console.error(`   To: ${to}`);
+            console.error(`   Subject: ${subject}`);
+            console.error(`   Error: ${error.message}`);
+            if (error.response) {
+                console.error(`   Response: ${JSON.stringify(error.response)}`);
+            }
             // Do not throw → prevents breaking main flow
+            return null;
         }
     }
 }

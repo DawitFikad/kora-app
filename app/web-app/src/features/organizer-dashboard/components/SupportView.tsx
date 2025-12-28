@@ -33,9 +33,10 @@ export const SupportView = () => {
             toast.success("Message sent! We'll reply shortly.");
             setSubject('');
             setMessage('');
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to send message.");
+        } catch (error: any) {
+            console.error('Support form error:', error);
+            const errorMessage = error?.error || error?.message || "Failed to send message. Please try again.";
+            toast.error(errorMessage);
             setStatus('idle');
         }
     };
