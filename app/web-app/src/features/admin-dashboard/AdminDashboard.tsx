@@ -38,16 +38,19 @@ const AdminDashboard = () => {
     const [pendingCount, setPendingCount] = useState(0);
     const [eventPendingCount, setEventPendingCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchCounts = async () => {
             try {
-                const [orgs, stats]: any = await Promise.all([
+                const [orgs, stats, notifRes]: any = await Promise.all([
                     AdminService.getPendingOrganizers(),
-                    AdminService.getStats()
+                    AdminService.getStats(),
+                    AdminService.getNotifications()
                 ]);
                 setPendingCount(orgs.filter((o: any) => o.status === 'PENDING').length);
                 setEventPendingCount(stats.kpis.pendingEvents);
+                setNotifications(notifRes.data);
             } catch (err) {
                 console.error('Failed to fetch admin counts', err);
             }
@@ -216,9 +219,25 @@ const AdminDashboard = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        {pendingCount === 0 && eventPendingCount === 0 && (
+                                        {pendingCount === 0 && eventPendingCount === 0 && notifications.length === 0 && (
                                             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                                 <p style={{ fontSize: '0.85rem' }}>All caught up! 🎉</p>
+                                            </div>
+                                        )}
+
+                                        {/* Recent System Notifications */}
+                                        {notifications.length > 0 && (
+                                            <div style={{ marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
+                                                <p style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', padding: '0 8px 4px 8px' }}>Recent Activity</p>
+                                                {notifications.slice(0, 5).map((n: any) => (
+                                                    <div key={n.id} style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: n.metadata?.type === 'FEATURE_REQUEST' ? '#FBBF24' : 'white' }}>{n.title}</span>
+                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </div>
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>{n.content}</p>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
                                     </div>

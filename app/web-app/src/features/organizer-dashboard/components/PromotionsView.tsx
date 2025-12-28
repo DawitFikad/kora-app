@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Tag, Users, Trash2, Loader2, Megaphone, Crown, ArrowUpRight } from 'lucide-react';
+import { Plus, Tag, Users, Trash2, Loader2, Megaphone, Crown, ArrowUpRight, CheckCircle } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
@@ -11,6 +11,7 @@ export const PromotionsView = () => {
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [pendingRequests, setPendingRequests] = useState<number[]>([]);
 
     const [form, setForm] = useState({
         code: '',
@@ -59,7 +60,8 @@ export const PromotionsView = () => {
     const handleRequestFeature = async (eventId: number) => {
         try {
             await OrganizerService.requestFeature(eventId);
-            toast.success("Feature request sent to Admin for approval.");
+            setPendingRequests(prev => [...prev, eventId]);
+            toast.success("Feature request sent. Pending admin approval.");
         } catch (error) {
             toast.error("Failed to submit request.");
         }
@@ -202,11 +204,17 @@ export const PromotionsView = () => {
                                 events.filter(e => !e.featured && e.status === 'APPROVED').map(e => (
                                     <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
                                         <span style={{ fontWeight: 600 }}>{e.title}</span>
-                                        <button
-                                            onClick={() => handleRequestFeature(e.id)}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--primary-blue)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>
-                                            Request <ArrowUpRight size={14} />
-                                        </button>
+                                        {pendingRequests.includes(e.id) || e.pendingFeatureRequest ? (
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(251, 191, 36, 0.1)', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                                                <CheckCircle size={14} /> Pending
+                                            </span>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleRequestFeature(e.id)}
+                                                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--primary-blue)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>
+                                                Request <ArrowUpRight size={14} />
+                                            </button>
+                                        )}
                                     </div>
                                 ))
                             ) : (

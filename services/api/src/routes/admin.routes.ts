@@ -31,4 +31,7 @@ router.patch("/users/:userId/activate", authenticate, authorize([Role.ADMIN]), A
 // Feature Event
 router.patch("/events/:eventId/featured", authenticate, authorize([Role.ADMIN]), AdminController.toggleEventFeatured);
 
+// Notifications
+router.get("/notifications", authenticate, authorize([Role.ADMIN]), AdminController.getNotifications);
+
 export default router;

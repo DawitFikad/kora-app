@@ -31,4 +31,5 @@ export const AdminService = {
     // Platform KPIs
     getStats: () => api.get('/admin/stats'),
     getAnalytics: () => api.get('/admin/analytics'),
+    getNotifications: () => api.get('/admin/notifications'),
 };

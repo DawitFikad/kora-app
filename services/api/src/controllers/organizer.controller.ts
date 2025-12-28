@@ -61,6 +61,7 @@ export class OrganizerController {
                     dateTime: true,
                     venue: true,
                     coverImage: true,
+                    featured: true,
                     _count: {
                         select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
                     },
@@ -70,10 +71,22 @@ export class OrganizerController {
                 }
             });
 
+            // Check Logs for persistent 'Pending' status
+            const requests = await prisma.notificationLog.findMany({
+                where: { organizerId, title: 'Feature Request' },
+                select: { metadata: true }
+            });
+            const pendingIds = new Set();
+            requests.forEach(r => {
+                const meta = r.metadata as any;
+                if (meta?.type === 'FEATURE_REQUEST') pendingIds.add(Number(meta.eventId));
+            });
+
             // Calculate total capacity for each event
             const formattedEvents = events.map(event => ({
                 ...event,
-                totalCapacity: event.tiers.reduce((sum, tier) => sum + tier.capacity, 0)
+                totalCapacity: event.tiers.reduce((sum, tier) => sum + tier.capacity, 0),
+                pendingFeatureRequest: pendingIds.has(event.id)
             }));
 
             res.json({ success: true, data: formattedEvents });
@@ -423,8 +436,23 @@ export class OrganizerController {
             const event = await prisma.event.findFirst({ where: { id: eventId, organizerId } });
             if (!event) return res.status(404).json({ success: false, message: "Event not found" });
 
-            // In a real app, this would create a notification for ADMIN
-            // For now, we return success
+            // Create notification for ADMIN
+            const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+
+            if (admin) {
+                await prisma.notificationLog.create({
+                    data: {
+                        userId: admin.id,
+                        channel: 'PUSH',
+                        recipient: admin.email || admin.phoneNumber || 'System',
+                        title: 'Feature Request',
+                        content: `Organizer ${organizerId} requested featuring for '${event.title}'`,
+                        status: 'DELIVERED',
+                        metadata: { type: 'FEATURE_REQUEST', eventId: eventId, organizerId: organizerId }
+                    }
+                });
+            }
+
             res.json({ success: true, message: "Feature request submitted for approval" });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
