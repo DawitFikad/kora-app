@@ -32,7 +32,7 @@ export class EventService {
             data: {
                 ...eventData,
                 organizerId,
-                status: EventStatus.PENDING,
+                status: EventStatus.APPROVED, // Auto-approve for development (change to PENDING for production)
                 tiers: {
                     create: tiers
                 }

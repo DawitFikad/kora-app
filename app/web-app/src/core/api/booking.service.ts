@@ -3,6 +3,7 @@ import api from './client';
 export interface TicketTier {
     id: number;
     name: string;
+    description?: string;
     price: number;
     capacity: number;
     soldCount: number;
