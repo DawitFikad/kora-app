@@ -14,7 +14,8 @@ import {
     DollarSign,
     Megaphone,
     Maximize,
-    LogOut
+    LogOut,
+    FileText
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -33,6 +34,8 @@ import { ScannerView } from './components/ScannerView';
 import { PendingApprovalView } from './components/PendingApprovalView';
 import { EventStatsView } from './components/EventStatsView';
 import { ContentManagementView } from './components/ContentManagementView';
+import { AdvancedAnalyticsView } from './components/AdvancedAnalyticsView';
+import { ReportGeneratorView } from './components/ReportGeneratorView';
 
 // --- Main Application Component ---
 
@@ -57,6 +60,8 @@ const OrganizerDashboard = () => {
         { icon: Calendar, label: 'Events' },
         { icon: Ticket, label: 'Tickets' },
         { icon: DollarSign, label: 'Payments' },
+        { icon: BarChart3, label: 'Analytics' },
+        { icon: FileText, label: 'Reports' },
         { icon: Users, label: 'Attendees' },
         { icon: Megaphone, label: 'Promotions' },
         { icon: Layout, label: 'Content' },
@@ -107,6 +112,8 @@ const OrganizerDashboard = () => {
             case 'Events': return <MyEventsView key="events" onNavigate={setActiveTab} onEditEvent={handleEditEvent} onViewStats={handleViewStats} />;
             case 'Tickets': return <TicketsView key="tickets" />;
             case 'Payments': return <ReportsView key="payments" />;
+            case 'Analytics': return <AdvancedAnalyticsView key="analytics" />;
+            case 'Reports': return <ReportGeneratorView key="reports" />;
             case 'Attendees': return <AttendeesView key="attendees" />;
             case 'Promotions': return <PromotionsView key="promotions" />;
             case 'Content': return <ContentManagementView key="content" />;

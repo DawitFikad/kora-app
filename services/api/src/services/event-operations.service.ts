@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { EventStatus } from "@prisma/client";
 import redis from "../utils/redis";
 import { AnalyticsService } from "./analytics.service";
 
@@ -130,7 +131,13 @@ export class EventOperationsService {
                     _count: {
                         select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
                     },
-                    tiers: true
+                    tiers: {
+                        include: {
+                            _count: {
+                                select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
+                            }
+                        }
+                    }
                 }
             }),
             prisma.organizerWallet.findUnique({
@@ -142,7 +149,7 @@ export class EventOperationsService {
                 where: {
                     event: { organizerId },
                     status: { in: ["SOLD", "USED", "VALID"] },
-                    createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+                    createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Extended to 30 days for better insights
                 }
             })
         ]);
@@ -161,25 +168,73 @@ export class EventOperationsService {
             _sum: { netAmount: true }
         });
 
-        // Calculate daily sales for velocity chart
+        // Calculate daily sales for velocity chart (last 7 days)
         const salesVelocity = new Array(7).fill(0).map((_, i) => {
             const date = new Date();
             date.setDate(date.getDate() - (6 - i));
             const dateString = date.toISOString().split('T')[0];
 
             const count = recentSales
-                .filter(s => s.createdAt.toISOString().split('T')[0] === dateString)
+                .filter(s => new Date(s.createdAt).toISOString().split('T')[0] === dateString)
                 .reduce((sum, s) => sum + s._count, 0);
 
             return { day: date.toLocaleDateString('en-US', { weekday: 'short' }), count };
         });
+
+        const totalCheckIns = await prisma.ticket.count({
+            where: {
+                event: { organizerId },
+                status: "USED"
+            }
+        });
+
+        const activeEventsCount = events.filter(e => e.status === EventStatus.APPROVED && new Date(e.dateTime) > new Date()).length;
+
+        // --- Advanced Analytics Calculations ---
+
+        // 1. Performance Insights: Best Event & Peak Day
+        const eventRevenues = events.map(e => ({
+            title: e.title,
+            revenue: e.tiers.reduce((acc, t) => acc + (Number(t.price) * (t._count?.tickets || 0)), 0)
+        })).sort((a, b) => b.revenue - a.revenue);
+
+        const bestEvent = eventRevenues[0] || { title: 'N/A', revenue: 0 };
+
+        const dayCounts: Record<string, number> = {};
+        recentSales.forEach(s => {
+            const day = new Date(s.createdAt).toLocaleDateString('en-US', { weekday: 'long' });
+            dayCounts[day] = (dayCounts[day] || 0) + s._count;
+        });
+        const peakDayEntry = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0] || ['N/A', 0];
+
+        // 2. Revenue Breakdown (Top 3 Events)
+        const revenueBreakdown = eventRevenues.slice(0, 3).map(e => ({
+            label: e.title,
+            value: e.revenue,
+            color: '#1D90F5' // Colors will be handled in frontend cyclically
+        }));
+
+        // 3. Funnel Metrics (Real Data: Capacity -> Sold -> Used)
+        const funnel = {
+            capacity: totalCapacity,
+            sold: totalTicketsSold,
+            checkedIn: totalCheckIns
+        };
 
         return {
             totalRevenue: Number(totalRevenue._sum.netAmount || 0),
             ticketsSold: totalTicketsSold,
             totalCapacity,
             nextPayout: Number(wallet?.availableBalance || 0),
-            salesVelocity
+            salesVelocity,
+            totalCheckIns,
+            activeEvents: activeEventsCount,
+            advanced: {
+                bestEvent: { title: bestEvent.title, revenue: bestEvent.revenue },
+                peakDay: { day: peakDayEntry[0], count: peakDayEntry[1] },
+                revenueBreakdown,
+                funnel
+            }
         };
     }
 

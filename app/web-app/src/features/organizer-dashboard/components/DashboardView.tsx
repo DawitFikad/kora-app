@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MoreHorizontal, Ticket, Eye, Building2, TrendingUp, Megaphone, Users, Download, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Ticket, Building2, TrendingUp, Megaphone, Users, Download, Loader2 } from 'lucide-react';
 import { CreditCardIcon } from './CustomIcons';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
@@ -19,7 +19,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                 const formattedStats = [
                     { label: 'Total Revenue', value: `ETB ${data.totalRevenue.toLocaleString()}`, change: 'Released funds', icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
                     { label: 'Tickets Sold', value: `${data.ticketsSold} / ${data.totalCapacity}`, change: `${data.totalCapacity > 0 ? ((data.ticketsSold / data.totalCapacity) * 100).toFixed(1) : 0}% sold`, icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
-                    { label: 'Page Views', value: '1,200', change: '+8% traffic increase', icon: Eye, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' }, // Mocked for now
+                    { label: 'Checked In', value: data.totalCheckIns?.toLocaleString() || '0', change: `${data.totalCheckIns > 0 && data.ticketsSold > 0 ? ((data.totalCheckIns / data.ticketsSold) * 100).toFixed(1) : 0}% of sold`, icon: Users, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' },
                     { label: 'Available Payout', value: `ETB ${data.nextPayout.toLocaleString()}`, change: 'Ready for withdrawal', icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },
                 ];
 
