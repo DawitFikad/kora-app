@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../core/context/AuthContext';
 import { useTheme } from '../../core/context/ThemeContext';
+import { useLanguage } from '../../core/context/LanguageContext';
 import {
     Calendar,
     Ticket,
@@ -46,6 +47,7 @@ import { ReportGeneratorView } from './components/ReportGeneratorView';
 const OrganizerDashboard = () => {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { language, setLanguage } = useLanguage();
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [editingEventId, setEditingEventId] = useState<number | null>(null);
     const [viewingStatsId, setViewingStatsId] = useState<number | null>(null);
@@ -310,6 +312,27 @@ const OrganizerDashboard = () => {
                                 {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
                             </div>
 
+                            <div
+                                className="action-icon"
+                                onClick={() => setLanguage(language === 'en' ? 'am' : 'en')}
+                                style={{
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: 'var(--bg-hover)',
+                                    color: 'var(--text-main)',
+                                    border: '1px solid var(--border)'
+                                }}
+                            >
+                                {language.toUpperCase()}
+                            </div>
+
                             <div style={{ position: 'relative' }}>
                                 <div
                                     className="action-icon"
@@ -413,7 +436,7 @@ const OrganizerDashboard = () => {
                     </AnimatePresence>
                 </div>
             </main>
-        </div>
+        </div >
 
     );
 };

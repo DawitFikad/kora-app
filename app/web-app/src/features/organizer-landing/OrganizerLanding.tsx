@@ -19,9 +19,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from '../auth/LoginModal';
 import { useAuth } from '../../core/context/AuthContext';
 import { useTheme } from '../../core/context/ThemeContext';
+import { useLanguage } from '../../core/context/LanguageContext';
 
 const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => void }) => {
     const { theme, toggleTheme } = useTheme();
+    const { language, setLanguage, t } = useLanguage();
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -43,8 +45,8 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
 
                 {/* Desktop Nav */}
                 <div className="desktop-nav" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                    <a href="#how-it-works" className="nav-link">How it works</a>
-                    <a href="#features" className="nav-link">Features</a>
+                    <a href="#how-it-works" className="nav-link">{t('nav.howItWorks')}</a>
+                    <a href="#features" className="nav-link">{t('nav.features')}</a>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <button
                             onClick={() => onAuthClick('login')}
@@ -59,7 +61,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                 whiteSpace: 'nowrap'
                             }}
                         >
-                            Organizer Login
+                            {t('nav.login')}
                         </button>
                         <button
                             onClick={() => onAuthClick('register')}
@@ -74,34 +76,38 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                 whiteSpace: 'nowrap'
                             }}
                         >
-                            Create Organizer Account
+                            {t('nav.register')}
                         </button>
-                        <div
-                            onClick={toggleTheme}
-                            style={{
-                                padding: '8px',
-                                borderRadius: '10px',
-                                background: 'var(--bg-subtle)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'var(--text-main)',
-                                border: '1px solid var(--border)'
-                            }}
-                        >
-                            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                        </div>
                     </div>
                 </div>
 
-                {/* Mobile Toggle */}
+                {/* Navbar Actions (Theme & Mobile Menu) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div
                         onClick={toggleTheme}
-                        style={{ borderRadius: '10px', background: 'var(--bg-hover)', padding: '8px', cursor: 'pointer', border: '1px solid var(--border)' }}
+                        style={{ borderRadius: '10px', background: 'var(--bg-hover)', padding: '8px', cursor: 'pointer', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                         {theme === 'dark' ? <Sun size={20} color="var(--text-main)" /> : <Moon size={20} color="var(--text-main)" />}
+                    </div>
+                    <div
+                        onClick={() => setLanguage(language === 'en' ? 'am' : 'en')}
+                        style={{
+                            borderRadius: '10px',
+                            background: 'var(--bg-hover)',
+                            padding: '8px',
+                            cursor: 'pointer',
+                            border: '1px solid var(--border)',
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                            color: 'var(--text-main)',
+                            minWidth: '36px',
+                            textAlign: 'center',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        {language.toUpperCase()}
                     </div>
                     <div
                         className="mobile-toggle"
@@ -123,8 +129,8 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                         style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border)', overflow: 'hidden' }}
                     >
                         <div style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem 2rem', gap: '1.5rem' }}>
-                            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>How it works</a>
-                            <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>Features</a>
+                            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.howItWorks')}</a>
+                            <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.features')}</a>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                 <button
                                     onClick={() => { onAuthClick('login'); setMobileMenuOpen(false); }}
@@ -143,7 +149,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                     }}
                                     className="nav-btn-outline"
                                 >
-                                    Organizer Login
+                                    {t('nav.login')}
                                 </button>
                                 <button
                                     onClick={() => { onAuthClick('register'); setMobileMenuOpen(false); }}
@@ -162,7 +168,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                     }}
                                     className="nav-btn-primary"
                                 >
-                                    Create Organizer Account
+                                    {t('nav.register')}
                                 </button>
                             </div>
                         </div>
@@ -236,12 +242,12 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
 };
 
 const PaymentServices = () => {
+    const { t, language } = useLanguage();
     const providers = [
-        { name: 'Telebirr', color: '#0066B3' },
-
-        { name: 'CBE Birr', color: '#8B5CF6' },
-        { name: 'Amole', color: '#F59E0B' },
-        { name: 'CBE', color: '#3B82F6' }
+        { name: language === 'am' ? 'ቴሌብር' : 'Telebirr', color: '#0066B3' },
+        { name: language === 'am' ? 'ሲቢኢ ብር' : 'CBE Birr', color: '#8B5CF6' },
+        { name: language === 'am' ? 'አሞሌ' : 'Amole', color: '#F59E0B' },
+        { name: language === 'am' ? 'ሲቢኢ' : 'CBE', color: '#3B82F6' }
     ];
 
     return (
@@ -262,14 +268,13 @@ const PaymentServices = () => {
                             marginBottom: '1.5rem',
                             border: '1px solid rgba(139, 92, 246, 0.2)'
                         }}>
-                            <Zap size={14} /> I LOVED DIGITAL PAYMENTS
+                            <Zap size={14} /> {t('payment.badge')}
                         </div>
                         <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 900, marginBottom: '2rem', lineHeight: 1.1, color: 'var(--text-main)' }}>
-                            Ethiopia's Most Advanced <br />
-                            <span className="gradient-text">Payment Integration.</span>
+                            {t('payment.title')}
                         </h2>
                         <p style={{ color: 'var(--text-muted)', fontSize: '1.25rem', lineHeight: 1.6, maxWidth: '600px' }}>
-                            We've built a seamless bridge between your event and the nation's biggest wallets. Accept Telebirr, CBE Birr, and more with instant verification.
+                            {t('payment.subtitle')}
                         </p>
                     </div>
                     <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center' }}>
@@ -348,18 +353,31 @@ const PaymentServices = () => {
 };
 
 const Testimonials = () => {
+    const { t, language } = useLanguage();
     const tms = [
-        { name: 'Abinet Kebede', role: 'Concert Promoter', quote: 'ET-TICKETS transformed how we manage gate entry. The QR scanning is flawless even with 5000+ attendees.' },
-        { name: 'Selam Tekle', role: 'Conference Organizer', quote: 'The real-time dashboard gives us peace of mind. We can see revenue growing minute by minute.' },
-        { name: 'Dawit Mengistu', role: 'Sports Event Lead', quote: 'Finally, a platform that understands Telebirr and CBE Birr. The settlement process is exceptionally fast.' }
+        {
+            name: language === 'am' ? 'አቢነት ከበደ' : 'Abinet Kebede',
+            role: language === 'am' ? 'የኮንሰርት አዘጋጅ' : 'Concert Promoter',
+            quote: language === 'am' ? 'ET-TICKETS የዝግጅት መግቢያ አያያዝ ሂደታችንን ለውጦታል። ከ5000 በላይ ታዳሚዎች ቢኖሩም የQR ቅኝቱ ፍጹም ነው።' : 'ET-TICKETS transformed how we manage gate entry. The QR scanning is flawless even with 5000+ attendees.'
+        },
+        {
+            name: language === 'am' ? 'ሰላም ተክሌ' : 'Selam Tekle',
+            role: language === 'am' ? 'የኮንፈረንስ አዘጋጅ' : 'Conference Organizer',
+            quote: language === 'am' ? 'የእውነተኛ ጊዜ ዳሽቦርዱ የአእምሮ ሰላም ይሰጠናል። ገቢያችን በየደቂቃው ሲያድግ ማየት እንችላለን።' : 'The real-time dashboard gives us peace of mind. We can see revenue growing minute by minute.'
+        },
+        {
+            name: language === 'am' ? 'ዳዊት መንግስቱ' : 'Dawit Mengistu',
+            role: language === 'am' ? 'የስፖርት ዝግጅት መሪ' : 'Sports Event Lead',
+            quote: language === 'am' ? 'በመጨረሻም ቴሌብርን እና ሲቢኢ ብርን የሚረዳ መድረክ አገኘን። የክፍያ አሰፋፈር ሂደቱ በሚገርም ሁኔታ ፈጣን ነው።' : 'Finally, a platform that understands Telebirr and CBE Birr. The settlement process is exceptionally fast.'
+        }
     ];
 
     return (
         <section style={{ padding: '10rem 0' }}>
             <div className="container">
                 <div style={{ textAlign: 'center', marginBottom: '6rem' }}>
-                    <h2 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '1.5rem', color: 'var(--text-main)' }}>Loved by Organizers</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Join hundreds of successful event hosts across Ethiopia.</p>
+                    <h2 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('testimonials.title')}</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{t('testimonials.subtitle')}</p>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem' }}>
                     {tms.map((t, i) => (
@@ -390,6 +408,7 @@ const OrganizerLanding = () => {
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
     const [revenue, setRevenue] = useState(24.5);
     const [tickets, setTickets] = useState(842);
+    const { language, setLanguage, t } = useLanguage();
 
     useEffect(() => {
         if (user) {
@@ -438,14 +457,17 @@ const OrganizerLanding = () => {
                             marginBottom: '2.5rem',
                             border: '1px solid rgba(139, 92, 246, 0.2)'
                         }}>
-                            <Zap size={14} /> THE GOLD STANDARD FOR EVENT TICKETING
+                            <Zap size={14} /> {t('hero.badge')}
                         </div>
                         <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', fontWeight: 900, lineHeight: 1, marginBottom: '2rem', letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
-                            Sell Tickets. Manage Events. <br />
-                            <span className="gradient-text">Get Paid — All in One Platform.</span>
+                            {language === 'en' ? (
+                                <>Sell Tickets. Manage Events. <br /><span className="gradient-text">Get Paid — All in One Platform.</span></>
+                            ) : (
+                                <>{t('hero.title')}</>
+                            )}
                         </h1>
                         <p style={{ fontSize: 'clamp(1.1rem, 2vw, 1.25rem)', color: 'var(--text-muted)', maxWidth: '800px', margin: '0 auto 3.5rem', lineHeight: 1.6 }}>
-                            Built for Ethiopian events — from concerts and conferences to sports and church gatherings. Scale your reach effortlessly with our industry-leading tools.
+                            {t('hero.subtitle')}
                         </p>
                         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                             <motion.button
@@ -470,7 +492,7 @@ const OrganizerLanding = () => {
                                     overflow: 'hidden'
                                 }}
                             >
-                                <span>Create Organizer Account</span>
+                                <span>{t('nav.register')}</span>
                                 <ArrowRight size={20} />
                             </motion.button>
                             <motion.button
@@ -489,7 +511,7 @@ const OrganizerLanding = () => {
                                     transition: 'all 0.3s ease'
                                 }}
                             >
-                                Organizer Login
+                                {t('nav.login')}
                             </motion.button>
                         </div>
                     </motion.div>
@@ -502,15 +524,15 @@ const OrganizerLanding = () => {
             <section id="how-it-works" style={{ background: 'var(--bg-subtle)', padding: '8rem 0' }}>
                 <div className="container">
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>Streamlined Workflow</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>From creation to validation, we've got you covered.</p>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>{t('steps.title')}</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{t('steps.subtitle')}</p>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2.5rem' }}>
                         {[
-                            { icon: Layers, title: 'Create Event', desc: 'Set up your event page, ticket tiers, and pricing in minutes.' },
-                            { icon: ShieldCheck, title: 'Get Admin Approval', desc: 'Secure verification from our team to protect you and your fans.' },
-                            { icon: Globe, title: 'Sell Tickets Online', desc: 'Accept payments via Telebirr, CBE Birr, and other local options.' },
-                            { icon: ScanLine, title: 'Scan & Validate', desc: 'Use our mobile scanner app to verify tickets at the gate.' }
+                            { icon: Layers, title: t('steps.1.title'), desc: t('steps.1.desc') },
+                            { icon: ShieldCheck, title: t('steps.2.title'), desc: t('steps.2.desc') },
+                            { icon: Globe, title: t('steps.3.title'), desc: t('steps.3.desc') },
+                            { icon: ScanLine, title: t('steps.4.title'), desc: t('steps.4.desc') }
                         ].map((step, i) => (
                             <motion.div
                                 key={i}
@@ -549,16 +571,16 @@ const OrganizerLanding = () => {
                     <div style={{ display: 'flex', gap: '6rem', alignItems: 'center', flexWrap: 'wrap' }}>
                         <div style={{ flex: '1 1 500px' }}>
                             <h2 style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1.1, marginBottom: '3rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-                                Tools designed for <br /><span className="gradient-text">Event Professionals.</span>
+                                {t('features.title')}
                             </h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                 {[
-                                    { title: 'Digital Ticketing & QR Validation', desc: 'Instant ticket delivery and fraud-proof scanning at the heavy-traffic gates.' },
-                                    { title: 'Seat Map & Capacity Control', desc: 'Customizable seating charts and real-time inventory management.' },
-                                    { title: 'Real-time Sales Dashboard', desc: 'Monitor ticket velocity and revenue as it happens.' },
-                                    { title: 'Marketing Campaigns', desc: 'Powerful tools to run promo codes, early-bird discounts, and track referral links.' },
-                                    { title: 'Automated Payouts', desc: 'Fast settlements to your local bank account or mobile wallet.' },
-                                    { title: 'Fraud Protection', desc: 'Advanced tracking to prevent scalping and double-entry.' }
+                                    { title: t('features.1.title'), desc: t('features.1.desc') },
+                                    { title: t('features.2.title'), desc: t('features.2.desc') },
+                                    { title: t('features.3.title'), desc: t('features.3.desc') },
+                                    { title: t('features.4.title'), desc: t('features.4.desc') },
+                                    { title: t('features.5.title'), desc: t('features.5.desc') },
+                                    { title: t('features.6.title'), desc: t('features.6.desc') }
                                 ].map((feat, i) => (
                                     <motion.div
                                         key={i}
@@ -602,11 +624,11 @@ const OrganizerLanding = () => {
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
                                     <div className="glass" style={{ padding: '1.5rem', borderRadius: '1.5rem' }}>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>LIVE REVENUE</p>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('stats.revenue')}</p>
                                         <p style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>ETB {revenue}k</p>
                                     </div>
                                     <div className="glass" style={{ padding: '1.5rem', borderRadius: '1.5rem' }}>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>LIVE SALES</p>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('stats.sales')}</p>
                                         <p style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>{tickets}</p>
                                     </div>
                                 </div>
@@ -639,16 +661,16 @@ const OrganizerLanding = () => {
                 <div className="container">
                     <div className="glass" style={{ padding: '2rem 1rem', borderRadius: '5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '5rem', alignItems: 'center' }}>
                         <div style={{ padding: '3rem' }}>
-                            <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1.5rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>Trust built on <br />Compliance.</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '2.5rem', lineHeight: 1.6 }}>We operate with full transparency to ensure every event is a success. Our automated settlement system ensures you get paid on time, every time.</p>
-                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-primary" style={{ padding: '1rem 2rem' }}>Learn About Payouts</button>
+                            <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1.5rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>{t('trust.title')}</h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '2.5rem', lineHeight: 1.6 }}>{t('trust.subtitle')}</p>
+                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-primary" style={{ padding: '1rem 2rem' }}>{t('trust.btn')}</button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', padding: '3rem' }}>
                             {[
-                                { title: 'Local Payment Integrations', desc: 'Secure settlement via Telebirr, CBE Birr, and CBE.' },
-                                { title: 'Secure Transactions', desc: 'End-to-end encryption for all payments.' },
-                                { title: 'Admin-Approved Events Only', desc: 'A verified marketplace for genuine organizers.' },
-                                { title: 'Transparent Fees', desc: 'No hidden costs. You know exactly what you take home.' }
+                                { title: t('trust.1.title'), desc: t('trust.1.desc') },
+                                { title: t('trust.2.title'), desc: t('trust.2.desc') },
+                                { title: t('trust.3.title'), desc: t('trust.3.desc') },
+                                { title: t('trust.4.title'), desc: t('trust.4.desc') }
                             ].map((item, i) => (
                                 <motion.div
                                     key={i}
@@ -673,24 +695,24 @@ const OrganizerLanding = () => {
             <section style={{ padding: '10rem 0' }}>
                 <div className="container" style={{ maxWidth: '800px' }}>
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>Common Questions</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Everything you need to know about the platform.</p>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('faq.title')}</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{t('faq.subtitle')}</p>
                     </div>
                     <FAQItem
-                        question="How long does it take to get paid?"
-                        answer="We offer daily settlements. Once an event is completed, payouts are typically processed within 24-48 hours directly to your bank account or mobile wallet."
+                        question={t('faq.1.q')}
+                        answer={t('faq.1.a')}
                     />
                     <FAQItem
-                        question="What are the platform fees?"
-                        answer="We charge a standard 10% commission on every ticket sold. This includes payment processing fees and platform usage. There are zero upfront costs."
+                        question={t('faq.2.q')}
+                        answer={t('faq.2.a')}
                     />
                     <FAQItem
-                        question="Can I scan tickets offline?"
-                        answer="Yes! Our mobile scanner app supports offline validation for areas with poor connectivity. Once you're back online, the data syncs automatically."
+                        question={t('faq.3.q')}
+                        answer={t('faq.3.a')}
                     />
                     <FAQItem
-                        question="Is identity verification required?"
-                        answer="Yes, all organizers must undergo a business or identity verification process to ensure a safe marketplace for ticket buyers."
+                        question={t('faq.4.q')}
+                        answer={t('faq.4.a')}
                     />
                 </div>
             </section>
@@ -705,56 +727,66 @@ const OrganizerLanding = () => {
                                 <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>ET-TICKETS</span>
                             </div>
                             <p style={{ color: 'var(--text-muted)', maxWidth: '350px', fontSize: '1.1rem', lineHeight: 1.6 }}>
-                                Ethiopia's leading digital ticketing platform. Empowering event organizers with technology that works.
+                                {t('footer.desc')}
                             </p>
                         </div>
 
                         <div style={{ display: 'flex', gap: '5rem', flexWrap: 'wrap' }}>
                             <div>
-                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>Platform</h5>
+                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{t('footer.platform')}</h5>
                                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Features</a></li>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Pricing</a></li>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Case Studies</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('nav.features')}</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.pricing')}</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.caseStudies')}</a></li>
                                 </ul>
                             </div>
                             <div>
-                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>Support</h5>
+                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{t('footer.support')}</h5>
                                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Help Center</a></li>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Contact Us</a></li>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>System Status</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.helpCenter')}</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.contactUs')}</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.systemStatus')}</a></li>
                                 </ul>
                             </div>
                         </div>
 
                         <div style={{ flex: '0 0 auto' }}>
-                            <div className="glass" style={{ display: 'flex', padding: '0.5rem', borderRadius: '14px' }}>
-                                <button style={{
-                                    background: 'var(--primary)',
-                                    border: 'none',
-                                    color: 'white',
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '10px',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 800
-                                }}>EN</button>
-                                <button style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--text-muted)',
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '10px',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 800
-                                }}>AM</button>
+                            <div className="glass" style={{ display: 'flex', padding: '0.5rem', borderRadius: '14px', border: '1px solid var(--border)' }}>
+                                <button
+                                    onClick={() => setLanguage('en')}
+                                    style={{
+                                        background: language === 'en' ? 'var(--primary)' : 'transparent',
+                                        border: 'none',
+                                        color: language === 'en' ? 'white' : 'var(--text-muted)',
+                                        padding: '0.5rem 1.25rem',
+                                        borderRadius: '10px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >EN</button>
+                                <button
+                                    onClick={() => setLanguage('am')}
+                                    style={{
+                                        background: language === 'am' ? 'var(--primary)' : 'transparent',
+                                        border: 'none',
+                                        color: language === 'am' ? 'white' : 'var(--text-muted)',
+                                        padding: '0.5rem 1.25rem',
+                                        borderRadius: '10px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >AM</button>
                             </div>
                         </div>
                     </div>
 
                     <div style={{ borderTop: '1px solid var(--border)', marginTop: '6rem', paddingTop: '3rem', textAlign: 'center' }}>
                         <p style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 600 }}>
-                            © 2025 ET-TICKETS PLATFORM. ALL RIGHTS RESERVED.
+                            © 2025 ET-TICKETS PLATFORM. {t('footer.rights')}
                         </p>
                     </div>
                 </div>
