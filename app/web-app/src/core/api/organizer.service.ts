@@ -32,6 +32,18 @@ export const OrganizerService = {
     // Settings
     getSettings: () => api.get('/organizer/settings'),
     updateSettings: (data: any) => api.patch('/organizer/settings', data),
+    
+    // Payment Methods (Payout Methods)
+    getPaymentMethods: () => api.get('/profiles/payment-methods'),
+    addPaymentMethod: (data: any) => api.post('/profiles/payment-methods', data),
+    deletePaymentMethod: (id: number) => api.delete(`/profiles/payment-methods/${id}`),
+    setDefaultPaymentMethod: (id: number) => api.patch(`/profiles/payment-methods/${id}/default`),
+    
+    // Notifications
+    getNotifications: () => api.get('/notifications'),
+    
+    // Financials/Billing
+    getPayoutHistory: () => api.get('/payouts/my'),
 
     // Support
     contactSupport: (data: { subject: string, message: string }) => api.post('/organizer/support', data),
