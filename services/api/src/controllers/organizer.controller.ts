@@ -71,22 +71,31 @@ export class OrganizerController {
                 }
             });
 
-            // Check Logs for persistent 'Pending' status
-            const requests = await prisma.notificationLog.findMany({
-                where: { organizerId, title: 'Feature Request' },
-                select: { metadata: true }
-            });
-            const pendingIds = new Set();
-            requests.forEach(r => {
-                const meta = r.metadata as any;
-                if (meta?.type === 'FEATURE_REQUEST') pendingIds.add(Number(meta.eventId));
+            // Check Logs for persistent status (Pending or Rejected)
+            const logs = await prisma.notificationLog.findMany({
+                where: { organizerId },
+                select: { metadata: true },
+                orderBy: { createdAt: 'desc' }
             });
 
-            // Calculate total capacity for each event
+            const eventStatusMap = new Map<number, string>();
+            logs.forEach(log => {
+                const meta = log.metadata as any;
+                if (!meta?.eventId) return;
+                const eid = Number(meta.eventId);
+
+                // Only consider the latest relevant log for each event
+                if (!eventStatusMap.has(eid)) {
+                    if (meta.type === 'FEATURE_REQUEST') eventStatusMap.set(eid, 'PENDING');
+                    else if (meta.type === 'FEATURE_DECLINED') eventStatusMap.set(eid, 'REJECTED');
+                }
+            });
+
+            // Calculate formatted events
             const formattedEvents = events.map(event => ({
                 ...event,
                 totalCapacity: event.tiers.reduce((sum, tier) => sum + tier.capacity, 0),
-                pendingFeatureRequest: pendingIds.has(event.id)
+                featureStatus: event.featured ? 'APPROVED' : (eventStatusMap.get(event.id) || 'NONE')
             }));
 
             res.json({ success: true, data: formattedEvents });
@@ -443,6 +452,7 @@ export class OrganizerController {
                 await prisma.notificationLog.create({
                     data: {
                         userId: admin.id,
+                        organizerId,
                         channel: 'PUSH',
                         recipient: admin.email || admin.phoneNumber || 'System',
                         title: 'Feature Request',

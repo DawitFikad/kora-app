@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Tag, Users, Trash2, Loader2, Megaphone, Crown, ArrowUpRight, CheckCircle } from 'lucide-react';
+import { Plus, Tag, Users, Trash2, Loader2, Megaphone, Crown, ArrowUpRight, CheckCircle, XCircle } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
@@ -204,10 +204,21 @@ export const PromotionsView = () => {
                                 events.filter(e => !e.featured && e.status === 'APPROVED').map(e => (
                                     <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
                                         <span style={{ fontWeight: 600 }}>{e.title}</span>
-                                        {pendingRequests.includes(e.id) || e.pendingFeatureRequest ? (
+                                        {(pendingRequests.includes(e.id) || e.featureStatus === 'PENDING') ? (
                                             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(251, 191, 36, 0.1)', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
                                                 <CheckCircle size={14} /> Pending
                                             </span>
+                                        ) : e.featureStatus === 'REJECTED' ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#EF4444', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <XCircle size={14} /> Declined
+                                                </span>
+                                                <button
+                                                    onClick={() => handleRequestFeature(e.id)}
+                                                    style={{ fontSize: '0.75rem', color: 'var(--primary-blue)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                                                    Retry
+                                                </button>
+                                            </div>
                                         ) : (
                                             <button
                                                 onClick={() => handleRequestFeature(e.id)}
