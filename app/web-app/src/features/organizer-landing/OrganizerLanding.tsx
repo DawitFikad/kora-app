@@ -32,7 +32,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div className="logo-box">
-                        <Ticket color="white" size={20} />
+                        <Ticket color="var(--primary-blue)" size={20} />
                     </div>
                     <span style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.05em' }}>ET-TICKETS</span>
                 </div>
@@ -47,9 +47,9 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                             style={{
                                 padding: '0.5rem 1.5rem',
                                 borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                border: '1px solid var(--border)',
                                 background: 'transparent',
-                                color: 'white',
+                                color: 'var(--text-main)',
                                 fontWeight: 600,
                                 cursor: 'pointer',
                                 whiteSpace: 'nowrap'
@@ -79,9 +79,9 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                 <div
                     className="mobile-toggle"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    style={{ borderRadius: '10px', background: 'rgba(255,255,255,0.05)', padding: '8px' }}
+                    style={{ borderRadius: '10px', background: 'var(--bg-hover)', padding: '8px' }}
                 >
-                    <Zap size={20} color={mobileMenuOpen ? 'var(--primary)' : 'white'} />
+                    <Zap size={20} color={mobileMenuOpen ? 'var(--primary)' : 'var(--text-main)'} />
                 </div>
             </div>
 
@@ -95,8 +95,8 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                         style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border)', overflow: 'hidden' }}
                     >
                         <div style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem 2rem', gap: '1.5rem' }}>
-                            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ color: 'white', textDecoration: 'none', fontWeight: 700 }}>How it works</a>
-                            <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: 'white', textDecoration: 'none', fontWeight: 700 }}>Features</a>
+                            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>How it works</a>
+                            <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>Features</a>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                 <button
                                     onClick={() => { onAuthClick('login'); setMobileMenuOpen(false); }}
@@ -104,9 +104,9 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                         flex: 1,
                                         padding: '0.7rem',
                                         borderRadius: '8px',
-                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        border: '1px solid var(--border)',
                                         background: 'transparent',
-                                        color: 'white',
+                                        color: 'var(--text-main)',
                                         fontWeight: 600,
                                         fontSize: '0.9rem',
                                         cursor: 'pointer',
@@ -143,17 +143,17 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
             </AnimatePresence>
 
             <style>{`
-                .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-weight: 600; fontSize: 0.9rem; transition: color 0.2s; }
-                .nav-link:hover { color: white; }
+                .nav-link { color: var(--text-muted); text-decoration: none; font-weight: 600; fontSize: 0.9rem; transition: color 0.2s; }
+                .nav-link:hover { color: var(--text-main); }
                 
                 .nav-btn-outline:hover {
-                    background: rgba(255, 255, 255, 0.05) !important;
-                    border-color: rgba(255, 255, 255, 0.3) !important;
+                    background: var(--bg-hover) !important;
+                    border-color: var(--text-main) !important;
                 }
                 
                 .nav-btn-primary:hover {
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4) !important;
+                    box-shadow: 0 4px 15px var(--primary-glow) !important;
                 }
                 
                 .nav-btn-primary:active {
@@ -199,7 +199,7 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
                         exit={{ height: 0, opacity: 0 }}
                         style={{ overflow: 'hidden' }}
                     >
-                        <p style={{ paddingTop: '1rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{answer}</p>
+                        <p style={{ paddingTop: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{answer}</p>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -217,7 +217,7 @@ const PaymentServices = () => {
     ];
 
     return (
-        <section style={{ padding: '10rem 0', background: 'rgba(255,255,255,0.01)', position: 'relative', overflow: 'hidden' }}>
+        <section style={{ padding: '10rem 0', background: 'var(--bg-subtle)', position: 'relative', overflow: 'hidden' }}>
             <div className="container">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4rem', marginBottom: '8rem', flexWrap: 'wrap' }}>
                     <div style={{ flex: '2 1 500px' }}>
@@ -240,7 +240,7 @@ const PaymentServices = () => {
                             Ethiopia's Most Advanced <br />
                             <span className="gradient-text">Payment Integration.</span>
                         </h2>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.25rem', lineHeight: 1.6, maxWidth: '600px' }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.25rem', lineHeight: 1.6, maxWidth: '600px' }}>
                             We've built a seamless bridge between your event and the nation's biggest wallets. Accept Telebirr, CBE Birr, and more with instant verification.
                         </p>
                     </div>
@@ -331,7 +331,7 @@ const Testimonials = () => {
             <div className="container">
                 <div style={{ textAlign: 'center', marginBottom: '6rem' }}>
                     <h2 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '1.5rem' }}>Loved by Organizers</h2>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.2rem' }}>Join hundreds of successful event hosts across Ethiopia.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Join hundreds of successful event hosts across Ethiopia.</p>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem' }}>
                     {tms.map((t, i) => (
@@ -416,7 +416,7 @@ const OrganizerLanding = () => {
                             Sell Tickets. Manage Events. <br />
                             <span className="gradient-text">Get Paid — All in One Platform.</span>
                         </h1>
-                        <p style={{ fontSize: 'clamp(1.1rem, 2vw, 1.25rem)', color: 'rgba(255,255,255,0.5)', maxWidth: '800px', margin: '0 auto 3.5rem', lineHeight: 1.6 }}>
+                        <p style={{ fontSize: 'clamp(1.1rem, 2vw, 1.25rem)', color: 'var(--text-muted)', maxWidth: '800px', margin: '0 auto 3.5rem', lineHeight: 1.6 }}>
                             Built for Ethiopian events — from concerts and conferences to sports and church gatherings. Scale your reach effortlessly with our industry-leading tools.
                         </p>
                         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -452,9 +452,9 @@ const OrganizerLanding = () => {
                                 style={{
                                     padding: '1.1rem 2.5rem',
                                     borderRadius: '12px',
-                                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    color: 'white',
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--bg-hover)',
+                                    color: 'var(--text-main)',
                                     fontWeight: 600,
                                     fontSize: '1.1rem',
                                     cursor: 'pointer',
@@ -471,11 +471,11 @@ const OrganizerLanding = () => {
             <PaymentServices />
 
             {/* 2. How It Works (4 Steps) */}
-            <section id="how-it-works" style={{ background: 'rgba(255,255,255,0.02)', padding: '8rem 0' }}>
+            <section id="how-it-works" style={{ background: 'var(--bg-subtle)', padding: '8rem 0' }}>
                 <div className="container">
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
                         <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.02em' }}>Streamlined Workflow</h2>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.2rem' }}>From creation to validation, we've got you covered.</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>From creation to validation, we've got you covered.</p>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2.5rem' }}>
                         {[
@@ -508,7 +508,7 @@ const OrganizerLanding = () => {
                                     <step.icon color="white" size={32} />
                                 </div>
                                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem' }}>{step.title}</h3>
-                                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1rem', lineHeight: 1.5 }}>{step.desc}</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.5 }}>{step.desc}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -540,7 +540,7 @@ const OrganizerLanding = () => {
                                         <div style={{ color: 'var(--primary)', paddingTop: '0.25rem' }}><CheckCircle2 size={26} /></div>
                                         <div>
                                             <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.4rem' }}>{feat.title}</h4>
-                                            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem', lineHeight: 1.5 }}>{feat.desc}</p>
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: 1.5 }}>{feat.desc}</p>
                                         </div>
                                     </motion.div>
                                 ))}
@@ -612,7 +612,7 @@ const OrganizerLanding = () => {
                     <div className="glass" style={{ padding: '2rem 1rem', borderRadius: '5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '5rem', alignItems: 'center' }}>
                         <div style={{ padding: '3rem' }}>
                             <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1.5rem', lineHeight: 1.1, letterSpacing: '-0.02em' }}>Trust built on <br />Compliance.</h2>
-                            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem', marginBottom: '2.5rem', lineHeight: 1.6 }}>We operate with full transparency to ensure every event is a success. Our automated settlement system ensures you get paid on time, every time.</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '2.5rem', lineHeight: 1.6 }}>We operate with full transparency to ensure every event is a success. Our automated settlement system ensures you get paid on time, every time.</p>
                             <button onClick={() => setIsLoginOpen(true)} className="btn btn-secondary" style={{ padding: '1rem 2rem' }}>Learn About Payouts</button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', padding: '3rem' }}>
@@ -632,7 +632,7 @@ const OrganizerLanding = () => {
                                     </div>
                                     <div>
                                         <span style={{ display: 'block', fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.2rem' }}>{item.title}</span>
-                                        <span style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)' }}>{item.desc}</span>
+                                        <span style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>{item.desc}</span>
                                     </div>
                                 </motion.div>
                             ))}
@@ -646,7 +646,7 @@ const OrganizerLanding = () => {
                 <div className="container" style={{ maxWidth: '800px' }}>
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
                         <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem' }}>Common Questions</h2>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.2rem' }}>Everything you need to know about the platform.</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Everything you need to know about the platform.</p>
                     </div>
                     <FAQItem
                         question="How long does it take to get paid?"
@@ -676,7 +676,7 @@ const OrganizerLanding = () => {
                                 <Ticket color="#8B5CF6" size={40} />
                                 <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.05em' }}>ET-TICKETS</span>
                             </div>
-                            <p style={{ color: 'rgba(255,255,255,0.4)', maxWidth: '350px', fontSize: '1.1rem', lineHeight: 1.6 }}>
+                            <p style={{ color: 'var(--text-muted)', maxWidth: '350px', fontSize: '1.1rem', lineHeight: 1.6 }}>
                                 Ethiopia's leading digital ticketing platform. Empowering event organizers with technology that works.
                             </p>
                         </div>
@@ -685,17 +685,17 @@ const OrganizerLanding = () => {
                             <div>
                                 <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem' }}>Platform</h5>
                                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <li><a href="#" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '1rem' }}>Features</a></li>
-                                    <li><a href="#" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '1rem' }}>Pricing</a></li>
-                                    <li><a href="#" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '1rem' }}>Case Studies</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Features</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Pricing</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Case Studies</a></li>
                                 </ul>
                             </div>
                             <div>
                                 <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem' }}>Support</h5>
                                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <li><a href="#" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '1rem' }}>Help Center</a></li>
-                                    <li><a href="#" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '1rem' }}>Contact Us</a></li>
-                                    <li><a href="#" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '1rem' }}>System Status</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Help Center</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>Contact Us</a></li>
+                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>System Status</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -714,7 +714,7 @@ const OrganizerLanding = () => {
                                 <button style={{
                                     background: 'transparent',
                                     border: 'none',
-                                    color: 'rgba(255,255,255,0.4)',
+                                    color: 'var(--text-muted)',
                                     padding: '0.5rem 1rem',
                                     borderRadius: '10px',
                                     fontSize: '0.9rem',
@@ -725,7 +725,7 @@ const OrganizerLanding = () => {
                     </div>
 
                     <div style={{ borderTop: '1px solid var(--border)', marginTop: '6rem', paddingTop: '3rem', textAlign: 'center' }}>
-                        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '1rem', fontWeight: 600 }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 600 }}>
                             © 2025 ET-TICKETS PLATFORM. ALL RIGHTS RESERVED.
                         </p>
                     </div>

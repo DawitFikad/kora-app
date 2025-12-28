@@ -12,42 +12,46 @@ import { ToastProvider } from './core/components/Toast';
 
 import { ProtectedRoute } from './core/components/ProtectedRoute';
 
+import { ThemeProvider } from './core/context/ThemeContext';
+
 function App() {
   return (
     <AuthProvider>
-      <ToastProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<OrganizerLanding />} />
+      <ThemeProvider>
+        <ToastProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<OrganizerLanding />} />
 
-            {/* Public Booking Route */}
-            <Route path="/book/:eventId" element={<BookingPage />} />
+              {/* Public Booking Route */}
+              <Route path="/book/:eventId" element={<BookingPage />} />
 
-            {/* Payment Routes */}
-            {/* Payment Page requires auth for fetching purchase details securely */}
-            <Route element={<ProtectedRoute allowedRoles={['USER', 'ORGANIZER', 'ADMIN']} />}>
-              <Route path="/payment/:purchaseId" element={<PaymentPage />} />
-              <Route path="/my-tickets" element={<MyTicketsPage />} />
-            </Route>
+              {/* Payment Routes */}
+              {/* Payment Page requires auth for fetching purchase details securely */}
+              <Route element={<ProtectedRoute allowedRoles={['USER', 'ORGANIZER', 'ADMIN']} />}>
+                <Route path="/payment/:purchaseId" element={<PaymentPage />} />
+                <Route path="/my-tickets" element={<MyTicketsPage />} />
+              </Route>
 
-            {/* Callback is effectively public to ensure redirects work, but validation is secure */}
-            <Route path="/payment/callback" element={<PaymentCallbackPage />} />
+              {/* Callback is effectively public to ensure redirects work, but validation is secure */}
+              <Route path="/payment/callback" element={<PaymentCallbackPage />} />
 
-            {/* Organizer Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['ORGANIZER']} />}>
-              <Route path="/dashboard/*" element={<OrganizerDashboard />} />
-            </Route>
+              {/* Organizer Routes */}
+              <Route element={<ProtectedRoute allowedRoles={['ORGANIZER']} />}>
+                <Route path="/dashboard/*" element={<OrganizerDashboard />} />
+              </Route>
 
-            {/* Admin Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-              <Route path="/admin/*" element={<AdminDashboard />} />
-            </Route>
+              {/* Admin Routes */}
+              <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                <Route path="/admin/*" element={<AdminDashboard />} />
+              </Route>
 
-            {/* Catch All - Redirect to Home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
-      </ToastProvider>
+              {/* Catch All - Redirect to Home */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </ToastProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

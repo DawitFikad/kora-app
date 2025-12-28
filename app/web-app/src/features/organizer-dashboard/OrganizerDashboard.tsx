@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../core/context/AuthContext';
+import { useTheme } from '../../core/context/ThemeContext';
 import {
     Calendar,
     Ticket,
@@ -15,7 +16,9 @@ import {
     Megaphone,
     Maximize,
     LogOut,
-    FileText
+    FileText,
+    Sun,
+    Moon
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -36,12 +39,13 @@ import { EventStatsView } from './components/EventStatsView';
 import { ContentManagementView } from './components/ContentManagementView';
 import { AdvancedAnalyticsView } from './components/AdvancedAnalyticsView';
 import { ReportGeneratorView } from './components/ReportGeneratorView';
-import { main } from 'framer-motion/client';
+
 
 // --- Main Application Component ---
 
 const OrganizerDashboard = () => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [editingEventId, setEditingEventId] = useState<number | null>(null);
     const [viewingStatsId, setViewingStatsId] = useState<number | null>(null);
@@ -168,17 +172,17 @@ const OrganizerDashboard = () => {
     // If pending, show the invitation/waiting page instead of the full dashboard
     if (user?.status === 'PENDING') {
         return (
-            <div className="container-fluid" style={{ minHeight: '100vh', background: '#0B0E14', flexDirection: 'column' }}>
+            <div className="container-fluid" style={{ minHeight: '100vh', background: 'var(--bg-main)', flexDirection: 'column' }}>
                 <header style={{
                     padding: '24px 80px', display: 'flex', justifyContent: 'space-between',
                     alignItems: 'center', borderBottom: '1px solid var(--border)',
-                    background: '#0B0E14', zIndex: 10
+                    background: 'var(--bg-main)', zIndex: 10
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div className="logo-box">
                             <BarChart3 color="#1D90F5" size={24} strokeWidth={2.5} />
                         </div>
-                        <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>ET-Ticket</h2>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>ET-Ticket</h2>
                     </div>
 
                     <button
@@ -292,84 +296,94 @@ const OrganizerDashboard = () => {
                     </div>
 
                     <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                        <div className="search-pill" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255, 255, 255, 0.05)', padding: '10px 20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                            <Search size={18} color="#8E9BAE" />
-                            <input type="text" placeholder={`Search...`} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', fontSize: '0.9rem' }} />
+                        <div className="search-pill" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-card)', padding: '10px 20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
+                            <Search size={18} color="var(--text-muted)" />
+                            <input type="text" placeholder={`Search...`} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', fontSize: '0.9rem' }} />
                         </div>
 
-                        <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '16px' }}>
                             <div
                                 className="action-icon"
-                                style={{ position: 'relative', cursor: 'pointer' }}
-                                onClick={() => setShowNotifications(!showNotifications)}
+                                onClick={toggleTheme}
+                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             >
-                                <Bell size={22} color="#8E9BAE" />
-                                {unreadCount > 0 && (
-                                    <div style={{ position: 'absolute', top: -6, right: -6, background: '#FF4D4D', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px', border: '2px solid #0B0E14', minWidth: '18px', textAlign: 'center' }}>
-                                        {unreadCount > 99 ? '99+' : unreadCount}
-                                    </div>
-                                )}
+                                {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
                             </div>
 
-                            {showNotifications && (
-                                <>
-                                    <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowNotifications(false)} />
-                                    <div style={{ position: 'absolute', top: '50px', right: '-10px', width: '380px', background: '#161B22', border: '1px solid var(--border)', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 40px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-                                        <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0D1117' }}>
-                                            <h4 style={{ fontSize: '1rem', fontWeight: 800 }}>Notifications</h4>
-                                            {unreadCount > 0 && (
-                                                <span onClick={(e) => { e.stopPropagation(); handleMarkAsRead(); }} style={{ fontSize: '0.8rem', color: '#1D90F5', cursor: 'pointer', fontWeight: 600 }}>Mark all read</span>
-                                            )}
+                            <div style={{ position: 'relative' }}>
+                                <div
+                                    className="action-icon"
+                                    style={{ position: 'relative', cursor: 'pointer' }}
+                                    onClick={() => setShowNotifications(!showNotifications)}
+                                >
+                                    <Bell size={22} color="var(--text-muted)" />
+                                    {unreadCount > 0 && (
+                                        <div style={{ position: 'absolute', top: -6, right: -6, background: '#FF4D4D', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px', border: '2px solid #0B0E14', minWidth: '18px', textAlign: 'center' }}>
+                                            {unreadCount > 99 ? '99+' : unreadCount}
                                         </div>
-                                        <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
-                                            {(['new', 'today', 'yesterday', 'older'] as const).map(group => {
-                                                const items = getGroupedNotifications()[group];
-                                                if (!items || items.length === 0) return null;
-                                                return (
-                                                    <div key={group}>
-                                                        <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'capitalize', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                            {group}
-                                                        </div>
-                                                        {items.map((n: any) => (
-                                                            <div
-                                                                key={n.id}
-                                                                onClick={() => handleMarkAsRead(n.id)}
-                                                                style={{
-                                                                    padding: '16px',
-                                                                    borderBottom: '1px solid var(--border)',
-                                                                    cursor: 'pointer',
-                                                                    background: n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)',
-                                                                    transition: 'background 0.2s',
-                                                                    display: 'flex',
-                                                                    gap: '12px'
-                                                                }}
-                                                                onMouseEnter={(e) => e.currentTarget.style.background = n.isRead ? 'rgba(255,255,255,0.02)' : 'rgba(29, 144, 245, 0.08)'}
-                                                                onMouseLeave={(e) => e.currentTarget.style.background = n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)'}
-                                                            >
-                                                                <div style={{ marginTop: '2px' }}>
-                                                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.isRead ? 'transparent' : '#1D90F5', border: n.isRead ? '1px solid var(--text-muted)' : 'none' }} />
-                                                                </div>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <p style={{ fontSize: '0.9rem', marginBottom: '4px', lineHeight: '1.4', color: n.isRead ? 'var(--text-muted)' : 'white' }}>{n.content}</p>
-                                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                                                </div>
+                                    )}
+                                </div>
+
+                                {showNotifications && (
+                                    <>
+                                        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowNotifications(false)} />
+                                        <div style={{ position: 'absolute', top: '50px', right: '-10px', width: '380px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 40px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                                            <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card-hover)' }}>
+                                                <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>Notifications</h4>
+                                                {unreadCount > 0 && (
+                                                    <span onClick={(e) => { e.stopPropagation(); handleMarkAsRead(); }} style={{ fontSize: '0.8rem', color: '#1D90F5', cursor: 'pointer', fontWeight: 600 }}>Mark all read</span>
+                                                )}
+                                            </div>
+                                            <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                                                {(['new', 'today', 'yesterday', 'older'] as const).map(group => {
+                                                    const items = getGroupedNotifications()[group];
+                                                    if (!items || items.length === 0) return null;
+                                                    return (
+                                                        <div key={group}>
+                                                            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'capitalize', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                                {group}
                                                             </div>
-                                                        ))}
+                                                            {items.map((n: any) => (
+                                                                <div
+                                                                    key={n.id}
+                                                                    onClick={() => handleMarkAsRead(n.id)}
+                                                                    style={{
+                                                                        padding: '16px',
+                                                                        borderBottom: '1px solid var(--border)',
+                                                                        cursor: 'pointer',
+                                                                        background: n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)',
+                                                                        transition: 'background 0.2s',
+                                                                        display: 'flex',
+                                                                        gap: '12px'
+                                                                    }}
+                                                                    onMouseEnter={(e) => e.currentTarget.style.background = n.isRead ? 'rgba(255,255,255,0.02)' : 'rgba(29, 144, 245, 0.08)'}
+                                                                    onMouseLeave={(e) => e.currentTarget.style.background = n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)'}
+                                                                >
+                                                                    <div style={{ marginTop: '2px' }}>
+                                                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.isRead ? 'transparent' : '#1D90F5', border: n.isRead ? '1px solid var(--text-muted)' : 'none' }} />
+                                                                    </div>
+                                                                    <div style={{ flex: 1 }}>
+                                                                        <p style={{ fontSize: '0.9rem', marginBottom: '4px', lineHeight: '1.4', color: n.isRead ? 'var(--text-muted)' : 'var(--text-main)' }}>{n.content}</p>
+                                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })}
+                                                {notifications.length === 0 && (
+                                                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                                        <Bell size={32} color="#2D333B" style={{ marginBottom: '16px' }} />
+                                                        <p>No notifications yet</p>
                                                     </div>
-                                                );
-                                            })}
-                                            {notifications.length === 0 && (
-                                                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                                    <Bell size={32} color="#2D333B" style={{ marginBottom: '16px' }} />
-                                                    <p>No notifications yet</p>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                </>
-                            )}
+                                    </>
+                                )}
+                            </div>
                         </div>
-                        <HelpCircle size={22} color="#8E9BAE" style={{ cursor: 'pointer' }} />
+                        <HelpCircle size={22} color="var(--text-muted)" style={{ cursor: 'pointer' }} />
                     </div>
 
                     <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />

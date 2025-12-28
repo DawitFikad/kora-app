@@ -356,7 +356,7 @@ export const SettingsView = () => {
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isActive) {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                        e.currentTarget.style.background = 'var(--bg-hover)';
                                     }
                                 }}
                                 onMouseLeave={(e) => {
@@ -405,7 +405,7 @@ export const SettingsView = () => {
                                             onClick={() => document.getElementById('logo-upload')?.click()}
                                             disabled={uploading}
                                             className="btn-blue"
-                                            style={{ background: 'white', color: 'black', padding: '10px 20px', fontSize: '0.85rem' }}
+                                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', padding: '10px 20px', fontSize: '0.85rem' }}
                                         >
                                             {profile?.logoUrl ? 'Change Logo' : 'Upload Logo'}
                                         </button>
@@ -430,7 +430,7 @@ export const SettingsView = () => {
                                         type="text"
                                         value={profile?.organizationName || ''}
                                         onChange={e => setProfile({ ...profile, organizationName: e.target.value })}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', outline: 'none' }}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
                                     />
                                 </div>
                                 <div>
@@ -439,7 +439,7 @@ export const SettingsView = () => {
                                         type="email"
                                         value={profile?.contactEmail || ''}
                                         onChange={e => setProfile({ ...profile, contactEmail: e.target.value })}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', outline: 'none' }}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
                                     />
                                 </div>
                             </div>
@@ -451,7 +451,7 @@ export const SettingsView = () => {
                                         type="tel"
                                         value={profile?.contactPhone || ''}
                                         onChange={e => setProfile({ ...profile, contactPhone: e.target.value })}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', outline: 'none' }}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
                                     />
                                 </div>
                                 <div>
@@ -460,7 +460,7 @@ export const SettingsView = () => {
                                         type="text"
                                         value={profile?.city || ''}
                                         onChange={e => setProfile({ ...profile, city: e.target.value })}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', outline: 'none' }}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
                                     />
                                 </div>
 
@@ -473,7 +473,7 @@ export const SettingsView = () => {
                                     placeholder="e.g. CBE - 1000123456789"
                                     value={profile?.payoutDetails || ''}
                                     onChange={e => setProfile({ ...profile, payoutDetails: e.target.value })}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', outline: 'none' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
                                 />
                             </div>
 
@@ -483,12 +483,12 @@ export const SettingsView = () => {
                                     rows={4}
                                     value={profile?.adminNote || ''}
                                     onChange={e => setProfile({ ...profile, adminNote: e.target.value })}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', resize: 'none', outline: 'none' }}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', resize: 'none', outline: 'none' }}
                                 />
                             </div>
 
                             {/* Security Section */}
-                            <div style={{ marginBottom: '32px', padding: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px' }}>
+                            <div style={{ marginBottom: '32px', padding: '24px', background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '14px' }}>
                                 <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '24px' }}>Security</h4>
 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
@@ -509,7 +509,7 @@ export const SettingsView = () => {
                                     <div>
                                         <p style={{ fontWeight: 600, marginBottom: '4px' }}>Phone Number</p>
                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                            Current: <span style={{ color: 'white' }}>{profile?.user?.phoneNumber || 'N/A'}</span>
+                                            Current: <span style={{ color: 'var(--text-main)' }}>{profile?.user?.phoneNumber || 'N/A'}</span>
                                         </p>
                                     </div>
                                     <button
@@ -545,7 +545,7 @@ export const SettingsView = () => {
                                                 type="password"
                                                 value={currentPassword}
                                                 onChange={e => setCurrentPassword(e.target.value)}
-                                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                             />
                                         </div>
 
@@ -555,7 +555,7 @@ export const SettingsView = () => {
                                                 type="password"
                                                 value={newPassword}
                                                 onChange={e => setNewPassword(e.target.value)}
-                                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                             />
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>At least 8 characters with 1 uppercase, 1 lowercase, and 1 number</p>
                                         </div>
@@ -566,7 +566,7 @@ export const SettingsView = () => {
                                                 type="password"
                                                 value={confirmPassword}
                                                 onChange={e => setConfirmPassword(e.target.value)}
-                                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                             />
                                         </div>
 
@@ -600,7 +600,7 @@ export const SettingsView = () => {
                                                         placeholder="+251..."
                                                         value={newPhoneNumber}
                                                         onChange={e => setNewPhoneNumber(e.target.value)}
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                                     />
                                                 </div>
 
@@ -625,7 +625,7 @@ export const SettingsView = () => {
                                                         placeholder="123456"
                                                         value={phoneOtp}
                                                         onChange={e => setPhoneOtp(e.target.value)}
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none', letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none', letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
                                                         maxLength={6}
                                                     />
                                                 </div>
@@ -660,7 +660,7 @@ export const SettingsView = () => {
                             </div>
 
                             {showAddPayment && (
-                                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px', padding: '24px', marginBottom: '24px' }}>
+                                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '14px', padding: '24px', marginBottom: '24px' }}>
                                     <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '20px' }}>Add New Payment Method</h4>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                                         <div>
@@ -668,7 +668,7 @@ export const SettingsView = () => {
                                             <select
                                                 value={newPaymentMethod.provider}
                                                 onChange={e => setNewPaymentMethod({ ...newPaymentMethod, provider: e.target.value })}
-                                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                             >
                                                 <option value="BANK_TRANSFER">Bank Transfer</option>
                                                 <option value="MOBILE_MONEY">Mobile Money</option>
@@ -681,7 +681,7 @@ export const SettingsView = () => {
                                                 value={newPaymentMethod.accountNumber}
                                                 onChange={e => setNewPaymentMethod({ ...newPaymentMethod, accountNumber: e.target.value })}
                                                 placeholder="e.g. 1000123456789"
-                                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                             />
                                         </div>
                                     </div>
@@ -692,7 +692,7 @@ export const SettingsView = () => {
                                             value={newPaymentMethod.accountName}
                                             onChange={e => setNewPaymentMethod({ ...newPaymentMethod, accountName: e.target.value })}
                                             placeholder="Account holder name"
-                                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                         />
                                     </div>
                                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
@@ -719,7 +719,7 @@ export const SettingsView = () => {
                                         <div
                                             key={method.id}
                                             style={{
-                                                background: 'rgba(255,255,255,0.02)',
+                                                background: 'var(--bg-subtle)',
                                                 border: '1px solid var(--border)',
                                                 borderRadius: '12px',
                                                 padding: '20px',
@@ -793,7 +793,7 @@ export const SettingsView = () => {
                                         <div
                                             key={notif.id}
                                             style={{
-                                                background: 'rgba(255,255,255,0.02)',
+                                                background: 'var(--bg-subtle)',
                                                 border: '1px solid var(--border)',
                                                 borderRadius: '12px',
                                                 padding: '20px'
@@ -825,7 +825,7 @@ export const SettingsView = () => {
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Security Settings</h3>
 
-                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
+                            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                     <div>
                                         <h4 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>Two-Factor Authentication</h4>
@@ -835,7 +835,7 @@ export const SettingsView = () => {
                                         onClick={() => setSecuritySettings({ ...securitySettings, twoFactorEnabled: !securitySettings.twoFactorEnabled })}
                                         style={{
                                             padding: '8px 16px',
-                                            background: securitySettings.twoFactorEnabled ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)',
+                                            background: securitySettings.twoFactorEnabled ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-hover)',
                                             border: securitySettings.twoFactorEnabled ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--border)',
                                             borderRadius: '8px',
                                             color: securitySettings.twoFactorEnabled ? '#10B981' : 'var(--text-muted)',
@@ -875,7 +875,7 @@ export const SettingsView = () => {
                                         <div
                                             key={payout.id}
                                             style={{
-                                                background: 'rgba(255,255,255,0.02)',
+                                                background: 'var(--bg-subtle)',
                                                 border: '1px solid var(--border)',
                                                 borderRadius: '12px',
                                                 padding: '20px'

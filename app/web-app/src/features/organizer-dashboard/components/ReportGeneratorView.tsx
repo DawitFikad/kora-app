@@ -279,9 +279,9 @@ export const ReportGeneratorView = () => {
                             onChange={(e) => setDateRange(e.target.value)}
                             style={{
                                 width: '100%',
-                                background: '#161B22',
+                                background: 'var(--bg-subtle)',
                                 border: '1px solid var(--border)',
-                                color: 'white',
+                                color: 'var(--text-main)',
                                 padding: '12px 16px',
                                 borderRadius: '10px',
                                 fontSize: '0.9rem',
@@ -309,9 +309,9 @@ export const ReportGeneratorView = () => {
                             onChange={(e) => setSelectedEvents(Array.from(e.target.selectedOptions, option => option.value))}
                             style={{
                                 width: '100%',
-                                background: '#161B22',
+                                background: 'var(--bg-subtle)',
                                 border: '1px solid var(--border)',
-                                color: 'white',
+                                color: 'var(--text-main)',
                                 padding: '12px 16px',
                                 borderRadius: '10px',
                                 fontSize: '0.9rem',

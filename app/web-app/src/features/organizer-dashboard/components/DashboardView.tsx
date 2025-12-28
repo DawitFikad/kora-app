@@ -81,10 +81,10 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Last 7 days performance</p>
                         </div>
                         <div style={{ position: 'relative' }}>
-                            <select style={{ background: '#161B22', border: '1px solid var(--border)', color: 'white', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, appearance: 'none', cursor: 'pointer', paddingRight: '40px' }}>
+                            <select style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, appearance: 'none', cursor: 'pointer', paddingRight: '40px' }}>
                                 <option>Last 7 Days</option>
                             </select>
-                            <MoreHorizontal size={14} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%) rotate(90deg)' }} />
+                            <MoreHorizontal size={14} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%) rotate(90deg)' }} color="var(--text-muted)" />
                         </div>
                     </div>
                     <div style={{ height: '220px', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 20px' }}>
@@ -97,7 +97,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                                     borderRadius: '4px 4px 0 0',
                                     opacity: 0.8
                                 }} />
-                                <span style={{ fontSize: '0.8rem', color: i === 6 ? 'white' : 'var(--text-muted)', fontWeight: 700 }}>{v.day}</span>
+                                <span style={{ fontSize: '0.8rem', color: i === 6 ? 'var(--text-main)' : 'var(--text-muted)', fontWeight: 700 }}>{v.day}</span>
                             </div>
                         ))}
                     </div>
@@ -116,11 +116,11 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                                 key={action.label}
                                 onClick={() => handleQuickAction(action.label)}
                                 className="quick-action-btn" style={{
-                                    background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                                    background: 'var(--bg-hover)', border: '1px solid var(--border)',
                                     borderRadius: '16px', padding: '24px 12px', textAlign: 'center', cursor: 'pointer',
                                     transition: 'all 0.2s'
                                 }}>
-                                <div style={{ width: '42px', height: '42px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: '42px', height: '42px', background: 'var(--bg-subtle)', borderRadius: '12px', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <action.icon size={20} color="#8E9BAE" />
                                 </div>
                                 <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>{action.label}</p>
