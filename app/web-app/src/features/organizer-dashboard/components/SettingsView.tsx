@@ -12,21 +12,21 @@ export const SettingsView = () => {
     const [activeTab, setActiveTab] = useState<TabType>('General');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    
+
     // General Settings
     const [profile, setProfile] = useState<any>(null);
-    
+
     // Payout Methods
     const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
     const [showAddPayment, setShowAddPayment] = useState(false);
     const [newPaymentMethod, setNewPaymentMethod] = useState({ provider: 'BANK_TRANSFER', accountNumber: '', accountName: '' });
-    
+
     // Notifications
     const [notifications, setNotifications] = useState<any[]>([]);
-    
+
     // Security
     const [securitySettings, setSecuritySettings] = useState({ twoFactorEnabled: false });
-    
+
     // Billing
     const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
 
@@ -39,9 +39,8 @@ export const SettingsView = () => {
         try {
             // Always fetch general settings
             const settingsRes = await OrganizerService.getSettings();
+            // API interceptor unwraps response.data, check for success wrapper
             if (settingsRes && (settingsRes as any).success) {
-                setProfile((settingsRes as any).data);
-            } else if (settingsRes && (settingsRes as any).data) {
                 setProfile((settingsRes as any).data);
             } else {
                 setProfile(settingsRes);
@@ -92,14 +91,11 @@ export const SettingsView = () => {
                 payoutDetails: profile?.payoutDetails,
                 adminNote: profile?.adminNote
             });
+            toast.success("Settings saved successfully!");
+            // Handle response - check if it has success wrapper
             if ((result as any).success) {
-                toast.success("Settings saved successfully!");
-                setProfile((result as any).data);
-            } else if ((result as any).data) {
-                toast.success("Settings saved successfully!");
                 setProfile((result as any).data);
             } else {
-                toast.success("Settings saved successfully!");
                 setProfile(result);
             }
         } catch (error: any) {
@@ -490,7 +486,7 @@ export const SettingsView = () => {
                     {activeTab === 'Security' && (
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Security Settings</h3>
-                            
+
                             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                     <div>

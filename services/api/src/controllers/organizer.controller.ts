@@ -473,7 +473,7 @@ export class OrganizerController {
         try {
             const { subject, message } = req.body;
             const userId = (req as any).user?.userId;
-            
+
             if (!userId) {
                 return res.status(401).json({ error: "User not authenticated" });
             }
@@ -510,7 +510,7 @@ export class OrganizerController {
 
             // Send Email Notification
             const { EmailService } = await import("../services/email.service");
-            
+
             // Send to support team (use EMAIL_USER from .env or fallback to support email)
             const supportEmail = process.env.EMAIL_USER || 'support@ettickets.com';
             const supportHtml = EmailService.createSupportNotificationTemplate({
@@ -521,7 +521,7 @@ export class OrganizerController {
                 subject,
                 message
             });
-            
+
             await EmailService.sendEmail(
                 supportEmail,
                 `[Support] ${organizer.organizationName}: ${subject}`,
@@ -536,7 +536,7 @@ export class OrganizerController {
                     subject,
                     message
                 });
-                
+
                 await EmailService.sendEmail(
                     organizer.contactEmail,
                     `Support Request Confirmation: ${subject}`,
@@ -550,6 +550,205 @@ export class OrganizerController {
             console.error("Support error:", error);
             const errorMessage = error?.message || "An unexpected error occurred. Please try again.";
             res.status(500).json({ error: errorMessage });
+        }
+    }
+
+    /**
+     * GET /api/organizer/payment-methods
+     */
+    static async getPaymentMethods(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.id;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const methods = await prisma.savedPaymentMethod.findMany({
+                where: { userId },
+                orderBy: { createdAt: 'desc' }
+            });
+
+            res.json(methods);
+        } catch (error: any) {
+            console.error("Get payment methods error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/payment-methods
+     */
+    static async addPaymentMethod(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.id;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const { provider, accountNumber, accountName } = req.body;
+
+            if (!provider || !accountNumber || !accountName) {
+                return res.status(400).json({ error: "Provider, account number, and account name are required" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Check if this is the first payment method
+            const existingMethods = await prisma.savedPaymentMethod.count({ where: { userId } });
+            const isDefault = existingMethods === 0;
+
+            const method = await prisma.savedPaymentMethod.create({
+                data: {
+                    userId,
+                    provider,
+                    accountNumber,
+                    accountName,
+                    isDefault
+                }
+            });
+
+            res.json({ success: true, data: method });
+        } catch (error: any) {
+            console.error("Add payment method error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * DELETE /api/organizer/payment-methods/:id
+     */
+    static async deletePaymentMethod(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.id;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const methodId = parseInt(req.params.id);
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Verify ownership
+            const method = await prisma.savedPaymentMethod.findFirst({
+                where: { id: methodId, userId }
+            });
+
+            if (!method) {
+                return res.status(404).json({ error: "Payment method not found" });
+            }
+
+            if (method.isDefault) {
+                return res.status(400).json({ error: "Cannot delete default payment method. Set another as default first." });
+            }
+
+            await prisma.savedPaymentMethod.delete({ where: { id: methodId } });
+
+            res.json({ success: true, message: "Payment method deleted" });
+        } catch (error: any) {
+            console.error("Delete payment method error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * PATCH /api/organizer/payment-methods/:id/default
+     */
+    static async setDefaultPaymentMethod(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.id;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const methodId = parseInt(req.params.id);
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Verify ownership
+            const method = await prisma.savedPaymentMethod.findFirst({
+                where: { id: methodId, userId }
+            });
+
+            if (!method) {
+                return res.status(404).json({ error: "Payment method not found" });
+            }
+
+            // Unset all defaults, then set this one
+            await prisma.savedPaymentMethod.updateMany({
+                where: { userId },
+                data: { isDefault: false }
+            });
+
+            await prisma.savedPaymentMethod.update({
+                where: { id: methodId },
+                data: { isDefault: true }
+            });
+
+            res.json({ success: true, message: "Default payment method updated" });
+        } catch (error: any) {
+            console.error("Set default payment method error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * GET /api/organizer/notifications
+     */
+    static async getNotifications(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.id;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Get organizer profile to find organizerId
+            const organizer = await prisma.organizerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!organizer) {
+                return res.status(404).json({ error: "Organizer profile not found" });
+            }
+
+            const notifications = await prisma.notificationLog.findMany({
+                where: { organizerId: organizer.id },
+                orderBy: { createdAt: 'desc' },
+                take: 50 // Limit to recent 50
+            });
+
+            res.json({ success: true, data: notifications });
+        } catch (error: any) {
+            console.error("Get notifications error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * GET /api/organizer/payouts
+     */
+    static async getPayoutHistory(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.id;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Get organizer profile and wallet
+            const organizer = await prisma.organizerProfile.findUnique({
+                where: { userId },
+                include: {
+                    wallet: {
+                        include: {
+                            payouts: {
+                                orderBy: { createdAt: 'desc' },
+                                take: 50
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (!organizer) {
+                return res.status(404).json({ error: "Organizer profile not found" });
+            }
+
+            const payouts = organizer.wallet?.payouts || [];
+
+            res.json(payouts);
+        } catch (error: any) {
+            console.error("Get payout history error:", error);
+            res.status(500).json({ error: error.message });
         }
     }
 }

@@ -25,4 +25,16 @@ router.patch("/events/:id", OrganizerController.updateEvent);
 router.post("/events/:id/feature", OrganizerController.requestFeature);
 router.post("/support", OrganizerController.contactSupport);
 
+// Payment Methods
+router.get("/payment-methods", OrganizerController.getPaymentMethods);
+router.post("/payment-methods", OrganizerController.addPaymentMethod);
+router.delete("/payment-methods/:id", OrganizerController.deletePaymentMethod);
+router.patch("/payment-methods/:id/default", OrganizerController.setDefaultPaymentMethod);
+
+// Notifications
+router.get("/notifications", OrganizerController.getNotifications);
+
+// Payouts
+router.get("/payouts", OrganizerController.getPayoutHistory);
+
 export default router;
