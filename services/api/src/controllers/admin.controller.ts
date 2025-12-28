@@ -207,4 +207,56 @@ export class AdminController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // Respond to feature request (Approve/Reject)
+    static async respondToFeatureRequest(req: Request, res: Response) {
+        try {
+            const { notificationId } = req.params;
+            const { approved } = req.body;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const notif = await prisma.notificationLog.findUnique({ where: { id: Number(notificationId) } });
+            if (!notif) return res.status(404).json({ error: "Request not found" });
+
+            const meta = notif.metadata as any;
+            if (meta?.type !== 'FEATURE_REQUEST') return res.status(400).json({ error: "Not a feature request" });
+
+            const eventId = Number(meta.eventId);
+            const organizerId = Number(meta.organizerId);
+
+            if (approved) {
+                await prisma.event.update({ where: { id: eventId }, data: { featured: true } });
+                await prisma.notificationLog.create({
+                    data: {
+                        organizerId,
+                        channel: 'PUSH',
+                        recipient: 'System',
+                        title: 'Feature Approved! 🌟',
+                        content: 'Your event has been featured on the homepage.',
+                        status: 'DELIVERED',
+                        metadata: { type: 'FEATURE_APPROVED', eventId }
+                    }
+                });
+            } else {
+                await prisma.notificationLog.create({
+                    data: {
+                        organizerId,
+                        channel: 'PUSH',
+                        recipient: 'System',
+                        title: 'Feature Request Declined',
+                        content: 'Your feature request was reviewed but declined at this time.',
+                        status: 'DELIVERED',
+                        metadata: { type: 'FEATURE_DECLINED', eventId }
+                    }
+                });
+            }
+
+            // Remove the request log
+            await prisma.notificationLog.delete({ where: { id: Number(notificationId) } });
+
+            res.json({ success: true });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }

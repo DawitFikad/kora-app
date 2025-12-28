@@ -33,5 +33,6 @@ router.patch("/events/:eventId/featured", authenticate, authorize([Role.ADMIN]),
 
 // Notifications
 router.get("/notifications", authenticate, authorize([Role.ADMIN]), AdminController.getNotifications);
+router.post("/feature-requests/:notificationId/respond", authenticate, authorize([Role.ADMIN]), AdminController.respondToFeatureRequest);
 
 export default router;

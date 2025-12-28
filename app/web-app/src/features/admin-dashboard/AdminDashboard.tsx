@@ -65,6 +65,16 @@ const AdminDashboard = () => {
         AuthService.logout();
     };
 
+    const handleFeatureResponse = async (notificationId: number, approved: boolean) => {
+        try {
+            await AdminService.respondToFeatureRequest(notificationId, approved);
+            const res: any = await AdminService.getNotifications();
+            setNotifications(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const navItems = [
         { icon: Layout, label: 'Dashboard' as AdminTab, display: 'Dashboard Overview' },
         { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined },
@@ -236,6 +246,12 @@ const AdminDashboard = () => {
                                                             <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                         </div>
                                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>{n.content}</p>
+                                                        {n.metadata?.type === 'FEATURE_REQUEST' && (
+                                                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                                <button onClick={(e) => { e.stopPropagation(); handleFeatureResponse(n.id, true); }} style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#10B981', border: 'none', borderRadius: '4px', cursor: 'pointer', color: 'white', fontWeight: 600 }}>Approve</button>
+                                                                <button onClick={(e) => { e.stopPropagation(); handleFeatureResponse(n.id, false); }} style={{ fontSize: '0.7rem', padding: '4px 8px', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #EF4444', borderRadius: '4px', cursor: 'pointer', color: '#EF4444', fontWeight: 600 }}>Reject</button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>

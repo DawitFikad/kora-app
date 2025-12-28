@@ -32,4 +32,5 @@ export const AdminService = {
     getStats: () => api.get('/admin/stats'),
     getAnalytics: () => api.get('/admin/analytics'),
     getNotifications: () => api.get('/admin/notifications'),
+    respondToFeatureRequest: (notificationId: number, approved: boolean) => api.post(`/admin/feature-requests/${notificationId}/respond`, { approved }),
 };
