@@ -158,6 +158,8 @@ model OrganizerProfile {
   payoutDetails    String // Bank or mobile money details
   status           OrganizerStatus @default(PENDING)
   adminNote        String?
+  logoUrl          String?  // Profile picture/logo URL
+  emailVerified    Boolean  @default(false)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -520,6 +522,7 @@ model NotificationLog {
   content   String
 
   status      String // "SENT", "FAILED", "DELIVERED"
+  isRead      Boolean @default(false)
   providerRef String? // External message ID
 
   metadata Json? // Event identifiers, error logs

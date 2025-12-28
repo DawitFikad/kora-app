@@ -15,6 +15,7 @@
     "@prisma/client": "6.1.0",
     "@prisma/extension-accelerate": "^3.0.1",
     "@sendgrid/mail": "^8.0.0",
+    "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.4",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
@@ -24,11 +25,13 @@
     "firebase-admin": "^12.0.0",
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
     "pg": "^8.16.3",
     "pino": "^9.0.0",
     "pino-pretty": "^11.0.0",
+    "sharp": "^0.34.5",
     "twilio": "^5.11.1"
   },
   "devDependencies": {

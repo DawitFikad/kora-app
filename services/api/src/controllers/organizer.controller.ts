@@ -1,3 +1,4 @@
+/// <reference path="../types/express.d.ts" />
 import { Request, Response } from "express";
 import { EventOperationsService } from "../services/event-operations.service";
 
@@ -558,7 +559,7 @@ export class OrganizerController {
      */
     static async getPaymentMethods(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.id;
+            const userId = (req as any).user?.userId;
             if (!userId) return res.status(403).json({ error: "Unauthorized" });
 
             const prisma = (await import("../lib/prisma")).prisma;
@@ -579,7 +580,7 @@ export class OrganizerController {
      */
     static async addPaymentMethod(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.id;
+            const userId = (req as any).user?.userId;
             if (!userId) return res.status(403).json({ error: "Unauthorized" });
 
             const { provider, accountNumber, accountName } = req.body;
@@ -616,7 +617,7 @@ export class OrganizerController {
      */
     static async deletePaymentMethod(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.id;
+            const userId = (req as any).user?.userId;
             if (!userId) return res.status(403).json({ error: "Unauthorized" });
 
             const methodId = parseInt(req.params.id);
@@ -649,7 +650,7 @@ export class OrganizerController {
      */
     static async setDefaultPaymentMethod(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.id;
+            const userId = (req as any).user?.userId;
             if (!userId) return res.status(403).json({ error: "Unauthorized" });
 
             const methodId = parseInt(req.params.id);
@@ -687,7 +688,7 @@ export class OrganizerController {
      */
     static async getNotifications(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.id;
+            const userId = (req as any).user?.userId;
             if (!userId) return res.status(403).json({ error: "Unauthorized" });
 
             const prisma = (await import("../lib/prisma")).prisma;
@@ -707,9 +708,55 @@ export class OrganizerController {
                 take: 50 // Limit to recent 50
             });
 
-            res.json({ success: true, data: notifications });
+            const unreadCount = await prisma.notificationLog.count({
+                where: { organizerId: organizer.id, isRead: false }
+            });
+
+            res.json({ success: true, data: notifications, unreadCount });
         } catch (error: any) {
             console.error("Get notifications error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * PATCH /api/organizer/notifications/read
+     */
+    static async markNotificationsRead(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.userId;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const { notificationIds, markAll } = req.body;
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const organizer = await prisma.organizerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!organizer) {
+                return res.status(404).json({ error: "Organizer profile not found" });
+            }
+
+            if (markAll) {
+                await prisma.notificationLog.updateMany({
+                    where: { organizerId: organizer.id, isRead: false },
+                    data: { isRead: true }
+                });
+            } else if (notificationIds && Array.isArray(notificationIds) && notificationIds.length > 0) {
+                await prisma.notificationLog.updateMany({
+                    where: {
+                        organizerId: organizer.id,
+                        id: { in: notificationIds }
+                    },
+                    data: { isRead: true }
+                });
+            }
+
+            res.json({ success: true, message: "Notifications marked as read" });
+        } catch (error: any) {
+            console.error("Mark notifications read error:", error);
             res.status(500).json({ error: error.message });
         }
     }
@@ -719,7 +766,7 @@ export class OrganizerController {
      */
     static async getPayoutHistory(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.id;
+            const userId = (req as any).user?.userId;
             if (!userId) return res.status(403).json({ error: "Unauthorized" });
 
             const prisma = (await import("../lib/prisma")).prisma;
@@ -748,6 +795,258 @@ export class OrganizerController {
             res.json(payouts);
         } catch (error: any) {
             console.error("Get payout history error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/profile/upload-logo
+     */
+    static async uploadLogo(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.userId;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            if (!req.file) {
+                return res.status(400).json({ error: "No file uploaded" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const sharp = (await import("sharp")).default;
+
+            // Process image: resize and optimize
+            const outputPath = req.file.path.replace(/\.[^.]+$/, '-optimized.jpg');
+
+            await sharp(req.file.path)
+                .resize(512, 512, { fit: 'cover' })
+                .jpeg({ quality: 85 })
+                .toFile(outputPath);
+
+            // Delete original file
+            const fs = await import('fs');
+            fs.unlinkSync(req.file.path);
+
+            // Generate URL (relative path for storage)
+            const logoUrl = '/' + outputPath.replace(/\\/g, '/');
+
+            // Get organizer profile
+            const organizer = await prisma.organizerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!organizer) {
+                return res.status(404).json({ error: "Organizer profile not found" });
+            }
+
+            // Delete old logo file if exists
+            if (organizer.logoUrl) {
+                const oldPath = organizer.logoUrl.substring(1); // Remove leading /
+                if (fs.existsSync(oldPath)) {
+                    fs.unlinkSync(oldPath);
+                }
+            }
+
+            // Update profile with new logo URL
+            const updated = await prisma.organizerProfile.update({
+                where: { userId },
+                data: { logoUrl }
+            });
+
+            res.json({ success: true, logoUrl: updated.logoUrl });
+        } catch (error: any) {
+            console.error("Upload logo error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * DELETE /api/organizer/profile/remove-logo
+     */
+    static async removeLogo(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.userId;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const fs = await import('fs');
+
+            const organizer = await prisma.organizerProfile.findUnique({
+                where: { userId }
+            });
+
+            if (!organizer) {
+                return res.status(404).json({ error: "Organizer profile not found" });
+            }
+
+            // Delete file if exists
+            if (organizer.logoUrl) {
+                const filePath = organizer.logoUrl.substring(1);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            }
+
+            // Remove from database
+            await prisma.organizerProfile.update({
+                where: { userId },
+                data: { logoUrl: null }
+            });
+
+            res.json({ success: true, message: "Logo removed successfully" });
+        } catch (error: any) {
+            console.error("Remove logo error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/profile/change-password
+     */
+    static async changePassword(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.userId;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const { currentPassword, newPassword } = req.body;
+
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({ error: "Current password and new password are required" });
+            }
+
+            // Password strength validation
+            if (newPassword.length < 8) {
+                return res.status(400).json({ error: "Password must be at least 8 characters long" });
+            }
+
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+            if (!passwordRegex.test(newPassword)) {
+                return res.status(400).json({
+                    error: "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+                });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const bcrypt = await import("bcryptjs");
+
+            // Get user
+            const user = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+
+            if (!user || !user.password) {
+                return res.status(400).json({ error: "Cannot change password for this account" });
+            }
+
+            // Verify current password
+            const isValid = await bcrypt.compare(currentPassword, user.password);
+            if (!isValid) {
+                return res.status(401).json({ error: "Current password is incorrect" });
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            // Update password
+            await prisma.user.update({
+                where: { id: userId },
+                data: { password: hashedPassword }
+            });
+
+            res.json({ success: true, message: "Password changed successfully. Please log in again with your new password." });
+        } catch (error: any) {
+            console.error("Change password error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+    /**
+     * POST /api/organizer/profile/change-phone-request
+     */
+    static async requestPhoneChange(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.userId;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const { newPhoneNumber } = req.body;
+
+            if (!newPhoneNumber) {
+                return res.status(400).json({ error: "New phone number is required" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const OtpService = (await import("../services/otp.service")).OtpService;
+            const SmsService = (await import("../services/sms.service")).SmsService;
+
+            // Check if phone number is already in use
+            const existingUser = await prisma.user.findUnique({
+                where: { phoneNumber: newPhoneNumber }
+            });
+
+            if (existingUser) {
+                return res.status(400).json({ error: "Phone number is already associated with another account." });
+            }
+
+            // Generate and send OTP
+            const otp = await OtpService.generateOtp(newPhoneNumber);
+            await SmsService.sendOtp(newPhoneNumber, otp);
+
+            res.json({ success: true, message: `OTP sent to ${newPhoneNumber}` });
+        } catch (error: any) {
+            console.error("Request phone change error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/profile/change-phone-verify
+     */
+    static async verifyPhoneChange(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.userId;
+            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+
+            const { newPhoneNumber, otp } = req.body;
+
+            if (!newPhoneNumber || !otp) {
+                return res.status(400).json({ error: "Phone number and OTP are required" });
+            }
+
+            const OtpService = (await import("../services/otp.service")).OtpService;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Verify OTP
+            const isValid = await OtpService.verifyOtp(newPhoneNumber, otp);
+            if (!isValid) {
+                return res.status(400).json({ error: "Invalid or expired OTP" });
+            }
+
+            // Double check availability (in case of race condition)
+            const existingUser = await prisma.user.findUnique({
+                where: { phoneNumber: newPhoneNumber }
+            });
+
+            if (existingUser) {
+                return res.status(400).json({ error: "Phone number is already associated with another account." });
+            }
+
+            // Update user phone number
+            await prisma.user.update({
+                where: { id: userId },
+                data: { phoneNumber: newPhoneNumber }
+            });
+
+            // Update organizer contact phone as well (optional but good for consistency)
+            await prisma.organizerProfile.update({
+                where: { userId },
+                data: { contactPhone: newPhoneNumber }
+            });
+
+            // Note: In a stricter system, we might revoke tokens here, but for now we let them stay logged in.
+            // But since the token contains userId (which didn't change), it's fine.
+            // If token contained phoneNumber, we'd need to reissue. It doesn't.
+
+            res.json({ success: true, message: "Phone number updated successfully." });
+        } catch (error: any) {
+            console.error("Verify phone change error:", error);
             res.status(500).json({ error: error.message });
         }
     }

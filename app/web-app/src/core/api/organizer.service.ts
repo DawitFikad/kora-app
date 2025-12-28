@@ -42,12 +42,22 @@ export const OrganizerService = {
 
     // Notifications
     getNotifications: () => api.get('/organizer/notifications'),
+    markNotificationsRead: (data: { notificationIds?: number[], markAll?: boolean }) => api.patch('/organizer/notifications/read', data),
 
     // Financials/Billing
     getPayoutHistory: () => api.get('/organizer/payouts'),
 
     // Support
     contactSupport: (data: { subject: string, message: string }) => api.post('/organizer/support', data),
+
+    // Profile Management  
+    uploadLogo: (formData: FormData) => api.post('/organizer/profile/upload-logo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    removeLogo: () => api.delete('/organizer/profile/remove-logo'),
+    changePassword: (data: { currentPassword: string, newPassword: string }) => api.post('/organizer/profile/change-password', data),
+    requestPhoneChange: (newPhoneNumber: string) => api.post('/organizer/profile/change-phone-request', { newPhoneNumber }),
+    verifyPhoneChange: (data: { newPhoneNumber: string, otp: string }) => api.post('/organizer/profile/change-phone-verify', data),
 
     // Validation
     validateTicket: (qrPayload: string, gateId?: string) => api.post('/validate/scan', { qrPayload, gateId }),

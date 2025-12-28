@@ -2,6 +2,7 @@ import { Router } from "express";
 import { OrganizerController } from "../controllers/organizer.controller";
 import { authenticate, authorize } from "../middlewares/auth.middleware";
 import { Role } from "@prisma/client";
+import { upload } from "../config/upload.config";
 
 const router = Router();
 
@@ -33,8 +34,16 @@ router.patch("/payment-methods/:id/default", OrganizerController.setDefaultPayme
 
 // Notifications
 router.get("/notifications", OrganizerController.getNotifications);
+router.patch("/notifications/read", OrganizerController.markNotificationsRead);
 
 // Payouts
 router.get("/payouts", OrganizerController.getPayoutHistory);
+
+// Profile Management
+router.post("/profile/upload-logo", upload.single('logo'), OrganizerController.uploadLogo);
+router.delete("/profile/remove-logo", OrganizerController.removeLogo);
+router.post("/profile/change-password", OrganizerController.changePassword);
+router.post("/profile/change-phone-request", OrganizerController.requestPhoneChange);
+router.post("/profile/change-phone-verify", OrganizerController.verifyPhoneChange);
 
 export default router;

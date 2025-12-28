@@ -30,6 +30,19 @@ export const SettingsView = () => {
     // Billing
     const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
 
+    // Profile Management
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [uploading, setUploading] = useState(false);
+
+    // Phone Change
+    const [showPhoneModal, setShowPhoneModal] = useState(false);
+    const [changePhoneStep, setChangePhoneStep] = useState(1); // 1 = Request, 2 = Verify
+    const [newPhoneNumber, setNewPhoneNumber] = useState('');
+    const [phoneOtp, setPhoneOtp] = useState('');
+
     useEffect(() => {
         fetchAllData();
     }, [activeTab]);
@@ -155,6 +168,148 @@ export const SettingsView = () => {
         }
     };
 
+    const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+            toast.error("Invalid file type. Please upload JPG, PNG, or WebP image.");
+            return;
+        }
+
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("File too large. Maximum size is 5MB.");
+            return;
+        }
+
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('logo', file);
+
+            const result = await OrganizerService.uploadLogo(formData);
+            const logoUrl = (result as any).logoUrl;
+
+            setProfile({ ...profile, logoUrl });
+            toast.success("Profile picture uploaded successfully!");
+        } catch (error: any) {
+            console.error("Logo upload error:", error);
+            toast.error(error?.error || "Failed to upload logo");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleRemoveLogo = async () => {
+        if (!confirm("Are you sure you want to remove your profile picture?")) return;
+
+        setSaving(true);
+        try {
+            await OrganizerService.removeLogo();
+            setProfile({ ...profile, logoUrl: null });
+            toast.success("Profile picture removed!");
+        } catch (error: any) {
+            console.error("Remove logo error:", error);
+            toast.error(error?.error || "Failed to remove logo");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            toast.error("Please fill in all password fields");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast.error("New passwords do not match");
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            toast.error("Password must be at least 8 characters long");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            await OrganizerService.changePassword({ currentPassword, newPassword });
+            toast.success("Password changed successfully! Please log in again.");
+            setShowPasswordModal(false);
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            // Optionally redirect to login
+        } catch (error: any) {
+            console.error("Change password error:", error);
+            toast.error(error?.error || "Failed to change password");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRequestPhoneChange = async () => {
+        if (!newPhoneNumber) {
+            toast.error("Please enter a new phone number");
+            return;
+        }
+
+        // Basic validation for Ethiopian numbers or international
+        const phoneRegex = /^\+?[0-9]{10,15}$/;
+        if (!phoneRegex.test(newPhoneNumber)) {
+            toast.error("Please enter a valid phone number (e.g. +251911223344)");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            await OrganizerService.requestPhoneChange(newPhoneNumber);
+            toast.success("OTP sent to your new number!");
+            setChangePhoneStep(2);
+        } catch (error: any) {
+            console.error("Request phone change error:", error);
+            toast.error(error?.error || "Failed to request phone change");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleVerifyPhoneChange = async () => {
+        if (!phoneOtp) {
+            toast.error("Please enter the verification code");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            await OrganizerService.verifyPhoneChange({ newPhoneNumber, otp: phoneOtp });
+            toast.success("Phone number updated successfully!");
+
+            // Update local state if profile exists
+            if (profile) {
+                setProfile({
+                    ...profile,
+                    contactPhone: newPhoneNumber,
+                    // If we had user details in profile structure, update them too
+                    user: profile.user ? { ...profile.user, phoneNumber: newPhoneNumber } : undefined
+                });
+            }
+
+            setShowPhoneModal(false);
+            setNewPhoneNumber('');
+            setPhoneOtp('');
+            setChangePhoneStep(1);
+        } catch (error: any) {
+            console.error("Verify phone change error:", error);
+            toast.error(error?.error || "Failed to verify phone change");
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const tabs: { id: TabType; icon: any; label: string }[] = [
         { id: 'General', icon: null, label: 'General' },
         { id: 'Payout Methods', icon: CreditCard, label: 'Payout Methods' },
@@ -223,17 +378,48 @@ export const SettingsView = () => {
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Public Profile</h3>
 
+                            {/* Profile Picture Section */}
                             <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', alignItems: 'center' }}>
-                                <div style={{ width: '100px', height: '100px', borderRadius: '24px', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '4px' }}>
+                                <div style={{ width: '120px', height: '120px', borderRadius: '24px', background: 'linear-gradient(45deg, #1D90F5, #D946EF', padding: '4px', position: 'relative' }}>
+                                    {uploading && (
+                                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                                            <Loader2 className="animate-spin" size={32} color="white" />
+                                        </div>
+                                    )}
                                     <img
-                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.organizationName || 'Organization')}&background=11141B&color=fff&size=128`}
-                                        style={{ width: '100%', height: '100%', borderRadius: '20px' }}
-                                        alt="Organization"
+                                        src={profile?.logoUrl ? `http://localhost:4000${profile.logoUrl}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.organizationName || 'Organization')}&background=11141B&color=fff&size=128`}
+                                        style={{ width: '100%', height: '100%', borderRadius: '20px', objectFit: 'cover' }}
+                                        alt="Organization Logo"
                                     />
                                 </div>
                                 <div>
-                                    <button className="btn-blue" style={{ background: 'white', color: 'black', padding: '10px 20px', fontSize: '0.85rem' }}>Change Logo</button>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '10px' }}>At least 512x512px. JPG or PNG only.</p>
+                                    <input
+                                        type="file"
+                                        id="logo-upload"
+                                        accept="image/*"
+                                        onChange={handleLogoUpload}
+                                        style={{ display: 'none' }}
+                                    />
+                                    <div style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
+                                        <button
+                                            onClick={() => document.getElementById('logo-upload')?.click()}
+                                            disabled={uploading}
+                                            className="btn-blue"
+                                            style={{ background: 'white', color: 'black', padding: '10px 20px', fontSize: '0.85rem' }}
+                                        >
+                                            {profile?.logoUrl ? 'Change Logo' : 'Upload Logo'}
+                                        </button>
+                                        {profile?.logoUrl && (
+                                            <button
+                                                onClick={handleRemoveLogo}
+                                                disabled={saving}
+                                                style={{ padding: '10px 20px', fontSize: '0.85rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', color: '#EF4444', cursor: 'pointer' }}
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>At least 512x512px. JPG, PNG, or WebP. Max 5MB.</p>
                                 </div>
                             </div>
 
@@ -277,6 +463,7 @@ export const SettingsView = () => {
                                         style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', outline: 'none' }}
                                     />
                                 </div>
+
                             </div>
 
                             <div style={{ marginBottom: '24px' }}>
@@ -300,11 +487,162 @@ export const SettingsView = () => {
                                 />
                             </div>
 
+                            {/* Security Section */}
+                            <div style={{ marginBottom: '32px', padding: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '24px' }}>Security</h4>
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <div>
+                                        <p style={{ fontWeight: 600, marginBottom: '4px' }}>Password</p>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Change your account password</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowPasswordModal(true)}
+                                        className="btn-ghost"
+                                        style={{ padding: '10px 20px' }}
+                                    >
+                                        Change Password
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <p style={{ fontWeight: 600, marginBottom: '4px' }}>Phone Number</p>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                            Current: <span style={{ color: 'white' }}>{profile?.user?.phoneNumber || 'N/A'}</span>
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setChangePhoneStep(1);
+                                            setNewPhoneNumber('');
+                                            setPhoneOtp('');
+                                            setShowPhoneModal(true);
+                                        }}
+                                        className="btn-ghost"
+                                        style={{ padding: '10px 20px' }}
+                                    >
+                                        Change Phone Number
+                                    </button>
+                                </div>
+                            </div>
+
                             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                 <button onClick={handleSaveGeneral} disabled={saving} className="btn-blue" style={{ padding: '14px 28px' }}>
                                     {saving ? <Loader2 className="animate-spin" size={20} /> : 'Save Changes'}
                                 </button>
                             </div>
+
+                            {/* Password Change Modal */}
+                            {showPasswordModal && (
+                                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowPasswordModal(false)}>
+                                    <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', width: '500px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Change Password</h3>
+
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Current Password</label>
+                                            <input
+                                                type="password"
+                                                value={currentPassword}
+                                                onChange={e => setCurrentPassword(e.target.value)}
+                                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                            />
+                                        </div>
+
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>New Password</label>
+                                            <input
+                                                type="password"
+                                                value={newPassword}
+                                                onChange={e => setNewPassword(e.target.value)}
+                                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                            />
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>At least 8 characters with 1 uppercase, 1 lowercase, and 1 number</p>
+                                        </div>
+
+                                        <div style={{ marginBottom: '24px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Confirm New Password</label>
+                                            <input
+                                                type="password"
+                                                value={confirmPassword}
+                                                onChange={e => setConfirmPassword(e.target.value)}
+                                                style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                            />
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => { setShowPasswordModal(false); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); }} className="btn-ghost">
+                                                Cancel
+                                            </button>
+                                            <button onClick={handleChangePassword} disabled={saving} className="btn-blue">
+                                                {saving ? <Loader2 className="animate-spin" size={16} /> : 'Change Password'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Phone Change Modal */}
+                            {showPhoneModal && (
+                                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowPhoneModal(false)}>
+                                    <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', width: '500px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Change Phone Number</h3>
+
+                                        {changePhoneStep === 1 ? (
+                                            <>
+                                                <div style={{ marginBottom: '20px' }}>
+                                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                                                        Enter your new phone number. We will send a verification code to this number.
+                                                    </p>
+                                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>New Phone Number</label>
+                                                    <input
+                                                        type="tel"
+                                                        placeholder="+251..."
+                                                        value={newPhoneNumber}
+                                                        onChange={e => setNewPhoneNumber(e.target.value)}
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none' }}
+                                                    />
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                                    <button onClick={() => setShowPhoneModal(false)} className="btn-ghost">
+                                                        Cancel
+                                                    </button>
+                                                    <button onClick={handleRequestPhoneChange} disabled={saving} className="btn-blue">
+                                                        {saving ? <Loader2 className="animate-spin" size={16} /> : 'Send Code'}
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div style={{ marginBottom: '20px' }}>
+                                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                                                        Enter the verification code sent to <strong>{newPhoneNumber}</strong>.
+                                                    </p>
+                                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Verification Code</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="123456"
+                                                        value={phoneOtp}
+                                                        onChange={e => setPhoneOtp(e.target.value)}
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white', outline: 'none', letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
+                                                        maxLength={6}
+                                                    />
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                                    <button onClick={() => setChangePhoneStep(1)} className="btn-ghost">
+                                                        Back
+                                                    </button>
+                                                    <button onClick={handleVerifyPhoneChange} disabled={saving} className="btn-blue">
+                                                        {saving ? <Loader2 className="animate-spin" size={16} /> : 'Verify & Update'}
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
