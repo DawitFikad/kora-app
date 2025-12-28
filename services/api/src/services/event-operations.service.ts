@@ -302,6 +302,7 @@ export class EventOperationsService {
         });
 
         const allTiers = events.flatMap(e => e.tiers.map(t => ({
+            eventId: e.id,
             name: t.name,
             eventName: e.title,
             price: Number(t.price),

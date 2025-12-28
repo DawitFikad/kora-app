@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Download,
@@ -13,12 +13,20 @@ import {
 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { useToast } from '../../../core/components/Toast';
+import { OrganizerService } from '../../../core/api/organizer.service';
 
 export const ReportGeneratorView = () => {
     const { showToast } = useToast();
     const [reportType, setReportType] = useState('financial');
     const [dateRange, setDateRange] = useState('30d');
-    const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+    const [selectedEvents, setSelectedEvents] = useState<string[]>(['all']);
+    const [eventsList, setEventsList] = useState<any[]>([]);
+
+    useEffect(() => {
+        OrganizerService.getMyEvents()
+            .then((res: any) => setEventsList(res.data))
+            .catch((err: any) => console.error("Failed to fetch events list", err));
+    }, []);
 
     const reportTypes = [
         {
@@ -51,57 +59,87 @@ export const ReportGeneratorView = () => {
         }
     ];
 
-    const generateReport = (format: 'pdf' | 'csv' | 'json') => {
-        // Mock data for demonstration
-        const reportData = {
-            reportType,
-            dateRange,
-            generatedAt: new Date().toISOString(),
-            events: selectedEvents,
-            summary: {
-                totalRevenue: 450000,
-                ticketsSold: 1250,
-                totalAttendees: 1180,
-                averageTicketPrice: 360
-            },
-            details: [
-                { event: 'Summer Music Festival', revenue: 125000, tickets: 350 },
-                { event: 'Tech Conference 2025', revenue: 200000, tickets: 500 },
-                { event: 'Food & Wine Expo', revenue: 125000, tickets: 400 }
-            ]
-        };
+    const generateReport = async (format: 'pdf' | 'csv' | 'json') => {
+        showToast('Generating report...', 'info');
 
-        if (format === 'json') {
-            const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${reportType}-report-${dateRange}-${Date.now()}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } else if (format === 'csv') {
-            const headers = ['Event', 'Revenue', 'Tickets Sold'];
-            const csvContent = [
-                headers.join(','),
-                ...reportData.details.map(row => [row.event, row.revenue, row.tickets].join(','))
-            ].join('\\n');
+        try {
+            // Fetch Real Data
+            const response = await OrganizerService.getTicketStats();
+            const stats = response.data;
 
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${reportType}-report-${dateRange}-${Date.now()}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } else if (format === 'pdf') {
-            // For PDF, we'll create an HTML report that can be printed
-            const printWindow = window.open('', '_blank');
-            if (printWindow) {
-                printWindow.document.write(`
+            // Process Stats into Report Data
+            const eventMap = new Map();
+            stats.tiers.forEach((tier: any) => {
+                const id = tier.eventId?.toString() || 'unknown';
+                const name = tier.eventName;
+                if (!eventMap.has(id)) {
+                    eventMap.set(id, { id, name, revenue: 0, tickets: 0 });
+                }
+                const current = eventMap.get(id);
+                current.revenue += Number(tier.price) * tier.sold;
+                current.tickets += tier.sold;
+            });
+
+            let details = Array.from(eventMap.values()).map((d: any) => ({
+                event: d.name,
+                eventId: d.id,
+                revenue: d.revenue,
+                tickets: d.tickets
+            }));
+
+            // Filter
+            if (selectedEvents.length > 0 && !selectedEvents.includes('all')) {
+                details = details.filter(d => selectedEvents.includes(d.eventId));
+            }
+
+            const summary = {
+                totalRevenue: details.reduce((sum, d) => sum + d.revenue, 0),
+                ticketsSold: details.reduce((sum, d) => sum + d.tickets, 0),
+                totalAttendees: stats.checkedIn,
+                averageTicketPrice: 0
+            };
+            summary.averageTicketPrice = summary.ticketsSold > 0 ? Math.round(summary.totalRevenue / summary.ticketsSold) : 0;
+
+            const reportData = {
+                reportType,
+                dateRange,
+                generatedAt: new Date().toISOString(),
+                events: selectedEvents,
+                summary,
+                details
+            };
+
+            if (format === 'json') {
+                const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${reportType}-report-${dateRange}-${Date.now()}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } else if (format === 'csv') {
+                const headers = ['Event', 'Revenue', 'Tickets Sold'];
+                const csvContent = [
+                    headers.join(','),
+                    ...reportData.details.map(row => [row.event, row.revenue, row.tickets].join(','))
+                ].join('\\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${reportType}-report-${dateRange}-${Date.now()}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } else if (format === 'pdf') {
+                // For PDF, we'll create an HTML report that can be printed
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    printWindow.document.write(`
                     <!DOCTYPE html>
                     <html>
                     <head>
@@ -165,14 +203,18 @@ export const ReportGeneratorView = () => {
                     </body>
                     </html>
                 `);
-                printWindow.document.close();
-                setTimeout(() => {
-                    printWindow.print();
-                }, 250);
+                    printWindow.document.close();
+                    setTimeout(() => {
+                        printWindow.print();
+                    }, 250);
+                }
             }
-        }
 
-        showToast(`${format.toUpperCase()} report generated successfully`, 'success');
+            showToast(`${format.toUpperCase()} report generated successfully`, 'success');
+        } catch (error) {
+            console.error(error);
+            showToast('Failed to generate report', 'error');
+        }
     };
 
     return (
@@ -278,9 +320,9 @@ export const ReportGeneratorView = () => {
                             }}
                         >
                             <option value="all">All Events</option>
-                            <option value="event1">Summer Music Festival</option>
-                            <option value="event2">Tech Conference 2025</option>
-                            <option value="event3">Food & Wine Expo</option>
+                            {eventsList.map(e => (
+                                <option key={e.id} value={e.id.toString()}>{e.title}</option>
+                            ))}
                         </select>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
                             Hold Ctrl/Cmd to select multiple events
