@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
+import { exportToPDF } from '../../../core/utils/pdf';
 
 export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void }) => {
     const { t } = useTranslation();
@@ -69,7 +70,7 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
         fetchDashboardData();
     }, []);
 
-    const handleExportReport = () => {
+    const handleExportReport = (type: 'csv' | 'pdf') => {
         const reportData = [
             { Metric: 'Total GMV', Value: stats.totalGMV },
             { Metric: 'Platform Commission', Value: stats.platformCommission },
@@ -77,7 +78,25 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
             { Metric: 'Tickets Sold', Value: stats.totalTicketsSold },
             { Metric: 'Pending Payouts', Value: stats.pendingPayouts },
         ];
-        exportToCSV(reportData, `admin_overview_report_${new Date().toISOString().split('T')[0]}.csv`);
+        if (type === 'csv') {
+            exportToCSV(reportData, `admin_overview_report_${new Date().toISOString().split('T')[0]}.csv`);
+        } else {
+            exportToPDF(reportData, ['Metric', 'Value'], `admin_overview_report_${new Date().toISOString().split('T')[0]}.pdf`, 'Dashboard Overview Report');
+        }
+    };
+
+    const handleExportOrganizers = (type: 'csv' | 'pdf') => {
+        const data = organizers.map(o => ({
+            Organization: o.organizationName,
+            Contact: o.contactPhone,
+            Submitted: new Date(o.createdAt).toLocaleDateString(),
+            Status: o.status
+        }));
+        if (type === 'csv') {
+            exportToCSV(data, `recent_registrations_${new Date().toISOString().split('T')[0]}.csv`);
+        } else {
+            exportToPDF(data, ['Organization', 'Contact', 'Submitted', 'Status'], `recent_registrations_${new Date().toISOString().split('T')[0]}.pdf`, 'Recent Organizer Registrations');
+        }
     };
 
     const handleInviteAdmin = (e: React.FormEvent) => {
@@ -102,7 +121,7 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
                 {[
                     { label: t('admin.review_pending'), sub: `${stats.pendingOrganizers + stats.pendingEvents} items waiting`, icon: ShieldAlert, color: '#3B82F6', iconBg: 'rgba(59, 130, 246, 0.1)', tab: 'Organizer Approvals' },
-                    { label: t('admin.export_report'), sub: 'CSV or PDF', icon: Download, color: '#A78BFA', iconBg: 'rgba(167, 139, 250, 0.1)', action: handleExportReport },
+                    { label: t('admin.export_report'), sub: 'CSV or PDF', icon: Download, color: '#A78BFA', iconBg: 'rgba(167, 139, 250, 0.1)', action: () => handleExportReport('pdf') },
                     { label: t('admin.invite_admin'), sub: 'Manage access', icon: UserPlus, color: '#F59E0B', iconBg: 'rgba(245, 158, 11, 0.1)', action: () => setShowInviteModal(true) },
                     { label: t('admin.system_status'), sub: 'All systems operational', icon: Activity, color: '#10B981', iconBg: 'rgba(16, 185, 129, 0.1)', tab: 'Monitoring' },
                 ].map((item, i) => (
@@ -235,6 +254,16 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
                     <div>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{t('admin.recent_registrations', 'Recent Registrations')}</h3>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('admin.awaiting_verif', 'Latest organizers awaiting verification')}</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                            onClick={() => onNavigate?.('Organizer Approvals')}
+                            style={{ background: 'none', border: 'none', color: 'var(--bg-active)', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', marginRight: '16px' }}
+                        >
+                            {t('admin.view_all', 'View All')}
+                        </button>
+                        <button onClick={() => handleExportOrganizers('csv')} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>CSV</button>
+                        <button onClick={() => handleExportOrganizers('pdf')} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>PDF</button>
                     </div>
                 </div>
                 <table className="admin-table">

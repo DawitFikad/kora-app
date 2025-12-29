@@ -31,6 +31,7 @@
         "no_critical": "No critical alerts found.",
         "recent_registrations": "Recent Registrations",
         "awaiting_verif": "Latest organizers awaiting verification",
+        "view_all": "View All",
         "organizer_approvals_desc": "Review and process official organizer registration applications.",
         "export_list": "Export List",
         "pending_applications": "Pending Applications",

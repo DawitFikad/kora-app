@@ -8,10 +8,7 @@ import {
     Server,
     Database,
     Globe,
-    Lock,
-    Unlock,
-    MessageSquare,
-    Bug
+    MessageSquare
 } from 'lucide-react';
 
 export const PlatformControlView = () => {
@@ -75,22 +72,37 @@ export const PlatformControlView = () => {
                         <MetricCard label="Active Sessions" value={systemMetrics.activeConnections.toLocaleString()} icon={Globe} color="#10B981" />
                         <MetricCard label="DB Latency" value={`${systemMetrics.dbLatency.toFixed(0)}ms`} icon={Database} color="#F59E0B" warn={systemMetrics.dbLatency > 80} />
                         <MetricCard label="API Latency" value={`${systemMetrics.apiLatency.toFixed(0)}ms`} icon={Activity} color="#6366F1" />
-                        <MetricCard label="System Logs" value="Normal" icon={Bug} color="#57606A" />
+                        <MetricCard label="Cache Hit Rate" value="98.2%" icon={Zap} color="#10B981" />
                     </div>
 
                     <div style={{ marginTop: '32px' }}>
                         <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '16px' }}>NETWORK TRAFFIC (REAL-TIME)</h4>
-                        <div style={{ height: '120px', width: '100%', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
+                        <div style={{ height: '120px', width: '100%', background: 'var(--bg-main)', borderRadius: '12px', overflow: 'hidden', position: 'relative', border: '1px solid var(--border)' }}>
                             <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
                                 <motion.path
                                     d="M0,80 Q10,20 20,50 T40,30 T60,70 T80,40 T100,60 L100,100 L0,100 Z"
-                                    fill="rgba(59, 130, 246, 0.15)"
+                                    fill="rgba(59, 130, 246, 0.1)"
                                     stroke="#3B82F6"
-                                    strokeWidth="2"
-                                    initial={{ pathLength: 0 }}
-                                    animate={{ pathLength: 1 }}
+                                    strokeWidth="1"
+                                    animate={{
+                                        d: [
+                                            "M0,80 Q10,20 20,50 T40,30 T60,70 T80,40 T100,60 L100,100 L0,100 Z",
+                                            "M0,80 Q15,40 25,60 T45,20 T65,80 T85,30 T100,70 L100,100 L0,100 Z",
+                                            "M0,80 Q10,20 20,50 T40,30 T60,70 T80,40 T100,60 L100,100 L0,100 Z"
+                                        ]
+                                    }}
+                                    transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
                                 />
                             </svg>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: '24px' }}>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '12px' }}>API SERVICE CLUSTERS</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '4px' }}>
+                            {Array.from({ length: 24 }).map((_, i) => (
+                                <div key={i} title="Service Node Online" style={{ height: '12px', background: Math.random() > 0.1 ? '#10B981' : '#F59E0B', borderRadius: '2px', opacity: 0.6 }} />
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -98,41 +110,38 @@ export const PlatformControlView = () => {
                 {/* 🔵 Right Side: Platform Controls */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div className="admin-card" style={{ padding: '24px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '24px' }}>Emergency Actions</h3>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '24px' }}>Platform Sovereignty</h3>
 
-                        <div style={{ padding: '20px', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)', marginBottom: '16px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div className="metric-card" style={{ marginBottom: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div>
-                                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#EF4444' }}>Maintenance Mode</h4>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Lock the platform for all users immediately.</p>
+                                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#EF4444' }}>MAINTENANCE PROTOCOL</h4>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Read-only mode for maintenance tasks.</p>
                                 </div>
                                 <button
                                     onClick={() => setIsMaintenanceMode(!isMaintenanceMode)}
                                     style={{
                                         padding: '8px 16px',
                                         borderRadius: '8px',
-                                        border: 'none',
-                                        background: isMaintenanceMode ? '#EF4444' : 'rgba(239, 68, 68, 0.1)',
+                                        background: isMaintenanceMode ? '#EF4444' : 'var(--bg-card)',
                                         color: isMaintenanceMode ? 'white' : '#EF4444',
+                                        border: isMaintenanceMode ? 'none' : '1px solid #EF4444',
                                         fontWeight: 800,
                                         cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px'
+                                        fontSize: '0.75rem'
                                     }}
                                 >
-                                    {isMaintenanceMode ? <Unlock size={16} /> : <Lock size={16} />}
-                                    {isMaintenanceMode ? 'Deactivate' : 'Activate'}
+                                    {isMaintenanceMode ? 'DEACTIVATE' : 'ACTIVATE'}
                                 </button>
                             </div>
                         </div>
 
-                        <div style={{ padding: '20px', borderRadius: '16px', border: '1px solid rgba(59, 130, 246, 0.2)', background: 'rgba(59, 130, 246, 0.05)' }}>
-                            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#3B82F6', marginBottom: '12px' }}>Global Announcement</h4>
+                        <div style={{ padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '12px', color: 'var(--text-main)' }}>GLOBAL BROADCAST</h4>
                             <div style={{ position: 'relative' }}>
-                                <MessageSquare size={18} style={{ position: 'absolute', left: 16, top: 16, color: 'rgba(255,255,255,0.3)' }} />
+                                <MessageSquare size={16} style={{ position: 'absolute', left: 16, top: 16, color: 'var(--text-muted)' }} />
                                 <textarea
-                                    placeholder="Enter message for all users..."
+                                    placeholder="Alert all active users..."
                                     value={globalMessage}
                                     onChange={(e) => setGlobalMessage(e.target.value)}
                                     style={{
@@ -141,26 +150,32 @@ export const PlatformControlView = () => {
                                         border: '1px solid var(--border)',
                                         borderRadius: '12px',
                                         padding: '16px 16px 16px 48px',
-                                        color: 'white',
-                                        fontSize: '0.9rem',
+                                        color: 'var(--text-main)',
+                                        fontSize: '0.85rem',
                                         minHeight: '80px',
                                         resize: 'none'
                                     }}
                                 />
                             </div>
-                            <button className="btn-blue" style={{ width: '100%', marginTop: '12px', padding: '12px', background: '#3B82F6', borderRadius: '10px', color: 'white', fontWeight: 800, border: 'none', cursor: 'pointer' }}>
-                                Broadcast To All
+                            <button className="btn-blue" style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'var(--bg-active)', borderRadius: '10px', color: 'white', fontWeight: 800, border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                EXECUTE BROADCAST
                             </button>
                         </div>
                     </div>
 
                     <div className="admin-card" style={{ padding: '24px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px' }}>Recent Audit Logs</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <AuditItem time="2m ago" action="Admin 'Aman' updated commission rates" />
-                            <AuditItem time="15m ago" action="Maintenance mode deactivated" />
-                            <AuditItem time="45m ago" action="Suspicious IP blocked: 192.168.1.45" />
-                            <AuditItem time="1h ago" action="Global announcement broadcasted" />
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px' }}>Security Events</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div className="audit-item" style={{ borderLeft: '3px solid #EF4444' }}>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <AlertTriangle size={14} color="#EF4444" />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>Brute-force attempt blocked</span>
+                                </div>
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>12:45 PM</span>
+                            </div>
+                            <AuditItem time="12:30 PM" action="Admin login: 'Alex' (Addis Ababa)" />
+                            <AuditItem time="11:15 AM" action="Backup sync completed (S3 Bucket)" />
+                            <AuditItem time="10:00 AM" action="New organizer verified: 'National Theater'" />
                         </div>
                     </div>
                 </div>

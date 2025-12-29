@@ -15,7 +15,9 @@ import {
     Activity,
     Calendar,
     LogOut,
-    Globe
+    Globe,
+    Sun,
+    Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,6 +45,17 @@ const AdminDashboard = () => {
     const [eventPendingCount, setEventPendingCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
+
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(theme === 'dark' ? 'light' : 'dark');
+    };
 
     const toggleLanguage = () => {
         i18n.changeLanguage(i18n.language === 'en' ? 'am' : 'en');
@@ -285,8 +298,16 @@ const AdminDashboard = () => {
 
                         <div
                             className="action-icon"
+                            onClick={toggleTheme}
+                            style={{ background: 'var(--bg-subtle)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                        >
+                            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                        </div>
+
+                        <div
+                            className="action-icon"
                             onClick={() => setActiveTab('Settings')}
-                            style={{ background: 'rgba(255,255,255,0.03)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            style={{ background: 'var(--bg-subtle)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                         >
                             <Settings size={18} />
                         </div>
