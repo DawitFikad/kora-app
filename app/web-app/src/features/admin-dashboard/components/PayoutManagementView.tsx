@@ -17,6 +17,7 @@ import { Download } from 'lucide-react';
 export const PayoutsManagementView = () => {
     const { t } = useTranslation();
     const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
+    const [processedPayouts, setProcessedPayouts] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
@@ -24,11 +25,13 @@ export const PayoutsManagementView = () => {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [payoutsRes, metricsRes]: any = await Promise.all([
+            const [payoutsRes, processedRes, metricsRes]: any = await Promise.all([
                 AdminService.getPendingPayouts(),
+                AdminService.getProcessedPayouts(),
                 AdminService.getFinancialMetrics()
             ]);
             setPendingPayouts(payoutsRes.data || []);
+            setProcessedPayouts(processedRes.data || []);
             setMetrics(metricsRes.data || null);
         } catch (err) {
             console.error('Failed to fetch payout data', err);
@@ -40,6 +43,20 @@ export const PayoutsManagementView = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const handleReject = async (batchId: number) => {
+        const reason = prompt('Please enter the reason for rejection:');
+        if (!reason) return;
+        try {
+            setProcessingId(batchId);
+            await AdminService.rejectPayout(batchId, reason);
+            fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Failed to reject payout');
+        } finally {
+            setProcessingId(null);
+        }
+    };
 
     const handleApprove = async (batchId: number) => {
         if (!confirm('Are you sure you want to approve this payout? This will deduct funds from the organizer\'s wallet.')) return;
@@ -154,19 +171,32 @@ export const PayoutsManagementView = () => {
                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(p.createdAt).toLocaleDateString()}</p>
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
-                                        <button
-                                            onClick={() => handleApprove(p.id)}
-                                            disabled={processingId === p.id}
-                                            style={{
-                                                background: '#10B981', color: 'white', border: 'none',
-                                                padding: '8px 16px', borderRadius: '8px', fontWeight: 800,
-                                                fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '8px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {processingId === p.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                            Approve Payout
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button
+                                                onClick={() => handleReject(p.id)}
+                                                disabled={processingId === p.id}
+                                                style={{
+                                                    background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid #EF4444',
+                                                    padding: '8px 12px', borderRadius: '8px', fontWeight: 800,
+                                                    fontSize: '0.75rem', cursor: 'pointer'
+                                                }}
+                                            >
+                                                Reject
+                                            </button>
+                                            <button
+                                                onClick={() => handleApprove(p.id)}
+                                                disabled={processingId === p.id}
+                                                style={{
+                                                    background: '#10B981', color: 'white', border: 'none',
+                                                    padding: '8px 16px', borderRadius: '8px', fontWeight: 800,
+                                                    fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                {processingId === p.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                                Approve
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -175,20 +205,44 @@ export const PayoutsManagementView = () => {
                 </table>
             </div>
 
-            <div style={{ marginTop: '32px' }} className="admin-card">
+            {/* Payout History */}
+            <div className="admin-card" style={{ marginTop: '32px' }}>
                 <div style={{ padding: '24px', borderBottom: '1px solid var(--border)' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Settlement Logic</h3>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Settlement History</h3>
                 </div>
-                <div style={{ padding: '24px', display: 'flex', gap: '24px' }}>
-                    <div style={{ flex: 1, background: 'var(--bg-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                        <h4 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '12px', color: '#3B82F6' }}>AUTOMATED PAYOUTS</h4>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mobile Money (TeleBirr/CBE Birr) payouts are processed via B2B API upon approval. Ensure merchant gateway has sufficient float.</p>
-                    </div>
-                    <div style={{ flex: 1, background: 'var(--bg-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                        <h4 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '12px', color: '#F59E0B' }}>MANUAL SETTLEMENT</h4>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Bank transfers require manual processing. Approve the request here AFTER the bank transfer is confirmed externally.</p>
-                    </div>
-                </div>
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ORGANIZER</th>
+                            <th>AMOUNT</th>
+                            <th>METHOD</th>
+                            <th>PROCESSED AT</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {processedPayouts.length === 0 ? (
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No history available</td></tr>
+                        ) : (
+                            processedPayouts.map((p) => (
+                                <tr key={p.id}>
+                                    <td>{p.wallet?.organizer?.organizationName}</td>
+                                    <td style={{ fontWeight: 800 }}>ETB {Number(p.amount).toLocaleString()}</td>
+                                    <td>{p.method}</td>
+                                    <td>{new Date(p.processedAt).toLocaleString()}</td>
+                                    <td>
+                                        <span className="pill" style={{
+                                            background: p.status === 'PAID_OUT' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                            color: p.status === 'PAID_OUT' ? '#10B981' : '#EF4444'
+                                        }}>
+                                            {p.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
         </motion.div>
     );

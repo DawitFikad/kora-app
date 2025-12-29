@@ -159,4 +159,33 @@ export class PayoutService {
             orderBy: { createdAt: 'asc' }
         });
     }
+
+    static async rejectPayout(batchId: number, adminId: number, reason: string) {
+        return prisma.payoutBatch.update({
+            where: { id: batchId },
+            data: {
+                status: FinancialStatus.FAILED,
+                processedAt: new Date(),
+                adminId,
+                payoutDetails: `REJECTED: ${reason}`
+            }
+        });
+    }
+
+    static async adminListProcessedPayouts() {
+        return prisma.payoutBatch.findMany({
+            where: {
+                status: { in: [FinancialStatus.PAID_OUT, FinancialStatus.FAILED] }
+            },
+            include: {
+                wallet: {
+                    include: {
+                        organizer: true
+                    }
+                }
+            },
+            orderBy: { processedAt: 'desc' },
+            take: 50
+        });
+    }
 }

@@ -21,7 +21,9 @@ export const AdminService = {
     getCities: () => api.get('/content/cities'),
     toggleFeaturedEvent: (eventId: number, featured: boolean) => api.patch(`/admin/events/${eventId}/featured`, { featured }),
     getPendingPayouts: () => api.get('/payouts/pending'),
+    getProcessedPayouts: () => api.get('/payouts/processed'),
     approvePayout: (batchId: number) => api.post(`/payouts/${batchId}/approve`),
+    rejectPayout: (batchId: number, reason: string) => api.post(`/payouts/${batchId}/reject`, { reason }),
 
     // Security & Tickets
     invalidateTicket: (ticketId: string, reason: string) => api.post(`/tickets/${ticketId}/invalidate`, { reason }),
@@ -35,4 +37,7 @@ export const AdminService = {
     getAnalytics: () => api.get('/admin/analytics'),
     getNotifications: () => api.get('/admin/notifications'),
     respondToFeatureRequest: (notificationId: number, approved: boolean) => api.post(`/admin/feature-requests/${notificationId}/respond`, { approved }),
+    // Platform Fees
+    getPlatformFees: () => api.get('/admin/fees'),
+    updatePlatformFee: (data: any) => api.patch('/admin/fees', data),
 };

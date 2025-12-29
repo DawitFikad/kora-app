@@ -69,4 +69,32 @@ export class PayoutController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+
+    /**
+     * Admin: Reject Payout
+     */
+    static async rejectPayout(req: Request, res: Response) {
+        try {
+            const adminId = (req as any).user.id;
+            const { batchId } = req.params;
+            const { reason } = req.body;
+
+            const payout = await PayoutService.rejectPayout(parseInt(batchId), adminId, reason || "Rejected by admin");
+            res.json({ success: true, data: payout, message: "Payout rejected" });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * Admin: List Processed Payouts
+     */
+    static async listProcessedPayouts(req: Request, res: Response) {
+        try {
+            const payouts = await PayoutService.adminListProcessedPayouts();
+            res.json({ success: true, data: payouts });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }

@@ -9,7 +9,9 @@ import { exportToCSV } from '../../../core/utils/export';
 export const CommissionsView = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
+    const [fees, setFees] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleExport = () => {
         const exportData = transactions.map(tx => ({
@@ -29,18 +31,32 @@ export const CommissionsView = () => {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [txResponse, metricsResponse]: any = await Promise.all([
+            const [txResponse, metricsResponse, feesResponse]: any = await Promise.all([
                 AdminService.getFinancialTransactions(),
-                AdminService.getFinancialMetrics()
+                AdminService.getFinancialMetrics(),
+                AdminService.getPlatformFees()
             ]);
             // Filter for only platform fee transactions in the table if desired?
             // Actually, keep the ledger but focus the title.
             setTransactions(txResponse.data || []);
             setMetrics(metricsResponse.data || null);
+            setFees(feesResponse.data || []);
         } catch (err) {
             console.error('Failed to fetch commission data', err);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleUpdateFee = async (feeId: number, data: any) => {
+        try {
+            setIsSaving(true);
+            await AdminService.updatePlatformFee({ id: feeId, ...data });
+            await fetchData();
+        } catch (err) {
+            console.error('Failed to update fee', err);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -84,6 +100,66 @@ export const CommissionsView = () => {
                     </div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>ETB {metrics.monthlyGMV.toLocaleString()}</h2>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Gross volume this month</p>
+                </div>
+            </div>
+
+            {/* Global Fee Configuration */}
+            <div className="admin-card" style={{ padding: '32px', marginBottom: '32px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '24px' }}>Global Fee Configuration</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
+                    {fees.filter(f => f.isDefault).map(fee => (
+                        <div key={fee.id} style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem' }}>{fee.name}</span>
+                                <span className="pill" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6' }}>DEFAULT</span>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                                <div style={{ flex: 1, minWidth: '120px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 700 }}>PERCENTAGE (%)</label>
+                                    <input
+                                        type="number"
+                                        defaultValue={fee.feePercentage}
+                                        onChange={(e) => fee.newPercentage = Number(e.target.value)}
+                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'white', fontWeight: 700 }}
+                                    />
+                                </div>
+                                <div style={{ flex: 1, minWidth: '120px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 700 }}>FIXED FEE (ETB)</label>
+                                    <input
+                                        type="number"
+                                        defaultValue={fee.feeFixed}
+                                        onChange={(e) => fee.newFixed = Number(e.target.value)}
+                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'white', fontWeight: 700 }}
+                                    />
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => handleUpdateFee(fee.id, {
+                                    name: fee.name,
+                                    feePercentage: fee.newPercentage !== undefined ? fee.newPercentage : fee.feePercentage,
+                                    feeFixed: fee.newFixed !== undefined ? fee.newFixed : fee.feeFixed,
+                                    isDefault: true
+                                })}
+                                disabled={isSaving}
+                                className="btn-blue"
+                                style={{ marginTop: '20px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                            >
+                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : 'Update Settings'}
+                            </button>
+                        </div>
+                    ))}
+                    {fees.length === 0 && (
+                        <div style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px dotted var(--border)', textAlign: 'center' }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No fee configs found. Initializing...</p>
+                            <button
+                                onClick={() => handleUpdateFee(0, { name: 'Standard Commission', feeType: 'PERCENTAGE', feePercentage: 5, feeFixed: 10, isDefault: true })}
+                                className="btn-blue"
+                                style={{ marginTop: '12px' }}
+                            >
+                                Create Default Fee
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -401,6 +401,101 @@ const Testimonials = () => {
     );
 };
 
+import { ContentService } from '../../core/api/content.service';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
+
+const HeroCarousel = ({ banners }: { banners: any[] }) => {
+    const [index, setIndex] = useState(0);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setIndex(prev => (prev + 1) % banners.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [banners.length]);
+
+    const current = banners[index];
+
+    return (
+        <section style={{ height: '80vh', minHeight: '600px', position: 'relative', overflow: 'hidden' }}>
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={current.id}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.8 }}
+                    style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundImage: `url(${current.imageUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                    }}
+                >
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #0f172a 0%, transparent 60%, rgba(0,0,0,0.4) 100%)' }} />
+                </motion.div>
+            </AnimatePresence>
+
+            <div className="container" style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center', zIndex: 10 }}>
+                <div style={{ maxWidth: '800px', paddingTop: '100px' }}>
+                    <motion.h1
+                        key={`t-${current.id}`}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, color: 'white', marginBottom: '1.5rem', lineHeight: 1.1, textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                    >
+                        {current.title}
+                    </motion.h1>
+                    {current.subtitle && (
+                        <motion.p
+                            key={`s-${current.id}`}
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.9)', marginBottom: '2.5rem', fontWeight: 500 }}
+                        >
+                            {current.subtitle}
+                        </motion.p>
+                    )}
+                    {current.linkUrl && (
+                        <motion.button
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            onClick={() => {
+                                if (current.linkUrl.startsWith('http')) window.location.href = current.linkUrl;
+                                else navigate(current.linkUrl);
+                            }}
+                            style={{
+                                padding: '1rem 2.5rem', borderRadius: '50px',
+                                background: 'white', color: 'black',
+                                border: 'none', fontSize: '1.1rem', fontWeight: 800,
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'
+                            }}
+                        >
+                            Explore Event <ArrowRight size={20} />
+                        </motion.button>
+                    )}
+                </div>
+            </div>
+
+            {/* Controls */}
+            {banners.length > 1 && (
+                <div style={{ position: 'absolute', bottom: '40px', right: '40px', display: 'flex', gap: '12px', zIndex: 20 }}>
+                    <button onClick={() => setIndex(prev => (prev - 1 + banners.length) % banners.length)} style={{ padding: '12px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>
+                        <ChevronLeft size={24} />
+                    </button>
+                    <button onClick={() => setIndex(prev => (prev + 1) % banners.length)} style={{ padding: '12px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>
+                        <ChevronRight size={24} />
+                    </button>
+                </div>
+            )}
+        </section>
+    );
+};
+
 const OrganizerLanding = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -409,6 +504,21 @@ const OrganizerLanding = () => {
     const [revenue, setRevenue] = useState(24.5);
     const [tickets, setTickets] = useState(842);
     const { language, setLanguage, t } = useLanguage();
+    const [banners, setBanners] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchBanners = async () => {
+            try {
+                const res = await ContentService.getBanners();
+                if (res.success && res.data.length > 0) {
+                    setBanners(res.data.filter((b: any) => b.isActive).sort((a: any, b: any) => a.order - b.order));
+                }
+            } catch (err) {
+                console.error('Failed to load banners', err);
+            }
+        };
+        fetchBanners();
+    }, []);
 
     useEffect(() => {
         if (user) {
@@ -431,13 +541,23 @@ const OrganizerLanding = () => {
 
     return (
         <div>
-            <div className="mesh-bg" />
-            <Navbar onAuthClick={(mode) => { setAuthMode(mode); setIsLoginOpen(true); }} />
+            {banners.length > 0 ? (
+                <>
+                    <Navbar onAuthClick={(mode) => { setAuthMode(mode); setIsLoginOpen(true); }} />
+                    <HeroCarousel banners={banners} />
+                </>
+            ) : (
+                <>
+                    <div className="mesh-bg" />
+                    <Navbar onAuthClick={(mode) => { setAuthMode(mode); setIsLoginOpen(true); }} />
+                </>
+            )}
 
             <LoginModal isOpen={isLoginOpen} mode={authMode} onClose={() => setIsLoginOpen(false)} />
 
-            {/* 1. Hero Section */}
-            <section style={{ paddingTop: '10rem', paddingBottom: '6rem' }}>
+            {/* 1. Hero Section - Only show if NO banners */}
+            {banners.length === 0 && (
+                <section style={{ paddingTop: '10rem', paddingBottom: '6rem' }}>
                 <div className="container" style={{ textAlign: 'center' }}>
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}

@@ -259,4 +259,52 @@ export class AdminController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // Get Platform Fee Configs
+    static async getPlatformFees(req: Request, res: Response) {
+        try {
+            const configs = await prisma.platformFeeConfig.findMany({
+                orderBy: { createdAt: 'desc' }
+            });
+            res.json({ success: true, data: configs });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // Update or Create Default Platform Fee
+    static async updatePlatformFee(req: Request, res: Response) {
+        try {
+            const { name, feeType, feeFixed, feePercentage, isDefault } = req.body;
+
+            // If this is default, set others to non-default
+            if (isDefault) {
+                await prisma.platformFeeConfig.updateMany({
+                    data: { isDefault: false }
+                });
+            }
+
+            const config = await prisma.platformFeeConfig.upsert({
+                where: { id: req.body.id || 0 },
+                create: {
+                    name: name || "Global Fee",
+                    feeType: feeType || "PERCENTAGE",
+                    feeFixed: feeFixed || 0,
+                    feePercentage: feePercentage || 0,
+                    isDefault: !!isDefault
+                },
+                update: {
+                    name,
+                    feeType,
+                    feeFixed,
+                    feePercentage,
+                    isDefault: !!isDefault
+                }
+            });
+
+            res.json({ success: true, data: config });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }

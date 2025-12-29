@@ -17,13 +17,13 @@ export class AdminAnalyticsService {
         const commissionStats = await prisma.financialTransaction.aggregate({
             where: {
                 status: 'SETTLED',
-                type: 'PLATFORM_FEE'
+                type: 'TICKET_PURCHASE'
             },
             _sum: {
-                amount: true
+                feeAmount: true
             }
         });
-        const platformCommission = commissionStats._sum.amount?.toNumber() || 0;
+        const platformCommission = commissionStats._sum.feeAmount?.toNumber() || 0;
 
         // 2. Active Counts
         const activeEvents = await prisma.event.count({
@@ -181,8 +181,20 @@ export class AdminAnalyticsService {
             return { name: city.name, value: total };
         });
 
+        const sortedMonths = [];
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const mName = d.toLocaleString('default', { month: 'short' });
+            sortedMonths.push({
+                name: mName,
+                amount: monthlyStats[mName] || 0
+            });
+        }
+
         return {
-            monthlySales: Object.entries(monthlyStats).map(([name, amount]) => ({ name, amount })),
+            monthlySales: sortedMonths,
             categoryDistribution,
             cityDistribution
         };

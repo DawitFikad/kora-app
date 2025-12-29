@@ -12,6 +12,8 @@ router.get("/my", authenticate, authorize([Role.ORGANIZER]), PayoutController.ge
 
 // Admin: Manage Payouts
 router.get("/pending", authenticate, authorize([Role.ADMIN]), PayoutController.listPendingPayouts);
+router.get("/processed", authenticate, authorize([Role.ADMIN]), PayoutController.listProcessedPayouts);
 router.post("/:batchId/approve", authenticate, authorize([Role.ADMIN]), PayoutController.approvePayout);
+router.post("/:batchId/reject", authenticate, authorize([Role.ADMIN]), PayoutController.rejectPayout);
 
 export default router;
