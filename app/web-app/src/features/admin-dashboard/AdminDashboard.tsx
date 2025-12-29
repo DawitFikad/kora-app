@@ -33,8 +33,11 @@ import { ContentManagementView } from './components/ContentManagementView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { PlatformControlView } from './components/PlatformControlView';
 
+import { ReportsView } from './components/ReportsView';
+import { TeamManagementView } from './components/TeamManagementView';
+
 // --- Types ---
-type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Status' | 'Fraud' | 'Content' | 'Analytics' | 'Settings' | 'Monitoring';
+type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Status' | 'Fraud' | 'Content' | 'Analytics' | 'Reports' | 'Invite Admin' | 'Settings' | 'Monitoring';
 
 // --- Main Admin Dashboard Component ---
 
@@ -108,6 +111,8 @@ const AdminDashboard = () => {
         { icon: ShieldAlert, label: 'Fraud' as AdminTab, display: t('admin.fraud'), key: 'fraud' },
         { icon: FileText, label: 'Content' as AdminTab, display: t('admin.content'), key: 'content' },
         { icon: Activity, label: 'Analytics' as AdminTab, display: t('admin.analytics'), key: 'analytics' },
+        { icon: BarChart3, label: 'Reports' as AdminTab, display: t('admin.reports', 'Reports'), key: 'reports' },
+        { icon: Users, label: 'Invite Admin' as AdminTab, display: t('admin.invite', 'Invite Admin'), key: 'invite_admin' },
         { icon: ShieldAlert, label: 'Monitoring' as AdminTab, display: t('admin.monitoring', 'System Health'), key: 'platform_control' },
     ];
 
@@ -115,7 +120,7 @@ const AdminDashboard = () => {
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'Dashboard': return <AdminOverview onNavigate={(tab: AdminTab) => setActiveTab(tab)} />;
+            case 'Dashboard': return <AdminOverview />;
             case 'Organizer Approvals': return <OrganizerApprovalsView />;
             case 'Event Approvals': return <EventApprovalsView />;
             case 'Fraud': return <FraudMonitoringView />;
@@ -126,6 +131,8 @@ const AdminDashboard = () => {
             case 'Settlement Status': return <PayoutsManagementView />;
             case 'Content': return <ContentManagementView />;
             case 'Analytics': return <AnalyticsView />;
+            case 'Reports': return <ReportsView />;
+            case 'Invite Admin': return <TeamManagementView />;
             case 'Monitoring': return <PlatformControlView />;
             case 'Settings': return <AdminSettingsView />;
             default: return <AdminOverview />;
@@ -185,7 +192,9 @@ const AdminDashboard = () => {
                         {
                             title: 'Analytics',
                             items: [
-                                { icon: Activity, label: 'Analytics', display: t('admin.analytics') }
+                                { icon: Activity, label: 'Analytics' as AdminTab, display: t('admin.analytics') },
+                                { icon: BarChart3, label: 'Reports' as AdminTab, display: t('admin.reports', 'Reports') },
+                                { icon: Users, label: 'Invite Admin' as AdminTab, display: t('admin.invite', 'Invite Admin') }
                             ]
                         },
                         {

@@ -99,60 +99,35 @@ export const AdminOverview = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div style={{ paddingBottom: '40px' }}>
                 {/* 1. Top Stats Row */}
-                <div style={{ display: 'flex', gap: '20px', marginBottom: '24px', alignItems: 'center' }}>
-                    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                        <StatCard
-                            label={t('admin.active_users', 'Total customers')}
-                            value={stats.activeUsers.toLocaleString()}
-                            trend="+2.5%"
-                            trendColor="#10B981"
-                            icon={UserPlus}
-                        />
-                        <StatCard
-                            label={t('admin.total_gmv', 'Total revenue')}
-                            value={`ETB ${(stats.totalGMV / 1000).toFixed(1)}k`}
-                            trend="+0.5%"
-                            trendColor="#10B981"
-                            icon={DollarSign}
-                        />
-                        <StatCard
-                            label={t('admin.tickets_sold', 'Total orders')}
-                            value={stats.totalTicketsSold.toLocaleString()}
-                            trend="+0.2%"
-                            trendColor="#EF4444"
-                            icon={CheckCircle2}
-                        />
-                        <StatCard
-                            label={t('admin.pending_payouts', 'Total returns')}
-                            value={`ETB ${stats.pendingPayouts.toLocaleString()}`}
-                            trend="+0.12%"
-                            trendColor="#10B981"
-                            icon={Activity}
-                        />
-                    </div>
-                    {/* Add/Action Button */}
-                    <button
-                        onClick={() => setShowInviteModal(true)}
-                        style={{
-                            height: '100%',
-                            padding: '0 24px',
-                            background: 'white',
-                            border: '1px solid var(--border)',
-                            borderRadius: '16px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            minHeight: '100px',
-                            gap: '8px'
-                        }}
-                    >
-                        <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <UserPlus size={14} color="var(--text-muted)" />
-                        </div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.invite_admin', 'Add user')}</span>
-                    </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '24px' }}>
+                    <StatCard
+                        label={t('admin.active_users', 'Total customers')}
+                        value={stats.activeUsers.toLocaleString()}
+                        trend="+2.5%"
+                        trendColor="#10B981"
+                        icon={UserPlus}
+                    />
+                    <StatCard
+                        label={t('admin.total_gmv', 'Total revenue')}
+                        value={`ETB ${(stats.totalGMV / 1000).toFixed(1)}k`}
+                        trend="+0.5%"
+                        trendColor="#10B981"
+                        icon={DollarSign}
+                    />
+                    <StatCard
+                        label={t('admin.tickets_sold', 'Total orders')}
+                        value={stats.totalTicketsSold.toLocaleString()}
+                        trend="+0.2%"
+                        trendColor="#EF4444"
+                        icon={CheckCircle2}
+                    />
+                    <StatCard
+                        label={t('admin.pending_payouts', 'Total returns')}
+                        value={`ETB ${stats.pendingPayouts.toLocaleString()}`}
+                        trend="+0.12%"
+                        trendColor="#10B981"
+                        icon={Activity}
+                    />
                 </div>
 
                 {/* 2. Middle Main Chart Row (Splitted) */}
@@ -202,32 +177,57 @@ export const AdminOverview = () => {
                         </div>
                     </div>
 
-                    {/* Right: Upcoming Features / Events */}
-                    <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Phase 2 Features</h3>
-                            <span style={{ fontSize: '0.7rem', color: '#8B5CF6', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>POST-LAUNCH</span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            {[
-                                { title: 'Loyalty Points', date: 'Q1', desc: 'Rewards & Redemption', color: '#10B981' },
-                                { title: 'Wallet Balance', date: 'Q1', desc: 'Integrated stored value', color: '#F59E0B' },
-                                { title: 'Diaspora Cards', date: 'Q2', desc: 'International payment gateway', color: '#3B82F6' },
-                                { title: 'Seat Map Designer', date: 'Q2', desc: 'Visual layout editor', color: '#EC4899' },
-                                { title: 'White-label Pages', date: 'Q3', desc: 'Custom organizer domains', color: '#8B5CF6' },
-                                { title: 'Live Streaming', date: 'Q3', desc: 'Virtual event support', color: '#64748B' }
-                            ].map((feat, i) => (
-                                <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '40px' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{feat.date}</span>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: feat.color }} />
-                                    </div>
-                                    <div style={{ flex: 1, paddingBottom: '16px', borderBottom: i < 5 ? '1px solid var(--border)' : 'none' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-main)' }}>{feat.title}</h4>
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{feat.desc}</p>
-                                    </div>
+                    {/* Right Column: Calendar & Features */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+                        {/* 🗓️ Calendar Widget */}
+                        <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', background: '#2563EB', color: 'white' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>October 2026</h3>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ cursor: 'pointer', opacity: 0.7 }}>&lt;</span>
+                                    <span style={{ cursor: 'pointer', opacity: 0.7 }}>&gt;</span>
                                 </div>
-                            ))}
+                            </div>
+                            {/* Calendar Grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
+                                <span style={{ opacity: 0.6 }}>Su</span><span style={{ opacity: 0.6 }}>Mo</span><span style={{ opacity: 0.6 }}>Tu</span><span style={{ opacity: 0.6 }}>We</span><span style={{ opacity: 0.6 }}>Th</span><span style={{ opacity: 0.6 }}>Fr</span><span style={{ opacity: 0.6 }}>Sa</span>
+
+                                <span style={{ opacity: 0.3 }}>29</span><span style={{ opacity: 0.3 }}>30</span>
+                                <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                                <span>6</span><span>7</span><span>8</span><span style={{ background: 'white', color: '#2563EB', borderRadius: '8px', padding: '2px 0' }}>9</span><span>10</span><span>11</span><span>12</span>
+                                <span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span>
+                                <span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span>
+                            </div>
+                        </div>
+
+                        {/* Phase 2 Features List */}
+                        <div className="admin-card" style={{ flex: 1, padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Phase 2 Features</h3>
+                                <span style={{ fontSize: '0.7rem', color: '#8B5CF6', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>POST-LAUNCH</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {[
+                                    { title: 'Loyalty Points', date: 'Q1', desc: 'Rewards & Redemption', color: '#10B981' },
+                                    { title: 'Wallet Balance', date: 'Q1', desc: 'Integrated stored value', color: '#F59E0B' },
+                                    { title: 'Diaspora Cards', date: 'Q2', desc: 'International payment gateway', color: '#3B82F6' },
+                                    { title: 'Seat Map Designer', date: 'Q2', desc: 'Visual layout editor', color: '#EC4899' },
+                                    { title: 'White-label Pages', date: 'Q3', desc: 'Custom organizer domains', color: '#8B5CF6' },
+                                    { title: 'Live Streaming', date: 'Q3', desc: 'Virtual event support', color: '#64748B' }
+                                ].map((feat, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '40px' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{feat.date}</span>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: feat.color }} />
+                                        </div>
+                                        <div style={{ flex: 1, paddingBottom: '16px', borderBottom: i < 5 ? '1px solid var(--border)' : 'none' }}>
+                                            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-main)' }}>{feat.title}</h4>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{feat.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
