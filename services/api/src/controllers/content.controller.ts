@@ -79,4 +79,32 @@ export class ContentController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+
+    static async getBanners(req: Request, res: Response) {
+        try {
+            const banners = await ContentService.listBanners();
+            res.json({ success: true, data: banners });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async addBanner(req: Request, res: Response) {
+        try {
+            const banner = await ContentService.createBanner(req.body);
+            res.json({ success: true, data: banner });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async removeBanner(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            await ContentService.deleteBanner(parseInt(id));
+            res.json({ success: true, message: "Banner deleted" });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 }

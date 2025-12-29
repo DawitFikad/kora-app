@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, MapPin, Tag, Loader2, X, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, MapPin, Tag, Loader2, X, Calendar as CalendarIcon, Image as ImageIcon } from 'lucide-react';
 import { AdminPageHeader } from './AdminPageHeader';
 import { ContentService } from '../../../core/api/content.service';
 import { AdminService } from '../../../core/api/admin.service';
@@ -8,10 +8,12 @@ import { AdminService } from '../../../core/api/admin.service';
 export const ContentManagementView = () => {
     const [categories, setCategories] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
+    const [banners, setBanners] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [newCat, setNewCat] = useState({ name: '', slug: '' });
     const [newCity, setNewCity] = useState({ name: '', slug: '' });
+    const [newBanner, setNewBanner] = useState({ title: '', imageUrl: '', linkUrl: '', order: 0 });
 
     // Details handling
     const [selectedItem, setSelectedItem] = useState<{ type: 'category' | 'city', data: any } | null>(null);
@@ -20,12 +22,14 @@ export const ContentManagementView = () => {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [catRes, cityRes] = await Promise.all([
+            const [catRes, cityRes, bannerRes] = await Promise.all([
                 ContentService.getCategories(),
-                ContentService.getCities()
+                ContentService.getCities(),
+                ContentService.getBanners()
             ]);
             if (catRes?.success) setCategories(catRes.data);
             if (cityRes?.success) setCities(cityRes.data);
+            if (bannerRes?.success) setBanners(bannerRes.data);
         } catch (err) {
             console.error(err);
         } finally {
@@ -69,6 +73,15 @@ export const ContentManagementView = () => {
         } catch (err: any) { alert(err.error || 'Failed to add'); }
     };
 
+    const handleAddBanner = async () => {
+        if (!newBanner.imageUrl) return;
+        try {
+            await ContentService.addBanner(newBanner);
+            setNewBanner({ title: '', imageUrl: '', linkUrl: '', order: 0 });
+            fetchData();
+        } catch (err: any) { alert('Failed to add banner'); }
+    };
+
     const handleDeleteCat = async (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
         if (!confirm('Are you sure? This might affect existing events.')) return;
@@ -87,6 +100,14 @@ export const ContentManagementView = () => {
         } catch (err: any) { alert(err.error || 'Failed to delete'); }
     };
 
+    const handleDeleteBanner = async (id: number) => {
+        if (!confirm('Delete this banner?')) return;
+        try {
+            await ContentService.removeBanner(id);
+            fetchData();
+        } catch (err: any) { alert('Failed to delete banner'); }
+    };
+
     if (isLoading) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
@@ -97,7 +118,7 @@ export const ContentManagementView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader title="Content Management" subtitle="Manage platform metadata: Categories and Cities." />
+            <AdminPageHeader title="Content Management" subtitle="Manage platform metadata: Categories, Cities, and Hero Banners." />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
                 {/* Categories Section */}
@@ -112,15 +133,15 @@ export const ContentManagementView = () => {
                             placeholder="Name"
                             value={newCat.name}
                             onChange={e => setNewCat({ ...newCat, name: e.target.value })}
-                            style={{ flex: 1, background: '#0B0E14', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px' }}
+                            style={{ flex: 1, background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px', color: 'var(--text-main)' }}
                         />
                         <input
                             placeholder="Slug"
                             value={newCat.slug}
                             onChange={e => setNewCat({ ...newCat, slug: e.target.value.toLowerCase() })}
-                            style={{ flex: 1, background: '#0B0E14', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px' }}
+                            style={{ flex: 1, background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px', color: 'var(--text-main)' }}
                         />
-                        <button onClick={handleAddCategory} style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800 }}>
+                        <button onClick={handleAddCategory} style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>
                             <Plus size={18} />
                         </button>
                     </div>
@@ -132,11 +153,9 @@ export const ContentManagementView = () => {
                                 onClick={() => handleFetchDetail('category', c.id)}
                                 style={{
                                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    background: 'rgba(255,255,255,0.03)', padding: '12px 16px', borderRadius: '10px',
-                                    cursor: 'pointer', border: '1px solid transparent', transition: 'all 0.2s'
+                                    background: 'var(--bg-subtle)', padding: '12px 16px', borderRadius: '10px',
+                                    cursor: 'pointer', border: '1px solid var(--border)', transition: 'all 0.2s'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(217, 70, 239, 0.3)'}
-                                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
                             >
                                 <div>
                                     <p style={{ fontWeight: 700 }}>{c.name}</p>
@@ -164,15 +183,15 @@ export const ContentManagementView = () => {
                             placeholder="City Name"
                             value={newCity.name}
                             onChange={e => setNewCity({ ...newCity, name: e.target.value })}
-                            style={{ flex: 1, background: '#0B0E14', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px' }}
+                            style={{ flex: 1, background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px', color: 'var(--text-main)' }}
                         />
                         <input
                             placeholder="Slug"
                             value={newCity.slug}
                             onChange={e => setNewCity({ ...newCity, slug: e.target.value.toLowerCase() })}
-                            style={{ flex: 1, background: '#0B0E14', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px' }}
+                            style={{ flex: 1, background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px', color: 'var(--text-main)' }}
                         />
-                        <button onClick={handleAddCity} style={{ background: '#3B82F6', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800 }}>
+                        <button onClick={handleAddCity} style={{ background: '#3B82F6', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>
                             <Plus size={18} />
                         </button>
                     </div>
@@ -187,8 +206,6 @@ export const ContentManagementView = () => {
                                     background: 'rgba(255,255,255,0.03)', padding: '12px 16px', borderRadius: '10px',
                                     cursor: 'pointer', border: '1px solid transparent', transition: 'all 0.2s'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)'}
-                                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
                             >
                                 <div>
                                     <p style={{ fontWeight: 700 }}>{c.name}</p>
@@ -203,26 +220,41 @@ export const ContentManagementView = () => {
                 </div>
             </div>
 
-            {/* Featured Events Control */}
+            {/* Homepage Hero Banners */}
             <div className="admin-card" style={{ padding: '24px', marginTop: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                    <Plus color="var(--primary)" />
-                    <h3 style={{ fontWeight: 800 }}>Featured Programming</h3>
+                    <ImageIcon color="var(--primary)" />
+                    <h3 style={{ fontWeight: 800 }}>Homepage Hero Banners</h3>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                    {/* Actually, we need to fetch all approved events to toggle them.
-                        For now, I'll show a combined list or instructions.
-                    */}
-                    <div style={{ gridColumn: 'span 3', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                            To feature an event on the homepage banner, go to the <strong>Event Approvals</strong> tab and toggle the "Featured" status during review or from the event details.
-                            Currently, all approved events are listed in the category/city details below where you can monitor their status.
-                        </p>
-                    </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+                    <input placeholder="Banner Title" value={newBanner.title} onChange={e => setNewBanner({ ...newBanner, title: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
+                    <input placeholder="Image URL" value={newBanner.imageUrl} onChange={e => setNewBanner({ ...newBanner, imageUrl: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
+                    <input placeholder="Link URL" value={newBanner.linkUrl} onChange={e => setNewBanner({ ...newBanner, linkUrl: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
+                    <button onClick={handleAddBanner} style={{ background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>Add Banner</button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                    {banners.map(b => (
+                        <div key={b.id} style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', height: '160px', border: '1px solid var(--border)' }}>
+                            <img src={b.imageUrl} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} />
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.8))' }}>
+                                <h4 style={{ fontSize: '0.9rem', fontWeight: 800 }}>{b.title || 'No Title'}</h4>
+                                <button onClick={() => handleDeleteBanner(b.id)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(239, 68, 68, 0.2)', color: '#EF4444', border: 'none', padding: '6px', borderRadius: '50%', cursor: 'pointer' }}>
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    {banners.length === 0 && (
+                        <div style={{ gridColumn: 'span 3', padding: '40px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed var(--border)' }}>
+                            <p style={{ color: 'var(--text-muted)' }}>No homepage banners active.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Selection Detail Panel (Modal style) */}
+            {/* Selection Detail Panel */}
             <AnimatePresence>
                 {selectedItem && (
                     <div style={{
@@ -232,7 +264,7 @@ export const ContentManagementView = () => {
                     }}>
                         <motion.div
                             initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }}
-                            style={{ width: '450px', height: '100%', background: '#0C1017', borderLeft: '1px solid var(--border)', padding: '40px' }}
+                            style={{ width: '450px', height: '100%', background: 'var(--bg-sidebar)', borderLeft: '1px solid var(--border)', padding: '40px' }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                                 <div>
@@ -248,12 +280,12 @@ export const ContentManagementView = () => {
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
                                 {selectedItem.data.events?.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '16px' }}>
+                                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'var(--bg-subtle)', borderRadius: '16px' }}>
                                         No events found for this {selectedItem.type}.
                                     </div>
                                 ) : (
                                     selectedItem.data.events.map((evt: any) => (
-                                        <div key={evt.id} style={{ background: '#12171F', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
+                                        <div key={evt.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                                                 <h4 style={{ fontWeight: 800, fontSize: '0.95rem' }}>{evt.title}</h4>
                                                 <span style={{
@@ -265,7 +297,7 @@ export const ContentManagementView = () => {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                     <CalendarIcon size={14} />
-                                                    {new Date(evt.dateTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    {new Date(evt.dateTime).toLocaleDateString()}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                     <MapPin size={14} />

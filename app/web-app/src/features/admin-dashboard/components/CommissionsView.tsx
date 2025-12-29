@@ -4,10 +4,27 @@ import { Download, Loader2, DollarSign, Wallet, ArrowUpRight } from 'lucide-reac
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
 
+import { exportToCSV } from '../../../core/utils/export';
+
 export const CommissionsView = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    const handleExport = () => {
+        const exportData = transactions.map(tx => ({
+            id: tx.id,
+            event: tx.event?.title || 'N/A',
+            organizer: tx.event?.organizer?.organizationName || 'N/A',
+            type: tx.type,
+            amount: tx.amount,
+            fee: tx.feeAmount,
+            net: tx.netAmount,
+            status: tx.status,
+            date: new Date(tx.createdAt).toLocaleString()
+        }));
+        exportToCSV(exportData, `commission_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+    };
 
     const fetchData = async () => {
         try {
@@ -73,7 +90,10 @@ export const CommissionsView = () => {
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Incoming Transaction Audit</h3>
-                    <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '8px', color: 'white', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                        onClick={handleExport}
+                        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                    >
                         <Download size={16} /> Download Ledger
                     </button>
                 </div>

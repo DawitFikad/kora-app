@@ -76,4 +76,22 @@ export class ContentService {
             }
         });
     }
+
+    static async listBanners() {
+        return prisma.homepageBanner.findMany({
+            orderBy: { order: 'asc' }
+        });
+    }
+
+    static async createBanner(data: any) {
+        return prisma.homepageBanner.create({
+            data
+        });
+    }
+
+    static async deleteBanner(id: number) {
+        return prisma.homepageBanner.delete({
+            where: { id }
+        });
+    }
 }

@@ -160,9 +160,31 @@ export class AdminAnalyticsService {
             return { name: cat.name, value: total };
         });
 
+        // 3. Sales by City
+        const citySales: any[] = await prisma.city.findMany({
+            include: {
+                events: {
+                    include: {
+                        transactions: {
+                            where: { type: 'TICKET_PURCHASE', status: 'SETTLED' },
+                            select: { amount: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        const cityDistribution = citySales.map((city: any) => {
+            const total = city.events.reduce((sum: number, evt: any) => {
+                return sum + evt.transactions.reduce((s: number, tx: any) => s + Number(tx.amount), 0);
+            }, 0);
+            return { name: city.name, value: total };
+        });
+
         return {
             monthlySales: Object.entries(monthlyStats).map(([name, amount]) => ({ name, amount })),
-            categoryDistribution
+            categoryDistribution,
+            cityDistribution
         };
     }
 }

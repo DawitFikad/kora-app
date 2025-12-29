@@ -18,4 +18,8 @@ export const ContentService = {
 
     addCity: (name: string, slug: string) => api.post<any, ApiResponse<any>>('/content/cities', { name, slug }),
     removeCity: (id: number) => api.delete<any, ApiResponse<any>>(`/content/cities/${id}`),
+
+    getBanners: () => api.get<any, ApiResponse<any[]>>('/content/banners'),
+    addBanner: (data: any) => api.post<any, ApiResponse<any>>('/content/banners', data),
+    removeBanner: (id: number) => api.delete<any, ApiResponse<any>>(`/content/banners/${id}`),
 };

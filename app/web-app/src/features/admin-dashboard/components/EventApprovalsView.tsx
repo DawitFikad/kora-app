@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Filter, Loader2, Calendar, MapPin, Tag, ShieldCheck } from 'lucide-react';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
+import { exportToCSV } from '../../../core/utils/export';
+import { Download } from 'lucide-react';
 
 export const EventApprovalsView = () => {
+    const { t } = useTranslation();
     const [events, setEvents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
@@ -55,12 +59,27 @@ export const EventApprovalsView = () => {
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <AdminPageHeader
-                title="Event Approval Queue"
-                subtitle={`Review and moderate pending event applications (${pendingEvents.length} items waiting)`}
+                title={t('admin.events')}
+                subtitle={t('admin.events_queue_desc', 'Review and moderate pending event applications')}
                 actions={
-                    <button className="btn-blue" style={{ background: '#12171F', color: 'white', border: '1px solid var(--border)' }}>
-                        <Filter size={16} /> Advanced Search
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            onClick={() => exportToCSV(pendingEvents.map(e => ({
+                                Title: e.title,
+                                Organizer: e.organizer?.organizationName,
+                                Venue: e.venue,
+                                City: e.city?.name,
+                                Date: e.dateTime,
+                                Status: e.status
+                            })), 'pending_events.csv')}
+                            className="btn-blue" style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+                        >
+                            <Download size={16} /> {t('admin.export')}
+                        </button>
+                        <button className="btn-blue" style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px' }}>
+                            <Filter size={16} /> {t('admin.advanced_search', 'Advanced Search')}
+                        </button>
+                    </div>
                 }
             />
 
@@ -114,14 +133,14 @@ export const EventApprovalsView = () => {
                                         placeholder="Comm %"
                                         defaultValue={10}
                                         id={`comm-${event.id}`}
-                                        style={{ width: '70px', background: '#0B0E14', border: '1px solid var(--border)', padding: '6px', borderRadius: '6px', fontSize: '0.75rem', color: 'white' }}
+                                        style={{ width: '70px', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '6px', borderRadius: '6px', fontSize: '0.75rem', color: 'var(--text-main)' }}
                                     />
                                     <input
                                         type="number"
                                         placeholder="Conv Fee"
                                         defaultValue={0}
                                         id={`conv-${event.id}`}
-                                        style={{ width: '70px', background: '#0B0E14', border: '1px solid var(--border)', padding: '6px', borderRadius: '6px', fontSize: '0.75rem', color: 'white' }}
+                                        style={{ width: '70px', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '6px', borderRadius: '6px', fontSize: '0.75rem', color: 'var(--text-main)' }}
                                     />
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>

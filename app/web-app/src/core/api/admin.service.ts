@@ -27,6 +27,8 @@ export const AdminService = {
     invalidateTicket: (ticketId: string, reason: string) => api.post(`/tickets/${ticketId}/invalidate`, { reason }),
     getFraudAlerts: () => api.get('/security/fraud/alerts'),
     getFraudMetrics: () => api.get('/security/fraud/metrics'),
+    resolveFraudAlert: (id: number, adminNote: string) => api.patch(`/security/fraud/alerts/${id}/resolve`, { adminNote }),
+    getFraudAlertDetail: (id: number) => api.get(`/security/fraud/alerts/${id}`),
 
     // Platform KPIs
     getStats: () => api.get('/admin/stats'),

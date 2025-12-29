@@ -530,6 +530,18 @@ model NotificationLog {
   createdAt DateTime @default(now())
 }
 
+model HomepageBanner {
+  id          Int      @id @default(autoincrement())
+  title       String?
+  subtitle    String?
+  imageUrl    String
+  linkUrl     String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum RefundStatus {
   PENDING
   APPROVED

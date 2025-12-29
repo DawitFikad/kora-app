@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AuthService } from '../../core/api/auth.service';
 import { AdminService } from '../../core/api/admin.service';
 import {
@@ -13,7 +14,8 @@ import {
     FileText,
     Activity,
     Calendar,
-    LogOut
+    LogOut,
+    Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -27,18 +29,24 @@ import { PayoutsManagementView } from './components/PayoutManagementView';
 import { AdminSettingsView } from './components/AdminSettingsView';
 import { ContentManagementView } from './components/ContentManagementView';
 import { AnalyticsView } from './components/AnalyticsView';
+import { PlatformControlView } from './components/PlatformControlView';
 
 // --- Types ---
-type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Fraud' | 'Content' | 'Analytics' | 'Settings';
+type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Fraud' | 'Content' | 'Analytics' | 'Settings' | 'Monitoring';
 
 // --- Main Admin Dashboard Component ---
 
 const AdminDashboard = () => {
+    const { t, i18n } = useTranslation();
     const [activeTab, setActiveTab] = useState<AdminTab>('Dashboard');
     const [pendingCount, setPendingCount] = useState(0);
     const [eventPendingCount, setEventPendingCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
+
+    const toggleLanguage = () => {
+        i18n.changeLanguage(i18n.language === 'en' ? 'am' : 'en');
+    };
 
     useEffect(() => {
         const fetchCounts = async () => {
@@ -76,21 +84,22 @@ const AdminDashboard = () => {
     };
 
     const navItems = [
-        { icon: Layout, label: 'Dashboard' as AdminTab, display: 'Dashboard Overview' },
-        { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined },
-        { icon: Calendar, label: 'Event Approvals' as AdminTab, count: eventPendingCount > 0 ? eventPendingCount : undefined },
-        { icon: BarChart3, label: 'Commissions' as AdminTab, display: 'Commissions & Fees' },
-        { icon: DollarSign, label: 'GMV' as AdminTab, display: 'GMV & Payouts' },
-        { icon: ShieldAlert, label: 'Fraud' as AdminTab, display: 'Fraud Monitoring' },
-        { icon: FileText, label: 'Content' as AdminTab, display: 'Content Management' },
-        { icon: Activity, label: 'Analytics' as AdminTab, display: 'Detailed Analytics' },
+        { icon: Layout, label: 'Dashboard' as AdminTab, display: t('admin.dashboard'), key: 'dashboard' },
+        { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers'), key: 'organizers' },
+        { icon: Calendar, label: 'Event Approvals' as AdminTab, count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events'), key: 'events' },
+        { icon: BarChart3, label: 'Commissions' as AdminTab, display: t('admin.commissions'), key: 'commissions' },
+        { icon: DollarSign, label: 'GMV' as AdminTab, display: t('admin.payouts'), key: 'payouts' },
+        { icon: ShieldAlert, label: 'Fraud' as AdminTab, display: t('admin.fraud'), key: 'fraud' },
+        { icon: FileText, label: 'Content' as AdminTab, display: t('admin.content'), key: 'content' },
+        { icon: Activity, label: 'Analytics' as AdminTab, display: t('admin.analytics'), key: 'analytics' },
+        { icon: ShieldAlert, label: 'Monitoring' as AdminTab, display: t('admin.platform_control'), key: 'platform_control' },
     ];
 
     const currentNavItem = navItems.find(n => n.label === activeTab) || (activeTab === 'Settings' ? { display: 'Account Settings' } : null);
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'Dashboard': return <AdminOverview />;
+            case 'Dashboard': return <AdminOverview onNavigate={(tab: AdminTab) => setActiveTab(tab)} />;
             case 'Organizer Approvals': return <OrganizerApprovalsView />;
             case 'Event Approvals': return <EventApprovalsView />;
             case 'Fraud': return <FraudMonitoringView />;
@@ -98,15 +107,16 @@ const AdminDashboard = () => {
             case 'GMV': return <PayoutsManagementView />;
             case 'Content': return <ContentManagementView />;
             case 'Analytics': return <AnalyticsView />;
+            case 'Monitoring': return <PlatformControlView />;
             case 'Settings': return <AdminSettingsView />;
             default: return <AdminOverview />;
         }
     }
 
     return (
-        <div className="container-fluid" style={{ background: '#0B0E14' }}>
+        <div className="container-fluid" style={{ background: 'var(--bg-main)' }}>
             {/* 🟢 Admin Sidebar */}
-            <aside className="sidebar" style={{ width: '280px', background: '#0C1017' }}>
+            <aside className="sidebar" style={{ width: '280px', background: 'var(--bg-sidebar)' }}>
                 <div className="logo-section" style={{ marginBottom: '40px' }}>
                     <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#E0E0E0' }}>
                         <img src="https://ui-avatars.com/api/?name=Admin+Portal&background=000&color=fff" style={{ width: '100%' }} />
@@ -136,27 +146,31 @@ const AdminDashboard = () => {
                 </nav>
 
                 <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+                    <div className="nav-item" onClick={toggleLanguage}>
+                        <Globe size={18} />
+                        <span>{i18n.language === 'en' ? 'Amharic (አማርኛ)' : 'English'}</span>
+                    </div>
                     <div className="nav-item" onClick={() => setActiveTab('Settings')}>
                         <Settings size={18} />
-                        <span>Settings</span>
+                        <span>{t('admin.settings', 'Settings')}</span>
                     </div>
                     <div className="nav-item" style={{ color: '#EF4444' }} onClick={handleLogout}>
                         <LogOut size={18} />
-                        <span>Logout</span>
+                        <span>{t('admin.logout')}</span>
                     </div>
                 </div>
             </aside>
 
             {/* 🔵 Admin Main Content */}
             <main className="main-content" style={{ padding: '32px 40px' }}>
-                <header className="top-header" style={{ marginBottom: '32px' }}>
+                <header className="top-header" style={{ marginBottom: '32px', background: 'transparent' }}>
                     <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{(currentNavItem as any)?.display || activeTab}</h2>
 
-                    <div className="search-pill" style={{ width: '400px', background: '#12171F' }}>
-                        <Search size={18} color="#57606A" />
+                    <div className="search-pill" style={{ width: '400px', background: 'var(--bg-card)' }}>
+                        <Search size={18} color="var(--text-muted)" />
                         <input
                             type="text"
-                            placeholder="Search event ID, user, or email..."
+                            placeholder={t('admin.search')}
                             style={{ fontSize: '0.85rem' }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
@@ -187,7 +201,7 @@ const AdminDashboard = () => {
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                     style={{
                                         position: 'absolute', top: '50px', right: 0, width: '320px',
-                                        background: '#161B22', border: '1px solid var(--border)',
+                                        background: 'var(--bg-card)', border: '1px solid var(--border)',
                                         borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
                                         zIndex: 1000, overflow: 'hidden'
                                     }}
@@ -283,52 +297,6 @@ const AdminDashboard = () => {
                     {renderContent()}
                 </AnimatePresence>
             </main>
-
-            <style>{`
-                .admin-stat-card-mini {
-                    background: #12171F;
-                    border: 1px solid var(--border);
-                    border-radius: 12px;
-                    padding: 20px;
-                    transition: all 0.2s;
-                    cursor: pointer;
-                }
-                .admin-stat-card-mini:hover {
-                    border-color: rgba(255,255,255,0.1);
-                    background: #161B22;
-                }
-                .admin-stat-card-main {
-                    background: #12171F;
-                    border: 1px solid var(--border);
-                    border-radius: 16px;
-                    padding: 24px;
-                }
-                .admin-card {
-                    background: #12171F;
-                    border: 1px solid var(--border);
-                    border-radius: 16px;
-                }
-                .admin-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-                .admin-table th {
-                    text-align: left;
-                    padding: 16px 24px;
-                    color: var(--text-muted);
-                    font-size: 0.75rem;
-                    font-weight: 800;
-                    letter-spacing: 0.05em;
-                    border-bottom: 1px solid var(--border);
-                }
-                .admin-table td {
-                    padding: 20px 24px;
-                    border-bottom: 1px solid var(--border);
-                }
-                .admin-table tr:hover {
-                    background: rgba(255,255,255,0.01);
-                }
-            `}</style>
         </div>
     );
 };

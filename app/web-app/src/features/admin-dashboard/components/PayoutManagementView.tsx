@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
     DollarSign,
@@ -10,8 +11,11 @@ import {
 } from 'lucide-react';
 import { AdminService } from '../../../core/api/admin.service';
 import { AdminPageHeader } from './AdminPageHeader';
+import { exportToCSV } from '../../../core/utils/export';
+import { Download } from 'lucide-react';
 
 export const PayoutsManagementView = () => {
+    const { t } = useTranslation();
     const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -61,8 +65,22 @@ export const PayoutsManagementView = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AdminPageHeader
-                title="GMV & Payout Management"
-                subtitle="Track platform sales volume and settle organizer balances."
+                title={t('admin.payouts')}
+                subtitle={t('admin.payouts_desc', 'Track platform sales volume and settle organizer balances.')}
+                actions={
+                    <button
+                        onClick={() => exportToCSV(pendingPayouts.map(p => ({
+                            Organizer: p.wallet?.organizer?.organizationName,
+                            Amount: p.amount,
+                            Method: p.method,
+                            Details: p.payoutDetails,
+                            Requested: p.createdAt
+                        })), 'pending_payouts.csv')}
+                        className="btn-blue" style={{ background: '#12171F', color: 'white', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+                    >
+                        <Download size={16} /> {t('admin.export_queue', 'Export Queue')}
+                    </button>
+                }
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
@@ -124,7 +142,7 @@ export const PayoutsManagementView = () => {
                                         <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Balance: ETB {p.wallet?.availableBalance.toLocaleString()}</p>
                                     </td>
                                     <td>
-                                        <p style={{ fontWeight: 900, color: 'white' }}>ETB {Number(p.amount).toLocaleString()}</p>
+                                        <p style={{ fontWeight: 900, color: 'var(--text-main)' }}>ETB {Number(p.amount).toLocaleString()}</p>
                                     </td>
                                     <td>
                                         <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3B82F6' }}>{p.method}</span>
@@ -162,11 +180,11 @@ export const PayoutsManagementView = () => {
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Settlement Logic</h3>
                 </div>
                 <div style={{ padding: '24px', display: 'flex', gap: '24px' }}>
-                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div style={{ flex: 1, background: 'var(--bg-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
                         <h4 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '12px', color: '#3B82F6' }}>AUTOMATED PAYOUTS</h4>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mobile Money (TeleBirr/CBE Birr) payouts are processed via B2B API upon approval. Ensure merchant gateway has sufficient float.</p>
                     </div>
-                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div style={{ flex: 1, background: 'var(--bg-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
                         <h4 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '12px', color: '#F59E0B' }}>MANUAL SETTLEMENT</h4>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Bank transfers require manual processing. Approve the request here AFTER the bank transfer is confirmed externally.</p>
                     </div>

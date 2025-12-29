@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
+import { exportToCSV } from '../../../core/utils/export';
+import { Download } from 'lucide-react';
 import { Loader2, Check, X, ShieldCheck, ChevronDown, ChevronUp, Mail, Phone, MapPin } from 'lucide-react';
 
 export const OrganizerApprovalsView = () => {
+    const { t } = useTranslation();
     const [pendingOrganizers, setPendingOrganizers] = useState<any[]>([]);
     const [approvedOrganizers, setApprovedOrganizers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -55,8 +59,24 @@ export const OrganizerApprovalsView = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AdminPageHeader
-                title="Organizer Verification"
-                subtitle={`Verification queue and verified business partners.`}
+                title={t('admin.organizers')}
+                subtitle={t('admin.organizer_approvals_desc', 'Review and process official organizer registration applications.')}
+                actions={
+                    <button
+                        onClick={() => exportToCSV(pendingOrganizers.map(o => ({
+                            Organization: o.organizationName,
+                            Contact: o.contactPhone,
+                            Email: o.contactEmail,
+                            City: o.city,
+                            Details: o.payoutDetails,
+                            Status: o.status,
+                            Joined: o.createdAt
+                        })), 'organizer_applications.csv')}
+                        className="btn-blue" style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+                    >
+                        <Download size={16} /> {t('admin.export_list', 'Export List')}
+                    </button>
+                }
             />
 
             {error && (
@@ -94,7 +114,7 @@ export const OrganizerApprovalsView = () => {
                                 pendingOrganizers.map((org) => (
                                     <tr key={org.id}>
                                         <td>
-                                            <p style={{ fontWeight: 800, color: 'white' }}>{org.organizationName}</p>
+                                            <p style={{ fontWeight: 800, color: 'var(--text-main)' }}>{org.organizationName}</p>
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Reg: {new Date(org.createdAt).toLocaleDateString()}</p>
                                         </td>
                                         <td>
@@ -170,7 +190,7 @@ export const OrganizerApprovalsView = () => {
                                     <AnimatePresence>
                                         {expandedOrgId === org.id && (
                                             <tr>
-                                                <td colSpan={4} style={{ padding: '0', background: 'rgba(255,255,255,0.01)' }}>
+                                                <td colSpan={4} style={{ padding: '0', background: 'var(--bg-subtle)' }}>
                                                     <motion.div
                                                         initial={{ height: 0, opacity: 0 }}
                                                         animate={{ height: 'auto', opacity: 1 }}
@@ -199,7 +219,7 @@ export const OrganizerApprovalsView = () => {
                                                         </div>
                                                         <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
                                                             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Financial Configuration</p>
-                                                            <div style={{ background: '#0B0E14', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                                            <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
                                                                 <p style={{ fontSize: '0.85rem' }}><strong>Payout Details:</strong> {org.payoutDetails || 'No bank info provided'}</p>
                                                                 <p style={{ fontSize: '0.85rem', marginTop: '4px' }}><strong>Admin Note:</strong> <span style={{ color: 'var(--text-muted)' }}>{org.adminNote || 'No review notes found.'}</span></p>
                                                             </div>

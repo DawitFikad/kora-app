@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, ShieldCheck, Mail, ArrowRight, Loader2, MapPin, Building2 } from 'lucide-react';
 import { AuthService } from '../../core/api/auth.service';
 import { useAuth } from '../../core/context/AuthContext';
+import { useLanguage } from '../../core/context/LanguageContext';
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -12,6 +13,7 @@ interface LoginModalProps {
 
 export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps) => {
     const { login } = useAuth();
+    const { t } = useLanguage();
     const [step, setStep] = useState<'phone' | 'otp' | 'register'>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
@@ -70,7 +72,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
             } else {
                 // Regular login mode
                 if (!verifyRes.hasOrganizerProfile && verifyRes.user.role !== 'ADMIN') {
-                    setError('Organizer account not found. Please click "Create Organizer Account" to apply.');
+                    setError(t('auth.noAccountError'));
                     return;
                 }
                 await login({ accessToken: verifyRes.accessToken, user: verifyRes.user });
@@ -117,12 +119,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         {step === 'otp' && <ShieldCheck size={32} color="var(--primary)" />}
                     </div>
                     <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>
-                        {step === 'phone' && (mode === 'register' ? 'Apply as Organizer' : 'Welcome Back')}
-                        {step === 'otp' && 'Verify Identity'}
+                        {step === 'phone' && (mode === 'register' ? t('auth.applyTitle') : t('auth.welcomeTitle'))}
+                        {step === 'otp' && t('auth.verifyTitle')}
                     </h2>
                     <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>
-                        {step === 'phone' && (mode === 'register' ? 'Fill in your business details to get started' : 'Enter your registered phone number')}
-                        {step === 'otp' && `Enter the 6-digit code sent to ${phoneNumber}`}
+                        {step === 'phone' && (mode === 'register' ? t('auth.applyDesc') : t('auth.welcomeDesc'))}
+                        {step === 'otp' && `${t('auth.verifyDesc')} ${phoneNumber}`}
                     </p>
                 </div>
 
@@ -143,12 +145,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                             {mode === 'register' && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Organization Name</label>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.orgName')}</label>
                                         <div style={{ position: 'relative' }}>
                                             <Building2 size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                                             <input
                                                 type="text"
-                                                placeholder="Legal Entity Name"
+                                                placeholder={t('auth.orgNamePlaceholder')}
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
                                                 required
@@ -161,12 +163,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>City</label>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.city')}</label>
                                             <div style={{ position: 'relative' }}>
                                                 <MapPin size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                                                 <input
                                                     type="text"
-                                                    placeholder="Addis Ababa"
+                                                    placeholder={t('auth.cityPlaceholder')}
                                                     value={city}
                                                     onChange={(e) => setCity(e.target.value)}
                                                     required
@@ -178,12 +180,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                             </div>
                                         </div>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Contact Email</label>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.email')}</label>
                                             <div style={{ position: 'relative' }}>
                                                 <Mail size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                                                 <input
                                                     type="email"
-                                                    placeholder="gmail/outlook..."
+                                                    placeholder={t('auth.emailPlaceholder')}
                                                     value={email}
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     required
@@ -196,10 +198,10 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                         </div>
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Payout (Bank / Mobile Account)</label>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.payout')}</label>
                                         <input
                                             type="text"
-                                            placeholder="CBE / TeleBirr details..."
+                                            placeholder={t('auth.payoutPlaceholder')}
                                             value={payoutDetails}
                                             onChange={(e) => setPayoutDetails(e.target.value)}
                                             required
@@ -213,12 +215,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                             )}
 
                             <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Phone Number</label>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>{t('auth.phone')}</label>
                                 <div style={{ position: 'relative' }}>
                                     <Phone size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                                     <input
                                         type="tel"
-                                        placeholder="+251 9... or 09..."
+                                        placeholder={t('auth.phonePlaceholder')}
                                         value={phoneNumber}
                                         onChange={(e) => setPhoneNumber(e.target.value)}
                                         required
@@ -230,7 +232,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                 </div>
                             </div>
                             <button disabled={isLoading} className="btn-blue" style={{ width: '100%', padding: '16px', justifyContent: 'center', height: 'auto' }}>
-                                {isLoading ? <Loader2 className="animate-spin" /> : <>{mode === 'register' ? 'Apply & Send Verification' : 'Login & Send OTP'} <ArrowRight size={20} /></>}
+                                {isLoading ? <Loader2 className="animate-spin" /> : <>{mode === 'register' ? t('auth.registerBtn') : t('auth.loginBtn')} <ArrowRight size={20} /></>}
                             </button>
                         </motion.form>
                     )}
@@ -239,7 +241,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         <motion.form key="otp" onSubmit={handleVerifyOtp}
                             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                             <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Verification Code</label>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>{t('auth.otpLabel')}</label>
                                 <input
                                     type="text"
                                     maxLength={6}
@@ -255,10 +257,10 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                 />
                             </div>
                             <button disabled={isLoading} className="btn btn-primary" style={{ width: '100%', padding: '16px', justifyContent: 'center' }}>
-                                {isLoading ? <Loader2 className="animate-spin" /> : 'Verify & Sign In'}
+                                {isLoading ? <Loader2 className="animate-spin" /> : t('auth.verifyBtn')}
                             </button>
                             <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                Didn't receive code? <span style={{ color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }} onClick={() => setStep('phone')}>Resend</span>
+                                {t('auth.resend')} <span style={{ color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }} onClick={() => setStep('phone')}>{t('auth.resendBtn')}</span>
                             </p>
                         </motion.form>
                     )}

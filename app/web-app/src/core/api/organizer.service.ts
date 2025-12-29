@@ -44,9 +44,6 @@ export const OrganizerService = {
     getNotifications: () => api.get('/organizer/notifications'),
     markNotificationsRead: (data: { notificationIds?: number[], markAll?: boolean }) => api.patch('/organizer/notifications/read', data),
 
-    // Financials/Billing
-    getPayoutHistory: () => api.get('/organizer/payouts'),
-
     // Support
     contactSupport: (data: { subject: string, message: string }) => api.post('/organizer/support', data),
 
