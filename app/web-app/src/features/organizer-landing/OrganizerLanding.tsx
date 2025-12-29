@@ -408,97 +408,164 @@ const InlineBannerCarousel = ({ banners }: { banners: any[] }) => {
     const [index, setIndex] = useState(0);
     const navigate = useNavigate();
 
+    // Auto-rotate logic
     useEffect(() => {
+        if (banners.length < 2) return;
         const interval = setInterval(() => {
-            setIndex(prev => (prev + 1) % banners.length);
+            setIndex((prev) => (prev + 1) % banners.length);
         }, 5000);
         return () => clearInterval(interval);
     }, [banners.length]);
 
-    const current = banners[index];
+    if (banners.length === 0) return null;
 
-    return (
-        <div style={{
-            maxWidth: '1000px',
-            margin: '0 auto 3.5rem',
-            position: 'relative',
-            borderRadius: '24px',
-            overflow: 'hidden',
-            aspectRatio: '2/1',
-            maxHeight: '400px',
-            boxShadow: '0 20px 50px -10px rgba(0,0,0,0.3)',
-            border: '1px solid rgba(255,255,255,0.1)'
-        }}>
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={current.id}
-                    initial={{ opacity: 0, scale: 1.05 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5 }}
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundImage: `url(${current.imageUrl})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                    }}
-                >
+    // Single Banner (Hero Mode)
+    if (banners.length === 1) {
+        const current = banners[0];
+        return (
+            <div style={{ width: '100%', maxWidth: '100%', margin: '0 0 3.5rem', position: 'relative', borderRadius: '24px', overflow: 'hidden', aspectRatio: '2/1', maxHeight: '500px', boxShadow: '0 20px 50px -10px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <motion.div initial={{ opacity: 0, scale: 1.05 }} animate={{ opacity: 1, scale: 1 }} style={{ position: 'absolute', inset: 0, backgroundImage: `url(${current.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%)' }} />
                 </motion.div>
-            </AnimatePresence>
-
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem', textAlign: 'left', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                <div>
-                    <motion.h2
-                        key={`t-${current.id}`}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', marginBottom: '0.5rem', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
-                    >
-                        {current.title}
-                    </motion.h2>
-                    <motion.p
-                        key={`s-${current.id}`}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                        style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}
-                    >
-                        {current.subtitle}
-                    </motion.p>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '3rem', textAlign: 'left', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                    <div>
+                        <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'white', marginBottom: '0.5rem', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{current.title}</h2>
+                        <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>{current.subtitle}</p>
+                    </div>
+                    {current.linkUrl && (
+                        <button onClick={() => current.linkUrl.startsWith('http') ? window.location.href = current.linkUrl : navigate(current.linkUrl)} style={{ padding: '0.75rem 1.5rem', borderRadius: '12px', background: 'white', color: 'black', border: 'none', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            Check it out <ChevronRight size={16} />
+                        </button>
+                    )}
                 </div>
-                {current.linkUrl && (
-                    <motion.button
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        onClick={() => {
-                            if (current.linkUrl.startsWith('http')) window.location.href = current.linkUrl;
-                            else navigate(current.linkUrl);
-                        }}
-                        style={{
-                            padding: '0.75rem 1.5rem', borderRadius: '12px',
-                            background: 'white', color: 'black',
-                            border: 'none', fontSize: '0.9rem', fontWeight: 700,
-                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-                            boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
-                        }}
-                    >
-                        Check it out <ChevronRight size={16} />
-                    </motion.button>
-                )}
+            </div>
+        );
+    }
+
+    // Determine positions
+    const getPosition = (idx: number) => {
+        if (idx === index) return 'center';
+        const len = banners.length;
+        const diff = (idx - index + len) % len;
+
+        // Handle special case for 2 items to ensure they toggle sides correctly
+        if (len === 2) {
+            return idx !== index ? 'right' : 'center'; // Just show 'next' on right for 2-item toggle
+        }
+
+        if (diff === 1) return 'right';
+        if (diff === len - 1) return 'left';
+        return 'hidden';
+    };
+
+    // Variants for the items
+    const cardVariants = {
+        center: {
+            x: '0%',
+            scale: 1,
+            opacity: 1,
+            zIndex: 10,
+            transition: { duration: 0.5, ease: 'easeOut' }
+        },
+        left: {
+            x: '-85%',
+            scale: 0.85,
+            opacity: 0.5,
+            zIndex: 5,
+            transition: { duration: 0.5, ease: 'easeOut' }
+        },
+        right: {
+            x: '85%',
+            scale: 0.85,
+            opacity: 0.5,
+            zIndex: 5,
+            transition: { duration: 0.5, ease: 'easeOut' }
+        },
+        hidden: {
+            x: '0%',
+            scale: 0.5,
+            opacity: 0,
+            zIndex: 0,
+            transition: { duration: 0.5 }
+        }
+    };
+
+    return (
+        <div style={{ width: '100%', maxWidth: '100%', margin: '0 auto 4rem', height: '450px', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                <AnimatePresence initial={false}>
+                    {banners.map((b, idx) => {
+                        const itemPos = getPosition(idx);
+                        return (
+                            <motion.div
+                                key={`${b.id}`}
+                                variants={cardVariants}
+                                initial="hidden"
+                                animate={itemPos}
+                                style={{
+                                    position: 'absolute',
+                                    top: '0',
+                                    left: '0',
+                                    right: '0',
+                                    margin: '0 auto',
+                                    width: '70%',
+                                    maxWidth: '900px',
+                                    height: '100%',
+                                    borderRadius: '24px',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 20px 40px -5px rgba(0,0,0,0.4)',
+                                    cursor: 'pointer',
+                                    background: '#000'
+                                }}
+                                onClick={() => {
+                                    if (itemPos === 'center' && b.linkUrl) {
+                                        if (b.linkUrl.startsWith('http')) window.location.href = b.linkUrl;
+                                        else navigate(b.linkUrl);
+                                    } else {
+                                        setIndex(idx);
+                                    }
+                                }}
+                            >
+                                <img src={b.imageUrl} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%)' }} />
+
+                                {itemPos === 'center' && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem' }}
+                                    >
+                                        <div style={{ display: 'inline-block', padding: '6px 12px', background: 'var(--primary)', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 700, color: 'white', marginBottom: '12px' }}>
+                                            FEATURED
+                                        </div>
+                                        <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', fontWeight: 800, color: 'white', marginBottom: '0.5rem', lineHeight: 1.1 }}>{b.title}</h2>
+                                        {b.subtitle && <p style={{ fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)', color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>{b.subtitle}</p>}
+                                    </motion.div>
+                                )}
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
             </div>
 
-            {/* Controls */}
-            {banners.length > 1 && (
-                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', width: '100%', display: 'flex', justifyContent: 'space-between', padding: '0 10px', pointerEvents: 'none' }}>
-                    <button onClick={() => setIndex(prev => (prev - 1 + banners.length) % banners.length)} style={{ pointerEvents: 'auto', padding: '8px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', border: 'none', color: 'white', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
-                        <ChevronLeft size={20} />
-                    </button>
-                    <button onClick={() => setIndex(prev => (prev + 1) % banners.length)} style={{ pointerEvents: 'auto', padding: '8px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', border: 'none', color: 'white', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
-                        <ChevronRight size={20} />
-                    </button>
-                </div>
-            )}
+            <div style={{ position: 'absolute', bottom: '20px', display: 'flex', gap: '8px', zIndex: 50 }}>
+                {banners.map((_, i) => (
+                    <div
+                        key={i}
+                        onClick={() => setIndex(i)}
+                        style={{
+                            width: i === index ? '24px' : '8px',
+                            height: '8px',
+                            borderRadius: '4px',
+                            background: i === index ? 'white' : 'rgba(255,255,255,0.3)',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                        }}
+                    />
+                ))}
+            </div>
         </div>
     );
 };
