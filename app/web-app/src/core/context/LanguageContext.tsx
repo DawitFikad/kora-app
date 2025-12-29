@@ -5,7 +5,7 @@ type Language = 'en' | 'am';
 interface LanguageContextType {
     language: Language;
     setLanguage: (lang: Language) => void;
-    t: (key: string) => string;
+    t: (key: string, fallback?: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -102,6 +102,11 @@ const translations: Record<Language, Record<string, string>> = {
         'auth.registerBtn': 'Apply & Send Verification',
         'auth.verifyBtn': 'Verify & Sign In',
         'auth.noAccountError': 'Organizer account not found. Please click "Create Organizer Account" to apply.',
+        'help.badge': 'Help Center',
+        'help.title': 'How can we help you?',
+        'help.subtitle': 'Find answers to your questions and support for your events.',
+        'contact.title': 'Get in Touch',
+        'contact.subtitle': 'Have questions about enterprise solutions or need custom support? We\'re here to help.',
     },
     am: {
         'nav.howItWorks': 'እንዴት እንደሚሰራ',
@@ -194,6 +199,11 @@ const translations: Record<Language, Record<string, string>> = {
         'auth.registerBtn': 'አመልክት እና ኮድ ላክ',
         'auth.verifyBtn': 'አረጋግጥ እና ግባ',
         'auth.noAccountError': 'የአዘጋጅ መለያ አልተገኘም። እባክዎ ለማመልከት "አዘጋጅ መለያ ፍጠር" የሚለውን ይጫኑ።',
+        'help.badge': 'የእርዳታ ማዕከል',
+        'help.title': 'እንዴት ልንረዳዎ እንችላለን?',
+        'help.subtitle': 'ለጥያቄዎችዎ መልስ እና ለዝግጅቶችዎ ድጋፍ ያግኙ።',
+        'contact.title': 'ያግኙን',
+        'contact.subtitle': 'ስለ ኢንተርፕራይዝ መፍትሄዎች ጥያቄ አለዎት ወይስ ልዩ ድጋፍ ይፈልጋሉ? እኛ ለማገዝ እዚህ ነን።',
     }
 };
 
@@ -210,8 +220,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         document.documentElement.lang = language;
     }, [language]);
 
-    const t = (key: string) => {
-        return translations[language][key] || key;
+    const t = (key: string, fallback?: string) => {
+        return translations[language][key] || fallback || key;
     };
 
     return (

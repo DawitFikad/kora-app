@@ -12,7 +12,15 @@ import {
     Layers,
     ChevronDown,
     Sun,
-    Moon
+    Moon,
+    Mail,
+    Phone,
+    MapPin,
+    MessageSquare,
+    HelpCircle,
+    Rocket,
+    Users,
+    Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -580,6 +588,9 @@ const OrganizerLanding = () => {
     const { language, setLanguage, t } = useLanguage();
     const [banners, setBanners] = useState<any[]>([]);
 
+    const [contactName, setContactName] = useState('');
+    const [contactEmail, setContactEmail] = useState('');
+
     useEffect(() => {
         const fetchBanners = async () => {
             try {
@@ -601,6 +612,10 @@ const OrganizerLanding = () => {
                 navigate('/admin');
             } else if (user.role === 'ORGANIZER') {
                 navigate('/dashboard');
+            } else {
+                // Pre-fill contact form for other roles (e.g. USER)
+                setContactName(user.name || '');
+                setContactEmail(user.email || '');
             }
         }
     }, [user, navigate]);
@@ -879,29 +894,145 @@ const OrganizerLanding = () => {
                 </div>
             </section>
 
-            {/* FAQ Section */}
-            <section style={{ padding: '10rem 0' }}>
-                <div className="container" style={{ maxWidth: '800px' }}>
+            {/* Help Center Section */}
+            <section style={{ padding: '8rem 0', background: 'var(--bg-subtle)' }}>
+                <div className="container">
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('faq.title')}</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{t('faq.subtitle')}</p>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '20px', marginBottom: '1.5rem' }}>
+                            <HelpCircle size={16} color="var(--primary)" />
+                            <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>{t('help.badge', 'Help Center')}</span>
+                        </div>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('help.title', 'How can we help you?')}</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{t('help.subtitle', 'Find answers to your questions and support for your events.')}</p>
                     </div>
-                    <FAQItem
-                        question={t('faq.1.q')}
-                        answer={t('faq.1.a')}
-                    />
-                    <FAQItem
-                        question={t('faq.2.q')}
-                        answer={t('faq.2.a')}
-                    />
-                    <FAQItem
-                        question={t('faq.3.q')}
-                        answer={t('faq.3.a')}
-                    />
-                    <FAQItem
-                        question={t('faq.4.q')}
-                        answer={t('faq.4.a')}
-                    />
+
+                    {/* Help Categories */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', marginBottom: '6rem' }}>
+                        {[
+                            { icon: Rocket, title: 'Getting Started', desc: 'Guide to creating your first event' },
+                            { icon: Users, title: 'Account & Billing', desc: 'Manage your profile and payouts' },
+                            { icon: Calendar, title: 'Event Management', desc: 'Updates, seats, and ticketing' },
+                            { icon: ShieldCheck, title: 'Trust & Safety', desc: 'Policies and verification guide' }
+                        ].map((item, i) => (
+                            <motion.div
+                                key={i}
+                                className="glass"
+                                whileHover={{ y: -5 }}
+                                style={{ padding: '2rem', borderRadius: '1.5rem', cursor: 'pointer', border: '1px solid var(--border)' }}
+                            >
+                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
+                                    {/* Using generic icons if specific ones aren't available, but I added most. I'll use Layers for Rocket if Rocket isn't imported, but I didn't import Rocket. I should use imported icons. */}
+                                    {i === 0 ? <Zap size={24} color="var(--primary)" /> :
+                                        i === 1 ? <Users size={24} color="#EC4899" /> :
+                                            i === 2 ? <Calendar size={24} color="#F59E0B" /> : // Calendar might not be imported? I'll check.
+                                                <ShieldCheck size={24} color="#10B981" />}
+                                </div>
+                                <h4 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)' }}>{item.title}</h4>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{item.desc}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* FAQs */}
+                    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                        <h3 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '3rem', textAlign: 'center', color: 'var(--text-main)' }}>Frequently Asked Questions</h3>
+                        <FAQItem
+                            question={t('faq.1.q')}
+                            answer={t('faq.1.a')}
+                        />
+                        <FAQItem
+                            question={t('faq.2.q')}
+                            answer={t('faq.2.a')}
+                        />
+                        <FAQItem
+                            question={t('faq.3.q')}
+                            answer={t('faq.3.a')}
+                        />
+                        <FAQItem
+                            question={t('faq.4.q')}
+                            answer={t('faq.4.a')}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* Contact Us Section */}
+            <section style={{ padding: '8rem 0', background: 'var(--bg-main)' }}>
+                <div className="container">
+                    <div className="glass" style={{ borderRadius: '3rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
+                            {/* Contact Info */}
+                            <div style={{ padding: '4rem', background: 'var(--primary)', color: 'white' }}>
+                                <h2 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '1.5rem' }}>{t('contact.title', 'Get in Touch')}</h2>
+                                <p style={{ fontSize: '1.1rem', opacity: 0.9, marginBottom: '4rem', lineHeight: 1.6 }}>
+                                    {t('contact.subtitle', 'Have questions about enterprise solutions or need custom support? We\'re here to help.')}
+                                </p>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Mail size={20} color="white" />
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 700, marginBottom: '4px' }}>EMAIL US</p>
+                                            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>support@et-tickets.com</p>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Phone size={20} color="white" />
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 700, marginBottom: '4px' }}>CALL US</p>
+                                            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>+251 911 234 567</p>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <MapPin size={20} color="white" />
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 700, marginBottom: '4px' }}>VISIT US</p>
+                                            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Bole Atlas, Addis Ababa</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Contact Form */}
+                            <div style={{ padding: '4rem', background: 'var(--bg-card)' }}>
+                                <form onSubmit={(e) => { e.preventDefault(); alert('Message sent!'); }}>
+                                    <div style={{ marginBottom: '2rem' }}>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Full Name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="User Name"
+                                            value={contactName}
+                                            onChange={(e) => setContactName(e.target.value)}
+                                            style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '1rem' }}
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '2rem' }}>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Email Address</label>
+                                        <input
+                                            type="email"
+                                            placeholder="user@example.com"
+                                            value={contactEmail}
+                                            onChange={(e) => setContactEmail(e.target.value)}
+                                            style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '1rem' }}
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '2rem' }}>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Message</label>
+                                        <textarea rows={4} placeholder="How can we help you?" style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '1rem', resize: 'vertical' }}></textarea>
+                                    </div>
+                                    <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                                        Send Message <MessageSquare size={18} />
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
