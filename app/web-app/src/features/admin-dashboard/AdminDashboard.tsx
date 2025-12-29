@@ -34,7 +34,7 @@ import { AnalyticsView } from './components/AnalyticsView';
 import { PlatformControlView } from './components/PlatformControlView';
 
 // --- Types ---
-type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Fraud' | 'Content' | 'Analytics' | 'Settings' | 'Monitoring';
+type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Status' | 'Fraud' | 'Content' | 'Analytics' | 'Settings' | 'Monitoring';
 
 // --- Main Admin Dashboard Component ---
 
@@ -101,11 +101,14 @@ const AdminDashboard = () => {
         { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers'), key: 'organizers' },
         { icon: Calendar, label: 'Event Approvals' as AdminTab, count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events'), key: 'events' },
         { icon: BarChart3, label: 'Commissions' as AdminTab, display: t('admin.commissions'), key: 'commissions' },
-        { icon: DollarSign, label: 'GMV' as AdminTab, display: t('admin.payouts'), key: 'payouts' },
+        { icon: DollarSign, label: 'GMV' as AdminTab, display: t('admin.gmv', 'GMV Tracking'), key: 'gmv' },
+        { icon: DollarSign, label: 'Platform Revenue' as AdminTab, display: t('admin.revenue', 'Platform Revenue'), key: 'revenue' },
+        { icon: DollarSign, label: 'Organizer Payouts' as AdminTab, display: t('admin.payouts', 'Organizer Payouts'), key: 'payouts' },
+        { icon: DollarSign, label: 'Settlement Status' as AdminTab, display: t('admin.settlements', 'Settlement Status'), key: 'settlements' },
         { icon: ShieldAlert, label: 'Fraud' as AdminTab, display: t('admin.fraud'), key: 'fraud' },
         { icon: FileText, label: 'Content' as AdminTab, display: t('admin.content'), key: 'content' },
         { icon: Activity, label: 'Analytics' as AdminTab, display: t('admin.analytics'), key: 'analytics' },
-        { icon: ShieldAlert, label: 'Monitoring' as AdminTab, display: t('admin.platform_control'), key: 'platform_control' },
+        { icon: ShieldAlert, label: 'Monitoring' as AdminTab, display: t('admin.monitoring', 'System Health'), key: 'platform_control' },
     ];
 
     const currentNavItem = navItems.find(n => n.label === activeTab) || (activeTab === 'Settings' ? { display: 'Account Settings' } : null);
@@ -117,7 +120,10 @@ const AdminDashboard = () => {
             case 'Event Approvals': return <EventApprovalsView />;
             case 'Fraud': return <FraudMonitoringView />;
             case 'Commissions': return <CommissionsView />;
-            case 'GMV': return <PayoutsManagementView />;
+            case 'GMV': return <AnalyticsView />; // Reusing Analytics for GMV/Revenue charts
+            case 'Platform Revenue': return <AnalyticsView />;
+            case 'Organizer Payouts': return <PayoutsManagementView />;
+            case 'Settlement Status': return <PayoutsManagementView />;
             case 'Content': return <ContentManagementView />;
             case 'Analytics': return <AnalyticsView />;
             case 'Monitoring': return <PlatformControlView />;
@@ -141,19 +147,81 @@ const AdminDashboard = () => {
                 </div>
 
                 <nav className="nav-group" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 250px)' }}>
-                    {navItems.map((item) => (
-                        <div
-                            key={item.label}
-                            className={`nav-item ${activeTab === item.label ? 'active' : ''}`}
-                            onClick={() => setActiveTab(item.label)}
-                        >
-                            <item.icon size={18} />
-                            <span style={{ fontSize: '0.9rem' }}>{item.display || item.label}</span>
-                            {item.count && (
-                                <span style={{ marginLeft: 'auto', background: activeTab === item.label ? 'rgba(255,255,255,0.2)' : 'rgba(59, 130, 246, 0.1)', color: activeTab === item.label ? 'white' : '#3B82F6', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
-                                    {item.count}
-                                </span>
-                            )}
+                    {/* Dashboard - Always top */}
+                    <div
+                        className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('Dashboard')}
+                        style={{ marginBottom: '24px' }} // Spacing after dashboard
+                    >
+                        <Layout size={18} />
+                        <span style={{ fontSize: '0.9rem' }}>{t('admin.dashboard')}</span>
+                    </div>
+
+                    {[
+                        {
+                            title: 'Platform Control',
+                            items: [
+                                { icon: Users, label: 'Organizer Approvals', count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers') },
+                                { icon: Calendar, label: 'Event Approvals', count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events') },
+                                { icon: BarChart3, label: 'Commissions', display: t('admin.commissions') }
+                            ]
+                        },
+                        {
+                            title: 'Financials',
+                            items: [
+                                { icon: DollarSign, label: 'GMV', display: t('admin.gmv', 'GMV Tracking') },
+                                { icon: DollarSign, label: 'Platform Revenue', display: t('admin.revenue', 'Platform Revenue') },
+                                { icon: DollarSign, label: 'Organizer Payouts', display: t('admin.payouts', 'Organizer Payouts') },
+                                { icon: DollarSign, label: 'Settlement Status', display: t('admin.settlements', 'Settlement Status') }
+                            ]
+                        },
+                        {
+                            title: 'Fraud & Security',
+                            items: [
+                                { icon: ShieldAlert, label: 'Fraud', display: t('admin.fraud') },
+                                { icon: Activity, label: 'Monitoring', display: t('admin.monitoring', 'System Health') }
+                            ]
+                        },
+                        {
+                            title: 'Analytics',
+                            items: [
+                                { icon: Activity, label: 'Analytics', display: t('admin.analytics') }
+                            ]
+                        },
+                        {
+                            title: 'Content Management',
+                            items: [
+                                { icon: FileText, label: 'Content', display: t('admin.content') }
+                            ]
+                        }
+                    ].map((group, groupIndex) => (
+                        <div key={groupIndex} style={{ marginBottom: '24px' }}>
+                            <h4 style={{
+                                padding: '0 16px',
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                color: 'var(--text-muted)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                marginBottom: '8px'
+                            }}>
+                                {group.title}
+                            </h4>
+                            {group.items.map((item: any) => (
+                                <div
+                                    key={item.label}
+                                    className={`nav-item ${activeTab === item.label ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(item.label as AdminTab)}
+                                >
+                                    <item.icon size={18} />
+                                    <span style={{ fontSize: '0.9rem' }}>{item.display || item.label}</span>
+                                    {item.count && (
+                                        <span style={{ marginLeft: 'auto', background: activeTab === item.label ? 'rgba(255,255,255,0.2)' : 'rgba(59, 130, 246, 0.1)', color: activeTab === item.label ? 'white' : '#3B82F6', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                                            {item.count}
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     ))}
                 </nav>

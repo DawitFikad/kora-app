@@ -410,7 +410,7 @@ const Testimonials = () => {
 };
 
 import { ContentService } from '../../core/api/content.service';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 const InlineBannerCarousel = ({ banners }: { banners: any[] }) => {
     const [index, setIndex] = useState(0);
@@ -467,7 +467,7 @@ const InlineBannerCarousel = ({ banners }: { banners: any[] }) => {
     };
 
     // Variants for the items
-    const cardVariants = {
+    const cardVariants: any = {
         center: {
             x: '0%',
             scale: 1,
