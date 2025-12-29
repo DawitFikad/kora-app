@@ -79,7 +79,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                 onClose();
             }
         } catch (err: any) {
-            setError(err.response?.data?.error || err.message || 'Invalid OTP. Please try again.');
+            console.error('[LoginModal] Verification Error:', err);
+            const errorMessage = err.response?.data?.error || err.error || err.message || 'Verification failed. Please try again.';
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }

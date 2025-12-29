@@ -22,12 +22,17 @@ export class OtpService {
     }
 
     static async verifyOtp(phoneNumber: string, otp: string): Promise<boolean> {
+        console.log(`[OtpService] Checking Redis for key: otp:${phoneNumber}`);
         const hashedOtp = await redis.get(`otp:${phoneNumber}`);
+
         if (!hashedOtp) {
+            console.warn(`[OtpService] No OTP found in Redis for: ${phoneNumber} (Possibly expired)`);
             return false;
         }
 
         const isValid = await bcrypt.compare(otp, hashedOtp);
+        console.log(`[OtpService] Comparison result for ${phoneNumber}: ${isValid}`);
+
         if (isValid) {
             // Delete OTP after successful verification to prevent reuse
             await redis.del(`otp:${phoneNumber}`);

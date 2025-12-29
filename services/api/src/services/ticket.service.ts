@@ -25,25 +25,32 @@ export class TicketService {
             return { message: "Tickets already issued", purchaseId };
         }
 
-        // Metadata contains: eventId, tierId, quantity, seatNumbers
+        // Metadata contains: eventId, tierId, quantity, seatNumbers, priceBreakdown
         const metadata = purchase.metadata as any;
-        const { eventId, tierId, quantity, seatNumbers } = metadata;
+        const { eventId, tierId, quantity, seatNumbers, priceBreakdown } = metadata;
 
         const ticketsData = [];
         const secret = process.env.JWT_SECRET || "et-ticket-qr-secret";
         const generatedCodes: string[] = [];
 
+        // Calculate per-ticket financial snapshots (Point 3)
+        // Note: priceBreakdown is for the WHOLE purchase (subtotal for quantity)
+        const ticketBasePrice = Number(priceBreakdown.basePrice);
+        const ticketCommission = Number(priceBreakdown.commission) / quantity;
+        const ticketConvenience = Number(priceBreakdown.convenienceFee) / quantity;
+        const ticketDiscount = Number(priceBreakdown.discount || 0) / quantity;
+
+        const organizerNet = ticketBasePrice - ticketCommission - ticketDiscount;
+        const platformNet = ticketCommission + ticketConvenience;
+
         for (let i = 0; i < quantity; i++) {
             const seatNumber = seatNumbers ? seatNumbers[i] : null;
             const ticketId = crypto.randomUUID();
             // Generate short human-readable code (Backup OTP)
-            // Format: ET-XXXX (Alphanumeric)
             const randomSuffix = crypto.randomBytes(3).toString('hex').toUpperCase();
             const ticketCode = `ET-${randomSuffix}`;
             generatedCodes.push(ticketCode);
 
-            // 15. QR Payload (Encrypted / Signed)
-            // Requirements: Ticket ID, Event ID, Seat ID (nullable), Expiry, Nonce
             const payload = {
                 tid: ticketId,
                 eid: eventId,
@@ -63,7 +70,14 @@ export class TicketService {
                 eventId,
                 tierId,
                 seatNumber,
-                purchaseId: purchase.id
+                purchaseId: purchase.id,
+                // Financial Snapshot fields
+                basePrice: ticketBasePrice,
+                commissionRate: Number(priceBreakdown.commissionRate || 10),
+                commissionAmt: ticketCommission,
+                convenienceFee: ticketConvenience,
+                organizerNet: organizerNet,
+                platformNet: platformNet
             });
         }
 

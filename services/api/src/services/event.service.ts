@@ -213,9 +213,9 @@ export class EventService {
             where: { id: eventId },
             data: {
                 status,
-                feeType,
-                feeFixed,
-                feePercentage
+                feeType: feeType || null,
+                feeFixed: feeFixed !== undefined ? feeFixed : null,
+                feePercentage: feePercentage !== undefined ? feePercentage : null
             }
         });
     }

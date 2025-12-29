@@ -5,8 +5,8 @@ export const AdminService = {
     getPendingOrganizers: () => api.get('/profiles/admin/organizers?status=PENDING'),
     getApprovedOrganizers: () => api.get('/profiles/admin/organizers?status=APPROVED'),
 
-    reviewOrganizer: (id: number, status: 'APPROVED' | 'REJECTED', adminNote?: string) =>
-        api.post(`/profiles/admin/organizers/${id}/review`, { status, adminNote }),
+    reviewOrganizer: (id: number, status: 'APPROVED' | 'REJECTED', adminNote?: string, commission?: any) =>
+        api.post(`/profiles/admin/organizers/${id}/review`, { status, adminNote, ...commission }),
 
     // Event Management
     getEvents: () => api.get('/events/admin/list'),
@@ -14,8 +14,8 @@ export const AdminService = {
         api.post(`/events/${id}/review`, { status, ...commission }),
 
     // Financials
-    getFinancialTransactions: () => api.get('/financials/admin/transactions'),
-    getFinancialMetrics: () => api.get('/financials/admin/dashboard'),
+    getFinancialTransactions: () => api.get('/financials/transactions'),
+    getFinancialMetrics: () => api.get('/financials/dashboard'),
     // Content & Discovery
     getCategories: () => api.get('/content/categories'),
     getCities: () => api.get('/content/cities'),

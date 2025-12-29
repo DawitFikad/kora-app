@@ -3,27 +3,21 @@ import { EventStatus, OrganizerStatus, PaymentStatus } from "@prisma/client";
 
 export class AdminAnalyticsService {
     static async getPlatformStats() {
-        // 1. GMT and Commissions from successful purchases
-        const financialStats = await prisma.purchase.aggregate({
-            where: { status: PaymentStatus.SUCCESS },
+        // 1. GMT and Commissions from issued tickets (Point 7: Accurate without payment gateway)
+        const ticketStats = await prisma.ticket.aggregate({
+            where: { status: { in: ['SOLD', 'VALID', 'USED'] } },
             _sum: {
-                totalAmount: true
+                basePrice: true,
+                commissionAmt: true,
+                convenienceFee: true,
+                platformNet: true,
+                organizerNet: true
             }
         });
 
-        const totalGMV = financialStats._sum.totalAmount?.toNumber() || 0;
-
-        // Commission is calculated from netAmount in FinancialTransaction
-        const commissionStats = await prisma.financialTransaction.aggregate({
-            where: {
-                status: 'SETTLED',
-                type: 'TICKET_PURCHASE'
-            },
-            _sum: {
-                feeAmount: true
-            }
-        });
-        const platformCommission = commissionStats._sum.feeAmount?.toNumber() || 0;
+        const totalGMV = Number(ticketStats._sum.basePrice || 0) + Number(ticketStats._sum.convenienceFee || 0);
+        const platformCommission = Number(ticketStats._sum.platformNet || 0);
+        const organizerEarnings = Number(ticketStats._sum.organizerNet || 0);
 
         // 2. Active Counts
         const activeEvents = await prisma.event.count({
@@ -65,7 +59,7 @@ export class AdminAnalyticsService {
             }
         });
 
-        // 5. System Health (Simplified for now)
+        // 5. System Health
         const systemHealth = {
             api: 'healthy',
             database: 'healthy',
@@ -76,6 +70,7 @@ export class AdminAnalyticsService {
             kpis: {
                 totalGMV,
                 platformCommission,
+                organizerEarnings,
                 activeEvents,
                 activeOrganizers,
                 totalTicketsSold,
@@ -153,12 +148,23 @@ export class AdminAnalyticsService {
             }
         });
 
+        let totalCategoryRevenue = 0;
         const categoryDistribution = categorySales.map((cat: any) => {
             const total = cat.events.reduce((sum: number, evt: any) => {
                 return sum + evt.transactions.reduce((s: number, tx: any) => s + Number(tx.amount), 0);
             }, 0);
+            totalCategoryRevenue += total;
             return { name: cat.name, value: total };
-        });
+        })
+            .filter(c => c.value > 0)
+            .sort((a, b) => b.value - a.value);
+
+        // Calculate percentages
+        const categoriesWithPercentage = categoryDistribution.map(cat => ({
+            name: cat.name,
+            value: cat.value,
+            percentage: totalCategoryRevenue > 0 ? Math.round((cat.value / totalCategoryRevenue) * 100) : 0
+        }));
 
         // 3. Sales by City
         const citySales: any[] = await prisma.city.findMany({
@@ -195,7 +201,8 @@ export class AdminAnalyticsService {
 
         return {
             monthlySales: sortedMonths,
-            categoryDistribution,
+            categories: categoriesWithPercentage, // Return as 'categories' for frontend
+            categoryDistribution, // Keep original for reference
             cityDistribution
         };
     }

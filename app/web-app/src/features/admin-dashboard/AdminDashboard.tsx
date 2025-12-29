@@ -166,7 +166,7 @@ const AdminDashboard = () => {
 
                     {[
                         {
-                            title: 'Platform Control',
+                            title: 'Org. & Event Management', // Points 3 & 4
                             items: [
                                 { icon: Users, label: 'Organizer Approvals', count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers') },
                                 { icon: Calendar, label: 'Event Approvals', count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events') },
@@ -174,7 +174,7 @@ const AdminDashboard = () => {
                             ]
                         },
                         {
-                            title: 'Financials',
+                            title: 'Financial Control', // Point 6
                             items: [
                                 { icon: DollarSign, label: 'GMV', display: t('admin.gmv', 'GMV Tracking') },
                                 { icon: DollarSign, label: 'Platform Revenue', display: t('admin.revenue', 'Platform Revenue') },
@@ -183,51 +183,53 @@ const AdminDashboard = () => {
                             ]
                         },
                         {
-                            title: 'Fraud & Security',
+                            title: 'Fraud & Security', // Point 7
                             items: [
                                 { icon: ShieldAlert, label: 'Fraud', display: t('admin.fraud') },
                                 { icon: Activity, label: 'Monitoring', display: t('admin.monitoring', 'System Health') }
                             ]
                         },
                         {
-                            title: 'Analytics',
+                            title: 'Analytics & Reporting', // Point 2, 5, 9
                             items: [
-                                { icon: Activity, label: 'Analytics' as AdminTab, display: t('admin.analytics') },
-                                { icon: BarChart3, label: 'Reports' as AdminTab, display: t('admin.reports', 'Reports') },
-                                { icon: Users, label: 'Invite Admin' as AdminTab, display: t('admin.invite', 'Invite Admin') }
+                                { icon: Activity, label: 'Analytics', display: t('admin.analytics') },
+                                { icon: BarChart3, label: 'Reports', display: t('admin.reports', 'Reports') },
+                                { icon: Users, label: 'Invite Admin', display: t('admin.invite', 'Invite Admin') } // Team mgmt in reporting section per user request
                             ]
                         },
                         {
-                            title: 'Content Management',
+                            title: 'Content & Config', // Point 8
                             items: [
                                 { icon: FileText, label: 'Content', display: t('admin.content') }
                             ]
                         }
                     ].map((group, groupIndex) => (
                         <div key={groupIndex} style={{ marginBottom: '24px' }}>
-                            <h4 style={{
-                                padding: '0 16px',
-                                fontSize: '0.7rem',
-                                fontWeight: 800,
-                                color: 'var(--text-muted)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                marginBottom: '8px'
-                            }}>
+                            <h3 style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px', letterSpacing: '0.05em' }}>
                                 {group.title}
-                            </h4>
+                            </h3>
                             {group.items.map((item: any) => (
                                 <div
                                     key={item.label}
                                     className={`nav-item ${activeTab === item.label ? 'active' : ''}`}
                                     onClick={() => setActiveTab(item.label as AdminTab)}
+                                    style={{ position: 'relative' }}
                                 >
                                     <item.icon size={18} />
-                                    <span style={{ fontSize: '0.9rem' }}>{item.display || item.label}</span>
+                                    <span style={{ fontSize: '0.9rem' }}>{item.display}</span>
                                     {item.count && (
-                                        <span style={{ marginLeft: 'auto', background: activeTab === item.label ? 'rgba(255,255,255,0.2)' : 'rgba(59, 130, 246, 0.1)', color: activeTab === item.label ? 'white' : '#3B82F6', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                                        <div style={{
+                                            position: 'absolute',
+                                            right: '12px',
+                                            background: '#EF4444',
+                                            color: 'white',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 700,
+                                            padding: '2px 6px',
+                                            borderRadius: '10px'
+                                        }}>
                                             {item.count}
-                                        </span>
+                                        </div>
                                     )}
                                 </div>
                             ))}

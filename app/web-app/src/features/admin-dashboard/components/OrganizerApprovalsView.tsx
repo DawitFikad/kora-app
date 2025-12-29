@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
-import { Download } from 'lucide-react';
-import { Loader2, Check, X, ShieldCheck, ChevronDown, ChevronUp, Mail, Phone, MapPin } from 'lucide-react';
+import { Download, Loader2, Check, X, ShieldCheck } from 'lucide-react';
 
 export const OrganizerApprovalsView = () => {
     const { t } = useTranslation();
@@ -14,7 +13,6 @@ export const OrganizerApprovalsView = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [processingId, setProcessingId] = useState<number | null>(null);
-    const [expandedOrgId, setExpandedOrgId] = useState<number | null>(null);
 
     const fetchData = async () => {
         try {
@@ -36,10 +34,10 @@ export const OrganizerApprovalsView = () => {
         fetchData();
     }, []);
 
-    const handleReview = async (id: number, status: 'APPROVED' | 'REJECTED') => {
+    const handleReview = async (id: number, status: 'APPROVED' | 'REJECTED', commission?: any) => {
         try {
             setProcessingId(id);
-            await AdminService.reviewOrganizer(id, status, `Reviewed by admin at ${new Date().toLocaleString()}`);
+            await AdminService.reviewOrganizer(id, status, `Reviewed by admin at ${new Date().toLocaleString()}`, commission);
             fetchData(); // Refresh both lists
         } catch (err: any) {
             alert(err.error || 'Failed to review organizer');
@@ -88,9 +86,8 @@ export const OrganizerApprovalsView = () => {
             {/* 🟠 Pending Section */}
             <div style={{ marginBottom: '40px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', padding: '6px 14px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 900 }}>
-                        {pendingOrganizers.length} PENDING
-                    </div>
+                    <div style={{ background: '#F59E0B', width: '12px', height: '12px', borderRadius: '50%' }} />
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>Moderation Queue ({pendingOrganizers.length})</h3>
                 </div>
 
                 <div className="admin-card" style={{ padding: '0', overflow: 'hidden' }}>
@@ -123,13 +120,34 @@ export const OrganizerApprovalsView = () => {
                                         </td>
                                         <td>{org.city}</td>
                                         <td style={{ textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                                <input
+                                                    type="number"
+                                                    id={`org-comm-${org.id}`}
+                                                    placeholder="Comm %"
+                                                    defaultValue={10}
+                                                    style={{ width: '80px', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-main)' }}
+                                                />
+                                                <input
+                                                    type="number"
+                                                    id={`org-conv-${org.id}`}
+                                                    placeholder="Fixed Fee"
+                                                    defaultValue={0}
+                                                    style={{ width: '80px', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-main)' }}
+                                                />
+                                            </div>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                 <button
-                                                    onClick={() => handleReview(org.id, 'APPROVED')}
                                                     disabled={processingId === org.id}
-                                                    style={{ background: '#10B981', color: 'white', border: 'none', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                    onClick={() => {
+                                                        const comm = (document.getElementById(`org-comm-${org.id}`) as HTMLInputElement).value;
+                                                        const conv = (document.getElementById(`org-conv-${org.id}`) as HTMLInputElement).value;
+                                                        handleReview(org.id, 'APPROVED', { feePercentage: Number(comm), feeFixed: Number(conv), feeType: 'PERCENTAGE' });
+                                                    }}
+                                                    style={{ background: '#10B981', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                                                 >
-                                                    {processingId === org.id ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                                                    {processingId === org.id ? <Loader2 className="animate-spin" size={14} /> : <Check size={16} />}
+                                                    Approve
                                                 </button>
                                                 <button
                                                     onClick={() => handleReview(org.id, 'REJECTED')}
@@ -148,91 +166,29 @@ export const OrganizerApprovalsView = () => {
                 </div>
             </div>
 
-            {/* 🟢 Approved Section */}
-            <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '6px 14px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 900 }}>
-                        {approvedOrganizers.length} VERIFIED PARTNERS
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                {/* 🟢 Approved Section */}
+                <div className="admin-card" style={{ padding: '24px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10B981', marginBottom: '20px' }}>Verified Partners ({approvedOrganizers.length})</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {approvedOrganizers.length > 0 ? approvedOrganizers.map((org) => (
+                            <div key={org.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-subtle)', borderRadius: '16px' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>{org.organizationName}</p>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{org.city}</p>
+                                </div>
+                                <ShieldCheck size={16} color="#10B981" />
+                            </div>
+                        )) : <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No verified partners yet.</p>}
                     </div>
                 </div>
 
-                <div className="admin-card" style={{ padding: '0', overflow: 'hidden' }}>
-                    <table className="admin-table">
-                        <thead>
-                            <tr>
-                                <th>ORGANIZATION</th>
-                                <th>VERIFIED SINCE</th>
-                                <th>CITY</th>
-                                <th style={{ textAlign: 'right' }}>DETAILS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {approvedOrganizers.map((org) => (
-                                <React.Fragment key={org.id}>
-                                    <tr
-                                        onClick={() => setExpandedOrgId(expandedOrgId === org.id ? null : org.id)}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '6px', borderRadius: '50%' }}>
-                                                    <ShieldCheck size={16} />
-                                                </div>
-                                                <span style={{ fontWeight: 800 }}>{org.organizationName}</span>
-                                            </div>
-                                        </td>
-                                        <td>{new Date(org.updatedAt).toLocaleDateString()}</td>
-                                        <td>{org.city}</td>
-                                        <td style={{ textAlign: 'right' }}>
-                                            {expandedOrgId === org.id ? <ChevronUp size={20} color="var(--text-muted)" /> : <ChevronDown size={20} color="var(--text-muted)" />}
-                                        </td>
-                                    </tr>
-                                    <AnimatePresence>
-                                        {expandedOrgId === org.id && (
-                                            <tr>
-                                                <td colSpan={4} style={{ padding: '0', background: 'var(--bg-subtle)' }}>
-                                                    <motion.div
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: 'auto', opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        style={{ overflow: 'hidden', padding: '24px' }}
-                                                    >
-                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-                                                            <div className="detail-item">
-                                                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Business Email</p>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
-                                                                    <Mail size={14} color="#3B82F6" /> {org.contactEmail}
-                                                                </div>
-                                                            </div>
-                                                            <div className="detail-item">
-                                                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Phone Support</p>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
-                                                                    <Phone size={14} color="#10B981" /> {org.contactPhone}
-                                                                </div>
-                                                            </div>
-                                                            <div className="detail-item">
-                                                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Primary Hub</p>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
-                                                                    <MapPin size={14} color="#EF4444" /> {org.city || 'N/A'}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
-                                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Financial Configuration</p>
-                                                            <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                                                                <p style={{ fontSize: '0.85rem' }}><strong>Payout Details:</strong> {org.payoutDetails || 'No bank info provided'}</p>
-                                                                <p style={{ fontSize: '0.85rem', marginTop: '4px' }}><strong>Admin Note:</strong> <span style={{ color: 'var(--text-muted)' }}>{org.adminNote || 'No review notes found.'}</span></p>
-                                                            </div>
-                                                        </div>
-                                                    </motion.div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </AnimatePresence>
-                                </React.Fragment>
-                            ))}
-                        </tbody>
-                    </table>
+                {/* 🔴 Rejected Section */}
+                <div className="admin-card" style={{ padding: '24px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#EF4444', marginBottom: '20px' }}>Rejected Applications</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>History currently unavailable.</p>
+                    </div>
                 </div>
             </div>
         </motion.div>

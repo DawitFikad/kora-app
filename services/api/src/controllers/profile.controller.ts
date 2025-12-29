@@ -71,13 +71,20 @@ export class ProfileController {
     static async reviewOrganizer(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const { status, adminNote } = req.body;
+            const { status, adminNote, feeType, feeFixed, feePercentage } = req.body;
 
             if (![OrganizerStatus.APPROVED, OrganizerStatus.REJECTED].includes(status)) {
                 return res.status(400).json({ error: "Invalid status" });
             }
 
-            const result = await ProfileService.reviewOrganizer(parseInt(id), status, adminNote);
+            const result = await ProfileService.reviewOrganizer(
+                parseInt(id),
+                status,
+                adminNote,
+                feeType,
+                feeFixed,
+                feePercentage
+            );
             res.json(result);
         } catch (error: any) {
             res.status(400).json({ error: error.message });

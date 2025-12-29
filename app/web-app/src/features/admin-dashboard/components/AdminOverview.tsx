@@ -1,13 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     DollarSign,
     CheckCircle2,
     Download,
     UserPlus,
     Activity,
-    Loader2
+    Loader2,
+    Zap,
+    ArrowUpRight,
+    ShieldCheck,
+    BarChart3,
+    CalendarCheck,
+    ClipboardList,
+    TrendingUp,
+    LayoutDashboard,
+    Globe,
+    Layers,
+    MapPin,
+    Calendar,
+    Trophy,
+    Target
 } from 'lucide-react';
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
@@ -18,6 +32,7 @@ export const AdminOverview = () => {
     const [organizers, setOrganizers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [monthlySales, setMonthlySales] = useState<any[]>([]);
+    const [recentEvents, setRecentEvents] = useState<any[]>([]);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [stats, setStats] = useState({
@@ -26,35 +41,78 @@ export const AdminOverview = () => {
         totalGMV: 0,
         pendingPayouts: 0,
         platformCommission: 0,
+        organizerEarnings: 0,
         totalTicketsSold: 0,
-        activeUsers: 0
+        activeUsers: 0,
+        activeOrganizers: 0,
+        activeEvents: 0
     });
+    const [categoryData, setCategoryData] = useState<any[]>([]);
+    const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 setIsLoading(true);
-                const [orgsResponse, statsResponse, metricsResponse, analyticsResponse]: any = await Promise.all([
+                const results = await Promise.allSettled([
                     AdminService.getPendingOrganizers(),
                     AdminService.getStats(),
                     AdminService.getFinancialMetrics(),
-                    AdminService.getAnalytics()
+                    AdminService.getAnalytics(),
+                    AdminService.getApprovedOrganizers(),
+                    AdminService.getEvents()
                 ]);
 
-                setOrganizers(orgsResponse.slice(0, 5));
-                const kpis = statsResponse.kpis;
-                const metrics = metricsResponse.data;
+                const getVal = (res: PromiseSettledResult<any>) => res.status === 'fulfilled' ? res.value : null;
+
+                const orgsResponse = getVal(results[0]);
+                const statsResponse = getVal(results[1]);
+                const metricsResponse = getVal(results[2]);
+                const analyticsResponse = getVal(results[3]);
+                const approvedOrgs = getVal(results[4]);
+                const allEvents = getVal(results[5]);
+
+                const safeArray = (data: any) => {
+                    if (!data) return [];
+                    if (Array.isArray(data)) return data;
+                    if (data.data && Array.isArray(data.data)) return data.data;
+                    return [];
+                };
+
+                const pendingOrgsList = safeArray(orgsResponse);
+                const activeOrgsList = safeArray(approvedOrgs);
+
+                const allRecentOrgs = [...pendingOrgsList, ...activeOrgsList].sort((a: any, b: any) =>
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
+
+                setOrganizers(allRecentOrgs.slice(0, 5));
+
+                const kpis = statsResponse?.kpis || {};
+                const metrics = metricsResponse?.data || {};
+                const activeOrgCount = activeOrgsList.length;
+                const eventsList = safeArray(allEvents);
+                const activeEventCount = eventsList.filter((e: any) => e.status === 'PUBLISHED').length;
 
                 setStats({
-                    pendingOrganizers: kpis.pendingOrganizers,
-                    pendingEvents: kpis.pendingEvents,
-                    totalGMV: kpis.totalGMV,
-                    pendingPayouts: metrics.pendingPayouts.amount,
-                    platformCommission: kpis.platformCommission,
-                    totalTicketsSold: kpis.totalTicketsSold,
-                    activeUsers: kpis.activeUsers
+                    pendingOrganizers: kpis.pendingOrganizers || pendingOrgsList.length || 0,
+                    pendingEvents: kpis.pendingEvents || 0,
+                    totalGMV: kpis.totalGMV || 0,
+                    pendingPayouts: metrics.pendingPayouts?.amount || 0,
+                    platformCommission: kpis.platformCommission || 0,
+                    organizerEarnings: kpis.organizerEarnings || 0,
+                    totalTicketsSold: kpis.totalTicketsSold || 0,
+                    activeUsers: kpis.activeUsers || 0,
+                    activeOrganizers: activeOrgCount,
+                    activeEvents: activeEventCount
                 });
-                setMonthlySales(analyticsResponse.monthlySales || []);
+
+                setMonthlySales(analyticsResponse?.monthlySales || []);
+                setCategoryData(analyticsResponse?.categories || []);
+
+                const approvedEventsList = eventsList.filter((e: any) => e.status === 'PUBLISHED' || e.status === 'APPROVED');
+                setRecentEvents(approvedEventsList.slice(0, 5));
+
             } catch (err) {
                 console.error('Failed to fetch dashboard data', err);
             } finally {
@@ -87,6 +145,8 @@ export const AdminOverview = () => {
         setShowInviteModal(false);
     };
 
+    const colors = ['#8B5CF6', '#10B981', '#EC4899', '#3B82F6', '#F59E0B', '#64748B'];
+
     if (isLoading) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
@@ -98,133 +158,208 @@ export const AdminOverview = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div style={{ paddingBottom: '40px' }}>
-                {/* 1. Top Stats Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '24px' }}>
+                {/* 1. Header KPIs (4 Cards) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '16px' }}>
                     <StatCard
-                        label={t('admin.active_users', 'Total customers')}
-                        value={stats.activeUsers.toLocaleString()}
-                        trend="+2.5%"
-                        trendColor="#10B981"
-                        icon={UserPlus}
-                    />
-                    <StatCard
-                        label={t('admin.total_gmv', 'Total revenue')}
-                        value={`ETB ${(stats.totalGMV / 1000).toFixed(1)}k`}
-                        trend="+0.5%"
-                        trendColor="#10B981"
+                        label="Total GMV"
+                        value={`ETB ${stats.totalGMV.toLocaleString()}`}
+                        trend="Gross Sales Volume"
+                        trendColor="var(--text-muted)"
                         icon={DollarSign}
                     />
                     <StatCard
-                        label={t('admin.tickets_sold', 'Total orders')}
-                        value={stats.totalTicketsSold.toLocaleString()}
-                        trend="+0.2%"
-                        trendColor="#EF4444"
-                        icon={CheckCircle2}
-                    />
-                    <StatCard
-                        label={t('admin.pending_payouts', 'Total returns')}
-                        value={`ETB ${stats.pendingPayouts.toLocaleString()}`}
-                        trend="+0.12%"
+                        label="Platform Profit"
+                        value={`ETB ${stats.platformCommission.toLocaleString()}`}
+                        trend="Commission + Fees"
                         trendColor="#10B981"
                         icon={Activity}
                     />
+                    <StatCard
+                        label="Org. Earnings"
+                        value={`ETB ${stats.organizerEarnings.toLocaleString()}`}
+                        trend="Net paid to partners"
+                        trendColor="#8B5CF6"
+                        icon={TrendingUp}
+                    />
+                    <StatCard
+                        label="Active Organizers"
+                        value={stats.activeOrganizers.toLocaleString()}
+                        trend={`${stats.activeEvents} Global Events`}
+                        trendColor="#3B82F6"
+                        icon={UserPlus}
+                    />
+                    <StatCard
+                        label="Verified Sales"
+                        value={stats.totalTicketsSold.toLocaleString()}
+                        trend="Total Tickets Issued"
+                        trendColor="var(--text-muted)"
+                        icon={CheckCircle2}
+                    />
                 </div>
 
-                {/* 2. Middle Main Chart Row (Splitted) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                    {/* Left: Product Sales Chart */}
-                    <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Product sales</h3>
-                            <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', fontWeight: 600 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6' }} />
-                                    <span style={{ color: 'var(--text-muted)' }}>Gross margin</span>
+                {/* 2. Main High-Density Grid (DASHBOARD COMMAND CENTER) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.3fr 0.9fr', gap: '16px', marginBottom: '20px' }}>
+
+                    {/* COLUMN 1: GOVERNANCE & STATUS (Stacked) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {/* Admin Command Center */}
+                        <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                                <div style={{ background: 'var(--bg-active)', padding: '5px', borderRadius: '7px' }}>
+                                    <LayoutDashboard size={13} color="white" />
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B' }} />
-                                    <span style={{ color: 'var(--text-muted)' }}>Revenue</span>
-                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Command Center</span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                {[
+                                    { label: 'Organizers', sub: 'Validate', icon: ShieldCheck, col: '#3B82F6' },
+                                    { label: 'Events', sub: 'Review', icon: CalendarCheck, col: '#10B981' },
+                                    { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6' },
+                                    { label: 'Reports', sub: 'Finance', icon: ClipboardList, col: '#EC4899' }
+                                ].map((btn, i) => (
+                                    <button key={i} className="admin-action-btn" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
+                                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${btn.col}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <btn.icon size={14} color={btn.col} />
+                                        </div>
+                                        <div style={{ textAlign: 'left' }}>
+                                            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{btn.label}</p>
+                                            <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', margin: 0 }}>{btn.sub}</p>
+                                        </div>
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
-                        <div style={{ height: '300px', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingLeft: '20px', paddingRight: '20px' }}>
-                            {monthlySales.length > 0 ? monthlySales.slice(0, 12).map((s, i) => {
-                                const max = Math.max(...monthlySales.map(m => m.amount), 1);
-                                const h1 = (s.amount / max) * 200; // Blue bar
-                                const h2 = (s.amount * 0.7 / max) * 200; // Orange bar (simulated)
-                                return (
-                                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', flex: 1 }}>
-                                        <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', height: '100%' }}>
-                                            <div style={{ width: '12px', height: `${Math.max(4, h1)}px`, background: '#3B82F6', borderRadius: '4px' }} />
-                                            <div style={{ width: '12px', height: `${Math.max(4, h2)}px`, background: '#F59E0B', borderRadius: '4px' }} />
-                                        </div>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{s.name.substring(0, 3)}</span>
+                        {/* Organizer Status */}
+                        <div className="admin-card" style={{ flex: 1, padding: '20px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                                <UserPlus size={16} color="#10B981" />
+                                <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-main)' }}>Organizer Status</h3>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '16px' }}>
+                                <div style={{ position: 'relative', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: '8px solid var(--bg-subtle)', position: 'absolute' }} />
+                                    <div style={{
+                                        width: '80px', height: '80px', borderRadius: '50%', border: '8px solid transparent',
+                                        borderTopColor: '#10B981', borderRightColor: '#10B981',
+                                        transform: `rotate(${(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 360}deg)`,
+                                        transition: 'transform 1.5s ease'
+                                    }} />
+                                    <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{stats.activeOrganizers}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>VERIFIED</p>
+                                        <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10B981' }}>{stats.activeOrganizers}</p>
                                     </div>
-                                )
-                            }) : (
-                                // Placeholder bars if no data
-                                Array.from({ length: 12 }).map((_, i) => (
-                                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', flex: 1 }}>
-                                        <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', height: '100%' }}>
-                                            <div style={{ width: '12px', height: `${30 + Math.random() * 100}px`, background: '#3B82F6', borderRadius: '4px' }} />
-                                            <div style={{ width: '12px', height: `${20 + Math.random() * 80}px`, background: '#F59E0B', borderRadius: '4px' }} />
-                                        </div>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i]}</span>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>PENDING</p>
+                                        <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#F59E0B' }}>{stats.pendingOrganizers}</p>
                                     </div>
-                                ))
-                            )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Right Column: Calendar & Features */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-                        {/* 🗓️ Calendar Widget */}
-                        <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', background: '#2563EB', color: 'white' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>October 2026</h3>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ cursor: 'pointer', opacity: 0.7 }}>&lt;</span>
-                                    <span style={{ cursor: 'pointer', opacity: 0.7 }}>&gt;</span>
+                    {/* COLUMN 2: CORE ANALYTICS & HEALTH (Wide Focus) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {/* Ticket Sales Trend */}
+                        <div className="admin-card" style={{ flex: 1.2, padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <TrendingUp size={16} color="#F59E0B" />
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>Ticket Sales Trend</h3>
                                 </div>
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>MONTHLY PERFORMANCE</span>
                             </div>
-                            {/* Calendar Grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
-                                <span style={{ opacity: 0.6 }}>Su</span><span style={{ opacity: 0.6 }}>Mo</span><span style={{ opacity: 0.6 }}>Tu</span><span style={{ opacity: 0.6 }}>We</span><span style={{ opacity: 0.6 }}>Th</span><span style={{ opacity: 0.6 }}>Fr</span><span style={{ opacity: 0.6 }}>Sa</span>
-
-                                <span style={{ opacity: 0.3 }}>29</span><span style={{ opacity: 0.3 }}>30</span>
-                                <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-                                <span>6</span><span>7</span><span>8</span><span style={{ background: 'white', color: '#2563EB', borderRadius: '8px', padding: '2px 0' }}>9</span><span>10</span><span>11</span><span>12</span>
-                                <span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span>
-                                <span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flex: 1, minHeight: '120px', padding: '10px 0' }}>
+                                {monthlySales.length > 0 ? monthlySales.map((s, i) => {
+                                    const max = Math.max(...monthlySales.map(m => m.amount), 1);
+                                    const h = (s.amount / max) * 100;
+                                    return (
+                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                                                <div style={{ height: `${h}%`, width: '14px', background: 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)', borderRadius: '4px' }} />
+                                            </div>
+                                            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)' }}>{s.name}</span>
+                                        </div>
+                                    )
+                                }) : <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)' }}>Metrics loading...</div>}
                             </div>
                         </div>
 
-                        {/* Phase 2 Features List */}
-                        <div className="admin-card" style={{ flex: 1, padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Phase 2 Features</h3>
-                                <span style={{ fontSize: '0.7rem', color: '#8B5CF6', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>POST-LAUNCH</span>
+                        {/* System Health */}
+                        <div className="admin-card" style={{ padding: '20px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Layers size={15} color="#6366F1" />
+                                    <h3 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>System Health</h3>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ width: '8px', height: '8px', background: '#10B981', borderRadius: '50%', boxShadow: '0 0 8px rgba(16,185,129,0.4)' }} />
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10B981' }}>ONLINE</span>
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                                 {[
-                                    { title: 'Loyalty Points', date: 'Q1', desc: 'Rewards & Redemption', color: '#10B981' },
-                                    { title: 'Wallet Balance', date: 'Q1', desc: 'Integrated stored value', color: '#F59E0B' },
-                                    { title: 'Diaspora Cards', date: 'Q2', desc: 'International payment gateway', color: '#3B82F6' },
-                                    { title: 'Seat Map Designer', date: 'Q2', desc: 'Visual layout editor', color: '#EC4899' },
-                                    { title: 'White-label Pages', date: 'Q3', desc: 'Custom organizer domains', color: '#8B5CF6' },
-                                    { title: 'Live Streaming', date: 'Q3', desc: 'Virtual event support', color: '#64748B' }
+                                    { label: 'API', val: '22ms' },
+                                    { label: 'DB', val: 'Idle' },
+                                    { label: 'NET', val: 'Low' },
+                                    { label: 'CPU', val: '12%' }
+                                ].map((h, i) => (
+                                    <div key={i} style={{ padding: '8px', background: 'var(--bg-subtle)', borderRadius: '10px', textAlign: 'center' }}>
+                                        <p style={{ fontSize: '0.55rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '2px' }}>{h.label}</p>
+                                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-main)' }}>{h.val}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* COLUMN 3: SCHEDULER & ROADMAP */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {/* Compact Calendar */}
+                        <div className="admin-card" style={{ padding: '18px', borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Globe size={14} color="var(--text-muted)" />
+                                    <h3 style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--text-main)' }}>{new Date().toLocaleString('default', { month: 'short' })} '{new Date().getFullYear().toString().slice(-2)}</h3>
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.65rem', fontWeight: 700 }}>
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <span key={d} style={{ color: 'var(--text-muted)', opacity: 0.6 }}>{d}</span>)}
+                                {Array.from({ length: 31 }).map((_, i) => {
+                                    const day = i + 1;
+                                    const isToday = day === new Date().getDate();
+                                    return (
+                                        <span key={i} style={{
+                                            background: isToday ? 'var(--bg-active)' : 'transparent',
+                                            color: isToday ? 'white' : 'var(--text-main)',
+                                            borderRadius: '8px', padding: '4px 0',
+                                            fontWeight: isToday ? 900 : 600
+                                        }}>{day}</span>
+                                    )
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Roadmap v2.0 */}
+                        <div className="admin-card" style={{ flex: 1, padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <h3 style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--text-main)' }}>Phase 2</h3>
+                                <div style={{ background: '#8B5CF615', color: '#8B5CF6', fontSize: '0.55rem', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>v2.0</div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {[
+                                    { title: 'Loyalty Points', date: 'Q1', color: '#10B981' },
+                                    { title: 'Wallet Balance', date: 'Q1', color: '#F59E0B' },
+                                    { title: 'International Cards', date: 'Q2', color: '#3B82F6' },
+                                    { title: 'Visual Designer', date: 'Q2', color: '#EC4899' }
                                 ].map((feat, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '40px' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{feat.date}</span>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: feat.color }} />
-                                        </div>
-                                        <div style={{ flex: 1, paddingBottom: '16px', borderBottom: i < 5 ? '1px solid var(--border)' : 'none' }}>
-                                            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-main)' }}>{feat.title}</h4>
-                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{feat.desc}</p>
-                                        </div>
+                                    <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
+                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: feat.color }} />
+                                        <h4 style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', flex: 1 }}>{feat.title}</h4>
+                                        <span style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-muted)' }}>{feat.date}</span>
                                     </div>
                                 ))}
                             </div>
@@ -232,117 +367,209 @@ export const AdminOverview = () => {
                     </div>
                 </div>
 
-                {/* 3. Bottom Two Cards Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
-                    {/* Sales by Category (Donut Chart) */}
-                    <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '24px' }}>Sales by product category</h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                            <div style={{ width: '40%' }}>
-                                <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    {[
-                                        { label: 'Concerts', val: '25%', color: '#8B5CF6' },
-                                        { label: 'Sports', val: '13%', color: '#10B981' },
-                                        { label: 'Theater', val: '3%', color: '#EC4899' },
-                                        { label: 'Dining', val: '17%', color: '#3B82F6' },
-                                        { label: 'Bedroom', val: '12%', color: '#F59E0B' }, // Kept original labels from image or map to categories
-                                        { label: 'Other', val: '9%', color: '#64748B' }
-                                    ].map((c, i) => (
-                                        <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: c.color }} />
-                                            {c.label} - {c.val}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                                {/* Simple CSS Conic Gradient Donut */}
-                                <div style={{
-                                    width: '180px',
-                                    height: '180px',
-                                    borderRadius: '50%',
-                                    background: 'conic-gradient(#8B5CF6 0% 25%, #10B981 25% 38%, #EC4899 38% 41%, #3B82F6 41% 58%, #F59E0B 58% 70%, #64748B 70% 100%)',
-                                    position: 'relative',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <div style={{ width: '120px', height: '120px', background: 'white', borderRadius: '50%' }} />
+                {/* 3. Bottom Grid: Category & Organizers */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: '20px' }}>Sales per Category</h3>
+                        {categoryData.length > 0 ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                                <div style={{ width: '40%' }}>
+                                    <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '14px' }}>
+                                        {categoryData.map((c, i) => (
+                                            <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                                                <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: colors[i % colors.length] }} />
+                                                {c.name} ({c.percentage}%)
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                                    <div style={{
+                                        width: '140px', height: '140px', borderRadius: '50%',
+                                        background: `conic-gradient(${categoryData.map((c, i, arr) => {
+                                            const start = arr.slice(0, i).reduce((acc, curr) => acc + curr.percentage, 0);
+                                            const end = start + c.percentage;
+                                            return `${colors[i % colors.length]} ${start}% ${end}%`;
+                                        }).join(', ')})`,
+                                        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}>
+                                        <div style={{ width: '90px', height: '90px', background: 'var(--bg-card)', borderRadius: '50%', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.05)' }} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        ) : <div style={{ height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>No data available</div>}
                     </div>
 
-                    {/* Sales by Countries (Registrations List) */}
-                    <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Recent Organizers</h3>
-                            <button onClick={() => handleExportOrganizers('csv')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                                <Download size={18} />
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-main)' }}>Recent Organizers</h3>
+                            <button onClick={() => handleExportOrganizers('csv')} style={{ border: 'none', background: 'var(--bg-subtle)', padding: '8px', cursor: 'pointer', borderRadius: '8px', color: 'var(--text-muted)' }}>
+                                <Download size={16} />
                             </button>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {organizers.length > 0 ? organizers.map((org, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: org.status === 'APPROVED' ? '#10B981' : '#F59E0B' }} />
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>{org.organizationName}</span>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: org.status === 'APPROVED' ? '#10B981' : '#F59E0B' }} />
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)' }}>{org.organizationName}</span>
                                     </div>
-                                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-muted)' }}>{Math.floor(Math.random() * 20)}%</span>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 900, color: org.status === 'APPROVED' ? '#10B981' : '#D97706', textTransform: 'uppercase' }}>{org.status === 'APPROVED' ? 'active' : 'review'}</span>
                                 </div>
-                            )) : (
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No recent registrations.</p>
-                            )}
+                            )) : <p style={{ color: 'var(--text-muted)' }}>No recent records.</p>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Approved Events Registry */}
+                <div style={{ marginTop: '24px' }}>
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-main)' }}>Approved Events</h3>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 800, padding: '4px 12px', background: 'var(--bg-subtle)', borderRadius: '20px' }}>{stats.activeEvents} LIVE EVENTS</span>
+                        </div>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase' }}>Event Name</th>
+                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase' }}>Category</th>
+                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase' }}>Event Date</th>
+                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase' }}>Revenue</th>
+                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {recentEvents.length > 0 ? recentEvents.map((event, i) => (
+                                        <tr key={i} style={{ borderBottom: i < recentEvents.length - 1 ? '1px solid var(--border)' : 'none', fontSize: '0.92rem' }}>
+                                            <td style={{ padding: '16px 10px', fontWeight: 800, color: 'var(--text-main)' }}>{event.title}</td>
+                                            <td style={{ padding: '16px 10px', color: 'var(--text-muted)' }}>{event.category?.name || 'GENERIC'}</td>
+                                            <td style={{ padding: '16px 10px', color: 'var(--text-muted)' }}>{new Date(event.dateTime).toLocaleDateString()}</td>
+                                            <td style={{ padding: '16px 10px', fontWeight: 900, color: 'var(--text-main)' }}>ETB {Number(event.metrics?.totalRevenue || 0).toLocaleString()}</td>
+                                            <td style={{ padding: '16px 10px', textAlign: 'right' }}>
+                                                <button
+                                                    onClick={() => setSelectedEvent(event)}
+                                                    style={{ padding: '8px 16px', background: 'var(--bg-active)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                                                >
+                                                    INSPECT
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )) : <tr><td colSpan={5} style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-muted)' }}>No events found.</td></tr>}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Invite Admin Modal */}
-            {showInviteModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="admin-card" style={{ width: '400px', padding: '32px' }}>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '16px' }}>Invite New Admin</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Enter the email address of the person you want to grant administrative access.</p>
-                        <form onSubmit={handleInviteAdmin}>
-                            <input
-                                type="email"
-                                placeholder="email@example.com"
-                                value={inviteEmail}
-                                onChange={(e) => setInviteEmail(e.target.value)}
-                                style={{ width: '100%', padding: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', marginBottom: '20px' }}
-                                autoFocus
-                            />
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button type="button" onClick={() => setShowInviteModal(false)} style={{ flex: 1, padding: '12px', background: 'var(--bg-subtle)', border: 'none', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700 }}>Cancel</button>
-                                <button type="submit" style={{ flex: 1, padding: '12px', background: 'var(--bg-active)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700 }}>Send Invite</button>
+            {/* Premium Details Modal */}
+            <AnimatePresence>
+                {selectedEvent && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, padding: '20px' }} onClick={() => setSelectedEvent(null)}>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="admin-card"
+                            style={{ maxWidth: '800px', width: '100%', padding: '0', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px' }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div style={{ padding: '32px', background: 'linear-gradient(135deg, #1E293B, #0F172A)', color: 'white', position: 'relative' }}>
+                                <button onClick={() => setSelectedEvent(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                                <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+                                    <div style={{ width: '180px', height: '110px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                                        {selectedEvent.coverImage ? (
+                                            <img src={selectedEvent.coverImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🎫</div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                            <span style={{ fontSize: '0.65rem', background: '#10B981', color: 'white', padding: '4px 10px', borderRadius: '20px', fontWeight: 900, textTransform: 'uppercase' }}>{selectedEvent.status}</span>
+                                            <span style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontWeight: 800 }}>{selectedEvent.category?.name || 'GENERIC'}</span>
+                                        </div>
+                                        <h3 style={{ fontSize: '1.8rem', fontWeight: 1000, marginBottom: '4px', lineHeight: 1.1 }}>{selectedEvent.title}</h3>
+                                        <p style={{ fontSize: '0.95rem', opacity: 0.8, fontWeight: 700 }}>by {selectedEvent.organizer?.organizationName || 'Independent Partner'}</p>
+                                    </div>
+                                </div>
                             </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )}
+                            <div style={{ padding: '32px', overflowY: 'auto' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
+                                    <div style={{ background: 'var(--bg-subtle)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px' }}>Total Revenue</p>
+                                        <h4 style={{ fontSize: '1.3rem', fontWeight: 1000, color: 'var(--text-main)' }}>ETB {Number(selectedEvent.metrics?.totalRevenue || 0).toLocaleString()}</h4>
+                                    </div>
+                                    <div style={{ background: 'var(--bg-subtle)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px' }}>Tickets Sold</p>
+                                        <h4 style={{ fontSize: '1.3rem', fontWeight: 1000, color: 'var(--text-main)' }}>{selectedEvent.metrics?.ticketsSold || 0} / {selectedEvent.totalCapacity || '∞'}</h4>
+                                    </div>
+                                    <div style={{ background: 'var(--bg-subtle)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px' }}>Platform Profit</p>
+                                        <h4 style={{ fontSize: '1.3rem', fontWeight: 1000, color: '#10B981' }}>ETB {Number(selectedEvent.metrics?.totalRevenue * 0.1 || 0).toLocaleString()}</h4>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
+                                    <div>
+                                        <h5 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '20px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Logistics</h5>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                <Calendar size={16} color="var(--text-muted)" />
+                                                <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>{new Date(selectedEvent.dateTime).toLocaleString()}</p>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                <MapPin size={16} color="var(--text-muted)" />
+                                                <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>{selectedEvent.venue}, {selectedEvent.city?.name}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h5 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '20px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Market</h5>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {selectedEvent.tiers?.map((tier: any, idx: number) => (
+                                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
+                                                    <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)' }}>{tier.name}</p>
+                                                    <p style={{ fontSize: '0.9rem', fontWeight: 1000, color: 'var(--text-main)' }}>ETB {tier.price.toLocaleString()}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ padding: '24px 32px', borderTop: '1px solid var(--border)', background: 'var(--bg-main)', display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
+                                <button onClick={() => setSelectedEvent(null)} style={{ padding: '10px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}>Close</button>
+                                <button
+                                    onClick={() => window.open(`/book/${selectedEvent.id}`, '_blank')}
+                                    style={{ padding: '10px 20px', background: 'var(--bg-active)', border: 'none', color: 'white', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
+                                >
+                                    Browse <ArrowUpRight size={16} />
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
 
 const StatCard = ({ label, value, trend, trendColor, icon: Icon }: any) => (
     <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-        minHeight: '130px'
+        background: 'var(--bg-card)', borderRadius: '24px', padding: '20px',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)', border: '1px solid var(--border)',
+        minHeight: '100px'
     }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{label}</p>
-            <Icon size={18} color="var(--text-muted)" style={{ opacity: 0.5 }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={14} color="var(--text-muted)" />
+            </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>{value}</h3>
-            {trend && <span style={{ fontSize: '0.75rem', color: trendColor, fontWeight: 700 }}>{trend}</span>}
+        <div>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: 1000, color: 'var(--text-main)', marginBottom: '2px' }}>{value}</h3>
+            {trend && <span style={{ fontSize: '0.7rem', color: trendColor, fontWeight: 800, opacity: 0.8 }}>{trend}</span>}
         </div>
     </div>
 );

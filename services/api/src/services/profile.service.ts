@@ -126,7 +126,14 @@ export class ProfileService {
         });
     }
 
-    static async reviewOrganizer(organizerProfileId: number, status: OrganizerStatus, adminNote?: string) {
+    static async reviewOrganizer(
+        organizerProfileId: number,
+        status: OrganizerStatus,
+        adminNote?: string,
+        feeType?: string,
+        feeFixed?: number,
+        feePercentage?: number
+    ) {
         console.log(`[AdminReview] ID: ${organizerProfileId}, New Status: ${status}, Note: ${adminNote}`);
         const organizer = await prisma.organizerProfile.findUnique({
             where: { id: organizerProfileId }
@@ -140,7 +147,10 @@ export class ProfileService {
             where: { id: organizerProfileId },
             data: {
                 status,
-                adminNote
+                adminNote,
+                feeType,
+                feeFixed,
+                feePercentage
             },
         });
 

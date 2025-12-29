@@ -12,73 +12,100 @@ const getRefreshTokenSecret = () => process.env.JWT_REFRESH_SECRET || "default_r
 
 export class AuthService {
     static async requestOtp(phoneNumber: string) {
-        const otp = await OtpService.generateOtp(phoneNumber);
+        const cleanPhone = phoneNumber.trim();
+        console.log(`[AuthService] Requesting OTP for: ${cleanPhone}`);
+        const otp = await OtpService.generateOtp(cleanPhone);
 
         // Send real SMS (or fallback to console based on env)
-        await SmsService.sendOtp(phoneNumber, otp);
+        await SmsService.sendOtp(cleanPhone, otp);
 
         return { message: "OTP sent successfully" };
     }
 
     static async verifyOtp(phoneNumber: string, otp: string) {
-        const isValid = await OtpService.verifyOtp(phoneNumber, otp);
+        const cleanPhone = phoneNumber.trim();
+        const cleanOtp = String(otp).trim();
+        console.log(`[AuthService] Verifying OTP for: ${cleanPhone}, Input OTP: ${cleanOtp}`);
+
+        const isValid = await OtpService.verifyOtp(cleanPhone, cleanOtp);
         if (!isValid) {
+            console.warn(`[AuthService] OTP Verification FAILED for ${cleanPhone}`);
             throw new Error("Invalid or expired OTP");
         }
+        console.log(`[AuthService] OTP Verification SUCCESS for ${cleanPhone}`);
 
-        // Check if user exists
-        const existingUser = await prisma.user.findUnique({
-            where: { phoneNumber },
-            include: { organizer: true }
-        });
-
-        let user = existingUser;
-
-        if (!user) {
-            // Create new user (B2C default)
-            user = await prisma.user.create({
-                data: {
-                    phoneNumber,
-                    role: Role.USER,
-                    status: AccountStatus.ACTIVE,
-                    profile: {
-                        create: {
-                            fullName: null, // To be filled by user later
-                            language: "en",
-                        }
-                    }
-                },
+        try {
+            // Check if user exists
+            console.log(`[AuthService] Looking up user in DB: ${cleanPhone}`);
+            const existingUser = await prisma.user.findUnique({
+                where: { phoneNumber: cleanPhone },
                 include: { organizer: true }
             });
+
+            let user = existingUser;
+
+            if (!user) {
+                console.log(`[AuthService] New user detected, creating account for: ${cleanPhone}`);
+                // Create new user (B2C default)
+                user = await prisma.user.create({
+                    data: {
+                        phoneNumber: cleanPhone,
+                        role: Role.USER,
+                        status: AccountStatus.ACTIVE,
+                        profile: {
+                            create: {
+                                fullName: null, // To be filled by user later
+                                language: "en",
+                            }
+                        }
+                    },
+                    include: { organizer: true }
+                });
+                console.log(`[AuthService] User created with ID: ${user.id}`);
+            } else {
+                console.log(`[AuthService] Existing user found with ID: ${user.id}, Role: ${user.role}`);
+            }
+
+            if (user.status === AccountStatus.SUSPENDED) {
+                console.warn(`[AuthService] Account suspended for ID: ${user.id}`);
+                throw new Error("Account is suspended");
+            }
+
+            // Get organizerId if user is an organizer
+            const organizerId = user.organizer?.id;
+            console.log(`[AuthService] Organizer ID: ${organizerId || 'None'}`);
+
+            // Generate tokens
+            console.log(`[AuthService] Generating tokens...`);
+            const accessToken = this.generateAccessToken(user.id, user.role, organizerId);
+            const refreshToken = this.generateRefreshToken(user.id);
+            console.log(`[AuthService] Tokens generated successfully`);
+
+            // Store refresh token in DB
+            console.log(`[AuthService] Storing refresh token in DB...`);
+            await prisma.refreshToken.create({
+                data: {
+                    token: refreshToken,
+                    userId: user.id,
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+                },
+            });
+            console.log(`[AuthService] Refresh token stored`);
+
+            const response = {
+                user,
+                accessToken,
+                refreshToken,
+                isNewUser: !existingUser,
+                hasOrganizerProfile: !!user.organizer
+            };
+
+            console.log(`[AuthService] Returning success response for: ${cleanPhone}`);
+            return response;
+        } catch (error: any) {
+            console.error(`[AuthService ERROR] Failed during post-verification for ${cleanPhone}:`, error);
+            throw error;
         }
-
-        if (user.status === AccountStatus.SUSPENDED) {
-            throw new Error("Account is suspended");
-        }
-
-        // Get organizerId if user is an organizer
-        const organizerId = user.organizer?.id;
-
-        // Generate tokens
-        const accessToken = this.generateAccessToken(user.id, user.role, organizerId);
-        const refreshToken = this.generateRefreshToken(user.id);
-
-        // Store refresh token in DB
-        await prisma.refreshToken.create({
-            data: {
-                token: refreshToken,
-                userId: user.id,
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-            },
-        });
-
-        return {
-            user,
-            accessToken,
-            refreshToken,
-            isNewUser: !existingUser,
-            hasOrganizerProfile: !!user.organizer
-        };
     }
 
     static async registerOrganizer(data: { phoneNumber: string; email?: string | null; name: string; city: string; payoutDetails: string }) {

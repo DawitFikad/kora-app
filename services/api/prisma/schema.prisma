@@ -160,6 +160,12 @@ model OrganizerProfile {
   adminNote        String?
   logoUrl          String?  // Profile picture/logo URL
   emailVerified    Boolean  @default(false)
+
+  // Commission overrides for this organizer
+  feeType       String?  // PERCENTAGE, FIXED, HYBRID
+  feeFixed      Decimal? @db.Decimal(10, 2)
+  feePercentage Decimal? @db.Decimal(10, 2)
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -197,10 +203,10 @@ model Event {
   gallery    String[] @default([])
   featured   Boolean  @default(false)
 
-  // Commission settings for this specific event
-  feeType       String  @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
-  feeFixed      Decimal @default(0.0) @db.Decimal(10, 2)
-  feePercentage Decimal @default(0.0) @db.Decimal(10, 2)
+  // Commission settings for this specific event (Overrides organizer/global)
+  feeType       String? // PERCENTAGE, FIXED, HYBRID
+  feeFixed      Decimal? @db.Decimal(10, 2)
+  feePercentage Decimal? @db.Decimal(10, 2)
 
   organizerId Int
   organizer   OrganizerProfile @relation(fields: [organizerId], references: [id])
@@ -256,6 +262,14 @@ model Ticket {
   qrPayload String       @unique
   status    TicketStatus @default(VALID)
 
+  // Financial Snapshots (Point 3: Independent of payment logic)
+  basePrice      Decimal? @db.Decimal(10, 2)
+  commissionRate Decimal? @db.Decimal(10, 2) // % or fixed depending on feeType stored in event
+  commissionAmt  Decimal? @db.Decimal(10, 2)
+  convenienceFee Decimal? @default(0.0) @db.Decimal(10, 2)
+  organizerNet   Decimal? @db.Decimal(10, 2)
+  platformNet    Decimal? @db.Decimal(10, 2) // commissionAmt + convenienceFee
+
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
@@ -274,6 +288,7 @@ model Ticket {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
 
 model Purchase {
   id            Int           @id @default(autoincrement())

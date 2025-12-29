@@ -147,8 +147,8 @@ export class BookingService {
             city: event.city.name,
             organizer: event.organizer.organizationName,
             feeType: event.feeType,
-            feeFixed: event.feeFixed.toNumber(),
-            feePercentage: event.feePercentage.toNumber(),
+            feeFixed: event.feeFixed ? Number(event.feeFixed) : 0,
+            feePercentage: event.feePercentage ? Number(event.feePercentage) : 0,
             tiers: tiersWithAvailability
         };
     }
@@ -214,7 +214,10 @@ export class BookingService {
     }
 
     /**
-     * Calculates price breakdown with all fees
+     * Calculates price breakdown with all fees based on the priority hierarchy:
+     * 1. Event Override
+     * 2. Organizer Override
+     * 3. Global Default
      */
     static async calculatePrice(
         eventId: number,
@@ -224,7 +227,11 @@ export class BookingService {
     ): Promise<PriceBreakdown> {
         const tier = await prisma.ticketTier.findUnique({
             where: { id: tierId },
-            include: { event: true }
+            include: {
+                event: {
+                    include: { organizer: true }
+                }
+            }
         });
 
         if (!tier) {
@@ -235,21 +242,53 @@ export class BookingService {
             throw new Error("Tier does not belong to this event");
         }
 
-        const ticketPrice = tier.price.toNumber();
+        const event = tier.event;
+        const organizer = event.organizer;
+
+        // Resolve Commission Rules
+        let activeFeeType = "PERCENTAGE";
+        let activeFeeFixed = 0;
+        let activeFeePercentage = 10; // Default fallback
+
+        if (event.feeType) {
+            activeFeeType = event.feeType;
+            activeFeeFixed = Number(event.feeFixed || 0);
+            activeFeePercentage = Number(event.feePercentage || 0);
+        } else if (organizer.feeType) {
+            activeFeeType = organizer.feeType;
+            activeFeeFixed = Number(organizer.feeFixed || 0);
+            activeFeePercentage = Number(organizer.feePercentage || 0);
+        } else {
+            // Get Global Default
+            const globalConfig = await prisma.platformFeeConfig.findFirst({
+                where: { isDefault: true, isActive: true }
+            });
+            if (globalConfig) {
+                activeFeeType = globalConfig.feeType;
+                activeFeeFixed = Number(globalConfig.feeFixed);
+                activeFeePercentage = Number(globalConfig.feePercentage);
+            }
+        }
+
+        // Resolve Convenience Fee (Global only for now)
+        let convenienceFeeRate = this.CONVENIENCE_FEE_PERCENTAGE;
+        // In future, this could also be overrideable
+
+        const ticketPrice = Number(tier.price);
         const subtotal = ticketPrice * quantity;
 
-        // Calculate commission based on event settings
+        // Calculate commission
         const commission = PriceCalculator.calculateCommission(
             subtotal,
-            tier.event.feeType,
-            tier.event.feeFixed.toNumber(),
-            tier.event.feePercentage.toNumber()
+            activeFeeType,
+            activeFeeFixed,
+            activeFeePercentage
         );
 
         // Convenience fee (flat percentage on subtotal)
         const convenienceFee = PriceCalculator.calculateConvenienceFee(
             subtotal,
-            this.CONVENIENCE_FEE_PERCENTAGE
+            convenienceFeeRate
         );
 
         // Apply promo code if provided
@@ -283,8 +322,10 @@ export class BookingService {
             convenienceFee: Math.round(convenienceFee * 100) / 100,
             discount: Math.round(discount * 100) / 100,
             total: Math.round(total * 100) / 100,
-            promoApplied
-        };
+            promoApplied,
+            commissionRate: activeFeeType === 'PERCENTAGE' ? activeFeePercentage : activeFeeFixed,
+            feeType: activeFeeType
+        } as any;
     }
 
     /**

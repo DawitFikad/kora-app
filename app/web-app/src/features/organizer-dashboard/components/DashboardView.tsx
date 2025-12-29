@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MoreHorizontal, Ticket, Building2, TrendingUp, Megaphone, Users, Download, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Ticket, Building2, TrendingUp, Megaphone, Users, Download, Loader2, DollarSign } from 'lucide-react';
 import { CreditCardIcon } from './CustomIcons';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
@@ -17,7 +17,8 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                 const data = response.data;
 
                 const formattedStats = [
-                    { label: 'Total Revenue', value: `ETB ${data.totalRevenue.toLocaleString()}`, change: 'Released funds', icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
+                    { label: 'Gross Sales', value: `ETB ${data.grossVolume.toLocaleString()}`, change: 'Total ticket value', icon: DollarSign, bgColor: 'rgba(16, 185, 129, 0.1)', iconColor: '#10B981' },
+                    { label: 'Net Earnings', value: `ETB ${data.totalRevenue.toLocaleString()}`, change: 'After platform fees', icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
                     { label: 'Tickets Sold', value: `${data.ticketsSold} / ${data.totalCapacity}`, change: `${data.totalCapacity > 0 ? ((data.ticketsSold / data.totalCapacity) * 100).toFixed(1) : 0}% sold`, icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
                     { label: 'Checked In', value: data.totalCheckIns?.toLocaleString() || '0', change: `${data.totalCheckIns > 0 && data.ticketsSold > 0 ? ((data.totalCheckIns / data.ticketsSold) * 100).toFixed(1) : 0}% of sold`, icon: Users, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' },
                     { label: 'Available Payout', value: `ETB ${data.nextPayout.toLocaleString()}`, change: 'Ready for withdrawal', icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },

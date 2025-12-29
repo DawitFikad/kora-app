@@ -1,8 +1,13 @@
-import { Request } from 'express';
+import { Role } from '@prisma/client';
 
 declare global {
     namespace Express {
         interface Request {
+            user?: {
+                userId: number;
+                role: Role;
+                organizerId?: number;
+            };
             file?: Express.Multer.File;
             files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
         }

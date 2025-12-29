@@ -91,15 +91,21 @@ export class EventOperationsService {
     }
 
     private static async getFinancialSnapshot(eventId: number) {
-        const transactions = await prisma.financialTransaction.findMany({
-            where: { eventId, status: "RELEASED" } // Only released funds contribute to net
+        // Use Ticket financial snapshots for accurate reporting without payments (Point 7)
+        const ticketStats = await prisma.ticket.aggregate({
+            where: { eventId, status: { in: ["SOLD", "USED", "VALID"] } },
+            _sum: {
+                basePrice: true,
+                organizerNet: true,
+                platformNet: true
+            }
         });
 
-        const gross = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
-        const fees = transactions.reduce((sum, t) => sum + Number(t.feeAmount), 0);
-        const net = transactions.reduce((sum, t) => sum + Number(t.netAmount), 0);
+        const gross = Number(ticketStats._sum.basePrice || 0);
+        const net = Number(ticketStats._sum.organizerNet || 0);
+        const fees = Number(ticketStats._sum.platformNet || 0);
 
-        // Check if event has a payout batch
+        // Check if event has a payout batch (Real bank status)
         const payout = await prisma.payoutBatch.findFirst({
             where: { wallet: { organizer: { events: { some: { id: eventId } } } } },
             orderBy: { createdAt: 'desc' }
@@ -159,14 +165,21 @@ export class EventOperationsService {
             return sum + event.tiers.reduce((tSum, tier) => tSum + tier.capacity, 0);
         }, 0);
 
-        // Calculate total revenue from released transactions
-        const totalRevenue = await prisma.financialTransaction.aggregate({
+        // Calculate total revenue snapshots from issued tickets (Point 7)
+        const ticketMetrics = await prisma.ticket.aggregate({
             where: {
                 event: { organizerId },
-                status: "RELEASED"
+                status: { in: ["SOLD", "USED", "VALID"] }
             },
-            _sum: { netAmount: true }
+            _sum: {
+                basePrice: true,
+                organizerNet: true,
+                platformNet: true
+            }
         });
+
+        const grossVolume = Number(ticketMetrics._sum.basePrice || 0);
+        const netEarnings = Number(ticketMetrics._sum.organizerNet || 0);
 
         // Calculate daily sales for velocity chart (last 7 days)
         const salesVelocity = new Array(7).fill(0).map((_, i) => {
@@ -222,7 +235,8 @@ export class EventOperationsService {
         };
 
         return {
-            totalRevenue: Number(totalRevenue._sum.netAmount || 0),
+            totalRevenue: netEarnings,
+            grossVolume: grossVolume,
             ticketsSold: totalTicketsSold,
             totalCapacity,
             nextPayout: Number(wallet?.availableBalance || 0),
