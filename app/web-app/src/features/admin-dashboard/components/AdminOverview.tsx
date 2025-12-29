@@ -3,23 +3,20 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
     DollarSign,
-    TrendingUp,
     CheckCircle2,
     Download,
     UserPlus,
     Activity,
-    ShieldAlert,
     Loader2
 } from 'lucide-react';
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
 import { exportToPDF } from '../../../core/utils/pdf';
 
-export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void }) => {
+export const AdminOverview = () => {
     const { t } = useTranslation();
     const [organizers, setOrganizers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [fraudAlerts, setFraudAlerts] = useState<any[]>([]);
     const [monthlySales, setMonthlySales] = useState<any[]>([]);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
@@ -37,11 +34,10 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
         const fetchDashboardData = async () => {
             try {
                 setIsLoading(true);
-                const [orgsResponse, statsResponse, metricsResponse, fraudResponse, analyticsResponse]: any = await Promise.all([
+                const [orgsResponse, statsResponse, metricsResponse, analyticsResponse]: any = await Promise.all([
                     AdminService.getPendingOrganizers(),
                     AdminService.getStats(),
                     AdminService.getFinancialMetrics(),
-                    AdminService.getFraudAlerts(),
                     AdminService.getAnalytics()
                 ]);
 
@@ -58,7 +54,6 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
                     totalTicketsSold: kpis.totalTicketsSold,
                     activeUsers: kpis.activeUsers
                 });
-                setFraudAlerts(fraudResponse.slice(0, 3));
                 setMonthlySales(analyticsResponse.monthlySales || []);
             } catch (err) {
                 console.error('Failed to fetch dashboard data', err);
@@ -69,21 +64,6 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
 
         fetchDashboardData();
     }, []);
-
-    const handleExportReport = (type: 'csv' | 'pdf') => {
-        const reportData = [
-            { Metric: 'Total GMV', Value: stats.totalGMV },
-            { Metric: 'Platform Commission', Value: stats.platformCommission },
-            { Metric: 'Active Users', Value: stats.activeUsers },
-            { Metric: 'Tickets Sold', Value: stats.totalTicketsSold },
-            { Metric: 'Pending Payouts', Value: stats.pendingPayouts },
-        ];
-        if (type === 'csv') {
-            exportToCSV(reportData, `admin_overview_report_${new Date().toISOString().split('T')[0]}.csv`);
-        } else {
-            exportToPDF(reportData, ['Metric', 'Value'], `admin_overview_report_${new Date().toISOString().split('T')[0]}.pdf`, 'Dashboard Overview Report');
-        }
-    };
 
     const handleExportOrganizers = (type: 'csv' | 'pdf') => {
         const data = organizers.map(o => ({
@@ -117,201 +97,205 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {/* 🟢 Top Action Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                {[
-                    { label: t('admin.review_pending'), sub: `${stats.pendingOrganizers + stats.pendingEvents} items waiting`, icon: ShieldAlert, color: '#3B82F6', iconBg: 'rgba(59, 130, 246, 0.1)', tab: 'Organizer Approvals' },
-                    { label: t('admin.export_report'), sub: 'CSV or PDF', icon: Download, color: '#A78BFA', iconBg: 'rgba(167, 139, 250, 0.1)', action: () => handleExportReport('pdf') },
-                    { label: t('admin.invite_admin'), sub: 'Manage access', icon: UserPlus, color: '#F59E0B', iconBg: 'rgba(245, 158, 11, 0.1)', action: () => setShowInviteModal(true) },
-                    { label: t('admin.system_status'), sub: 'All systems operational', icon: Activity, color: '#10B981', iconBg: 'rgba(16, 185, 129, 0.1)', tab: 'Monitoring' },
-                ].map((item, i) => (
-                    <div key={i} className="admin-stat-card-mini" onClick={() => {
-                        if (item.tab) onNavigate?.(item.tab);
-                        if (item.action) item.action();
-                    }} style={{ cursor: 'pointer' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: item.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                            <item.icon size={20} color={item.color} />
+            <div style={{ paddingBottom: '40px' }}>
+                {/* 1. Top Stats Row */}
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '24px', alignItems: 'center' }}>
+                    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                        <StatCard
+                            label={t('admin.active_users', 'Total customers')}
+                            value={stats.activeUsers.toLocaleString()}
+                            trend="+2.5%"
+                            trendColor="#10B981"
+                            icon={UserPlus}
+                        />
+                        <StatCard
+                            label={t('admin.total_gmv', 'Total revenue')}
+                            value={`ETB ${(stats.totalGMV / 1000).toFixed(1)}k`}
+                            trend="+0.5%"
+                            trendColor="#10B981"
+                            icon={DollarSign}
+                        />
+                        <StatCard
+                            label={t('admin.tickets_sold', 'Total orders')}
+                            value={stats.totalTicketsSold.toLocaleString()}
+                            trend="+0.2%"
+                            trendColor="#EF4444"
+                            icon={CheckCircle2}
+                        />
+                        <StatCard
+                            label={t('admin.pending_payouts', 'Total returns')}
+                            value={`ETB ${stats.pendingPayouts.toLocaleString()}`}
+                            trend="+0.12%"
+                            trendColor="#10B981"
+                            icon={Activity}
+                        />
+                    </div>
+                    {/* Add/Action Button */}
+                    <button
+                        onClick={() => setShowInviteModal(true)}
+                        style={{
+                            height: '100%',
+                            padding: '0 24px',
+                            background: 'white',
+                            border: '1px solid var(--border)',
+                            borderRadius: '16px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            minHeight: '100px',
+                            gap: '8px'
+                        }}
+                    >
+                        <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <UserPlus size={14} color="var(--text-muted)" />
                         </div>
-                        <div>
-                            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '2px' }}>{item.label}</h4>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.sub}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '20px' }}>{t('admin.performance_overview', 'Performance Overview')}</h3>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
-                <div className="admin-stat-card-main">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.total_gmv')}</p>
-                        <DollarSign size={18} color="var(--text-muted)" />
-                    </div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>ETB {stats.totalGMV.toLocaleString()}</h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10B981', fontSize: '0.8rem', fontWeight: 700 }}>
-                        <TrendingUp size={14} /> +12% vs last month
-                    </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.invite_admin', 'Add user')}</span>
+                    </button>
                 </div>
 
-                <div className="admin-stat-card-main">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.platform_commission')}</p>
-                        <DollarSign size={18} color="#10B981" />
-                    </div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>ETB {stats.platformCommission.toLocaleString()}</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 700 }}>Total Earned</p>
-                </div>
-
-                <div className="admin-stat-card-main">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.pending_payouts')}</p>
-                        <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: stats.pendingPayouts > 0 ? '#F59E0B' : '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <CheckCircle2 size={12} color="white" />
-                        </div>
-                    </div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>ETB {stats.pendingPayouts.toLocaleString()}</h2>
-                    <p style={{ fontSize: '0.8rem', color: stats.pendingPayouts > 0 ? '#F59E0B' : '#10B981', fontWeight: 700 }}>
-                        {stats.pendingPayouts > 0 ? t('admin.awaiting_settlement', 'Awaiting settlement') : t('admin.all_settled', 'All settled')}
-                    </p>
-                </div>
-
-                <div className="admin-stat-card-main">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.active_users')}</p>
-                        <UserPlus size={18} color="#A78BFA" />
-                    </div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>{stats.activeUsers.toLocaleString()}</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#A78BFA', fontWeight: 700 }}>{t('admin.active_desc', 'Registered & Active')}</p>
-                </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '24px', marginBottom: '32px' }}>
-                {/* 🔵 Revenue Chart Area */}
-                <div className="admin-card" style={{ padding: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                        <div>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('admin.revenue_trends', 'Revenue Trends')}</h3>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('admin.gmv_payouts', 'Gross Merchandise Value vs. Payouts')}</p>
-                        </div>
-                    </div>
-
-                    <div style={{ height: '240px', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', paddingBottom: '30px', borderBottom: '1px solid var(--border)' }}>
-                        {monthlySales.length === 0 ? (
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', paddingBottom: '60px' }}>No sales data available yet</p>
-                        ) : (
-                            monthlySales.map((s, i) => {
-                                const maxAmount = Math.max(...monthlySales.map(m => m.amount), 1);
-                                const height = (s.amount / maxAmount) * 180;
-                                return (
-                                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-                                        <div style={{ width: '70%', height: `${height}px`, background: 'var(--primary)', borderRadius: '4px', opacity: 0.8 }} title={`ETB ${s.amount}`} />
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>{s.name}</span>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-                    <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, marginTop: '12px' }}>
-                        <span>6 mo trend</span>
-                        <span>Present</span>
-                    </div>
-                </div>
-
-                {/* 🟡 Fraud Alerts Sidebar */}
-                <div className="admin-card" style={{ padding: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('admin.fraud')}</h3>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {fraudAlerts.length === 0 ? (
-                            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                <CheckCircle2 size={18} color="#10B981" />
-                                <div>
-                                    <h4 style={{ fontSize: '0.85rem', fontWeight: 800 }}>{t('admin.all_normal', 'All systems normal')}</h4>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('admin.no_critical', 'No critical alerts found.')}</p>
+                {/* 2. Middle Main Chart Row (Splitted) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                    {/* Left: Product Sales Chart */}
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Product sales</h3>
+                            <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', fontWeight: 600 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6' }} />
+                                    <span style={{ color: 'var(--text-muted)' }}>Gross margin</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B' }} />
+                                    <span style={{ color: 'var(--text-muted)' }}>Revenue</span>
                                 </div>
                             </div>
-                        ) : (
-                            fraudAlerts.map(alert => (
-                                <div key={alert.id} style={{ padding: '12px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                    <ShieldAlert size={18} color="#EF4444" />
-                                    <div>
-                                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800 }}>{alert.type}</h4>
-                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{alert.message}</p>
+                        </div>
+
+                        <div style={{ height: '300px', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingLeft: '20px', paddingRight: '20px' }}>
+                            {monthlySales.length > 0 ? monthlySales.slice(0, 12).map((s, i) => {
+                                const max = Math.max(...monthlySales.map(m => m.amount), 1);
+                                const h1 = (s.amount / max) * 200; // Blue bar
+                                const h2 = (s.amount * 0.7 / max) * 200; // Orange bar (simulated)
+                                return (
+                                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                        <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', height: '100%' }}>
+                                            <div style={{ width: '12px', height: `${Math.max(4, h1)}px`, background: '#3B82F6', borderRadius: '4px' }} />
+                                            <div style={{ width: '12px', height: `${Math.max(4, h2)}px`, background: '#F59E0B', borderRadius: '4px' }} />
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{s.name.substring(0, 3)}</span>
+                                    </div>
+                                )
+                            }) : (
+                                // Placeholder bars if no data
+                                Array.from({ length: 12 }).map((_, i) => (
+                                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                        <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', height: '100%' }}>
+                                            <div style={{ width: '12px', height: `${30 + Math.random() * 100}px`, background: '#3B82F6', borderRadius: '4px' }} />
+                                            <div style={{ width: '12px', height: `${20 + Math.random() * 80}px`, background: '#F59E0B', borderRadius: '4px' }} />
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i]}</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right: Upcoming Features / Events */}
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Phase 2 Features</h3>
+                            <span style={{ fontSize: '0.7rem', color: '#8B5CF6', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>POST-LAUNCH</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {[
+                                { title: 'Loyalty Points', date: 'Q1', desc: 'Rewards & Redemption', color: '#10B981' },
+                                { title: 'Wallet Balance', date: 'Q1', desc: 'Integrated stored value', color: '#F59E0B' },
+                                { title: 'Diaspora Cards', date: 'Q2', desc: 'International payment gateway', color: '#3B82F6' },
+                                { title: 'Seat Map Designer', date: 'Q2', desc: 'Visual layout editor', color: '#EC4899' },
+                                { title: 'White-label Pages', date: 'Q3', desc: 'Custom organizer domains', color: '#8B5CF6' },
+                                { title: 'Live Streaming', date: 'Q3', desc: 'Virtual event support', color: '#64748B' }
+                            ].map((feat, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '40px' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{feat.date}</span>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: feat.color }} />
+                                    </div>
+                                    <div style={{ flex: 1, paddingBottom: '16px', borderBottom: i < 5 ? '1px solid var(--border)' : 'none' }}>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-main)' }}>{feat.title}</h4>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{feat.desc}</p>
                                     </div>
                                 </div>
-                            ))
-                        )}
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* 🟣 Needs Attention Table */}
-            <div className="admin-card" style={{ padding: '0' }}>
-                <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{t('admin.recent_registrations', 'Recent Registrations')}</h3>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('admin.awaiting_verif', 'Latest organizers awaiting verification')}</p>
+                {/* 3. Bottom Two Cards Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+                    {/* Sales by Category (Donut Chart) */}
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '24px' }}>Sales by product category</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                            <div style={{ width: '40%' }}>
+                                <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    {[
+                                        { label: 'Concerts', val: '25%', color: '#8B5CF6' },
+                                        { label: 'Sports', val: '13%', color: '#10B981' },
+                                        { label: 'Theater', val: '3%', color: '#EC4899' },
+                                        { label: 'Dining', val: '17%', color: '#3B82F6' },
+                                        { label: 'Bedroom', val: '12%', color: '#F59E0B' }, // Kept original labels from image or map to categories
+                                        { label: 'Other', val: '9%', color: '#64748B' }
+                                    ].map((c, i) => (
+                                        <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: c.color }} />
+                                            {c.label} - {c.val}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                                {/* Simple CSS Conic Gradient Donut */}
+                                <div style={{
+                                    width: '180px',
+                                    height: '180px',
+                                    borderRadius: '50%',
+                                    background: 'conic-gradient(#8B5CF6 0% 25%, #10B981 25% 38%, #EC4899 38% 41%, #3B82F6 41% 58%, #F59E0B 58% 70%, #64748B 70% 100%)',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <div style={{ width: '120px', height: '120px', background: 'white', borderRadius: '50%' }} />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button
-                            onClick={() => onNavigate?.('Organizer Approvals')}
-                            style={{ background: 'none', border: 'none', color: 'var(--bg-active)', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', marginRight: '16px' }}
-                        >
-                            {t('admin.view_all', 'View All')}
-                        </button>
-                        <button onClick={() => handleExportOrganizers('csv')} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>CSV</button>
-                        <button onClick={() => handleExportOrganizers('pdf')} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>PDF</button>
+
+                    {/* Sales by Countries (Registrations List) */}
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Recent Organizers</h3>
+                            <button onClick={() => handleExportOrganizers('csv')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                <Download size={18} />
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {organizers.length > 0 ? organizers.map((org, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: org.status === 'APPROVED' ? '#10B981' : '#F59E0B' }} />
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>{org.organizationName}</span>
+                                    </div>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-muted)' }}>{Math.floor(Math.random() * 20)}%</span>
+                                </div>
+                            )) : (
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No recent registrations.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
-                <table className="admin-table">
-                    <thead>
-                        <tr>
-                            <th>ORGANIZATION</th>
-                            <th>CONTACT</th>
-                            <th>SUBMITTED</th>
-                            <th>STATUS</th>
-                            <th style={{ textAlign: 'right' }}>ACTIONS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {organizers.length === 0 ? (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px' }}>No recent registrations</td></tr>
-                        ) : (
-                            organizers.map((org) => (
-                                <tr key={org.id}>
-                                    <td>
-                                        <p style={{ fontWeight: 800, fontSize: '0.9rem' }}>{org.organizationName}</p>
-                                    </td>
-                                    <td>{org.contactPhone}</td>
-                                    <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(org.createdAt).toLocaleDateString()}</td>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{
-                                                width: '6px', height: '6px', borderRadius: '50%',
-                                                background: org.status === 'PENDING' ? '#F59E0B' : '#10B981'
-                                            }} />
-                                            <span style={{
-                                                fontSize: '0.85rem', fontWeight: 700,
-                                                color: org.status === 'PENDING' ? '#F59E0B' : '#10B981'
-                                            }}>{org.status}</span>
-                                        </div>
-                                    </td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <button
-                                            onClick={() => onNavigate?.('Organizer Approvals')}
-                                            style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
-                                        >
-                                            Manage
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
             </div>
 
             {/* Invite Admin Modal */}
@@ -340,3 +324,25 @@ export const AdminOverview = ({ onNavigate }: { onNavigate?: (tab: any) => void 
         </motion.div>
     );
 };
+
+const StatCard = ({ label, value, trend, trendColor, icon: Icon }: any) => (
+    <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+        minHeight: '130px'
+    }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{label}</p>
+            <Icon size={18} color="var(--text-muted)" style={{ opacity: 0.5 }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>{value}</h3>
+            {trend && <span style={{ fontSize: '0.75rem', color: trendColor, fontWeight: 700 }}>{trend}</span>}
+        </div>
+    </div>
+);
