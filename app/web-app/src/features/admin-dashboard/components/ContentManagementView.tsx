@@ -13,7 +13,7 @@ export const ContentManagementView = () => {
 
     const [newCat, setNewCat] = useState({ name: '', slug: '' });
     const [newCity, setNewCity] = useState({ name: '', slug: '' });
-    const [newBanner, setNewBanner] = useState({ title: '', imageUrl: '', linkUrl: '', order: 0 });
+    const [newBanner, setNewBanner] = useState({ title: '', subtitle: '', imageUrl: '', linkUrl: '', order: 0 });
 
     // Details handling
     const [selectedItem, setSelectedItem] = useState<{ type: 'category' | 'city', data: any } | null>(null);
@@ -77,9 +77,12 @@ export const ContentManagementView = () => {
         if (!newBanner.imageUrl) return;
         try {
             await ContentService.addBanner(newBanner);
-            setNewBanner({ title: '', imageUrl: '', linkUrl: '', order: 0 });
+            setNewBanner({ title: '', subtitle: '', imageUrl: '', linkUrl: '', order: 0 });
             fetchData();
-        } catch (err: any) { alert('Failed to add banner'); }
+        } catch (err: any) {
+            console.error(err);
+            alert(err.response?.data?.error || err.message || 'Failed to add banner');
+        }
     };
 
     const handleDeleteCat = async (e: React.MouseEvent, id: number) => {
@@ -227,11 +230,13 @@ export const ContentManagementView = () => {
                     <h3 style={{ fontWeight: 800 }}>Homepage Hero Banners</h3>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '24px' }}>
                     <input placeholder="Banner Title" value={newBanner.title} onChange={e => setNewBanner({ ...newBanner, title: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
+                    <input placeholder="Subtitle (Optional)" value={newBanner.subtitle} onChange={e => setNewBanner({ ...newBanner, subtitle: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
                     <input placeholder="Image URL" value={newBanner.imageUrl} onChange={e => setNewBanner({ ...newBanner, imageUrl: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
                     <input placeholder="Link URL" value={newBanner.linkUrl} onChange={e => setNewBanner({ ...newBanner, linkUrl: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
-                    <button onClick={handleAddBanner} style={{ background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>Add Banner</button>
+                    <input type="number" placeholder="Order" value={newBanner.order} onChange={e => setNewBanner({ ...newBanner, order: parseInt(e.target.value) || 0 })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
+                    <button onClick={handleAddBanner} style={{ gridColumn: 'span 5', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontWeight: 800, cursor: 'pointer' }}>Add Banner</button>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>

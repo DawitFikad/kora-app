@@ -404,7 +404,7 @@ const Testimonials = () => {
 import { ContentService } from '../../core/api/content.service';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
-const HeroCarousel = ({ banners }: { banners: any[] }) => {
+const InlineBannerCarousel = ({ banners }: { banners: any[] }) => {
     const [index, setIndex] = useState(0);
     const navigate = useNavigate();
 
@@ -418,14 +418,24 @@ const HeroCarousel = ({ banners }: { banners: any[] }) => {
     const current = banners[index];
 
     return (
-        <section style={{ height: '80vh', minHeight: '600px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{
+            maxWidth: '1000px',
+            margin: '0 auto 3.5rem',
+            position: 'relative',
+            borderRadius: '24px',
+            overflow: 'hidden',
+            aspectRatio: '2/1',
+            maxHeight: '400px',
+            boxShadow: '0 20px 50px -10px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255,255,255,0.1)'
+        }}>
             <AnimatePresence mode="wait">
                 <motion.div
                     key={current.id}
-                    initial={{ opacity: 0, scale: 1.1 }}
+                    initial={{ opacity: 0, scale: 1.05 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.8 }}
+                    transition={{ duration: 0.5 }}
                     style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         backgroundImage: `url(${current.imageUrl})`,
@@ -433,66 +443,63 @@ const HeroCarousel = ({ banners }: { banners: any[] }) => {
                         backgroundPosition: 'center'
                     }}
                 >
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #0f172a 0%, transparent 60%, rgba(0,0,0,0.4) 100%)' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%)' }} />
                 </motion.div>
             </AnimatePresence>
 
-            <div className="container" style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center', zIndex: 10 }}>
-                <div style={{ maxWidth: '800px', paddingTop: '100px' }}>
-                    <motion.h1
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem', textAlign: 'left', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                <div>
+                    <motion.h2
                         key={`t-${current.id}`}
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                        style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, color: 'white', marginBottom: '1.5rem', lineHeight: 1.1, textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                        style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', marginBottom: '0.5rem', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
                     >
                         {current.title}
-                    </motion.h1>
-                    {current.subtitle && (
-                        <motion.p
-                            key={`s-${current.id}`}
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.4 }}
-                            style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.9)', marginBottom: '2.5rem', fontWeight: 500 }}
-                        >
-                            {current.subtitle}
-                        </motion.p>
-                    )}
-                    {current.linkUrl && (
-                        <motion.button
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.5 }}
-                            onClick={() => {
-                                if (current.linkUrl.startsWith('http')) window.location.href = current.linkUrl;
-                                else navigate(current.linkUrl);
-                            }}
-                            style={{
-                                padding: '1rem 2.5rem', borderRadius: '50px',
-                                background: 'white', color: 'black',
-                                border: 'none', fontSize: '1.1rem', fontWeight: 800,
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'
-                            }}
-                        >
-                            Explore Event <ArrowRight size={20} />
-                        </motion.button>
-                    )}
+                    </motion.h2>
+                    <motion.p
+                        key={`s-${current.id}`}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                        style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}
+                    >
+                        {current.subtitle}
+                    </motion.p>
                 </div>
+                {current.linkUrl && (
+                    <motion.button
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        onClick={() => {
+                            if (current.linkUrl.startsWith('http')) window.location.href = current.linkUrl;
+                            else navigate(current.linkUrl);
+                        }}
+                        style={{
+                            padding: '0.75rem 1.5rem', borderRadius: '12px',
+                            background: 'white', color: 'black',
+                            border: 'none', fontSize: '0.9rem', fontWeight: 700,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                            boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+                        }}
+                    >
+                        Check it out <ChevronRight size={16} />
+                    </motion.button>
+                )}
             </div>
 
             {/* Controls */}
             {banners.length > 1 && (
-                <div style={{ position: 'absolute', bottom: '40px', right: '40px', display: 'flex', gap: '12px', zIndex: 20 }}>
-                    <button onClick={() => setIndex(prev => (prev - 1 + banners.length) % banners.length)} style={{ padding: '12px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>
-                        <ChevronLeft size={24} />
+                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', width: '100%', display: 'flex', justifyContent: 'space-between', padding: '0 10px', pointerEvents: 'none' }}>
+                    <button onClick={() => setIndex(prev => (prev - 1 + banners.length) % banners.length)} style={{ pointerEvents: 'auto', padding: '8px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', border: 'none', color: 'white', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+                        <ChevronLeft size={20} />
                     </button>
-                    <button onClick={() => setIndex(prev => (prev + 1) % banners.length)} style={{ padding: '12px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>
-                        <ChevronRight size={24} />
+                    <button onClick={() => setIndex(prev => (prev + 1) % banners.length)} style={{ pointerEvents: 'auto', padding: '8px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', border: 'none', color: 'white', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+                        <ChevronRight size={20} />
                     </button>
                 </div>
             )}
-        </section>
+        </div>
     );
 };
 
@@ -541,23 +548,13 @@ const OrganizerLanding = () => {
 
     return (
         <div>
-            {banners.length > 0 ? (
-                <>
-                    <Navbar onAuthClick={(mode) => { setAuthMode(mode); setIsLoginOpen(true); }} />
-                    <HeroCarousel banners={banners} />
-                </>
-            ) : (
-                <>
-                    <div className="mesh-bg" />
-                    <Navbar onAuthClick={(mode) => { setAuthMode(mode); setIsLoginOpen(true); }} />
-                </>
-            )}
+            <div className="mesh-bg" />
+            <Navbar onAuthClick={(mode) => { setAuthMode(mode); setIsLoginOpen(true); }} />
 
             <LoginModal isOpen={isLoginOpen} mode={authMode} onClose={() => setIsLoginOpen(false)} />
 
-            {/* 1. Hero Section - Only show if NO banners */}
-            {banners.length === 0 && (
-                <section style={{ paddingTop: '10rem', paddingBottom: '6rem' }}>
+            {/* 1. Hero Section */}
+            <section style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
                 <div className="container" style={{ textAlign: 'center' }}>
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
@@ -574,21 +571,25 @@ const OrganizerLanding = () => {
                             color: '#A78BFA',
                             fontSize: '0.75rem',
                             fontWeight: 800,
-                            marginBottom: '2.5rem',
+                            marginBottom: '2rem',
                             border: '1px solid rgba(139, 92, 246, 0.2)'
                         }}>
                             <Zap size={14} /> {t('hero.badge')}
                         </div>
-                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', fontWeight: 900, lineHeight: 1, marginBottom: '2rem', letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
+                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 900, lineHeight: 1, marginBottom: '1.5rem', letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
                             {language === 'en' ? (
                                 <>Sell Tickets. Manage Events. <br /><span className="gradient-text">Get Paid — All in One Platform.</span></>
                             ) : (
                                 <>{t('hero.title')}</>
                             )}
                         </h1>
-                        <p style={{ fontSize: 'clamp(1.1rem, 2vw, 1.25rem)', color: 'var(--text-muted)', maxWidth: '800px', margin: '0 auto 3.5rem', lineHeight: 1.6 }}>
+                        <p style={{ fontSize: 'clamp(1.1rem, 2vw, 1.25rem)', color: 'var(--text-muted)', maxWidth: '800px', margin: '0 auto 3rem', lineHeight: 1.6 }}>
                             {t('hero.subtitle')}
                         </p>
+
+                        {/* BANNERS INJECTED HERE */}
+                        {banners.length > 0 && <InlineBannerCarousel banners={banners} />}
+
                         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                             <motion.button
                                 onClick={() => { setAuthMode('register'); setIsLoginOpen(true); }}
