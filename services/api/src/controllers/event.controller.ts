@@ -26,7 +26,16 @@ export class EventController {
             }
 
             // Only permit viewing if APPROVED or if requester is OWNER/ADMIN
-            const isOwner = req.user && (await ProfileService.getOrganizerProfile(req.user.userId)).id === event.organizerId;
+            // Only permit viewing if APPROVED or if requester is OWNER/ADMIN
+            let isOwner = false;
+            if (req.user && req.user.role === Role.ORGANIZER) {
+                try {
+                    const organizer = await ProfileService.getOrganizerProfile(req.user.userId);
+                    isOwner = organizer.id === event.organizerId;
+                } catch (e) {
+                    isOwner = false;
+                }
+            }
             const isAdmin = req.user?.role === Role.ADMIN;
 
             if (event.status !== EventStatus.APPROVED && !isOwner && !isAdmin) {

@@ -106,16 +106,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         tierId: widget.tierId,
         quantity: widget.quantity,
         promoCode: _appliedPromoCode,
-        paymentMethod: 'CHAPA', // Defaulting to CHAPA for now
+        paymentMethod: 'CHAPA', // Using Chapa as the payment gateway
       );
 
       final purchaseId = reservation['purchaseId'];
 
-      // 2. Initialize Payment
-      final paymentUrl = await ref.read(paymentServiceProvider).initializePayment(
+      // 2. Initialize Payment with Real Provider (Chapa/Telebirr)
+      final paymentResponse = await ref.read(paymentServiceProvider).initializePayment(
         purchaseId: purchaseId,
-        provider: 'CHAPA',
       );
+
+      final paymentUrl = paymentResponse['checkoutUrl'] ?? '';
+      final paymentMethod = paymentResponse['method'] ?? 'CHAPA';
 
       // 3. Launch Payment URL
       if (paymentUrl.isNotEmpty) {
@@ -123,12 +125,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         if (await canLaunchUrl(uri)) {
            await launchUrl(uri, mode: LaunchMode.externalApplication);
            
-           // In a real app, we would listen for deep links or poll status.
-           // For now, let's go back to home or show a pending screen.
+           // Navigate back and show success message
            if (mounted) {
              Navigator.popUntil(context, (route) => route.isFirst);
              ScaffoldMessenger.of(context).showSnackBar(
-               const SnackBar(content: Text("Payment initiated. Check your tickets shortly.")),
+               SnackBar(
+                 content: Text("Payment initiated via $paymentMethod. Complete payment to receive your tickets."),
+                 backgroundColor: Colors.green,
+                 duration: const Duration(seconds: 5),
+               ),
              );
            }
         } else {

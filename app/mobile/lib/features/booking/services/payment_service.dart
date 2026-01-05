@@ -11,21 +11,24 @@ class PaymentService {
 
   PaymentService(this._dio);
 
-  Future<String> initializePayment({
+  Future<Map<String, dynamic>> initializePayment({
     required int purchaseId,
-    required String provider, // 'CHAPA', 'STRIPE', etc.
   }) async {
     try {
       final response = await _dio.post(
         '/payments/initialize',
         data: {
           'purchaseId': purchaseId,
-          'provider': provider,
         },
       );
       
-      final data = response.data['data'];
-      return data['checkoutUrl'] ?? data['paymentUrl'] ?? ''; 
+      // Return the full response data
+      return {
+        'checkoutUrl': response.data['checkoutUrl'] ?? '',
+        'paymentRef': response.data['paymentRef'] ?? '',
+        'amount': response.data['amount'] ?? 0,
+        'method': response.data['method'] ?? 'CHAPA',
+      };
     } catch (e) {
       throw _handleError(e);
     }
