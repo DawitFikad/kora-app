@@ -1,0 +1,12 @@
+{
+  "success": false,
+  "message": "Status: Unknown",
+  "raw": {
+    "merch_order_id": "TX176772483423671a78d13",
+    "order_status": "WAIT_PAY",
+    "payment_order_id": null,
+    "trans_time": null,
+    "trans_currency": "ETB",
+    "total_amount": "2250.00"
+  }
+}
