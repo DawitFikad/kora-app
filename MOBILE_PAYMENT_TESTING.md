@@ -227,11 +227,12 @@ Before going live, test:
 
 ## 🔐 Security Notes
 
-### Current Setup (Test Mode):
-- Using Chapa TEST credentials
-- Using Telebirr TEST credentials
-- Safe for development/testing
-- No real money transactions
+### Current Setup (Production Mode):
+- **Mock Mode DISABLED**: Application requires valid provider credentials.
+- Using Chapa TEST credentials (Real API)
+- Using Telebirr TEST credentials (Real API - Note: Ensure URL is reachable)
+- No longer falls back to internal mock page.
+- No real money transactions (Test Env)
 
 ### Before Production:
 - [ ] Replace with production Chapa key

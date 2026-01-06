@@ -69,8 +69,7 @@ export class PaymentService {
                         checkoutUrl = telebirrResult.checkoutUrl;
                         providerPayload = { prepayId: telebirrResult.prepayId };
                     } else {
-                        logger.warn("Telebirr not configured, using mock mode");
-                        checkoutUrl = `${baseUrl}/api/payments/mock-gateways/mock?ref=${tx_ref}`;
+                        throw new Error("Telebirr payment provider is not configured.");
                     }
                     break;
 
@@ -90,8 +89,8 @@ export class PaymentService {
                             callbackUrl: callback_url,
                             returnUrl: return_url,
                             customization: {
-                                title: `ET-Tickets - ${purchase.paymentMethod}`,
-                                description: `Payment for Purchase #${purchase.id}`,
+                                title: "ET-Tickets Pay",
+                                description: `Ticket Purchase ${purchase.id}`,
                             },
                             meta: {
                                 purchaseId: purchase.id,
@@ -102,15 +101,12 @@ export class PaymentService {
                         checkoutUrl = chapaResult.checkoutUrl;
                         providerPayload = { txRef: chapaResult.txRef };
                     } else {
-                        logger.warn("Chapa not configured, using mock mode");
-                        checkoutUrl = `${baseUrl}/api/payments/mock-gateways/mock?ref=${tx_ref}`;
+                        throw new Error("Chapa payment provider is not configured.");
                     }
                     break;
 
                 default:
-                    // Fallback to mock for unsupported payment methods
-                    logger.warn({ method: purchase.paymentMethod }, "Unsupported payment method, using mock");
-                    checkoutUrl = `${baseUrl}/api/payments/mock-gateways/mock?ref=${tx_ref}`;
+                    throw new Error(`Unsupported payment method: ${purchase.paymentMethod}`);
             }
 
             return {
@@ -122,19 +118,6 @@ export class PaymentService {
             };
         } catch (error: any) {
             logger.error({ error: error.message, purchaseId }, "Payment initialization error");
-
-            // Fallback to mock in development if provider fails
-            if (process.env.NODE_ENV !== 'production') {
-                logger.warn("Provider initialization failed, falling back to mock mode");
-                return {
-                    checkoutUrl: `${baseUrl}/api/payments/mock-gateways/mock?ref=${tx_ref}`,
-                    paymentRef: purchase.paymentRef,
-                    amount: purchase.totalAmount,
-                    method: purchase.paymentMethod,
-                    mockPayload: {}
-                };
-            }
-
             throw error;
         }
     }
@@ -172,8 +155,7 @@ export class PaymentService {
                         }
                         verificationResult = result;
                     } else {
-                        // Mock verification
-                        isValid = !paymentRef.includes("fail") && !paymentRef.includes("FAIL");
+                        throw new Error("Telebirr provider is not configured for verification");
                     }
                     break;
 
@@ -188,14 +170,12 @@ export class PaymentService {
                         }
                         verificationResult = result;
                     } else {
-                        // Mock verification
-                        isValid = !paymentRef.includes("fail") && !paymentRef.includes("FAIL");
+                        throw new Error("Chapa provider is not configured for verification");
                     }
                     break;
 
                 default:
-                    // Mock verification for other methods
-                    isValid = !paymentRef.includes("fail") && !paymentRef.includes("FAIL");
+                    throw new Error(`Unsupported payment method: ${purchase.paymentMethod}`);
             }
 
             if (isValid) {
@@ -234,34 +214,6 @@ export class PaymentService {
             }
         } catch (error: any) {
             logger.error({ error: error.message, paymentRef }, "Payment verification error");
-
-            // In development, fallback to mock verification
-            if (process.env.NODE_ENV !== 'production') {
-                logger.warn("Provider verification failed, using mock verification");
-                isValid = !paymentRef.includes("fail") && !paymentRef.includes("FAIL");
-
-                if (isValid) {
-                    const updatedPurchase = await prisma.purchase.update({
-                        where: { id: purchase.id },
-                        data: {
-                            status: PaymentStatus.SUCCESS,
-                            externalRef: `MOCK-${Date.now()}`
-                        }
-                    });
-
-                    await TicketService.completePurchase(updatedPurchase.id);
-
-                    try {
-                        const { FinancialService } = require("./financial.service");
-                        await FinancialService.recordTicketPurchase(updatedPurchase.id);
-                    } catch (err) {
-                        logger.error({ err }, "Failed to record financial transaction");
-                    }
-
-                    return updatedPurchase;
-                }
-            }
-
             throw error;
         }
     }

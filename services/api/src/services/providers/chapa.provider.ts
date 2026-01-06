@@ -55,14 +55,12 @@ interface ChapaVerifyResponse {
 
 export class ChapaProvider {
     private static readonly BASE_URL = 'https://api.chapa.co/v1';
-    private static readonly SANDBOX_URL = 'https://api.chapa-sandbox.com/v1'; // For testing
 
     /**
      * Get the appropriate base URL based on environment
      */
     private static getBaseUrl(): string {
-        const isSandbox = env.chapaSecretKey?.startsWith('CHASECK_TEST');
-        return isSandbox ? this.SANDBOX_URL : this.BASE_URL;
+        return this.BASE_URL;
     }
 
     /**
@@ -117,7 +115,9 @@ export class ChapaProvider {
                 },
                 'Chapa initialization error'
             );
-            throw new Error(`Chapa payment initialization failed: ${error.response?.data?.message || error.message}`);
+            const errorMsg = error.response?.data?.message;
+            const formattedError = typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : (errorMsg || error.message);
+            throw new Error(`Chapa payment initialization failed: ${formattedError}`);
         }
     }
 
@@ -168,7 +168,7 @@ export class ChapaProvider {
                 return {
                     success: false,
                     status: response.data.data?.status,
-                    message: response.data.message || 'Payment verification failed',
+                    message: `Transaction status is ${response.data.data?.status || 'unknown'}`,
                 };
             }
         } catch (error: any) {

@@ -37,6 +37,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final TextEditingController _promoController = TextEditingController();
   String? _appliedPromoCode;
   String? _promoError;
+  String _selectedPaymentMethod = 'CHAPA'; // Default to Chapa
 
   @override
   void initState() {
@@ -106,7 +107,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         tierId: widget.tierId,
         quantity: widget.quantity,
         promoCode: _appliedPromoCode,
-        paymentMethod: 'CHAPA', // Using Chapa as the payment gateway
+        paymentMethod: _selectedPaymentMethod, // Using selected method
       );
 
       final purchaseId = reservation['purchaseId'];
@@ -282,6 +283,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       
                       const SizedBox(height: 32),
                       
+                      // Payment Method Selection
+                      Text("Payment Method", style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 12),
+                      _buildPaymentOption("Telebirr", "TELEBIRR", Icons.mobile_friendly),
+                      const SizedBox(height: 8),
+                      _buildPaymentOption("Chapa (Cards & Banks)", "CHAPA", Icons.credit_card),
+                      
+                      const SizedBox(height: 32),
+
                       // Promo Code
                       Text("Promo Code", style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
@@ -359,6 +369,34 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentOption(String label, String value, IconData icon) {
+    final isSelected = _selectedPaymentMethod == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPaymentMethod = value),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF8B5CF6).withOpacity(0.2) : const Color(0xFF1D192B),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent,
+            width: 2
+          )
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? const Color(0xFF8B5CF6) : Colors.white70),
+            const SizedBox(width: 12),
+            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+            const Spacer(),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 20)
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import https from 'https';
 import crypto from 'crypto';
 import { env } from '../../config/env';
 import logger from '../../utils/logger';
@@ -22,8 +23,31 @@ interface TelebirrResponse {
 }
 
 export class TelebirrProvider {
-    private static readonly BASE_URL = 'https://app.ethiotelebirr.et:9091/service-openup/toTradeWebPay';
-    private static readonly QUERY_URL = 'https://app.ethiotelebirr.et:9091/service-openup/query';
+    private static readonly BASE_URL = `${env.teleBirrApiUrl}/service-openup/toTradeWebPay`;
+    private static readonly QUERY_URL = `${env.teleBirrApiUrl}/service-openup/query`;
+
+    /**
+     * Format private key with PEM headers if missing
+     */
+    private static formatPrivateKey(key: string): string {
+        try {
+            if (!key) return '';
+
+            // Remove existing headers/footers and newlines to get clean base64
+            let cleanKey = key
+                .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, '')
+                .replace(/-----END (RSA )?PRIVATE KEY-----/g, '')
+                .replace(/\s+/g, '');
+
+            // Chunk into 64 characters
+            const chunked = cleanKey.match(/.{1,64}/g)?.join('\n');
+
+            return `-----BEGIN PRIVATE KEY-----\n${chunked}\n-----END PRIVATE KEY-----`;
+        } catch (error) {
+            logger.error({ error }, 'Error formatting private key');
+            return key;
+        }
+    }
 
     /**
      * Generate signature for Telebirr API requests
@@ -37,7 +61,7 @@ export class TelebirrProvider {
         const sign = crypto
             .createSign('RSA-SHA256')
             .update(signString)
-            .sign(env.teleBirrPrivateKey, 'base64');
+            .sign(this.formatPrivateKey(env.teleBirrPrivateKey), 'base64');
 
         return sign;
     }
@@ -105,10 +129,15 @@ export class TelebirrProvider {
 
             logger.info({ outTradeNo: params.outTradeNo }, 'Initializing Telebirr payment');
 
+            const agent = new https.Agent({
+                rejectUnauthorized: false
+            });
+
             const response = await axios.post<TelebirrResponse>(this.BASE_URL, payload, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                httpsAgent: agent,
                 timeout: 30000,
             });
 
@@ -154,10 +183,15 @@ export class TelebirrProvider {
 
             logger.info({ outTradeNo }, 'Verifying Telebirr payment');
 
+            const agent = new https.Agent({
+                rejectUnauthorized: false
+            });
+
             const response = await axios.post<TelebirrResponse>(this.QUERY_URL, payload, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                httpsAgent: agent,
                 timeout: 30000,
             });
 

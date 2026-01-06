@@ -4,9 +4,10 @@ import { authenticate } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-// Public Mock Gateways (Simulated Provider Pages)
-router.get("/mock-gateways/:provider", PaymentController.mockGateway);
+// Public Mock Gateways (Removed for Production)
 router.get("/verify-callback", PaymentController.verifyCallback);
+// Mobile Completion Page
+router.get("/completion", PaymentController.completion);
 
 // Webhook (Public, but should be signature-verified in production)
 router.post("/webhook", PaymentController.webhook);

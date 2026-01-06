@@ -48,45 +48,7 @@ export class PaymentController {
         }
     }
 
-    /**
-     * Mock Payment Gateway Redirect (Simulates the provider UI)
-     */
-    static async mockGateway(req: Request, res: Response) {
-        const { ref } = req.query;
-        const provider = req.path.split("/").pop(); // chapa, telebirr, etc.
-        const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
 
-        res.send(`
-            <html>
-                <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5;">
-                    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px;">
-                        <h2 style="color: #1a73e8; margin-top: 0;">EtTicket Mock Payment</h2>
-                        <p>You are paying via <strong>${provider?.toUpperCase()}</strong></p>
-                        <p>Reference: <code>${ref}</code></p>
-                        
-                        <div style="margin: 2rem 0;">
-                            <button onclick="pay('SUCCESS')" style="background: #34a853; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 10px;">Simulate Success</button>
-                            <button onclick="pay('FAIL')" style="background: #ea4335; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">Simulate Failure</button>
-                        </div>
-                    </div>
-
-                    <script>
-                        function pay(status) {
-                            const ref = "${ref}";
-                            if (status === 'SUCCESS') {
-                                // Redirect to Backend Verify Callback
-                                window.location.href = '/api/payments/verify-callback?ref=' + ref;
-                            } else {
-                                // Redirect to Frontend Callback with Failure
-                                // Note: Purchase stays PENDING in DB, which is fine (abandoned)
-                                window.location.href = "${clientUrl}/payment/callback?status=failed&ref=" + ref + "&reason=Simulated+Failure"; 
-                            }
-                        }
-                    </script>
-                </body>
-            </html>
-        `);
-    }
 
     /**
      * Handles the return redirect from Payment Providers.
@@ -94,23 +56,57 @@ export class PaymentController {
     static async verifyCallback(req: Request, res: Response) {
         try {
             const { ref } = req.query;
-            const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+            const clientUrl = process.env.CLIENT_URL || "http://10.0.2.2:4000/api/payments/completion";
 
             if (!ref) {
-                res.redirect(`${clientUrl}/payment/callback?status=error&message=Missing+Payment+Reference`);
+                res.redirect(`${clientUrl}?status=error&message=Missing+Payment+Reference`);
                 return;
             }
 
             const result = await PaymentService.verifyPayment(ref as string);
 
             if (result.status === 'SUCCESS') {
-                res.redirect(`${clientUrl}/payment/callback?status=success&ref=${ref}&purchaseId=${result.id}`);
+                res.redirect(`${clientUrl}?status=success&ref=${ref}&purchaseId=${result.id}`);
             } else {
-                res.redirect(`${clientUrl}/payment/callback?status=failed&ref=${ref}&reason=${encodeURIComponent(result.failureReason || 'Verification failed')}&purchaseId=${result.id}`);
+                res.redirect(`${clientUrl}?status=failed&ref=${ref}&reason=${encodeURIComponent(result.failureReason || 'Verification failed')}&purchaseId=${result.id}`);
             }
         } catch (error: any) {
-            const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-            res.redirect(`${clientUrl}/payment/callback?status=error&message=${encodeURIComponent(error.message)}`);
+            const clientUrl = process.env.CLIENT_URL || "http://10.0.2.2:4000/api/payments/completion";
+            res.redirect(`${clientUrl}?status=error&message=${encodeURIComponent(error.message)}`);
         }
+    }
+
+    /**
+     * Renders a simple completion page (to avoid localhost redirect issues on mobile).
+     */
+    static async completion(req: Request, res: Response) {
+        const { status, message } = req.query;
+        const isSuccess = status === 'success';
+        const color = isSuccess ? '#34a853' : '#ea4335';
+        const title = isSuccess ? 'Payment Successful' : 'Payment Failed';
+        const msg = message || (isSuccess ? 'Your payment has been verified. You can return to the app.' : 'Something went wrong.');
+
+        res.send(`
+            <html>
+                <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${title}</title>
+                </head>
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5; margin: 0; padding: 20px; text-align: center;">
+                    <div style="background: white; padding: 2.5rem 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; box-sizing: border-box;">
+                        <div style="width: 80px; height: 80px; background: ${color}20; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <span style="font-size: 40px; color: ${color};">${isSuccess ? '✓' : '✕'}</span>
+                        </div>
+                        <h2 style="color: #1a1a1a; margin: 0 0 0.5rem; font-size: 24px; font-weight: 700;">${title}</h2>
+                        <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 2rem;">${msg}</p>
+                        
+                        <a href="javascript:window.close()" style="background: ${color}; color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; display: block; width: 100%; text-decoration: none; font-size: 16px; box-sizing: border-box;">
+                           Return to App
+                        </a>
+                        <p style="margin-top: 1rem; color: #999; font-size: 13px;">If the button doesn't work, please close this tab manually.</p>
+                    </div>
+                </body>
+            </html>
+        `);
     }
 }
