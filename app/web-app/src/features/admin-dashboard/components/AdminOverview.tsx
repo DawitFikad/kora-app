@@ -198,128 +198,40 @@ export const AdminOverview = () => {
                 </div>
 
                 {/* 2. Main High-Density Grid (DASHBOARD COMMAND CENTER) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.3fr 0.9fr', gap: '16px', marginBottom: '20px' }}>
 
-                    {/* COLUMN 1: GOVERNANCE & STATUS (Stacked) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {/* Admin Command Center */}
-                        <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                                <div style={{ background: 'var(--bg-active)', padding: '5px', borderRadius: '7px' }}>
-                                    <LayoutDashboard size={13} color="white" />
-                                </div>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Command Center</span>
+                {/* Top row: Admin Command Center (left) and Calendar (right) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '16px', marginBottom: '16px' }}>
+                    {/* Admin Command Center (Left) */}
+                    <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                            <div style={{ background: 'var(--bg-active)', padding: '5px', borderRadius: '7px' }}>
+                                <LayoutDashboard size={13} color="white" />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                {[
-                                    { label: 'Organizers', sub: 'Validate', icon: ShieldCheck, col: '#3B82F6' },
-                                    { label: 'Events', sub: 'Review', icon: CalendarCheck, col: '#10B981' },
-                                    { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6' },
-                                    { label: 'Reports', sub: 'Finance', icon: ClipboardList, col: '#EC4899' }
-                                ].map((btn, i) => (
-                                    <button key={i} className="admin-action-btn" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
-                                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${btn.col}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <btn.icon size={14} color={btn.col} />
-                                        </div>
-                                        <div style={{ textAlign: 'left' }}>
-                                            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{btn.label}</p>
-                                            <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', margin: 0 }}>{btn.sub}</p>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Command Center</span>
                         </div>
-
-                        {/* Organizer Status */}
-                        <div className="admin-card" style={{ flex: 1, padding: '20px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                                <UserPlus size={16} color="#10B981" />
-                                <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-main)' }}>Organizer Status</h3>
-                            </div>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '16px' }}>
-                                <div style={{ position: 'relative', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: '8px solid var(--bg-subtle)', position: 'absolute' }} />
-                                    <div style={{
-                                        width: '80px', height: '80px', borderRadius: '50%', border: '8px solid transparent',
-                                        borderTopColor: '#10B981', borderRightColor: '#10B981',
-                                        transform: `rotate(${(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 360}deg)`,
-                                        transition: 'transform 1.5s ease'
-                                    }} />
-                                    <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{stats.activeOrganizers}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>VERIFIED</p>
-                                        <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10B981' }}>{stats.activeOrganizers}</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            {[
+                                { label: 'Organizers', sub: 'Validate', icon: ShieldCheck, col: '#3B82F6' },
+                                { label: 'Events', sub: 'Review', icon: CalendarCheck, col: '#10B981' },
+                                { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6' },
+                                { label: 'Reports', sub: 'Finance', icon: ClipboardList, col: '#EC4899' }
+                            ].map((btn, i) => (
+                                <button key={i} className="admin-action-btn" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
+                                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${btn.col}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <btn.icon size={14} color={btn.col} />
                                     </div>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>PENDING</p>
-                                        <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#F59E0B' }}>{stats.pendingOrganizers}</p>
+                                    <div style={{ textAlign: 'left' }}>
+                                        <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{btn.label}</p>
+                                        <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', margin: 0 }}>{btn.sub}</p>
                                     </div>
-                                </div>
-                            </div>
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {/* COLUMN 2: CORE ANALYTICS & HEALTH (Wide Focus) */}
+                    {/* Calendar (Right) */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {/* Ticket Sales Trend */}
-                        <div className="admin-card" style={{ flex: 1.2, padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <TrendingUp size={16} color="#F59E0B" />
-                                    <h3 style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>Ticket Sales Trend</h3>
-                                </div>
-                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>MONTHLY PERFORMANCE</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flex: 1, minHeight: '120px', padding: '10px 0' }}>
-                                {monthlySales.length > 0 ? monthlySales.map((s, i) => {
-                                    const max = Math.max(...monthlySales.map(m => m.amount), 1);
-                                    const h = (s.amount / max) * 100;
-                                    return (
-                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                                                <div style={{ height: `${h}%`, width: '14px', background: 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)', borderRadius: '4px' }} />
-                                            </div>
-                                            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)' }}>{s.name}</span>
-                                        </div>
-                                    )
-                                }) : <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)' }}>Metrics loading...</div>}
-                            </div>
-                        </div>
-
-                        {/* System Health */}
-                        <div className="admin-card" style={{ padding: '20px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Layers size={15} color="#6366F1" />
-                                    <h3 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>System Health</h3>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ width: '8px', height: '8px', background: '#10B981', borderRadius: '50%', boxShadow: '0 0 8px rgba(16,185,129,0.4)' }} />
-                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10B981' }}>ONLINE</span>
-                                </div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                                {[
-                                    { label: 'API', val: '22ms' },
-                                    { label: 'DB', val: 'Idle' },
-                                    { label: 'NET', val: 'Low' },
-                                    { label: 'CPU', val: '12%' }
-                                ].map((h, i) => (
-                                    <div key={i} style={{ padding: '8px', background: 'var(--bg-subtle)', borderRadius: '10px', textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.55rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '2px' }}>{h.label}</p>
-                                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-main)' }}>{h.val}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* COLUMN 3: SCHEDULER & ROADMAP */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {/* Compact Calendar */}
-                        <div className="admin-card" style={{ padding: '18px', borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                        <div className="admin-card" style={{ flex: 1, padding: '18px', borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Globe size={14} color="var(--text-muted)" />
@@ -342,26 +254,64 @@ export const AdminOverview = () => {
                                 })}
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        {/* Roadmap v2.0 */}
-                        <div className="admin-card" style={{ flex: 1, padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                <h3 style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--text-main)' }}>Phase 2</h3>
-                                <div style={{ background: '#8B5CF615', color: '#8B5CF6', fontSize: '0.55rem', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>v2.0</div>
+                {/* Second row: Organizer Status (left) and Ticket Sales Trend (right) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '20px' }}>
+                    {/* Organizer Status (Left) */}
+                    <div className="admin-card" style={{ flex: 1, padding: '20px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                            <UserPlus size={16} color="#10B981" />
+                            <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-main)' }}>Organizer Status</h3>
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '16px' }}>
+                            <div style={{ position: 'relative', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: '8px solid var(--bg-subtle)', position: 'absolute' }} />
+                                <div style={{
+                                    width: '80px', height: '80px', borderRadius: '50%', border: '8px solid transparent',
+                                    borderTopColor: '#10B981', borderRightColor: '#10B981',
+                                    transform: `rotate(${(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 360}deg)`,
+                                    transition: 'transform 1.5s ease'
+                                }} />
+                                <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{stats.activeOrganizers}</span>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {[
-                                    { title: 'Loyalty Points', date: 'Q1', color: '#10B981' },
-                                    { title: 'Wallet Balance', date: 'Q1', color: '#F59E0B' },
-                                    { title: 'International Cards', date: 'Q2', color: '#3B82F6' },
-                                    { title: 'Visual Designer', date: 'Q2', color: '#EC4899' }
-                                ].map((feat, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: feat.color }} />
-                                        <h4 style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', flex: 1 }}>{feat.title}</h4>
-                                        <span style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-muted)' }}>{feat.date}</span>
-                                    </div>
-                                ))}
+                            <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>VERIFIED</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10B981' }}>{stats.activeOrganizers}</p>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>PENDING</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#F59E0B' }}>{stats.pendingOrganizers}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Ticket Sales Trend (Right) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div className="admin-card" style={{ flex: 1, padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <TrendingUp size={16} color="#F59E0B" />
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>Ticket Sales Trend</h3>
+                                </div>
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>MONTHLY PERFORMANCE</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flex: 1, minHeight: '120px', padding: '10px 0' }}>
+                                {monthlySales.length > 0 ? monthlySales.map((s, i) => {
+                                    const max = Math.max(...monthlySales.map(m => m.amount), 1);
+                                    const h = (s.amount / max) * 100;
+                                    return (
+                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                                                <div style={{ height: `${h}%`, width: '14px', background: 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)', borderRadius: '4px' }} />
+                                            </div>
+                                            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)' }}>{s.name}</span>
+                                        </div>
+                                    )
+                                }) : <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)' }}>Metrics loading...</div>}
                             </div>
                         </div>
                     </div>
