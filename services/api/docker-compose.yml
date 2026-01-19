@@ -39,5 +39,19 @@ services:
       - redis
     command: ["npm", "run", "dev"]
 
+  web:
+    image: node:20-bullseye
+    working_dir: /usr/src/app
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ../../app/web-app:/usr/src/app:cached
+      - /usr/src/app/node_modules
+    ports:
+      - "5173:5173"
+    command: sh -c "cd /usr/src/app && npm install --silent && npm run dev -- --host"
+    depends_on:
+      - api
+
 volumes:
   db-data:
