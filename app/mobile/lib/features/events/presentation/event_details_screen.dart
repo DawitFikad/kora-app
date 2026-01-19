@@ -165,7 +165,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       quantity: quantity,
                       onChanged: (val) => setState(() => _ticketQuantities[tier.id] = val),
                      );
-                  }).toList(),
+                  }),
                   
                   const SizedBox(height: 24),
                   _buildExpandableSection("Event Policies"),

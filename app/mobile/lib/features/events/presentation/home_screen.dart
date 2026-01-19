@@ -6,9 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui; 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:mobile/features/auth/services/auth_service.dart';
 import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/profile/presentation/profile_screen.dart';
@@ -18,7 +16,6 @@ import 'package:mobile/features/events/models/city.dart';
 import 'package:mobile/features/tickets/presentation/my_tickets_screen.dart';
 import 'package:mobile/features/events/presentation/notification_screen.dart';
 import 'package:mobile/features/events/presentation/favorites_screen.dart';
-import 'package:mobile/features/events/presentation/event_details_screen.dart';
 import 'package:mobile/core/widgets/app_image.dart';
 
 final selectedCategoryProvider = StateProvider<Category?>((ref) => null);

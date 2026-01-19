@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ui';
 import '../../../../core/providers.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {

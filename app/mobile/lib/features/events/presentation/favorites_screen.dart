@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/core/widgets/app_image.dart';

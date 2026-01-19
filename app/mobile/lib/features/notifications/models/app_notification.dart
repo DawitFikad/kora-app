@@ -21,8 +21,9 @@ class AppNotification {
     // Map backend 'channel' or 'title' to UI 'type'
     String type = 'update';
     final title = json['title'] ?? '';
-    if (title.contains('Reminder')) type = 'reminder';
-    else if (title.contains('Booking') || title.contains('Ticket')) type = 'booking';
+    if (title.contains('Reminder')) {
+      type = 'reminder';
+    } else if (title.contains('Booking') || title.contains('Ticket')) type = 'booking';
     else if (title.contains('Alert')) type = 'alert';
 
     return AppNotification(

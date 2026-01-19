@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../auth/services/auth_service.dart';
 import '../../profile/services/profile_service.dart';
 import '../../profile/presentation/edit_profile_screen.dart';

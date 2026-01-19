@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile/core/constants/api_constants.dart';
 import 'package:mobile/core/providers.dart';
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
