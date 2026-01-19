@@ -79,11 +79,8 @@ CHAPA_SECRET_KEY="CHASECK_TEST-abc123def456ghi789jkl012mno345pqr"
 
 Once configured, users can pay using:
 - ✅ Telebirr
-- ✅ CBE Birr
-- ✅ Amole
-- ✅ Awash Wallet
-- ✅ M-Pesa
-- ✅ Credit/Debit Cards
+- ✅ Chapa
+
 
 ## Testing vs Production
 
