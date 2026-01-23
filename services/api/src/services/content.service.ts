@@ -79,7 +79,41 @@ export class ContentService {
 
     static async listBanners() {
         return prisma.homepageBanner.findMany({
-            orderBy: { order: 'asc' }
+            orderBy: [
+                { priority: 'desc' },
+                { order: 'asc' }
+            ]
+        });
+    }
+
+    static async listActiveBanners() {
+        const now = new Date();
+        return prisma.homepageBanner.findMany({
+            where: {
+                isActive: true,
+                OR: [
+                    { startDate: null },
+                    { startDate: { lte: now } }
+                ],
+                AND: [
+                    {
+                        OR: [
+                            { endDate: null },
+                            { endDate: { gte: now } }
+                        ]
+                    }
+                ]
+            },
+            orderBy: [
+                { priority: 'desc' },
+                { order: 'asc' }
+            ]
+        });
+    }
+
+    static async getBannerById(id: number) {
+        return prisma.homepageBanner.findUnique({
+            where: { id }
         });
     }
 
@@ -89,9 +123,30 @@ export class ContentService {
         });
     }
 
+    static async updateBanner(id: number, data: any) {
+        return prisma.homepageBanner.update({
+            where: { id },
+            data
+        });
+    }
+
     static async deleteBanner(id: number) {
         return prisma.homepageBanner.delete({
             where: { id }
+        });
+    }
+
+    static async incrementBannerView(id: number) {
+        return prisma.homepageBanner.update({
+            where: { id },
+            data: { viewCount: { increment: 1 } }
+        });
+    }
+
+    static async incrementBannerClick(id: number) {
+        return prisma.homepageBanner.update({
+            where: { id },
+            data: { clickCount: { increment: 1 } }
         });
     }
 }

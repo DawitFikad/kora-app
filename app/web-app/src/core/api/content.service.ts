@@ -19,7 +19,9 @@ export const ContentService = {
     addCity: (name: string, slug: string) => api.post<any, ApiResponse<any>>('/content/cities', { name, slug }),
     removeCity: (id: number) => api.delete<any, ApiResponse<any>>(`/content/cities/${id}`),
 
-    getBanners: () => api.get<any, ApiResponse<any[]>>('/content/banners'),
+    getBanners: (admin?: boolean) => api.get<any, ApiResponse<any[]>>(`/content/banners${admin ? '?admin=true' : ''}`),
+    getBannerDetail: (id: number) => api.get<any, ApiResponse<any>>(`/content/banners/${id}`),
     addBanner: (data: any) => api.post<any, ApiResponse<any>>('/content/banners', data),
+    updateBanner: (id: number, data: any) => api.put<any, ApiResponse<any>>(`/content/banners/${id}`, data),
     removeBanner: (id: number) => api.delete<any, ApiResponse<any>>(`/content/banners/${id}`),
 };

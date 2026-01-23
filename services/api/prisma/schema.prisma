@@ -8,6 +8,405 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                  Int                  @id @default(autoincrement())
+  phoneNumber         String               @unique
+  email               String?              @unique
+  password            String?
+  role                Role                 @default(USER)
+  status              AccountStatus        @default(ACTIVE)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  disputes            Dispute[]
+  fraudAlerts         FraudAlert[]
+  notifications       NotificationLog[]
+  organizer           OrganizerProfile?
+  purchases           Purchase[]
+  refreshTokens       RefreshToken[]
+  savedPaymentMethods SavedPaymentMethod[]
+  tickets             Ticket[]
+  profile             UserProfile?
+}
+
+model SavedPaymentMethod {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  provider      String
+  accountNumber String
+  accountName   String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserProfile {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  fullName  String?
+  avatarUrl String?
+  bio       String?
+  gender    String?
+  birthDate DateTime?
+  language  String    @default("en")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OrganizerProfile {
+  id               Int               @id @default(autoincrement())
+  userId           Int               @unique
+  organizationName String
+  contactPhone     String
+  contactEmail     String?
+  city             String
+  payoutDetails    String
+  status           OrganizerStatus   @default(PENDING)
+  adminNote        String?
+  logoUrl          String?
+  emailVerified    Boolean           @default(false)
+  feeType          String?
+  feeFixed         Decimal?          @db.Decimal(10, 2)
+  feePercentage    Decimal?          @db.Decimal(10, 2)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  events           Event[]
+  fraudAlerts      FraudAlert[]
+  notifications    NotificationLog[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet           OrganizerWallet?
+}
+
+model Category {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  slug   String  @unique
+  events Event[]
+}
+
+model City {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  slug   String  @unique
+  events Event[]
+}
+
+model Event {
+  id            Int                    @id @default(autoincrement())
+  title         String
+  description   String?
+  venue         String
+  dateTime      DateTime
+  status        EventStatus            @default(PENDING)
+  eventType     EventType              @default(CAPACITY)
+  totalCapacity Int?
+  coverImage    String?
+  gallery       String[]               @default([])
+  featured      Boolean                @default(false)
+  feeType       String?
+  feeFixed      Decimal?               @db.Decimal(10, 2)
+  feePercentage Decimal?               @db.Decimal(10, 2)
+  organizerId   Int
+  categoryId    Int
+  cityId        Int
+  refundPolicy  String                 @default("No refunds within 24 hours of event.")
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  entryMetrics  EntryMetric[]
+  category      Category               @relation(fields: [categoryId], references: [id])
+  city          City                   @relation(fields: [cityId], references: [id])
+  organizer     OrganizerProfile       @relation(fields: [organizerId], references: [id])
+  transactions  FinancialTransaction[]
+  fraudAlerts   FraudAlert[]
+  promoCodes    PromoCode[]
+  tickets       Ticket[]
+  tiers         TicketTier[]
+}
+
+model PromoCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  discount  Decimal   @db.Decimal(10, 2)
+  type      String    @default("PERCENTAGE")
+  expiresAt DateTime?
+  maxUses   Int?
+  usedCount Int       @default(0)
+  isActive  Boolean   @default(true)
+  eventId   Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model TicketTier {
+  id       Int      @id @default(autoincrement())
+  name     String
+  price    Decimal  @db.Decimal(10, 2)
+  capacity Int
+  eventId  Int
+  tickets  Ticket[]
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Ticket {
+  id             String       @id @default(uuid())
+  qrPayload      String       @unique
+  status         TicketStatus @default(VALID)
+  basePrice      Decimal?     @db.Decimal(10, 2)
+  commissionRate Decimal?     @db.Decimal(10, 2)
+  commissionAmt  Decimal?     @db.Decimal(10, 2)
+  convenienceFee Decimal?     @default(0.0) @db.Decimal(10, 2)
+  organizerNet   Decimal?     @db.Decimal(10, 2)
+  platformNet    Decimal?     @db.Decimal(10, 2)
+  userId         Int
+  eventId        Int
+  tierId         Int
+  seatNumber     String?
+  purchaseId     Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  fraudAlerts    FraudAlert[]
+  event          Event        @relation(fields: [eventId], references: [id])
+  purchase       Purchase?    @relation(fields: [purchaseId], references: [id])
+  tier           TicketTier   @relation(fields: [tierId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+}
+
+model Purchase {
+  id            Int                    @id @default(autoincrement())
+  status        PaymentStatus          @default(PENDING)
+  totalAmount   Decimal                @db.Decimal(10, 2)
+  paymentRef    String                 @unique
+  externalRef   String?                @unique
+  paymentMethod String
+  failureReason String?
+  userId        Int
+  metadata      Json?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  disputes      Dispute[]
+  transactions  FinancialTransaction[]
+  user          User                   @relation(fields: [userId], references: [id])
+  refunds       Refund[]
+  tickets       Ticket[]
+}
+
+model OrganizerWallet {
+  id               Int              @id @default(autoincrement())
+  organizerId      Int              @unique
+  pendingBalance   Decimal          @default(0.0) @db.Decimal(12, 2)
+  availableBalance Decimal          @default(0.0) @db.Decimal(12, 2)
+  totalWithdrawn   Decimal          @default(0.0) @db.Decimal(12, 2)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  organizer        OrganizerProfile @relation(fields: [organizerId], references: [id])
+  payouts          PayoutBatch[]
+  ledgerEntries    WalletLedger[]
+}
+
+model WalletLedger {
+  id            Int             @id @default(autoincrement())
+  walletId      Int
+  amount        Decimal         @db.Decimal(12, 2)
+  type          TransactionType
+  description   String?
+  referenceId   String
+  balanceBefore Decimal         @db.Decimal(12, 2)
+  balanceAfter  Decimal         @db.Decimal(12, 2)
+  createdAt     DateTime        @default(now())
+  wallet        OrganizerWallet @relation(fields: [walletId], references: [id])
+}
+
+model FinancialTransaction {
+  id            Int             @id @default(autoincrement())
+  status        FinancialStatus @default(INITIATED)
+  type          TransactionType
+  amount        Decimal         @db.Decimal(10, 2)
+  feeAmount     Decimal         @default(0.0) @db.Decimal(10, 2)
+  netAmount     Decimal         @db.Decimal(10, 2)
+  purchaseId    Int?
+  eventId       Int?
+  payoutBatchId Int?
+  metadata      Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  event         Event?          @relation(fields: [eventId], references: [id])
+  payoutBatch   PayoutBatch?    @relation(fields: [payoutBatchId], references: [id])
+  purchase      Purchase?       @relation(fields: [purchaseId], references: [id])
+  refund        Refund?
+}
+
+model PayoutBatch {
+  id            Int                    @id @default(autoincrement())
+  status        FinancialStatus        @default(INITIATED)
+  amount        Decimal                @db.Decimal(12, 2)
+  method        PayoutMethod
+  payoutDetails String
+  walletId      Int
+  processedAt   DateTime?
+  adminId       Int?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  transactions  FinancialTransaction[]
+  wallet        OrganizerWallet        @relation(fields: [walletId], references: [id])
+}
+
+model PlatformFeeConfig {
+  id            Int      @id @default(autoincrement())
+  name          String
+  feeType       String   @default("PERCENTAGE")
+  feeFixed      Decimal  @default(0.0) @db.Decimal(10, 2)
+  feePercentage Decimal  @default(0.0) @db.Decimal(10, 2)
+  isDefault     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SystemConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model ScanLog {
+  id         Int       @id @default(autoincrement())
+  ticketId   String
+  eventId    Int
+  gateId     String?
+  deviceId   String?
+  mode       String
+  status     String
+  reason     String?
+  timestamp  DateTime  @default(now())
+  deviceTime DateTime?
+  metadata   Json?
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FraudAlert {
+  id          Int               @id @default(autoincrement())
+  type        FraudType
+  riskLevel   RiskLevel
+  message     String
+  isCleared   Boolean           @default(false)
+  resolvedAt  DateTime?
+  adminNote   String?
+  userId      Int?
+  eventId     Int?
+  organizerId Int?
+  ticketId    String?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  event       Event?            @relation(fields: [eventId], references: [id])
+  organizer   OrganizerProfile? @relation(fields: [organizerId], references: [id])
+  ticket      Ticket?           @relation(fields: [ticketId], references: [id])
+  user        User?             @relation(fields: [userId], references: [id])
+}
+
+model RiskScore {
+  id          Int       @id @default(autoincrement())
+  entityType  String
+  entityId    String
+  score       Int       @default(0)
+  level       RiskLevel @default(LOW)
+  lastUpdated DateTime  @default(now())
+  metadata    Json?
+}
+
+model EntryMetric {
+  id          Int      @id @default(autoincrement())
+  eventId     Int
+  gateId      String?
+  entryCount  Int      @default(0)
+  failedCount Int      @default(0)
+  timestamp   DateTime
+  event       Event    @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, gateId, timestamp])
+}
+
+model Refund {
+  id            Int                   @id @default(autoincrement())
+  status        RefundStatus          @default(PENDING)
+  amount        Decimal               @db.Decimal(10, 2)
+  reason        RefundReason          @default(OTHER)
+  description   String?
+  purchaseId    Int
+  transactionId Int?                  @unique
+  processedBy   Int?
+  failureReason String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  disputes      Dispute[]
+  purchase      Purchase              @relation(fields: [purchaseId], references: [id])
+  transaction   FinancialTransaction? @relation(fields: [transactionId], references: [id])
+}
+
+model Dispute {
+  id         Int           @id @default(autoincrement())
+  status     DisputeStatus @default(OPEN)
+  source     DisputeSource
+  reason     String
+  purchaseId Int?
+  refundId   Int?
+  userId     Int
+  metadata   Json?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  purchase   Purchase?     @relation(fields: [purchaseId], references: [id])
+  refund     Refund?       @relation(fields: [refundId], references: [id])
+  user       User          @relation(fields: [userId], references: [id])
+}
+
+model NotificationLog {
+  id          Int                 @id @default(autoincrement())
+  userId      Int?
+  organizerId Int?
+  channel     NotificationChannel
+  recipient   String
+  title       String?
+  content     String
+  status      String
+  isRead      Boolean             @default(false)
+  providerRef String?
+  metadata    Json?
+  createdAt   DateTime            @default(now())
+  organizer   OrganizerProfile?   @relation(fields: [organizerId], references: [id])
+  user        User?               @relation(fields: [userId], references: [id])
+}
+
+model HomepageBanner {
+  id          Int       @id @default(autoincrement())
+  title       String?
+  subtitle    String?
+  imageUrl    String
+  linkUrl     String?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  clickCount  Int       @default(0)
+  ctaText     String?   @default("Learn More")
+  endDate     DateTime?
+  priority    Int       @default(0)
+  startDate   DateTime?
+  targetRules Json?
+  viewCount   Int       @default(0)
+}
+
 enum Role {
   USER
   ORGANIZER
@@ -98,471 +497,6 @@ enum FraudType {
   INSIDER_ABUSE
   PAYMENT_FRAUD
   IP_ANOMALY
-}
-
-model User {
-  id          Int           @id @default(autoincrement())
-  phoneNumber String        @unique
-  email       String?       @unique
-  password    String?
-  role        Role          @default(USER)
-  status      AccountStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  profile               UserProfile?
-  organizer             OrganizerProfile?
-  refreshTokens         RefreshToken[]
-  tickets               Ticket[]
-  purchases             Purchase[]
-  fraudAlerts           FraudAlert[]
-  disputes              Dispute[]
-  notifications         NotificationLog[]
-  savedPaymentMethods   SavedPaymentMethod[]
-}
-
-model SavedPaymentMethod {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider      String   // "TELEBIRR", "CBE_BIRR", "CHAPA", "BANK"
-  accountNumber String   // e.g., phone number or masked card
-  accountName   String?  // Optional name for the account
-  isDefault     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model UserProfile {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName  String?
-  avatarUrl String?
-  bio       String?
-  gender    String?
-  birthDate DateTime?
-  language  String    @default("en") // "am" for Amharic, "en" for English
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-}
-
-model OrganizerProfile {
-  id               Int             @id @default(autoincrement())
-  userId           Int             @unique
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organizationName String
-  contactPhone     String
-  contactEmail     String?
-  city             String
-  payoutDetails    String // Bank or mobile money details
-  status           OrganizerStatus @default(PENDING)
-  adminNote        String?
-  logoUrl          String?  // Profile picture/logo URL
-  emailVerified    Boolean  @default(false)
-
-  // Commission overrides for this organizer
-  feeType       String?  // PERCENTAGE, FIXED, HYBRID
-  feeFixed      Decimal? @db.Decimal(10, 2)
-  feePercentage Decimal? @db.Decimal(10, 2)
-
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-
-  events        Event[]
-  wallet        OrganizerWallet?
-  notifications NotificationLog[]
-  fraudAlerts   FraudAlert[]
-}
-
-model Category {
-  id     Int     @id @default(autoincrement())
-  name   String  @unique
-  slug   String  @unique
-  events Event[]
-}
-
-model City {
-  id     Int     @id @default(autoincrement())
-  name   String  @unique
-  slug   String  @unique
-  events Event[]
-}
-
-model Event {
-  id            Int         @id @default(autoincrement())
-  title         String
-  description   String?
-  venue         String
-  dateTime      DateTime
-  status        EventStatus @default(PENDING)
-  eventType     EventType   @default(CAPACITY)
-  totalCapacity Int? // Used for CAPACITY type
-
-  coverImage String?
-  gallery    String[] @default([])
-  featured   Boolean  @default(false)
-
-  // Commission settings for this specific event (Overrides organizer/global)
-  feeType       String? // PERCENTAGE, FIXED, HYBRID
-  feeFixed      Decimal? @db.Decimal(10, 2)
-  feePercentage Decimal? @db.Decimal(10, 2)
-
-  organizerId Int
-  organizer   OrganizerProfile @relation(fields: [organizerId], references: [id])
-
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  cityId Int
-  city   City @relation(fields: [cityId], references: [id])
-
-  tiers        TicketTier[]
-  tickets      Ticket[]
-  transactions FinancialTransaction[]
-  fraudAlerts  FraudAlert[]
-  entryMetrics EntryMetric[]
-  promoCodes   PromoCode[]
-  
-  refundPolicy String @default("No refunds within 24 hours of event.")
-  
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-}
-
-model PromoCode {
-  id        Int      @id @default(autoincrement())
-  code      String   @unique
-  discount  Decimal  @db.Decimal(10, 2)
-  type      String   @default("PERCENTAGE") // PERCENTAGE, FIXED
-  expiresAt DateTime?
-  maxUses   Int?
-  usedCount Int      @default(0)
-  isActive  Boolean  @default(true)
-
-  eventId Int
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model TicketTier {
-  id       Int      @id @default(autoincrement())
-  name     String // Regular, VIP, etc.
-  price    Decimal  @db.Decimal(10, 2)
-  capacity Int
-  eventId  Int
-  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  tickets  Ticket[]
-}
-
-model Ticket {
-  id        String       @id @default(uuid())
-  qrPayload String       @unique
-  status    TicketStatus @default(VALID)
-
-  // Financial Snapshots (Point 3: Independent of payment logic)
-  basePrice      Decimal? @db.Decimal(10, 2)
-  commissionRate Decimal? @db.Decimal(10, 2) // % or fixed depending on feeType stored in event
-  commissionAmt  Decimal? @db.Decimal(10, 2)
-  convenienceFee Decimal? @default(0.0) @db.Decimal(10, 2)
-  organizerNet   Decimal? @db.Decimal(10, 2)
-  platformNet    Decimal? @db.Decimal(10, 2) // commissionAmt + convenienceFee
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-
-  eventId Int
-  event   Event @relation(fields: [eventId], references: [id])
-
-  tierId Int
-  tier   TicketTier @relation(fields: [tierId], references: [id])
-
-  seatNumber String? // For SEAT_MAP events
-
-  purchaseId  Int?
-  purchase    Purchase?    @relation(fields: [purchaseId], references: [id])
-  fraudAlerts FraudAlert[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-
-model Purchase {
-  id            Int           @id @default(autoincrement())
-  status        PaymentStatus @default(PENDING)
-  totalAmount   Decimal       @db.Decimal(10, 2)
-  paymentRef    String        @unique // Our internal unique ref
-  externalRef   String?       @unique // Provider's ref (Chapa, TeleBirr, etc)
-  paymentMethod String // e.g., "CHAPA", "TELEBIRR", "CBE_BIRR", "AMOLE"
-  failureReason String?
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-
-  metadata Json? // To store eventId, tierId, quantity, seatNumbers
-
-  tickets      Ticket[]
-  transactions FinancialTransaction[]
-  refunds      Refund[]
-  disputes     Dispute[]
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-}
-
-model OrganizerWallet {
-  id          Int              @id @default(autoincrement())
-  organizerId Int              @unique
-  organizer   OrganizerProfile @relation(fields: [organizerId], references: [id])
-
-  pendingBalance   Decimal @default(0.0) @db.Decimal(12, 2)
-  availableBalance Decimal @default(0.0) @db.Decimal(12, 2)
-  totalWithdrawn   Decimal @default(0.0) @db.Decimal(12, 2)
-
-  ledgerEntries WalletLedger[]
-  payouts       PayoutBatch[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model WalletLedger {
-  id       Int             @id @default(autoincrement())
-  walletId Int
-  wallet   OrganizerWallet @relation(fields: [walletId], references: [id])
-
-  amount      Decimal         @db.Decimal(12, 2)
-  type        TransactionType
-  description String?
-  referenceId String // ID of related entity (Purchase, PayoutBatch, etc)
-
-  balanceBefore Decimal @db.Decimal(12, 2)
-  balanceAfter  Decimal @db.Decimal(12, 2)
-
-  createdAt DateTime @default(now())
-}
-
-model FinancialTransaction {
-  id     Int             @id @default(autoincrement())
-  status FinancialStatus @default(INITIATED)
-  type   TransactionType
-
-  amount    Decimal @db.Decimal(10, 2)
-  feeAmount Decimal @default(0.0) @db.Decimal(10, 2)
-  netAmount Decimal @db.Decimal(10, 2) // amount - feeAmount
-
-  purchaseId Int?
-  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
-
-  eventId Int?
-  event   Event? @relation(fields: [eventId], references: [id])
-
-  payoutBatchId Int?
-  payoutBatch   PayoutBatch? @relation(fields: [payoutBatchId], references: [id])
-
-  refund   Refund?
-  metadata Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model PayoutBatch {
-  id     Int             @id @default(autoincrement())
-  status FinancialStatus @default(INITIATED)
-
-  amount        Decimal      @db.Decimal(12, 2)
-  method        PayoutMethod
-  payoutDetails String // Bank/Mobile details used for this payout
-
-  walletId Int
-  wallet   OrganizerWallet @relation(fields: [walletId], references: [id])
-
-  transactions FinancialTransaction[]
-
-  processedAt DateTime?
-  adminId     Int? // The admin who approved/processed it
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model PlatformFeeConfig {
-  id            Int     @id @default(autoincrement())
-  name          String // e.g., "Default Global Fee"
-  feeType       String  @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
-  feeFixed      Decimal @default(0.0) @db.Decimal(10, 2)
-  feePercentage Decimal @default(0.0) @db.Decimal(10, 2)
-  isDefault     Boolean @default(false)
-  isActive      Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model SystemConfig {
-  id          Int      @id @default(autoincrement())
-  key         String   @unique
-  value       String
-  description String?
-  updatedAt   DateTime @updatedAt
-}
-
-model ScanLog {
-  id         Int       @id @default(autoincrement())
-  ticketId   String
-  eventId    Int
-  gateId     String?
-  deviceId   String?
-  mode       String // "ONLINE" | "OFFLINE"
-  status     String // "SUCCESS" | "REJECTED"
-  reason     String?
-  timestamp  DateTime  @default(now())
-  deviceTime DateTime? // Original time from device for offline sync
-
-  metadata Json? // Any extra context (e.g. error details)
-}
-
-model RefreshToken {
-  id        Int      @id @default(autoincrement())
-  token     String   @unique
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-}
-
-model FraudAlert {
-  id        Int       @id @default(autoincrement())
-  type      FraudType
-  riskLevel RiskLevel
-  message   String
-
-  // Investigation status
-  isCleared  Boolean   @default(false)
-  resolvedAt DateTime?
-  adminNote  String?
-
-  // Associations (nullable as alerts can be for various entities)
-  userId      Int?
-  user        User?             @relation(fields: [userId], references: [id])
-  eventId     Int?
-  event       Event?            @relation(fields: [eventId], references: [id])
-  organizerId Int?
-  organizer   OrganizerProfile? @relation(fields: [organizerId], references: [id])
-  ticketId    String?
-  ticket      Ticket?           @relation(fields: [ticketId], references: [id])
-
-  // Context metadata
-  metadata Json? // IPs, device IDs, timestamps involved
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model RiskScore {
-  id         Int       @id @default(autoincrement())
-  entityType String // "USER", "ORGANIZER", "DEVICE"
-  entityId   String // ID as string to support device IDs
-  score      Int       @default(0) // 0-100
-  level      RiskLevel @default(LOW)
-
-  lastUpdated DateTime @default(now())
-  metadata    Json? // History of adjustments
-}
-
-model EntryMetric {
-  id      Int   @id @default(autoincrement())
-  eventId Int
-  event   Event @relation(fields: [eventId], references: [id])
-
-  gateId      String?
-  entryCount  Int     @default(0)
-  failedCount Int     @default(0)
-
-  // Hourly or per-minute buckets
-  timestamp DateTime // Bucket start time
-
-  @@unique([eventId, gateId, timestamp])
-}
-
-model Refund {
-  id          Int          @id @default(autoincrement())
-  status      RefundStatus @default(PENDING)
-  amount      Decimal      @db.Decimal(10, 2)
-  reason      RefundReason @default(OTHER)
-  description String?
-
-  purchaseId Int
-  purchase   Purchase @relation(fields: [purchaseId], references: [id])
-
-  transactionId Int?                  @unique
-  transaction   FinancialTransaction? @relation(fields: [transactionId], references: [id])
-
-  processedBy   Int? // Admin user ID
-  failureReason String?
-
-  disputes Dispute[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Dispute {
-  id     Int           @id @default(autoincrement())
-  status DisputeStatus @default(OPEN)
-  source DisputeSource
-  reason String
-
-  purchaseId Int?
-  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
-
-  refundId Int?
-  refund   Refund? @relation(fields: [refundId], references: [id])
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-
-  metadata Json? // Evidence, communication history
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model NotificationLog {
-  id     Int   @id @default(autoincrement())
-  userId Int?
-  user   User? @relation(fields: [userId], references: [id])
-
-  organizerId Int?
-  organizer   OrganizerProfile? @relation(fields: [organizerId], references: [id])
-
-  channel   NotificationChannel
-  recipient String // Phone number or Email
-  title     String?
-  content   String
-
-  status      String // "SENT", "FAILED", "DELIVERED"
-  isRead      Boolean @default(false)
-  providerRef String? // External message ID
-
-  metadata Json? // Event identifiers, error logs
-
-  createdAt DateTime @default(now())
-}
-
-model HomepageBanner {
-  id          Int      @id @default(autoincrement())
-  title       String?
-  subtitle    String?
-  imageUrl    String
-  linkUrl     String?
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 enum RefundStatus {

@@ -13,7 +13,14 @@ export const ContentManagementView = () => {
 
     const [newCat, setNewCat] = useState({ name: '', slug: '' });
     const [newCity, setNewCity] = useState({ name: '', slug: '' });
-    const [newBanner, setNewBanner] = useState({ title: '', subtitle: '', imageUrl: '', linkUrl: '', order: 0 });
+    const [newBanner, setNewBanner] = useState({
+        title: '', subtitle: '', imageUrl: '', linkUrl: '',
+        ctaText: 'Learn More', priority: 0, order: 0,
+        startDate: '', endDate: '', isActive: true,
+        targetRules: {}
+    });
+
+    const [editingBanner, setEditingBanner] = useState<any | null>(null);
 
     // Details handling
     const [selectedItem, setSelectedItem] = useState<{ type: 'category' | 'city', data: any } | null>(null);
@@ -25,7 +32,7 @@ export const ContentManagementView = () => {
             const [catRes, cityRes, bannerRes] = await Promise.all([
                 ContentService.getCategories(),
                 ContentService.getCities(),
-                ContentService.getBanners()
+                ContentService.getBanners(true)
             ]);
             if (catRes?.success) setCategories(catRes.data);
             if (cityRes?.success) setCities(cityRes.data);
@@ -76,12 +83,42 @@ export const ContentManagementView = () => {
     const handleAddBanner = async () => {
         if (!newBanner.imageUrl) return;
         try {
-            await ContentService.addBanner(newBanner);
-            setNewBanner({ title: '', subtitle: '', imageUrl: '', linkUrl: '', order: 0 });
+            // Clean up empty dates
+            const data = { ...newBanner };
+            if (!data.startDate) delete (data as any).startDate;
+            if (!data.endDate) delete (data as any).endDate;
+
+            await ContentService.addBanner(data);
+            setNewBanner({
+                title: '', subtitle: '', imageUrl: '', linkUrl: '',
+                ctaText: 'Learn More', priority: 0, order: 0,
+                startDate: '', endDate: '', isActive: true,
+                targetRules: {}
+            });
             fetchData();
         } catch (err: any) {
             console.error(err);
             alert(err.response?.data?.error || err.message || 'Failed to add banner');
+        }
+    };
+
+    const handleUpdateBanner = async () => {
+        if (!editingBanner) return;
+        try {
+            await ContentService.updateBanner(editingBanner.id, editingBanner);
+            setEditingBanner(null);
+            fetchData();
+        } catch (err: any) {
+            alert('Failed to update banner');
+        }
+    };
+
+    const handleToggleBannerStatus = async (banner: any) => {
+        try {
+            await ContentService.updateBanner(banner.id, { isActive: !banner.isActive });
+            fetchData();
+        } catch (err) {
+            alert('Failed to toggle status');
         }
     };
 
@@ -225,39 +262,306 @@ export const ContentManagementView = () => {
 
             {/* Homepage Hero Banners */}
             <div className="admin-card" style={{ padding: '24px', marginTop: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                     <ImageIcon color="var(--primary)" />
                     <h3 style={{ fontWeight: 800 }}>Homepage Hero Banners</h3>
                 </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '24px' }}>
+                    Manage banners that appear on the mobile and web homepages. Higher priority banners appear first.
+                </p>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '24px' }}>
-                    <input placeholder="Banner Title" value={newBanner.title} onChange={e => setNewBanner({ ...newBanner, title: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
-                    <input placeholder="Subtitle (Optional)" value={newBanner.subtitle} onChange={e => setNewBanner({ ...newBanner, subtitle: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
-                    <input placeholder="Image URL" value={newBanner.imageUrl} onChange={e => setNewBanner({ ...newBanner, imageUrl: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
-                    <input placeholder="Link URL" value={newBanner.linkUrl} onChange={e => setNewBanner({ ...newBanner, linkUrl: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
-                    <input type="number" placeholder="Order" value={newBanner.order} onChange={e => setNewBanner({ ...newBanner, order: parseInt(e.target.value) || 0 })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '8px', color: 'var(--text-main)' }} />
-                    <button onClick={handleAddBanner} style={{ gridColumn: 'span 5', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontWeight: 800, cursor: 'pointer' }}>Add Banner</button>
+                {/* Banner Creation Form - More Professional */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', marginBottom: '32px' }}>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '20px', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Create New Banner</h4>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Banner Title (Optional)</label>
+                            <input
+                                placeholder="e.g. Early Bird Tickets"
+                                value={newBanner.title}
+                                onChange={e => setNewBanner({ ...newBanner, title: e.target.value })}
+                                style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Subtitle (Optional)</label>
+                            <input
+                                placeholder="e.g. Get 20% off today"
+                                value={newBanner.subtitle}
+                                onChange={e => setNewBanner({ ...newBanner, subtitle: e.target.value })}
+                                style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Image URL (Required)</label>
+                            <input
+                                placeholder="https://..."
+                                value={newBanner.imageUrl}
+                                onChange={e => setNewBanner({ ...newBanner, imageUrl: e.target.value })}
+                                style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>CTA Text</label>
+                            <input
+                                value={newBanner.ctaText}
+                                onChange={e => setNewBanner({ ...newBanner, ctaText: e.target.value })}
+                                style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Link / Destination</label>
+                            <input
+                                placeholder="/events/123 or https://..."
+                                value={newBanner.linkUrl}
+                                onChange={e => setNewBanner({ ...newBanner, linkUrl: e.target.value })}
+                                style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                            />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Priority (Ranking)</label>
+                                <input
+                                    type="number"
+                                    value={newBanner.priority}
+                                    onChange={e => setNewBanner({ ...newBanner, priority: parseInt(e.target.value) || 0 })}
+                                    style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Internal Order</label>
+                                <input
+                                    type="number"
+                                    value={newBanner.order}
+                                    onChange={e => setNewBanner({ ...newBanner, order: parseInt(e.target.value) || 0 })}
+                                    style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Start Date (Optional)</label>
+                            <input
+                                type="datetime-local"
+                                value={newBanner.startDate}
+                                onChange={e => setNewBanner({ ...newBanner, startDate: e.target.value })}
+                                style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>End Date (Optional)</label>
+                            <input
+                                type="datetime-local"
+                                value={newBanner.endDate}
+                                onChange={e => setNewBanner({ ...newBanner, endDate: e.target.value })}
+                                style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                            />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Target City</label>
+                                <select
+                                    value={(newBanner.targetRules as any).city || ''}
+                                    onChange={e => setNewBanner({ ...newBanner, targetRules: { ...newBanner.targetRules, city: e.target.value } })}
+                                    style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                                >
+                                    <option value="">All Cities</option>
+                                    {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Target Language</label>
+                                <select
+                                    value={(newBanner.targetRules as any).lang || ''}
+                                    onChange={e => setNewBanner({ ...newBanner, targetRules: { ...newBanner.targetRules, lang: e.target.value } })}
+                                    style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                                >
+                                    <option value="">All Languages</option>
+                                    <option value="en">English</option>
+                                    <option value="am">Amharic</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                            <button
+                                onClick={handleAddBanner}
+                                style={{ width: '100%', background: 'linear-gradient(135deg, var(--primary), #3B82F6)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
+                            >
+                                <Plus size={20} />
+                                Create Banner
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                {/* Banner List / Grid with Metrics */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
                     {banners.map(b => (
-                        <div key={b.id} style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', height: '160px', border: '1px solid var(--border)' }}>
-                            <img src={b.imageUrl} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} />
-                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.8))' }}>
-                                <h4 style={{ fontSize: '0.9rem', fontWeight: 800 }}>{b.title || 'No Title'}</h4>
-                                <button onClick={() => handleDeleteBanner(b.id)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(239, 68, 68, 0.2)', color: '#EF4444', border: 'none', padding: '6px', borderRadius: '50%', cursor: 'pointer' }}>
-                                    <Trash2 size={16} />
+                        <div
+                            key={b.id}
+                            style={{
+                                position: 'relative', borderRadius: '24px', overflow: 'hidden',
+                                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                                display: 'flex', flexDirection: 'column', height: 'fit-content',
+                                opacity: b.isActive ? 1 : 0.6, transition: 'all 0.3s'
+                            }}
+                        >
+                            {/* Priority Badge */}
+                            <div style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 10, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', fontWeight: 900, color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                P{b.priority}
+                            </div>
+
+                            {/* Status Checkbox / Toggle */}
+                            <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+                                <button
+                                    onClick={() => handleToggleBannerStatus(b)}
+                                    style={{
+                                        background: b.isActive ? '#10B981' : 'rgba(255,255,255,0.1)',
+                                        color: 'white', border: 'none', padding: '6px 12px', borderRadius: '20px',
+                                        fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer', backdropFilter: 'blur(4px)'
+                                    }}
+                                >
+                                    {b.isActive ? 'LIVE' : 'PAUSED'}
                                 </button>
+                            </div>
+
+                            <div style={{ height: '160px', position: 'relative' }}>
+                                <img src={b.imageUrl} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))' }}>
+                                    <h4 style={{ fontWeight: 800, fontSize: '1rem' }}>{b.title || 'Nameless Banner'}</h4>
+                                    <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{b.subtitle || 'No subtitle provided'}</p>
+                                </div>
+                            </div>
+
+                            <div style={{ padding: '20px' }}>
+                                {/* Metrics Bar */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', textAlign: 'center' }}>
+                                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Impressions</p>
+                                        <p style={{ fontSize: '1.2rem', fontWeight: 900, color: '#3B82F6' }}>{b.viewCount || 0}</p>
+                                    </div>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', textAlign: 'center' }}>
+                                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Engagement</p>
+                                        <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--primary)' }}>{b.clickCount || 0}</p>
+                                    </div>
+                                </div>
+
+                                {/* Scheduling Info */}
+                                {(b.startDate || b.endDate) && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px', fontSize: '0.75rem', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                                        {b.startDate && <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Starts:</span>
+                                            <span style={{ fontWeight: 700 }}>{new Date(b.startDate).toLocaleDateString()}</span>
+                                        </div>}
+                                        {b.endDate && <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Ends:</span>
+                                            <span style={{ fontWeight: 700 }}>{new Date(b.endDate).toLocaleDateString()}</span>
+                                        </div>}
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button
+                                        onClick={() => setEditingBanner(b)}
+                                        style={{ flex: 1, background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s' }}
+                                    >
+                                        Edit Details
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteBanner(b.id)}
+                                        style={{ padding: '10px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', cursor: 'pointer' }}
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
                     {banners.length === 0 && (
-                        <div style={{ gridColumn: 'span 3', padding: '40px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed var(--border)' }}>
-                            <p style={{ color: 'var(--text-muted)' }}>No homepage banners active.</p>
+                        <div style={{ gridColumn: 'span 3', padding: '60px', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '2px dashed var(--border)' }}>
+                            <ImageIcon size={48} color="var(--text-muted)" style={{ marginBottom: '16px', opacity: 0.3 }} />
+                            <h4 style={{ fontWeight: 800, color: 'var(--text-muted)' }}>No homepage banners active.</h4>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>Create your first banner to see it live on the homepage.</p>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Edit Banner Modal (New) */}
+            <AnimatePresence>
+                {editingBanner && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} style={{ width: '600px', background: 'var(--bg-sidebar)', border: '1px solid var(--border)', borderRadius: '24px', padding: '32px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Edit Banner</h3>
+                                <button onClick={() => setEditingBanner(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24} /></button>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Image URL</label>
+                                    <input value={editingBanner.imageUrl} onChange={e => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Title</label>
+                                    <input value={editingBanner.title} onChange={e => setEditingBanner({ ...editingBanner, title: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Subtitle</label>
+                                    <input value={editingBanner.subtitle} onChange={e => setEditingBanner({ ...editingBanner, subtitle: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>CTA Text</label>
+                                    <input value={editingBanner.ctaText} onChange={e => setEditingBanner({ ...editingBanner, ctaText: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Priority</label>
+                                    <input type="number" value={editingBanner.priority} onChange={e => setEditingBanner({ ...editingBanner, priority: parseInt(e.target.value) || 0 })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Start Date</label>
+                                    <input type="datetime-local" value={editingBanner.startDate?.split('.')[0] || ''} onChange={e => setEditingBanner({ ...editingBanner, startDate: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>End Date</label>
+                                    <input type="datetime-local" value={editingBanner.endDate?.split('.')[0] || ''} onChange={e => setEditingBanner({ ...editingBanner, endDate: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Target City</label>
+                                    <select
+                                        value={(editingBanner.targetRules as any)?.city || ''}
+                                        onChange={e => setEditingBanner({ ...editingBanner, targetRules: { ...(editingBanner.targetRules as any), city: e.target.value } })}
+                                        style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }}
+                                    >
+                                        <option value="">All Cities</option>
+                                        {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                    </select>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Target Language</label>
+                                    <select
+                                        value={(editingBanner.targetRules as any)?.lang || ''}
+                                        onChange={e => setEditingBanner({ ...editingBanner, targetRules: { ...(editingBanner.targetRules as any), lang: e.target.value } })}
+                                        style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'white' }}
+                                    >
+                                        <option value="">All Languages</option>
+                                        <option value="en">English</option>
+                                        <option value="am">Amharic</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
+                                <button onClick={() => setEditingBanner(null)} style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--border)', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+                                <button onClick={handleUpdateBanner} style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer' }}>Save Changes</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Selection Detail Panel */}
             <AnimatePresence>

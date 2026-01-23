@@ -82,8 +82,27 @@ export class ContentController {
 
     static async getBanners(req: Request, res: Response) {
         try {
-            const banners = await ContentService.listBanners();
+            const { admin } = req.query;
+            let banners;
+            if (admin === 'true') {
+                banners = await ContentService.listBanners();
+            } else {
+                banners = await ContentService.listActiveBanners();
+            }
             res.json({ success: true, data: banners });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async getBannerDetail(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const banner = await ContentService.getBannerById(parseInt(id));
+            if (!banner) {
+                return res.status(404).json({ success: false, message: "Banner not found" });
+            }
+            res.json({ success: true, data: banner });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
         }
@@ -91,9 +110,33 @@ export class ContentController {
 
     static async addBanner(req: Request, res: Response) {
         try {
-            const banner = await ContentService.createBanner(req.body);
+            console.log('Adding Banner Payload:', req.body);
+            const data = { ...req.body };
+
+            if (data.startDate) data.startDate = new Date(data.startDate);
+            if (data.endDate) data.endDate = new Date(data.endDate);
+
+            const banner = await ContentService.createBanner(data);
             res.json({ success: true, data: banner });
         } catch (error: any) {
+            console.error('Add Banner Error:', error);
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async updateBanner(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            console.log(`Updating Banner ${id} Payload:`, req.body);
+            const data = { ...req.body };
+
+            if (data.startDate) data.startDate = new Date(data.startDate);
+            if (data.endDate) data.endDate = new Date(data.endDate);
+
+            const banner = await ContentService.updateBanner(parseInt(id), data);
+            res.json({ success: true, data: banner });
+        } catch (error: any) {
+            console.error('Update Banner Error:', error);
             res.status(400).json({ error: error.message });
         }
     }
@@ -103,6 +146,26 @@ export class ContentController {
             const { id } = req.params;
             await ContentService.deleteBanner(parseInt(id));
             res.json({ success: true, message: "Banner deleted" });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async trackBannerView(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            await ContentService.incrementBannerView(parseInt(id));
+            res.json({ success: true });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async trackBannerClick(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            await ContentService.incrementBannerClick(parseInt(id));
+            res.json({ success: true });
         } catch (error: any) {
             res.status(400).json({ error: error.message });
         }
