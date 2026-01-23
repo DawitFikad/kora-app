@@ -219,7 +219,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: any) => vo
                                 {[
                                     { label: 'Organizers', sub: 'Validate', icon: ShieldCheck, col: '#3B82F6', tab: 'Organizer Approvals' },
                                     { label: 'Events', sub: 'Review', icon: CalendarCheck, col: '#10B981', tab: 'Event Approvals' },
-                                    { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6', tab: 'Analytics' },
+                                    { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6', tab: 'GMV Tracking' },
                                     { label: 'Logs', sub: 'Audits', icon: ClipboardList, col: '#EC4899', tab: 'Audit Logs' }
                                 ].map((btn, i) => (
                                     <button

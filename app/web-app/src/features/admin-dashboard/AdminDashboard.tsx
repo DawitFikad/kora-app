@@ -34,12 +34,11 @@ import { ContentManagementView } from './components/ContentManagementView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { PlatformControlView } from './components/PlatformControlView';
 
-import { ReportsView } from './components/ReportsView';
 import { TeamManagementView } from './components/TeamManagementView';
 import { ActivityLogView } from './components/ActivityLogView';
 
 // --- Types ---
-type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Status' | 'Fraud' | 'Content' | 'Analytics' | 'Reports' | 'Invite Admin' | 'Settings' | 'Monitoring' | 'Audit Logs';
+type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud' | 'Content' | 'Invite Admin' | 'Settings' | 'Monitoring' | 'Audit Logs';
 
 // --- Main Admin Dashboard Component ---
 
@@ -127,13 +126,11 @@ const AdminDashboard = () => {
             case 'Event Approvals': return <EventApprovalsView />;
             case 'Fraud': return <FraudMonitoringView />;
             case 'Commissions': return <CommissionsView />;
-            case 'GMV': return <AnalyticsView />; // Reusing Analytics for GMV/Revenue charts
-            case 'Platform Revenue': return <AnalyticsView />;
-            case 'Organizer Payouts': return <PayoutsManagementView />;
-            case 'Settlement Status': return <PayoutsManagementView />;
+            case 'GMV Tracking': return <AnalyticsView view="GMV" />;
+            case 'Platform Revenue': return <AnalyticsView view="REVENUE" />;
+            case 'Organizer Payouts': return <PayoutsManagementView view="QUEUE" />;
+            case 'Settlement Ledger': return <PayoutsManagementView view="SETTLEMENTS" />;
             case 'Content': return <ContentManagementView />;
-            case 'Analytics': return <AnalyticsView />;
-            case 'Reports': return <ReportsView />;
             case 'Invite Admin': return <TeamManagementView />;
             case 'Monitoring': return <PlatformControlView />;
             case 'Audit Logs': return <ActivityLogView />;
@@ -169,7 +166,7 @@ const AdminDashboard = () => {
 
                     {[
                         {
-                            title: 'Org. & Event Management', // Points 3 & 4
+                            title: 'Org. & Event Management',
                             items: [
                                 { icon: Users, label: 'Organizer Approvals', count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers') },
                                 { icon: Calendar, label: 'Event Approvals', count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events') },
@@ -177,33 +174,21 @@ const AdminDashboard = () => {
                             ]
                         },
                         {
-                            title: 'Financial Control', // Point 6
+                            title: 'Financial Control',
                             items: [
-                                { icon: DollarSign, label: 'GMV', display: t('admin.gmv', 'GMV Tracking') },
-                                { icon: DollarSign, label: 'Platform Revenue', display: t('admin.revenue', 'Platform Revenue') },
-                                { icon: DollarSign, label: 'Organizer Payouts', display: t('admin.payouts', 'Organizer Payouts') },
-                                { icon: DollarSign, label: 'Settlement Status', display: t('admin.settlements', 'Settlement Status') }
+                                { icon: DollarSign, label: 'GMV Tracking', display: 'GMV Tracking' },
+                                { icon: DollarSign, label: 'Platform Revenue', display: 'Platform Revenue' },
+                                { icon: DollarSign, label: 'Organizer Payouts', display: 'Organizer Payouts' },
+                                { icon: DollarSign, label: 'Settlement Ledger', display: 'Settlement Ledger' }
                             ]
                         },
                         {
-                            title: 'Fraud & System Control', // Point 7
+                            title: 'Security & System',
                             items: [
                                 { icon: ShieldAlert, label: 'Fraud', display: t('admin.fraud') },
-                                { icon: Activity, label: 'Monitoring', display: "System Control Center" }
-                            ]
-                        },
-                        {
-                            title: 'Analytics & Reporting', // Point 2, 5, 9
-                            items: [
-                                { icon: Activity, label: 'Analytics', display: t('admin.analytics') },
-                                { icon: BarChart3, label: 'Reports', display: t('admin.reports', 'Reports') },
+                                { icon: Activity, label: 'Monitoring', display: "Platform Health" },
                                 { icon: ClipboardList, label: 'Audit Logs', display: 'Audit Logs' },
-                                { icon: Users, label: 'Invite Admin', display: t('admin.invite', 'Invite Admin') } // Team mgmt in reporting section per user request
-                            ]
-                        },
-                        {
-                            title: 'Content & Config', // Point 8
-                            items: [
+                                { icon: Users, label: 'Invite Admin', display: t('admin.invite', 'Invite Admin') },
                                 { icon: FileText, label: 'Content', display: t('admin.content') }
                             ]
                         }
@@ -277,8 +262,9 @@ const AdminDashboard = () => {
                                     else if (val.includes('log') || val.includes('audit')) setActiveTab('Audit Logs');
                                     else if (val.includes('fraud')) setActiveTab('Fraud');
                                     else if (val.includes('payout')) setActiveTab('Organizer Payouts');
-                                    else if (val.includes('analytics')) setActiveTab('Analytics');
-                                    else if (val.includes('report')) setActiveTab('Reports');
+                                    else if (val.includes('gmv')) setActiveTab('GMV Tracking');
+                                    else if (val.includes('revenue')) setActiveTab('Platform Revenue');
+                                    else if (val.includes('settle')) setActiveTab('Settlement Ledger');
                                     else if (val.includes('team') || val.includes('invite')) setActiveTab('Invite Admin');
                                     else if (val.includes('control') || val.includes('health')) setActiveTab('Monitoring');
                                 }
