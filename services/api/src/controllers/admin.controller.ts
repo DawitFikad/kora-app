@@ -295,7 +295,24 @@ export class AdminController {
             const configs = await prisma.platformFeeConfig.findMany({
                 orderBy: { createdAt: 'desc' }
             });
-            res.json({ success: true, data: configs });
+
+            // Also find organizers with custom fees (overrides)
+            const overrides = await prisma.organizerProfile.findMany({
+                where: {
+                    OR: [
+                        { feePercentage: { not: 10 } }, // Assuming 10 is the global default or looking for deviation
+                        { feeFixed: { not: 0 } }
+                    ]
+                },
+                select: {
+                    id: true,
+                    organizationName: true,
+                    feePercentage: true,
+                    feeFixed: true
+                }
+            });
+
+            res.json({ success: true, data: configs, overrides });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }

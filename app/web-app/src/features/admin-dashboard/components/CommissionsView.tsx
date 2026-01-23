@@ -10,6 +10,7 @@ export const CommissionsView = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [fees, setFees] = useState<any[]>([]);
+    const [overrides, setOverrides] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -41,6 +42,7 @@ export const CommissionsView = () => {
             setTransactions(txResponse.data || []);
             setMetrics(metricsResponse.data || null);
             setFees(feesResponse.data || []);
+            setOverrides(feesResponse.overrides || []);
         } catch (err) {
             console.error('Failed to fetch commission data', err);
         } finally {
@@ -124,7 +126,7 @@ export const CommissionsView = () => {
                                     />
                                 </div>
                                 <div style={{ flex: 1, minWidth: '120px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 700 }}>FIXED FEE (ETB)</label>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 700 }}>CONVENIENCE FEE (ETB)</label>
                                     <input
                                         type="number"
                                         defaultValue={fee.feeFixed}

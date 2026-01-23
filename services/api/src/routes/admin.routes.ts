@@ -39,4 +39,8 @@ router.post("/feature-requests/:notificationId/respond", authenticate, authorize
 router.get("/config", authenticate, authorize([Role.ADMIN]), AdminController.getSystemConfigs);
 router.patch("/config", authenticate, authorize([Role.ADMIN]), AdminController.updateSystemConfig);
 
+// Platform Fees
+router.get("/fees", authenticate, authorize([Role.ADMIN]), AdminController.getPlatformFees);
+router.patch("/fees", authenticate, authorize([Role.ADMIN]), AdminController.updatePlatformFee);
+
 export default router;
