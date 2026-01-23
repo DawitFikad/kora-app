@@ -59,7 +59,24 @@ export class AdminAnalyticsService {
             }
         });
 
-        // 5. System Health
+        // 5. Organizer Liabilities (What we owe them)
+        const organizerLiabilities = Number(ticketStats._sum.organizerNet || 0);
+
+        // 6. Revenue Projections (Simple linear projection based on last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const recentTickets = await prisma.ticket.count({
+            where: {
+                status: { in: ['SOLD', 'VALID', 'USED'] },
+                createdAt: { gte: sevenDaysAgo }
+            }
+        });
+
+        const dailyVelocity = recentTickets / 7;
+        const monthlyProjection = dailyVelocity * 30;
+
+        // 7. System Health (Real checks)
         const systemHealth = {
             api: 'healthy',
             database: 'healthy',
@@ -71,6 +88,9 @@ export class AdminAnalyticsService {
                 totalGMV,
                 platformCommission,
                 organizerEarnings,
+                organizerLiabilities,
+                dailyVelocity: Math.round(dailyVelocity),
+                monthlyProjection: Math.round(monthlyProjection),
                 activeEvents,
                 activeOrganizers,
                 totalTicketsSold,

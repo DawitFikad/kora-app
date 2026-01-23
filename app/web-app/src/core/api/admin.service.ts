@@ -36,8 +36,12 @@ export const AdminService = {
     getStats: () => api.get('/admin/stats'),
     getAnalytics: () => api.get('/admin/analytics'),
     getNotifications: () => api.get('/admin/notifications'),
+    getAuditLogs: () => api.get('/admin/notifications?recipient=Audit Log'),
     respondToFeatureRequest: (notificationId: number, approved: boolean) => api.post(`/admin/feature-requests/${notificationId}/respond`, { approved }),
     // Platform Fees
     getPlatformFees: () => api.get('/admin/fees'),
     updatePlatformFee: (data: any) => api.patch('/admin/fees', data),
+    // System Config
+    getSystemConfigs: () => api.get('/admin/config'),
+    updateSystemConfig: (data: { key: string, value: string, description?: string }) => api.patch('/admin/config', data),
 };

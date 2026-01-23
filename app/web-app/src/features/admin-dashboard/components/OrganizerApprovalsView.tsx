@@ -13,6 +13,7 @@ export const OrganizerApprovalsView = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [processingId, setProcessingId] = useState<number | null>(null);
+    const [editingOrgId, setEditingOrgId] = useState<number | null>(null);
 
     const fetchData = async () => {
         try {
@@ -41,6 +42,19 @@ export const OrganizerApprovalsView = () => {
             fetchData(); // Refresh both lists
         } catch (err: any) {
             alert(err.error || 'Failed to review organizer');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleUpdateCommission = async (id: number, commission: any) => {
+        try {
+            setProcessingId(id);
+            await AdminService.reviewOrganizer(id, 'APPROVED', `Commission update by admin`, commission);
+            setEditingOrgId(null);
+            fetchData();
+        } catch (err: any) {
+            alert(err.error || 'Failed to update commission');
         } finally {
             setProcessingId(null);
         }
@@ -172,12 +186,51 @@ export const OrganizerApprovalsView = () => {
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10B981', marginBottom: '20px' }}>Verified Partners ({approvedOrganizers.length})</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {approvedOrganizers.length > 0 ? approvedOrganizers.map((org) => (
-                            <div key={org.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-subtle)', borderRadius: '16px' }}>
-                                <div>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>{org.organizationName}</p>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{org.city}</p>
+                            <div key={org.id} style={{ display: 'flex', flexDirection: 'column', padding: '16px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: editingOrgId === org.id ? '16px' : '0' }}>
+                                    <div>
+                                        <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>{org.organizationName}</p>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{org.feePercentage}% + ETB {org.feeFixed} | {org.city}</p>
+                                    </div>
+                                    {editingOrgId === org.id ? (
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button onClick={() => setEditingOrgId(null)} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.7rem' }}>Cancel</button>
+                                            <button
+                                                onClick={() => {
+                                                    const comm = (document.getElementById(`edit-comm-${org.id}`) as HTMLInputElement).value;
+                                                    const conv = (document.getElementById(`edit-conv-${org.id}`) as HTMLInputElement).value;
+                                                    handleUpdateCommission(org.id, { feePercentage: Number(comm), feeFixed: Number(conv), feeType: 'PERCENTAGE' });
+                                                }}
+                                                style={{ background: 'var(--bg-active)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}
+                                            >Save</button>
+                                        </div>
+                                    ) : (
+                                        <button onClick={() => setEditingOrgId(org.id)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>Edit Settings</button>
+                                    )}
                                 </div>
-                                <ShieldCheck size={16} color="#10B981" />
+
+                                {editingOrgId === org.id && (
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, display: 'block', marginBottom: '4px' }}>Percent %</label>
+                                            <input
+                                                type="number"
+                                                id={`edit-comm-${org.id}`}
+                                                defaultValue={org.feePercentage}
+                                                style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', color: 'white' }}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, display: 'block', marginBottom: '4px' }}>Fixed Fee</label>
+                                            <input
+                                                type="number"
+                                                id={`edit-conv-${org.id}`}
+                                                defaultValue={org.feeFixed}
+                                                style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', color: 'white' }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )) : <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No verified partners yet.</p>}
                     </div>

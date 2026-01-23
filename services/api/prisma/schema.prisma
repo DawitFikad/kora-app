@@ -402,6 +402,14 @@ model PlatformFeeConfig {
   updatedAt DateTime @updatedAt
 }
 
+model SystemConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
 model ScanLog {
   id         Int       @id @default(autoincrement())
   ticketId   String

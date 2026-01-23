@@ -107,6 +107,21 @@ export class EventController {
                 feeFixed || 0,
                 feePercentage || 0
             );
+
+            // Audit Log
+            const { prisma } = await import("../lib/prisma");
+            await prisma.notificationLog.create({
+                data: {
+                    userId: (req as any).user?.userId,
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'Event Reviewed',
+                    content: `Admin ${(req as any).user?.userId} reviewed event ${id}: ${status}`,
+                    status: 'DELIVERED',
+                    metadata: { eventId: id, status, fees: { feeType, feeFixed, feePercentage } }
+                }
+            });
+
             res.json(event);
         } catch (error: any) {
             res.status(400).json({ error: error.message });

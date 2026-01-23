@@ -12,6 +12,7 @@ export const EventApprovalsView = () => {
     const [events, setEvents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
+    const [inspectingEvent, setInspectingEvent] = useState<any>(null);
 
     const fetchEvents = async () => {
         try {
@@ -204,7 +205,12 @@ export const EventApprovalsView = () => {
                                     <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>{event.title}</p>
                                     <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{event.organizer?.organizationName}</p>
                                 </div>
-                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#10B981', padding: '4px 8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>LIVE</span>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#10B981', padding: '4px 8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>LIVE</span>
+                                    <button
+                                        onClick={() => setInspectingEvent(event)}
+                                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '0.65rem', fontWeight: 800, padding: '4px 8px', borderRadius: '8px', cursor: 'pointer' }}>OVERRIDE</button>
+                                </div>
                             </div>
                         )) : <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No approved events yet.</p>}
                     </div>
@@ -228,6 +234,47 @@ export const EventApprovalsView = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Admin Override Modal */}
+            {inspectingEvent && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setInspectingEvent(null)}>
+                    <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '24px', maxWidth: '500px', width: '100%', border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '8px' }}>Admin Override: {inspectingEvent.title}</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Forcefully adjust event parameters or status. This bypasses organizer control.</p>
+
+                        <div style={{ display: 'grid', gap: '20px', marginBottom: '32px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>FEE PERCENTAGE (%)</label>
+                                <input id="override-comm" type="number" defaultValue={inspectingEvent.feePercentage || 10} style={{ width: '100%', padding: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '12px', color: 'white', fontWeight: 700 }} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>FIXED FEE (ETB)</label>
+                                <input id="override-conv" type="number" defaultValue={inspectingEvent.feeFixed || 0} style={{ width: '100%', padding: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '12px', color: 'white', fontWeight: 700 }} />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button
+                                onClick={async () => {
+                                    const comm = (document.getElementById('override-comm') as HTMLInputElement).value;
+                                    const conv = (document.getElementById('override-conv') as HTMLInputElement).value;
+                                    await handleReview(inspectingEvent.id, 'APPROVED', { feePercentage: Number(comm), feeFixed: Number(conv) });
+                                    setInspectingEvent(null);
+                                }}
+                                className="btn-blue" style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: 800 }}>UPDATE SETTINGS</button>
+                            <button
+                                onClick={async () => {
+                                    if (confirm('Are you sure you want to suspend this event?')) {
+                                        await handleReview(inspectingEvent.id, 'REJECTED');
+                                        setInspectingEvent(null);
+                                    }
+                                }}
+                                style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: 800, background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid #EF4444', cursor: 'pointer' }}>SUSPEND EVENT</button>
+                        </div>
+                        <button onClick={() => setInspectingEvent(null)} style={{ marginTop: '16px', width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>Dismiss</button>
+                    </div>
+                </div>
+            )}
         </motion.div >
     );
 };

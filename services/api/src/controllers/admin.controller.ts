@@ -7,7 +7,23 @@ export class AdminController {
     static async getStats(req: Request, res: Response) {
         try {
             const stats = await AdminAnalyticsService.getPlatformStats();
-            res.json(stats);
+
+            // Add Financial Clarity Metrics (Liability & Projections)
+            const financials = await prisma.financialTransaction.aggregate({
+                where: { status: 'SETTLED' },
+                _sum: { amount: true, feeAmount: true, netAmount: true }
+            });
+
+            const statsWithFinancials = {
+                ...stats,
+                financials: {
+                    totalRevenue: Number(financials._sum.amount || 0),
+                    platformProfit: Number(financials._sum.feeAmount || 0),
+                    organizerLiabilities: Number(financials._sum.netAmount || 0)
+                }
+            };
+
+            res.json(statsWithFinancials);
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
@@ -188,6 +204,19 @@ export class AdminController {
                 data: { featured: !!featured }
             });
 
+            // Audit Log
+            await prisma.notificationLog.create({
+                data: {
+                    userId: (req as any).user?.id,
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'Event Featured Toggle',
+                    content: `Admin ${(req as any).user?.id} toggled featured for event ${eventId} to ${!!featured}`,
+                    status: 'DELIVERED',
+                    metadata: { eventId, featured: !!featured }
+                }
+            });
+
             res.json({ success: true, featured: updatedEvent.featured });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
@@ -299,6 +328,56 @@ export class AdminController {
                     feeFixed,
                     feePercentage,
                     isDefault: !!isDefault
+                }
+            });
+
+            // Audit Log
+            await prisma.notificationLog.create({
+                data: {
+                    userId: (req as any).user?.id,
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'Platform Fee Updated',
+                    content: `Admin ${(req as any).user?.id} updated platform fee: ${config.name}`,
+                    status: 'DELIVERED',
+                    metadata: { configId: config.id, config }
+                }
+            });
+
+            res.json({ success: true, data: config });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async getSystemConfigs(req: Request, res: Response) {
+        try {
+            const configs = await prisma.systemConfig.findMany();
+            res.json(configs);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async updateSystemConfig(req: Request, res: Response) {
+        try {
+            const { key, value, description } = req.body;
+            const config = await prisma.systemConfig.upsert({
+                where: { key },
+                update: { value, description },
+                create: { key, value, description }
+            });
+
+            // Audit Log
+            await prisma.notificationLog.create({
+                data: {
+                    userId: (req as any).user?.userId,
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'System Config Updated',
+                    content: `Admin ${(req as any).user?.userId} updated system config: ${key} to ${value}`,
+                    status: 'DELIVERED',
+                    metadata: { key, value }
                 }
             });
 

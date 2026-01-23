@@ -85,6 +85,21 @@ export class ProfileController {
                 feeFixed,
                 feePercentage
             );
+
+            // Audit Log
+            const { prisma } = await import("../lib/prisma");
+            await prisma.notificationLog.create({
+                data: {
+                    userId: (req as any).user?.userId,
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'Organizer Reviewed',
+                    content: `Admin ${(req as any).user?.userId} reviewed organizer ${id}: ${status}`,
+                    status: 'DELIVERED',
+                    metadata: { organizerId: id, status, adminNote, fees: { feeType, feeFixed, feePercentage } }
+                }
+            });
+
             res.json(result);
         } catch (error: any) {
             res.status(400).json({ error: error.message });

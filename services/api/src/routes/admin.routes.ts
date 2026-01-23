@@ -35,8 +35,8 @@ router.patch("/events/:eventId/featured", authenticate, authorize([Role.ADMIN]),
 router.get("/notifications", authenticate, authorize([Role.ADMIN]), AdminController.getNotifications);
 router.post("/feature-requests/:notificationId/respond", authenticate, authorize([Role.ADMIN]), AdminController.respondToFeatureRequest);
 
-// Platform Fees
-router.get("/fees", authenticate, authorize([Role.ADMIN]), AdminController.getPlatformFees);
-router.patch("/fees", authenticate, authorize([Role.ADMIN]), AdminController.updatePlatformFee);
+// System Config
+router.get("/config", authenticate, authorize([Role.ADMIN]), AdminController.getSystemConfigs);
+router.patch("/config", authenticate, authorize([Role.ADMIN]), AdminController.updateSystemConfig);
 
 export default router;

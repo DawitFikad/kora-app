@@ -17,7 +17,8 @@ import {
     LogOut,
     Globe,
     Sun,
-    Moon
+    Moon,
+    ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,9 +36,10 @@ import { PlatformControlView } from './components/PlatformControlView';
 
 import { ReportsView } from './components/ReportsView';
 import { TeamManagementView } from './components/TeamManagementView';
+import { ActivityLogView } from './components/ActivityLogView';
 
 // --- Types ---
-type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Status' | 'Fraud' | 'Content' | 'Analytics' | 'Reports' | 'Invite Admin' | 'Settings' | 'Monitoring';
+type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Status' | 'Fraud' | 'Content' | 'Analytics' | 'Reports' | 'Invite Admin' | 'Settings' | 'Monitoring' | 'Audit Logs';
 
 // --- Main Admin Dashboard Component ---
 
@@ -113,14 +115,14 @@ const AdminDashboard = () => {
         { icon: Activity, label: 'Analytics' as AdminTab, display: t('admin.analytics'), key: 'analytics' },
         { icon: BarChart3, label: 'Reports' as AdminTab, display: t('admin.reports', 'Reports'), key: 'reports' },
         { icon: Users, label: 'Invite Admin' as AdminTab, display: t('admin.invite', 'Invite Admin'), key: 'invite_admin' },
-        { icon: ShieldAlert, label: 'Monitoring' as AdminTab, display: t('admin.monitoring', 'System Health'), key: 'platform_control' },
+        { icon: Settings, label: 'Monitoring' as AdminTab, display: "System Control Center", key: 'platform_control' },
     ];
 
     const currentNavItem = navItems.find(n => n.label === activeTab) || (activeTab === 'Settings' ? { display: 'Account Settings' } : null);
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'Dashboard': return <AdminOverview />;
+            case 'Dashboard': return <AdminOverview setActiveTab={setActiveTab} />;
             case 'Organizer Approvals': return <OrganizerApprovalsView />;
             case 'Event Approvals': return <EventApprovalsView />;
             case 'Fraud': return <FraudMonitoringView />;
@@ -134,8 +136,9 @@ const AdminDashboard = () => {
             case 'Reports': return <ReportsView />;
             case 'Invite Admin': return <TeamManagementView />;
             case 'Monitoring': return <PlatformControlView />;
+            case 'Audit Logs': return <ActivityLogView />;
             case 'Settings': return <AdminSettingsView />;
-            default: return <AdminOverview />;
+            default: return <AdminOverview setActiveTab={setActiveTab} />;
         }
     }
 
@@ -183,10 +186,10 @@ const AdminDashboard = () => {
                             ]
                         },
                         {
-                            title: 'Fraud & Security', // Point 7
+                            title: 'Fraud & System Control', // Point 7
                             items: [
                                 { icon: ShieldAlert, label: 'Fraud', display: t('admin.fraud') },
-                                { icon: Activity, label: 'Monitoring', display: t('admin.monitoring', 'System Health') }
+                                { icon: Activity, label: 'Monitoring', display: "System Control Center" }
                             ]
                         },
                         {
@@ -194,6 +197,7 @@ const AdminDashboard = () => {
                             items: [
                                 { icon: Activity, label: 'Analytics', display: t('admin.analytics') },
                                 { icon: BarChart3, label: 'Reports', display: t('admin.reports', 'Reports') },
+                                { icon: ClipboardList, label: 'Audit Logs', display: 'Audit Logs' },
                                 { icon: Users, label: 'Invite Admin', display: t('admin.invite', 'Invite Admin') } // Team mgmt in reporting section per user request
                             ]
                         },
@@ -262,12 +266,21 @@ const AdminDashboard = () => {
                         <Search size={18} color="var(--text-muted)" />
                         <input
                             type="text"
-                            placeholder={t('admin.search')}
+                            placeholder="Try searching 'events', 'payouts', or 'logs'..."
                             style={{ fontSize: '0.85rem' }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                    alert(`Searching for: ${e.currentTarget.value}`);
-                                    // Global search logic could be integrated here
+                                    const val = e.currentTarget.value.toLowerCase();
+                                    if (val.includes('event')) setActiveTab('Event Approvals');
+                                    else if (val.includes('org')) setActiveTab('Organizer Approvals');
+                                    else if (val.includes('comm')) setActiveTab('Commissions');
+                                    else if (val.includes('log') || val.includes('audit')) setActiveTab('Audit Logs');
+                                    else if (val.includes('fraud')) setActiveTab('Fraud');
+                                    else if (val.includes('payout')) setActiveTab('Organizer Payouts');
+                                    else if (val.includes('analytics')) setActiveTab('Analytics');
+                                    else if (val.includes('report')) setActiveTab('Reports');
+                                    else if (val.includes('team') || val.includes('invite')) setActiveTab('Invite Admin');
+                                    else if (val.includes('control') || val.includes('health')) setActiveTab('Monitoring');
                                 }
                             }}
                         />

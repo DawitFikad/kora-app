@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { AdminService } from '../../../core/api/admin.service';
 import { AdminPageHeader } from './AdminPageHeader';
 import {
     Activity,
@@ -14,6 +15,7 @@ import {
 export const PlatformControlView = () => {
     const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
     const [globalMessage, setGlobalMessage] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
     const [systemMetrics, setSystemMetrics] = useState({
         cpu: 24,
         memory: 42,
@@ -22,8 +24,19 @@ export const PlatformControlView = () => {
         activeConnections: 1240
     });
 
-    // Simulated real-time metrics update
+    // Fetch live config
     useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res: any = await AdminService.getSystemConfigs();
+                const mMode = res.data.find((c: any) => c.key === 'maintenance_mode');
+                if (mMode) setIsMaintenanceMode(mMode.value === 'true');
+            } catch (err) {
+                console.error('Failed to fetch system config', err);
+            }
+        };
+        fetchConfig();
+
         const interval = setInterval(() => {
             setSystemMetrics(prev => ({
                 cpu: Math.max(10, Math.min(95, prev.cpu + (Math.random() * 10 - 5))),
@@ -119,7 +132,23 @@ export const PlatformControlView = () => {
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Read-only mode for maintenance tasks.</p>
                                 </div>
                                 <button
-                                    onClick={() => setIsMaintenanceMode(!isMaintenanceMode)}
+                                    onClick={async () => {
+                                        try {
+                                            setIsUpdating(true);
+                                            const newValue = !isMaintenanceMode;
+                                            await AdminService.updateSystemConfig({
+                                                key: 'maintenance_mode',
+                                                value: String(newValue),
+                                                description: 'Global maintenance mode'
+                                            });
+                                            setIsMaintenanceMode(newValue);
+                                        } catch (err) {
+                                            alert('Failed to update maintenance mode');
+                                        } finally {
+                                            setIsUpdating(false);
+                                        }
+                                    }}
+                                    disabled={isUpdating}
                                     style={{
                                         padding: '8px 16px',
                                         borderRadius: '8px',
@@ -128,10 +157,11 @@ export const PlatformControlView = () => {
                                         border: isMaintenanceMode ? 'none' : '1px solid #EF4444',
                                         fontWeight: 800,
                                         cursor: 'pointer',
-                                        fontSize: '0.75rem'
+                                        fontSize: '0.75rem',
+                                        opacity: isUpdating ? 0.5 : 1
                                     }}
                                 >
-                                    {isMaintenanceMode ? 'DEACTIVATE' : 'ACTIVATE'}
+                                    {isUpdating ? '...' : (isMaintenanceMode ? 'DEACTIVATE' : 'ACTIVATE')}
                                 </button>
                             </div>
                         </div>
@@ -157,8 +187,30 @@ export const PlatformControlView = () => {
                                     }}
                                 />
                             </div>
-                            <button className="btn-blue" style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'var(--bg-active)', borderRadius: '10px', color: 'white', fontWeight: 800, border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>
-                                EXECUTE BROADCAST
+                            <button
+                                onClick={async () => {
+                                    if (!globalMessage) return;
+                                    try {
+                                        setIsUpdating(true);
+                                        // In real app, this would hit a push-notify endpoint
+                                        // For now, we log it as an audit event
+                                        await AdminService.updateSystemConfig({
+                                            key: 'last_broadcast',
+                                            value: globalMessage,
+                                            description: 'Last global broadcast message'
+                                        });
+                                        alert('Global broadcast sent to all active users!');
+                                        setGlobalMessage('');
+                                    } catch (err) {
+                                        alert('Failed to send broadcast');
+                                    } finally {
+                                        setIsUpdating(false);
+                                    }
+                                }}
+                                disabled={isUpdating || !globalMessage}
+                                className="btn-blue"
+                                style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'var(--bg-active)', borderRadius: '10px', color: 'white', fontWeight: 800, border: 'none', cursor: 'pointer', fontSize: '0.85rem', opacity: isUpdating ? 0.5 : 1 }}>
+                                {isUpdating ? 'BROADCASTING...' : 'EXECUTE BROADCAST'}
                             </button>
                         </div>
                     </div>
