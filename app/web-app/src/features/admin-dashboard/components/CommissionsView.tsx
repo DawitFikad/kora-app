@@ -165,6 +165,28 @@ export const CommissionsView = () => {
                 </div>
             </div>
 
+            {/* Overrides Table */}
+            {overrides.length > 0 && (
+                <div className="admin-card" style={{ padding: '32px', marginBottom: '32px', borderLeft: '4px solid #8B5CF6' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Active Commission Overrides
+                        <span style={{ fontSize: '0.7rem', background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', padding: '4px 8px', borderRadius: '8px' }}>{overrides.length} Partner Overrides</span>
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                        {overrides.map(ov => (
+                            <div key={ov.id} style={{ padding: '16px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 900 }}>{ov.organizationName}</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{ov.feePercentage}% + ETB {ov.feeFixed}</p>
+                                </div>
+                                <ArrowUpRight size={16} color="var(--text-muted)" style={{ opacity: 0.5 }} />
+                            </div>
+                        ))}
+                    </div>
+                    <p style={{ marginTop: '20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Note: Overrides are set individually via the Organizer Approvals panel.</p>
+                </div>
+            )}
+
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Incoming Transaction Audit</h3>
