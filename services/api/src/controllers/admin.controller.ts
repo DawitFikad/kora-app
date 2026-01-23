@@ -308,11 +308,22 @@ export class AdminController {
     // Get Admin Notifications
     static async getNotifications(req: Request, res: Response) {
         try {
-            const userId = (req as any).user.id;
+            const currentUserId = (req as any).user.userId;
+            const { recipient } = req.query;
+
+            const where: any = {};
+
+            if (recipient === 'Audit Log') {
+                where.recipient = 'Audit Log';
+            } else {
+                where.userId = currentUserId;
+                if (recipient) where.recipient = recipient as string;
+            }
+
             const notifications = await prisma.notificationLog.findMany({
-                where: { userId },
+                where,
                 orderBy: { createdAt: 'desc' },
-                take: 20
+                take: 50
             });
             res.json({ success: true, data: notifications });
         } catch (error: any) {
