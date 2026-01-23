@@ -34,28 +34,28 @@
 
 [data-theme='light'] {
     /* Core Colors */
-    --bg-main: #F8FAFC;
+    --bg-main: #F1F5F9;
     --bg-sidebar: #FFFFFF;
     --bg-card: #FFFFFF;
-    --bg-card-hover: #F1F5F9;
+    --bg-card-hover: #F8FAFC;
     --bg-active: #1D90F5;
 
     /* Functional */
-    --bg-hover: rgba(15, 23, 42, 0.04);
-    --bg-subtle: rgba(15, 23, 42, 0.06);
+    --bg-hover: rgba(15, 23, 42, 0.05);
+    --bg-subtle: rgba(15, 23, 42, 0.03);
 
     /* Branding */
     --primary-blue: #1D90F5;
-    --primary-glow: rgba(29, 144, 245, 0.2);
+    --primary-glow: rgba(29, 144, 245, 0.15);
 
     /* Text */
     --text-main: #0F172A;
-    --text-muted: #64748B;
+    --text-muted: #475569; /* Darkened for better readability in light mode */
 
     /* Borders & Glass */
     --border: #E2E8F0;
-    --glass-bg: rgba(255, 255, 255, 0.8);
-    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(15, 23, 42, 0.08);
 
     color-scheme: light;
 }

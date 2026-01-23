@@ -43,7 +43,6 @@ export const AdminSettingsView = () => {
     const [configs, setConfigs] = useState<ConfigItem[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const categories: { id: SettingsCategory; label: string; icon: any; color: string }[] = [
@@ -80,14 +79,13 @@ export const AdminSettingsView = () => {
 
     const handleUpdateConfig = async (key: string, value: string, description?: string) => {
         try {
-            setIsSaving(true);
             await AdminService.updateSystemConfig({ key, value, description });
             await fetchData();
             showMessage('success', `${key.split('.').pop()?.toUpperCase()} updated successfully`);
         } catch (err) {
             showMessage('error', 'Failed to update configuration');
         } finally {
-            setIsSaving(false);
+            // setIsLoading(false); // Removed duplicate or unused finally block logic
         }
     };
 
@@ -297,11 +295,12 @@ const ActivityLogs = ({ auditLogs }: { auditLogs: AuditLog[] }) => (
                         width: '36px',
                         height: '36px',
                         borderRadius: '10px',
-                        background: 'rgba(59, 130, 246, 0.1)',
+                        background: 'var(--bg-hover)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        border: '1px solid var(--border)'
                     }}>
                         <ShieldCheck size={20} color="#3B82F6" />
                     </div>
@@ -351,7 +350,7 @@ const ConfigInput = ({ label, configKey, value, description, type = 'text', onSa
                     {type !== 'toggle' && isDirty && (
                         <button
                             onClick={() => { setCurrentValue(value); setIsDirty(false); }}
-                            style={{ padding: '8px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            style={{ padding: '8px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text-muted)' }}
                         >
                             <RotateCcw size={16} />
                         </button>
@@ -367,10 +366,10 @@ const ConfigInput = ({ label, configKey, value, description, type = 'text', onSa
                             style={{
                                 padding: '8px 16px',
                                 borderRadius: '10px',
-                                background: type === 'toggle' ? (currentValue === 'true' ? '#3B82F6' : 'rgba(255,255,255,0.1)') : 'var(--bg-active)',
-                                border: 'none',
+                                background: type === 'toggle' ? (currentValue === 'true' ? 'var(--bg-active)' : 'var(--bg-subtle)') : 'var(--bg-active)',
+                                border: type === 'toggle' && currentValue !== 'true' ? '1px solid var(--border)' : 'none',
                                 cursor: 'pointer',
-                                color: 'white',
+                                color: type === 'toggle' && currentValue !== 'true' ? 'var(--text-main)' : 'white',
                                 fontWeight: 800,
                                 fontSize: '0.8rem',
                                 display: 'flex',
@@ -381,7 +380,7 @@ const ConfigInput = ({ label, configKey, value, description, type = 'text', onSa
                         >
                             {type === 'toggle' ? (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'white', opacity: currentValue === 'true' ? 1 : 0.3 }} />
+                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: currentValue === 'true' ? 'white' : 'var(--text-muted)', opacity: currentValue === 'true' ? 1 : 0.5 }} />
                                     {currentValue === 'true' ? 'ACTIVE' : 'DISABLED'}
                                 </div>
                             ) : (
@@ -406,11 +405,12 @@ const ConfigInput = ({ label, configKey, value, description, type = 'text', onSa
                         border: '1px solid var(--border)',
                         padding: '14px 18px',
                         borderRadius: '12px',
-                        color: 'white',
+                        color: 'var(--text-main)',
                         fontSize: '0.95rem',
                         fontWeight: 600,
                         outline: 'none',
-                        transition: 'border-color 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                     }}
                     onFocus={(e) => e.target.style.borderColor = 'var(--bg-active)'}
                     onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
