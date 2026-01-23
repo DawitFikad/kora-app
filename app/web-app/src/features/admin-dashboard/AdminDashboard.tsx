@@ -38,7 +38,7 @@ import { TeamManagementView } from './components/TeamManagementView';
 import { ActivityLogView } from './components/ActivityLogView';
 
 // --- Types ---
-type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud' | 'Content' | 'Invite Admin' | 'Settings' | 'Monitoring' | 'Audit Logs';
+type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud Monitoring' | 'Content' | 'Invite Admin' | 'Settings' | 'Platform Health' | 'Audit Logs';
 
 // --- Main Admin Dashboard Component ---
 
@@ -124,7 +124,7 @@ const AdminDashboard = () => {
             case 'Dashboard': return <AdminOverview setActiveTab={setActiveTab} />;
             case 'Organizer Approvals': return <OrganizerApprovalsView />;
             case 'Event Approvals': return <EventApprovalsView />;
-            case 'Fraud': return <FraudMonitoringView />;
+            case 'Fraud Monitoring': return <FraudMonitoringView />;
             case 'Commissions': return <CommissionsView />;
             case 'GMV Tracking': return <AnalyticsView view="GMV" />;
             case 'Platform Revenue': return <AnalyticsView view="REVENUE" />;
@@ -132,7 +132,7 @@ const AdminDashboard = () => {
             case 'Settlement Ledger': return <PayoutsManagementView view="SETTLEMENTS" />;
             case 'Content': return <ContentManagementView />;
             case 'Invite Admin': return <TeamManagementView />;
-            case 'Monitoring': return <PlatformControlView />;
+            case 'Platform Health': return <PlatformControlView />;
             case 'Audit Logs': return <ActivityLogView />;
             case 'Settings': return <AdminSettingsView />;
             default: return <AdminOverview setActiveTab={setActiveTab} />;
@@ -185,11 +185,11 @@ const AdminDashboard = () => {
                         {
                             title: 'Security & System',
                             items: [
-                                { icon: ShieldAlert, label: 'Fraud', display: t('admin.fraud') },
-                                { icon: Activity, label: 'Monitoring', display: "Platform Health" },
+                                { icon: ShieldAlert, label: 'Fraud Monitoring', display: 'Fraud Monitoring' },
+                                { icon: Activity, label: 'Platform Health', display: 'Platform Health' },
                                 { icon: ClipboardList, label: 'Audit Logs', display: 'Audit Logs' },
-                                { icon: Users, label: 'Invite Admin', display: t('admin.invite', 'Invite Admin') },
-                                { icon: FileText, label: 'Content', display: t('admin.content') }
+                                { icon: Users, label: 'Invite Admin', display: 'Invite Admin' },
+                                { icon: FileText, label: 'Content', display: 'Content Management' }
                             ]
                         }
                     ].map((group, groupIndex) => (
@@ -260,13 +260,13 @@ const AdminDashboard = () => {
                                     else if (val.includes('org')) setActiveTab('Organizer Approvals');
                                     else if (val.includes('comm')) setActiveTab('Commissions');
                                     else if (val.includes('log') || val.includes('audit')) setActiveTab('Audit Logs');
-                                    else if (val.includes('fraud')) setActiveTab('Fraud');
+                                    else if (val.includes('fraud')) setActiveTab('Fraud Monitoring');
                                     else if (val.includes('payout')) setActiveTab('Organizer Payouts');
                                     else if (val.includes('gmv')) setActiveTab('GMV Tracking');
                                     else if (val.includes('revenue')) setActiveTab('Platform Revenue');
                                     else if (val.includes('settle')) setActiveTab('Settlement Ledger');
                                     else if (val.includes('team') || val.includes('invite')) setActiveTab('Invite Admin');
-                                    else if (val.includes('control') || val.includes('health')) setActiveTab('Monitoring');
+                                    else if (val.includes('control') || val.includes('health')) setActiveTab('Platform Health');
                                 }
                             }}
                         />

@@ -12,6 +12,9 @@ const router = Router();
 // Create admin (for testing/initial setup - should be secured in production)
 router.post("/create-admin", AdminController.createAdmin);
 
+// Invite Admin (Email-based)
+router.post("/invite", authenticate, authorize([Role.ADMIN]), AdminController.inviteAdmin);
+
 // Get platform stats
 router.get("/stats", authenticate, authorize([Role.ADMIN]), AdminController.getStats);
 router.get("/analytics", authenticate, authorize([Role.ADMIN]), AdminController.getDetailedStats);

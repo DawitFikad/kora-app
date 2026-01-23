@@ -1,23 +1,46 @@
 import { useState } from 'react';
 import { AdminPageHeader } from './AdminPageHeader';
-import { UserPlus, Shield, Mail, CheckCircle2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { AdminService } from '../../../core/api/admin.service';
+import { UserPlus, Shield, Mail, CheckCircle2, User, Phone, Loader2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const TeamManagementView = () => {
     const [inviteEmail, setInviteEmail] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [role, setRole] = useState('admin');
-    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
-    const handleInvite = (e: React.FormEvent) => {
+    const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!inviteEmail) return;
+        if (!inviteEmail || !fullName || !phoneNumber) return;
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            setStatus('loading');
+            const res: any = await AdminService.inviteAdmin({
+                email: inviteEmail,
+                phoneNumber,
+                fullName,
+                role
+            });
+
             setStatus('success');
+            setSuccessMessage(res.message || 'Invitation sent successfully!');
             setInviteEmail('');
-            setTimeout(() => setStatus('idle'), 3000);
-        }, 1000);
+            setFullName('');
+            setPhoneNumber('');
+
+            setTimeout(() => setStatus('idle'), 5000);
+        } catch (err: any) {
+            console.error('[Invitation Error]', err);
+            setStatus('error');
+            // Interceptor returns error.response.data directly
+            const msg = err.error || err.message || (typeof err === 'string' ? err : 'Failed to send invitation');
+            setErrorMessage(msg);
+            setTimeout(() => setStatus('idle'), 5000);
+        }
     };
 
     return (
@@ -40,6 +63,37 @@ export const TeamManagementView = () => {
                     </div>
 
                     <form onSubmit={handleInvite}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Full Name</label>
+                                <div style={{ position: 'relative' }}>
+                                    <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                    <input
+                                        type="text"
+                                        placeholder="Enter full name"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Phone Number</label>
+                                <div style={{ position: 'relative' }}>
+                                    <Phone size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                    <input
+                                        type="tel"
+                                        placeholder="+251..."
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <div style={{ marginBottom: '20px' }}>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Email Address</label>
                             <div style={{ position: 'relative' }}>
@@ -63,53 +117,68 @@ export const TeamManagementView = () => {
                                     style={{
                                         padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'admin' ? 'var(--primary)' : 'var(--border)'}`,
                                         cursor: 'pointer', background: role === 'admin' ? 'var(--bg-subtle)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px'
+                                        display: 'flex', flexDirection: 'column', gap: '8px',
+                                        transition: 'all 0.2s ease'
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Shield size={16} color="var(--primary)" />
-                                        <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Admin</span>
+                                        <Shield size={16} color={role === 'admin' ? 'var(--primary)' : 'var(--text-muted)'} />
+                                        <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Super Admin</span>
                                     </div>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Full system access</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Full sovereign control</span>
                                 </div>
                                 <div
                                     onClick={() => setRole('moderator')}
                                     style={{
                                         padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'moderator' ? 'var(--primary)' : 'var(--border)'}`,
                                         cursor: 'pointer', background: role === 'moderator' ? 'var(--bg-subtle)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px'
+                                        display: 'flex', flexDirection: 'column', gap: '8px',
+                                        transition: 'all 0.2s ease'
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Shield size={16} color="var(--text-muted)" />
+                                        <Shield size={16} color={role === 'moderator' ? 'var(--primary)' : 'var(--text-muted)'} />
                                         <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Moderator</span>
                                     </div>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Limited permissions</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ops & Audit only</span>
                                 </div>
                             </div>
                         </div>
 
                         <button
                             type="submit"
+                            disabled={status === 'loading'}
                             style={{
                                 width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: 'var(--bg-active)',
-                                color: 'white', fontWeight: 800, fontSize: '0.95rem', cursor: 'cursor',
-                                opacity: !inviteEmail ? 0.7 : 1
+                                color: 'white', fontWeight: 800, fontSize: '0.95rem', cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
                             }}
                         >
-                            Send Invitation
+                            {status === 'loading' ? <Loader2 size={20} className="animate-spin" /> : <UserPlus size={20} />}
+                            {status === 'loading' ? 'Sending Invitation...' : 'Send Real Invitation'}
                         </button>
                     </form>
 
-                    {status === 'success' && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                            style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', display: 'flex', alignItems: 'center', gap: '12px' }}
-                        >
-                            <CheckCircle2 size={20} />
-                            <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>Invitation sent successfully!</span>
-                        </motion.div>
-                    )}
+                    <AnimatePresence>
+                        {status === 'success' && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                                style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', display: 'flex', alignItems: 'center', gap: '12px' }}
+                            >
+                                <CheckCircle2 size={20} />
+                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{successMessage}</span>
+                            </motion.div>
+                        )}
+                        {status === 'error' && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                                style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '12px' }}
+                            >
+                                <AlertCircle size={20} />
+                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{errorMessage}</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </div>

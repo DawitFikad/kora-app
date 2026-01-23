@@ -44,4 +44,5 @@ export const AdminService = {
     // System Config
     getSystemConfigs: () => api.get('/admin/config'),
     updateSystemConfig: (data: { key: string, value: string, description?: string }) => api.patch('/admin/config', data),
+    inviteAdmin: (data: { email: string, phoneNumber: string, fullName: string, role: string }) => api.post('/admin/invite', data),
 };

@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { Role, AccountStatus, OrganizerStatus } from "@prisma/client";
+import { Role, AccountStatus, OrganizerStatus, NotificationChannel } from "@prisma/client";
 import { AdminAnalyticsService } from "../services/admin-analytics.service";
+import { EmailService } from "../services/email.service";
 
 export class AdminController {
     static async getStats(req: Request, res: Response) {
@@ -143,7 +144,7 @@ export class AdminController {
         }
     }
 
-    // Create admin user
+    // Create admin user (Direct)
     static async createAdmin(req: Request, res: Response) {
         try {
             const { phoneNumber, email, firstName, lastName } = req.body;
@@ -190,6 +191,88 @@ export class AdminController {
             });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
+        }
+    }
+
+    // Invite Admin (With Email Integration)
+    static async inviteAdmin(req: Request, res: Response) {
+        try {
+            const { email, phoneNumber, fullName, role } = req.body;
+
+            if (!email || !phoneNumber || !fullName) {
+                return res.status(400).json({ error: "Email, Phone and Full Name are required" });
+            }
+
+            const existingUser = await prisma.user.findFirst({
+                where: {
+                    OR: [
+                        { phoneNumber },
+                        { email }
+                    ]
+                }
+            });
+
+            if (existingUser) {
+                return res.status(400).json({ error: "User with this phone number or email already exists" });
+            }
+
+            // Create account as PENDING until they login
+            const admin = await prisma.user.create({
+                data: {
+                    phoneNumber,
+                    email,
+                    role: role === 'moderator' ? Role.ADMIN : Role.ADMIN, // Both use ADMIN role in schema for now, logic can be differentiated via profiles or metadata if needed
+                    status: AccountStatus.ACTIVE,
+                    profile: {
+                        create: {
+                            fullName,
+                            language: "en"
+                        }
+                    }
+                }
+            });
+
+            // Send Real Email
+            const portalUrl = process.env.ADMIN_PORTAL_URL || "https://admin.ettickets.com";
+            const emailHtml = EmailService.createAdminInvitationTemplate({
+                fullName,
+                role: role || 'admin',
+                phoneNumber,
+                portalUrl
+            });
+
+            console.log(`[inviteAdmin] Sending email to ${email}...`);
+            const emailResult = await EmailService.sendEmail(
+                email,
+                "Invitation to join the ET-Ticket Admin Team",
+                `Hello ${fullName}, you have been invited to join ET-Ticket as an ${role || 'admin'}. Visit ${portalUrl} to login with your phone: ${phoneNumber}.`,
+                emailHtml
+            );
+
+            if (!emailResult) {
+                console.warn(`[inviteAdmin] Email failed to send to ${email}, but account was created.`);
+            }
+
+            // Audit Log
+            await prisma.notificationLog.create({
+                data: {
+                    userId: (req as any).user?.userId || (req as any).user?.id,
+                    channel: NotificationChannel.EMAIL,
+                    recipient: email,
+                    title: 'Admin Invited',
+                    content: `Admin ${(req as any).user?.userId || (req as any).user?.id} invited ${fullName} (${email}) as ${role}`,
+                    status: emailResult ? 'SENT' : 'FAILED',
+                    metadata: { invitedUserId: admin.id, role }
+                }
+            });
+
+            res.json({ success: true, message: emailResult ? "Invitation sent successfully" : "Account created but email failed to send" });
+        } catch (error: any) {
+            console.error("[inviteAdmin Error]", error);
+            if (error.code === 'P2002') {
+                return res.status(400).json({ error: "User with this phone number or email already exists in our system." });
+            }
+            res.status(500).json({ error: error.message || "An unexpected error occurred while sending the invitation." });
         }
     }
 

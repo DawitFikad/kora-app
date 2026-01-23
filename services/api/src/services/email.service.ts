@@ -14,7 +14,7 @@ export class EmailService {
         isConfirmation?: boolean;
     }): string {
         const { title, content, footerText, isConfirmation } = options;
-        
+
         return `
 <!DOCTYPE html>
 <html lang="en">
@@ -188,6 +188,54 @@ ${data.message}
             content,
             footerText: 'Thank you for using ET-Ticket!',
             isConfirmation: true
+        });
+    }
+
+    static createAdminInvitationTemplate(data: {
+        fullName: string;
+        role: string;
+        phoneNumber: string;
+        portalUrl: string;
+    }): string {
+        const content = `
+            <div style="margin-bottom: 30px;">
+                <h2 style="margin: 0 0 20px 0; color: #1D90F5; font-size: 22px; font-weight: 600;">
+                    Welcome to the Admin Team
+                </h2>
+                <p style="margin: 0 0 15px 0; color: #495057;">
+                    Hello <strong>${data.fullName}</strong>,
+                </p>
+                <p style="margin: 0 0 15px 0; color: #495057;">
+                    You have been invited to join the <strong>ET-Ticket</strong> administration platform as a <strong>${data.role.toUpperCase()}</strong>.
+                </p>
+            </div>
+            
+            <div style="background-color: #f8f9fa; border-left: 4px solid #1D90F5; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                <h3 style="margin: 0 0 15px 0; color: #495057; font-size: 16px; font-weight: 600;">
+                    Your Access Credentials:
+                </h3>
+                <p style="margin: 0 0 8px 0; color: #212529;"><strong>Registered Phone:</strong> ${data.phoneNumber}</p>
+                <p style="margin: 0 0 8px 0; color: #212529;"><strong>Assigned Role:</strong> ${data.role}</p>
+                <p style="margin: 0; color: #6c757d; font-size: 13px; font-style: italic;">
+                    * You can login using your phone number via the OTP verification system.
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="${data.portalUrl}" style="background-color: #1D90F5; color: #ffffff; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: 700; display: inline-block; box-shadow: 0 4px 6px rgba(29, 144, 245, 0.2);">
+                    Access Admin Portal
+                </a>
+            </div>
+            
+            <p style="color: #6c757d; font-size: 14px;">
+                If you were not expecting this invitation, please contact the system administrator immediately.
+            </p>
+        `;
+
+        return this.createEmailTemplate({
+            title: 'Admin Platform Invitation',
+            content,
+            footerText: 'Internal Administrative Communication'
         });
     }
 
