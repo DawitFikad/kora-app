@@ -104,7 +104,16 @@ export const SettingsView = () => {
                 payoutDetails: profile?.payoutDetails,
                 payoutDetailsAm: profile?.payoutDetailsAm,
                 description: profile?.description,
-                adminNote: profile?.adminNote
+                adminNote: profile?.adminNote,
+                websiteUrl: profile?.websiteUrl,
+                socialLinks: profile?.socialLinks,
+                supportPhone: profile?.supportPhone,
+                supportEmail: profile?.supportEmail,
+                businessAddress: profile?.businessAddress,
+                categoryFocus: profile?.categoryFocus,
+                operatingCities: profile?.operatingCities,
+                defaultConfig: profile?.defaultConfig,
+                notificationPrefs: profile?.notificationPrefs
             });
             toast.success("Settings saved successfully!");
             // Handle response - check if it has success wrapper
@@ -577,124 +586,195 @@ export const SettingsView = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                <button onClick={handleSaveGeneral} disabled={saving} className="btn-blue" style={{ padding: '14px 28px' }}>
-                                    {saving ? <Loader2 className="animate-spin" size={20} /> : 'Save Changes'}
-                                </button>
+
+                            <div style={{ marginBottom: '32px' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '20px', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>Extended Profile Information</h4>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Website URL</label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://..."
+                                            value={profile?.websiteUrl || ''}
+                                            onChange={e => setProfile({ ...profile, websiteUrl: e.target.value })}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Facebook / Telegram</label>
+                                        <input
+                                            type="text"
+                                            placeholder="@channel"
+                                            value={profile?.socialLinks?.telegram || ''}
+                                            onChange={e => setProfile({ ...profile, socialLinks: { ...profile.socialLinks, telegram: e.target.value } })}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Support Email (Public)</label>
+                                        <input
+                                            type="email"
+                                            placeholder="support@org.com"
+                                            value={profile?.supportEmail || ''}
+                                            onChange={e => setProfile({ ...profile, supportEmail: e.target.value })}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Support Phone (Public)</label>
+                                        <input
+                                            type="tel"
+                                            placeholder="+251..."
+                                            value={profile?.supportPhone || ''}
+                                            onChange={e => setProfile({ ...profile, supportPhone: e.target.value })}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Operating Cities (Select main)</label>
+                                    <select
+                                        value={profile?.operatingCities?.[0] || ''}
+                                        onChange={e => setProfile({ ...profile, operatingCities: [e.target.value] })}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
+                                    >
+                                        <option value="">Select City</option>
+                                        <option value="Addis Ababa">Addis Ababa</option>
+                                        <option value="Adama">Adama</option>
+                                        <option value="Hawassa">Hawassa</option>
+                                        <option value="Bahir Dar">Bahir Dar</option>
+                                        <option value="Mekelle">Mekelle</option>
+                                        <option value="Dire Dawa">Dire Dawa</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            {/* Password Change Modal */}
-                            {showPasswordModal && (
-                                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowPasswordModal(false)}>
-                                    <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', width: '500px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
-                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Change Password</h3>
+                            {activeTab === 'General' && (
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                                    <button onClick={handleSaveGeneral} disabled={saving} className="btn-blue" style={{ padding: '14px 28px' }}>
+                                        {saving ? <Loader2 className="animate-spin" size={20} /> : 'Save Changes'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
+
+                    {showPasswordModal && (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowPasswordModal(false)}>
+                            <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', width: '500px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Change Password</h3>
+
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Current Password</label>
+                                    <input
+                                        type="password"
+                                        value={currentPassword}
+                                        onChange={e => setCurrentPassword(e.target.value)}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
+                                    />
+                                </div>
+
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>New Password</label>
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={e => setNewPassword(e.target.value)}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
+                                    />
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>At least 8 characters with 1 uppercase, 1 lowercase, and 1 number</p>
+                                </div>
+
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Confirm New Password</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                    <button onClick={() => { setShowPasswordModal(false); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); }} className="btn-ghost">
+                                        Cancel
+                                    </button>
+                                    <button onClick={handleChangePassword} disabled={saving} className="btn-blue">
+                                        {saving ? <Loader2 className="animate-spin" size={16} /> : 'Change Password'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Phone Change Modal */}
+                    {showPhoneModal && (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowPhoneModal(false)}>
+                            <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', width: '500px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Change Phone Number</h3>
+
+                                {changePhoneStep === 1 ? (
+                                    <>
                                         <div style={{ marginBottom: '20px' }}>
-                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Current Password</label>
+                                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                                                Enter your new phone number. We will send a verification code to this number.
+                                            </p>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>New Phone Number</label>
                                             <input
-                                                type="password"
-                                                value={currentPassword}
-                                                onChange={e => setCurrentPassword(e.target.value)}
-                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
-                                            />
-                                        </div>
-
-                                        <div style={{ marginBottom: '20px' }}>
-                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>New Password</label>
-                                            <input
-                                                type="password"
-                                                value={newPassword}
-                                                onChange={e => setNewPassword(e.target.value)}
-                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
-                                            />
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>At least 8 characters with 1 uppercase, 1 lowercase, and 1 number</p>
-                                        </div>
-
-                                        <div style={{ marginBottom: '24px' }}>
-                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Confirm New Password</label>
-                                            <input
-                                                type="password"
-                                                value={confirmPassword}
-                                                onChange={e => setConfirmPassword(e.target.value)}
+                                                type="tel"
+                                                placeholder="+251..."
+                                                value={newPhoneNumber}
+                                                onChange={e => setNewPhoneNumber(e.target.value)}
                                                 style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                             />
                                         </div>
 
                                         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => { setShowPasswordModal(false); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); }} className="btn-ghost">
+                                            <button onClick={() => setShowPhoneModal(false)} className="btn-ghost">
                                                 Cancel
                                             </button>
-                                            <button onClick={handleChangePassword} disabled={saving} className="btn-blue">
-                                                {saving ? <Loader2 className="animate-spin" size={16} /> : 'Change Password'}
+                                            <button onClick={handleRequestPhoneChange} disabled={saving} className="btn-blue">
+                                                {saving ? <Loader2 className="animate-spin" size={16} /> : 'Send Code'}
                                             </button>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                                                Enter the verification code sent to <strong>{newPhoneNumber}</strong>.
+                                            </p>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Verification Code</label>
+                                            <input
+                                                type="text"
+                                                placeholder="123456"
+                                                value={phoneOtp}
+                                                onChange={e => setPhoneOtp(e.target.value)}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none', letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
+                                                maxLength={6}
+                                            />
+                                        </div>
 
-                            {/* Phone Change Modal */}
-                            {showPhoneModal && (
-                                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowPhoneModal(false)}>
-                                    <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', width: '500px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
-                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Change Phone Number</h3>
-
-                                        {changePhoneStep === 1 ? (
-                                            <>
-                                                <div style={{ marginBottom: '20px' }}>
-                                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                                                        Enter your new phone number. We will send a verification code to this number.
-                                                    </p>
-                                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>New Phone Number</label>
-                                                    <input
-                                                        type="tel"
-                                                        placeholder="+251..."
-                                                        value={newPhoneNumber}
-                                                        onChange={e => setNewPhoneNumber(e.target.value)}
-                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
-                                                    />
-                                                </div>
-
-                                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                                    <button onClick={() => setShowPhoneModal(false)} className="btn-ghost">
-                                                        Cancel
-                                                    </button>
-                                                    <button onClick={handleRequestPhoneChange} disabled={saving} className="btn-blue">
-                                                        {saving ? <Loader2 className="animate-spin" size={16} /> : 'Send Code'}
-                                                    </button>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div style={{ marginBottom: '20px' }}>
-                                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                                                        Enter the verification code sent to <strong>{newPhoneNumber}</strong>.
-                                                    </p>
-                                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Verification Code</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="123456"
-                                                        value={phoneOtp}
-                                                        onChange={e => setPhoneOtp(e.target.value)}
-                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none', letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
-                                                        maxLength={6}
-                                                    />
-                                                </div>
-
-                                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                                    <button onClick={() => setChangePhoneStep(1)} className="btn-ghost">
-                                                        Back
-                                                    </button>
-                                                    <button onClick={handleVerifyPhoneChange} disabled={saving} className="btn-blue">
-                                                        {saving ? <Loader2 className="animate-spin" size={16} /> : 'Verify & Update'}
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => setChangePhoneStep(1)} className="btn-ghost">
+                                                Back
+                                            </button>
+                                            <button onClick={handleVerifyPhoneChange} disabled={saving} className="btn-blue">
+                                                {saving ? <Loader2 className="animate-spin" size={16} /> : 'Verify & Update'}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     )}
+
 
                     {activeTab === 'Payout Methods' && (
                         <div>
@@ -827,6 +907,72 @@ export const SettingsView = () => {
 
                     {activeTab === 'Notifications' && (
                         <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Notification Preferences</h3>
+                                <button onClick={handleSaveGeneral} disabled={saving} className="btn-blue" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>
+                                    {saving ? <Loader2 className="animate-spin" size={16} /> : 'Save Preferences'}
+                                </button>
+                            </div>
+
+                            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '14px', padding: '24px', marginBottom: '32px' }}>
+                                {[
+                                    { key: 'approval', label: 'Event Approval Updates', desc: 'Get notified when your event is approved or rejected.' },
+                                    { key: 'sales', label: 'Sales Milestones', desc: 'Receive alerts when you hit sales targets (10, 50, 100 sold).' },
+                                    { key: 'inventory', label: 'Low Inventory Alerts', desc: 'Get warned when tickets are running low (90% sold).' },
+                                    { key: 'refunds', label: 'Refund Requests', desc: 'Notifications for new refund requests requiring approval.' },
+                                    { key: 'payouts', label: 'Payout Updates', desc: 'Updates on your withdrawal requests.' }
+                                ].map((item) => (
+                                    <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div style={{ paddingRight: '24px' }}>
+                                            <h4 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '4px' }}>{item.label}</h4>
+                                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.desc}</p>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <button
+                                                onClick={() => setProfile({
+                                                    ...profile,
+                                                    notificationPrefs: {
+                                                        ...profile?.notificationPrefs,
+                                                        [item.key]: { ...profile?.notificationPrefs?.[item.key], sms: !profile?.notificationPrefs?.[item.key]?.sms }
+                                                    }
+                                                })}
+                                                style={{
+                                                    padding: '8px 12px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid',
+                                                    borderColor: profile?.notificationPrefs?.[item.key]?.sms ? '#10B981' : 'var(--border)',
+                                                    background: profile?.notificationPrefs?.[item.key]?.sms ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                                                    color: profile?.notificationPrefs?.[item.key]?.sms ? '#10B981' : 'var(--text-muted)',
+                                                    fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+                                                }}
+                                            >
+                                                SMS
+                                            </button>
+                                            <button
+                                                onClick={() => setProfile({
+                                                    ...profile,
+                                                    notificationPrefs: {
+                                                        ...profile?.notificationPrefs,
+                                                        [item.key]: { ...profile?.notificationPrefs?.[item.key], email: !profile?.notificationPrefs?.[item.key]?.email }
+                                                    }
+                                                })}
+                                                style={{
+                                                    padding: '8px 12px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid',
+                                                    borderColor: profile?.notificationPrefs?.[item.key]?.email ? '#1D90F5' : 'var(--border)',
+                                                    background: profile?.notificationPrefs?.[item.key]?.email ? 'rgba(29, 144, 245, 0.1)' : 'transparent',
+                                                    color: profile?.notificationPrefs?.[item.key]?.email ? '#1D90F5' : 'var(--text-muted)',
+                                                    fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+                                                }}
+                                            >
+                                                Email
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Notification History</h3>
                             {loading ? (
                                 <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
@@ -959,6 +1105,6 @@ export const SettingsView = () => {
                     )}
                 </div>
             </div>
-        </motion.div>
+        </motion.div >
     );
 };

@@ -77,6 +77,18 @@ model OrganizerProfile {
   notifications    NotificationLog[]
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   wallet           OrganizerWallet?
+  
+  // Extended Profile Fields
+  websiteUrl        String?
+  socialLinks       Json?
+  supportPhone      String?
+  supportEmail      String?
+  businessAddress   Json?
+  categoryFocus     String[]
+  operatingCities   String[]
+  
+  defaultConfig     Json?
+  notificationPrefs Json?
 }
 
 model Category {

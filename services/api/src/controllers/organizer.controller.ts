@@ -223,7 +223,11 @@ export class OrganizerController {
             const organizerId = (req as any).user.organizerId;
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-            const { organizationName, contactEmail, contactPhone, city, payoutDetails, adminNote, description } = req.body;
+            const {
+                organizationName, contactEmail, contactPhone, city, payoutDetails, adminNote, description,
+                websiteUrl, socialLinks, supportPhone, supportEmail, businessAddress,
+                categoryFocus, operatingCities, defaultConfig, notificationPrefs
+            } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
 
             // Check current status for locking
@@ -235,7 +239,16 @@ export class OrganizerController {
                 contactPhone,
                 city,
                 adminNote,
-                description
+                description,
+                websiteUrl,
+                socialLinks,
+                supportPhone,
+                supportEmail,
+                businessAddress,
+                categoryFocus,
+                operatingCities,
+                defaultConfig,
+                notificationPrefs
             };
 
             // Lock critical fields if APPROVED
