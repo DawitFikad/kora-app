@@ -29,7 +29,7 @@ class AppRouter {
       // If it's the first launch, force onboarding UNLESS they are already authenticated.
       // An authenticated user should never be stuck in onboarding.
       if (isFirstLaunch && !isAuthenticated) {
-        if (!isGoingToOnboarding && !isGoingToLogin) return '/onboarding';
+        if (!isGoingToOnboarding) return '/onboarding';
         return null;
       }
 

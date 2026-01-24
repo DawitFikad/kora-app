@@ -32,7 +32,8 @@
         "terms_privacy": "የግላዊነት መመሪያ",
         "terms_suffix": " ይስማማሉ።",
         "done": "ጨርስ",
-        "country_code": "+251"
+        "country_code": "+251",
+        "secure_otp": "ደህንነቱ የተጠበቀ መግቢያ"
     },
     "home": {
         "title": "ያስሱ",

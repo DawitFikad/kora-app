@@ -1,37 +1,31 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-    TrendingUp,
-    DollarSign,
-    Ticket,
-    Users,
-    Download,
-    Calendar,
-    Filter,
-    ArrowUp,
+    Activity,
     ArrowDown,
+    ArrowUp,
     BarChart3,
-    PieChart,
-    Activity
+    DollarSign,
+    Download,
+    Ticket,
+    TrendingUp
 } from 'lucide-react';
-import { PageHeader } from './PageHeader';
+import { useEffect, useState } from 'react';
+import {
+    CartesianGrid,
+    Cell,
+    Legend,
+    Line,
+    LineChart,
+    Pie,
+    PieChart as RechartsPieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis
+} from 'recharts';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
-import {
-    LineChart,
-    Line,
-    BarChart,
-    Bar,
-    PieChart as RechartsPieChart,
-    Pie,
-    Cell,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer
-} from 'recharts';
+import { PageHeader } from './PageHeader';
 
 interface SalesData {
     totalRevenue: number;

@@ -84,7 +84,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                    // Branding (Centered)
                   Align(
-                    alignment: Alignment.center,
+                    alignment: Alignment.topCenter,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -112,7 +112,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
                   // Language Switcher (Top Right)
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: Alignment.topRight,
                     child: GestureDetector(
                       onTap: () {
                         if (context.locale.languageCode == 'en') {

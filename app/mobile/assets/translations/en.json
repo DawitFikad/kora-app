@@ -32,7 +32,8 @@
         "terms_privacy": "Privacy Policy",
         "terms_suffix": ".",
         "done": "Done",
-        "country_code": "+251"
+        "country_code": "+251",
+        "secure_otp": "Secure login via OTP"
     },
     "home": {
         "title": "Discover",

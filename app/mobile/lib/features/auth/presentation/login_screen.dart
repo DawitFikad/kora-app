@@ -93,9 +93,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.help_outline, color: Colors.white54, size: 22),
-                        onPressed: () {},
+                      // Language Switcher
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Row(
+                          children: [
+                            _buildLanguageOption(context, 'en', '🇺🇸'),
+                            _buildLanguageOption(context, 'am', '🇪🇹'),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -175,14 +185,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 child: TextField(
                                   controller: _phoneController,
                                   keyboardType: TextInputType.phone,
-                                  style: const TextStyle(color: Colors.white, fontSize: 18),
-                                  cursorColor: Colors.white,
+                                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                                  cursorColor: const Color(0xFF8B5CF6),
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     hintText: "login.hint_phone".tr(),
                                     hintStyle: const TextStyle(color: Colors.white24),
                                   ),
                                 ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        Row(
+                          children: [
+                            const Icon(Icons.lock_outline, color: Color(0xFF8B5CF6), size: 14),
+                            const SizedBox(width: 8),
+                            Text(
+                              "login.secure_otp".tr(),
+                              style: GoogleFonts.poppins(
+                                color: Colors.white54,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
@@ -466,5 +493,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
+  }
+  Widget _buildLanguageOption(BuildContext context, String code, String flag) {
+    final isSelected = context.locale.languageCode == code;
+    return GestureDetector(
+      onTap: () async {
+        if (!isSelected) {
+          await context.setLocale(Locale(code));
+          setState(() {}); // Trigger rebuild to reflect changes immediately
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF8B5CF6).withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          flag,
+          style: TextStyle(
+            fontSize: 16,
+            color: isSelected ? const Color(0xFF8B5CF6) : Colors.white38,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
   }
 }
