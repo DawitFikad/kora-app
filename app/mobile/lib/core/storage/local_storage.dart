@@ -6,6 +6,8 @@ class LocalStorage extends ChangeNotifier {
   static const String keyAuthToken = 'auth_token';
   static const String keyCachedTickets = 'cached_tickets';
   static const String keyFavorites = 'favorites';
+  static const String keyPushNotifications = 'push_notifications';
+  static const String keyEmailNotifications = 'email_notifications';
 
   final SharedPreferences _prefs;
 
@@ -58,6 +60,18 @@ class LocalStorage extends ChangeNotifier {
 
   Future<void> clearAuth() async {
     await _prefs.remove(keyAuthToken);
+    notifyListeners();
+  }
+
+  bool get pushNotifications => _prefs.getBool(keyPushNotifications) ?? true;
+  Future<void> setPushNotifications(bool value) async {
+    await _prefs.setBool(keyPushNotifications, value);
+    notifyListeners();
+  }
+
+  bool get emailNotifications => _prefs.getBool(keyEmailNotifications) ?? false;
+  Future<void> setEmailNotifications(bool value) async {
+    await _prefs.setBool(keyEmailNotifications, value);
     notifyListeners();
   }
 

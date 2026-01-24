@@ -9,6 +9,9 @@ import '../../../core/providers.dart';
 import '../../auth/services/auth_service.dart';
 import '../../profile/services/profile_service.dart';
 import '../../profile/presentation/edit_profile_screen.dart';
+import 'support_screen.dart';
+import 'legal_screen.dart';
+import 'about_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -19,8 +22,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _appVersion = '';
-  bool _pushNotifications = true;
-  bool _emailNotifications = false;
 
   @override
   void initState() {
@@ -260,9 +261,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Push Notifications',
             subtitle: 'Get updates about your tickets',
             trailing: Switch(
-              value: _pushNotifications,
+              value: ref.watch(localStorageProvider).pushNotifications,
               activeColor: const Color(0xFF8B5CF6),
-              onChanged: (val) => setState(() => _pushNotifications = val),
+              onChanged: (val) => ref.read(localStorageProvider).setPushNotifications(val),
             ),
           ),
 
@@ -273,9 +274,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Email Notifications',
             subtitle: 'Receive event reminders via email',
             trailing: Switch(
-              value: _emailNotifications,
+              value: ref.watch(localStorageProvider).emailNotifications,
               activeColor: const Color(0xFF8B5CF6),
-              onChanged: (val) => setState(() => _emailNotifications = val),
+              onChanged: (val) => ref.read(localStorageProvider).setEmailNotifications(val),
             ),
           ),
 
@@ -287,28 +288,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _SettingsTile(
             icon: Icons.support_agent,
-            title: 'Contact Support',
+            title: 'Help & Support',
             subtitle: 'Get help with your account',
             trailing: Icon(Icons.chevron_right, color: Colors.grey),
-            onTap: () => _launchUrl('mailto:support@etticket.com'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SupportScreen()),
+            ),
           ),
 
           const SizedBox(height: 12),
 
           _SettingsTile(
             icon: Icons.description,
-            title: 'Terms of Service',
+            title: 'Terms & Privacy',
+            subtitle: 'Legals and policies',
             trailing: Icon(Icons.chevron_right, color: Colors.grey),
-            onTap: () => _launchUrl('https://etticket.com/terms'),
-          ),
-
-          const SizedBox(height: 12),
-
-          _SettingsTile(
-            icon: Icons.privacy_tip,
-            title: 'Privacy Policy',
-            trailing: Icon(Icons.chevron_right, color: Colors.grey),
-            onTap: () => _launchUrl('https://etticket.com/privacy'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LegalScreen()),
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -317,27 +316,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.info_outline,
             title: 'About',
             trailing: Icon(Icons.chevron_right, color: Colors.grey),
-            onTap: () {
-              showAboutDialog(
-                context: context,
-                applicationName: 'EtTicket',
-                applicationVersion: _appVersion,
-                applicationIcon: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.confirmation_number, color: Colors.white, size: 32),
-                ),
-                children: [
-                  Text(
-                    'Your trusted platform for event ticketing in Ethiopia.',
-                    style: GoogleFonts.poppins(fontSize: 14),
-                  ),
-                ],
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AboutScreen(appVersion: _appVersion)),
+            ),
           ),
 
           const SizedBox(height: 32),
