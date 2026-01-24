@@ -61,7 +61,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader title="Welcome back" subtitle="Here is what’s happening with your events today." />
 
-            <PageHeader title="Welcome back" subtitle="Here is what’s happening with your events today." />
+
 
             {/* Alerts Section */}
             {alerts.length > 0 && (
