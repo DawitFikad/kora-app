@@ -133,6 +133,20 @@ export class PayoutService {
                 }
             });
 
+            // 4. Send Notification (Async)
+            (async () => {
+                try {
+                    const { NotificationService } = require("./notification.service");
+                    const { NotificationChannel } = require("@prisma/client");
+                    await NotificationService.notifyOrganizer(wallet.organizerId, {
+                        title: "Payout Approved 💰",
+                        content: `Your payout of ETB ${batch.amount} has been processed via ${batch.method}.`,
+                        channels: [NotificationChannel.SMS, NotificationChannel.PUSH],
+                        metadata: { type: 'PAYOUT_SUCCESS', amount: batch.amount, batchId: batch.id }
+                    });
+                } catch (e) { console.error("Failed to notify organizer of payout:", e); }
+            })();
+
             return batch;
         });
     }
@@ -161,15 +175,32 @@ export class PayoutService {
     }
 
     static async rejectPayout(batchId: number, adminId: number, reason: string) {
-        return prisma.payoutBatch.update({
+        const batch = await prisma.payoutBatch.update({
             where: { id: batchId },
             data: {
                 status: FinancialStatus.FAILED,
                 processedAt: new Date(),
                 adminId,
                 payoutDetails: `REJECTED: ${reason}`
-            }
+            },
+            include: { wallet: true }
         });
+
+        // Notify Organizer (Async)
+        (async () => {
+            try {
+                const { NotificationService } = require("./notification.service");
+                const { NotificationChannel } = require("@prisma/client");
+                await NotificationService.notifyOrganizer(batch.wallet.organizerId, {
+                    title: "Payout Rejected ❌",
+                    content: `Your payout request of ETB ${batch.amount} was rejected. Reason: ${reason}`,
+                    channels: [NotificationChannel.SMS, NotificationChannel.PUSH],
+                    metadata: { type: 'PAYOUT_FAILED', reason, batchId: batch.id }
+                });
+            } catch (e) { console.error("Failed to notify organizer of payout rejection:", e); }
+        })();
+
+        return batch;
     }
 
     static async adminListProcessedPayouts() {

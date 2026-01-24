@@ -209,15 +209,42 @@ export class EventService {
     }
 
     static async reviewEvent(eventId: number, status: EventStatus, feeType: string, feeFixed: number, feePercentage: number) {
-        return prisma.event.update({
+        const event = await prisma.event.update({
             where: { id: eventId },
             data: {
                 status,
                 feeType: feeType || null,
                 feeFixed: feeFixed !== undefined ? feeFixed : null,
                 feePercentage: feePercentage !== undefined ? feePercentage : null
-            }
+            },
+            include: { organizer: true }
         });
+
+        // Notify Organizer (Async)
+        (async () => {
+            try {
+                const { NotificationService } = require("./notification.service");
+                const { NotificationChannel } = require("@prisma/client");
+
+                const title = status === EventStatus.APPROVED ? "Event Approved! 🎉" :
+                    status === EventStatus.REJECTED ? "Event Rejected ⚠️" : "Event Status Updated";
+
+                const content = status === EventStatus.APPROVED
+                    ? `Your event "${event.title}" has been approved and is now live!`
+                    : `Your event "${event.title}" has been rejected. Please contact support for details.`;
+
+                await NotificationService.notifyOrganizer(event.organizerId, {
+                    title,
+                    content,
+                    channels: [NotificationChannel.SMS, NotificationChannel.PUSH],
+                    metadata: { type: 'EVENT_STATUS', eventId, status }
+                });
+            } catch (e) {
+                console.error("Failed to notify organizer of event review:", e);
+            }
+        })();
+
+        return event;
     }
 
     // --- Meta Data ---

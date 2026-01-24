@@ -105,6 +105,66 @@ export class TicketService {
                 content: `Your tickets are ready! Codes: ${generatedCodes.join(', ')}. Use these codes or the QR in app for entry.`,
                 channels: [NotificationChannel.SMS]
             });
+
+            // --- ORGANIZER NOTIFICATIONS (Async) ---
+            (async () => {
+                try {
+                    const event = await prisma.event.findUnique({
+                        where: { id: eventId },
+                        include: { tiers: true }
+                    });
+
+                    if (!event) return;
+
+                    // 1. Calculate new totals
+                    const ticketsSold = await prisma.ticket.count({
+                        where: { eventId, status: { in: ['SOLD', 'VALID', 'USED'] } }
+                    });
+
+                    // 2. Sales Milestones (10, 50, 100, 500, 1000, etc.)
+                    const milestones = [10, 50, 100, 500, 1000, 5000, 10000];
+                    if (milestones.includes(ticketsSold) || (ticketsSold > 0 && ticketsSold % 1000 === 0)) {
+                        await NotificationService.notifyOrganizer(event.organizerId, {
+                            title: "Sales Milestone! 🚀",
+                            content: `Congratulations! You've sold ${ticketsSold} tickets for "${event.title}".`,
+                            channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+                            metadata: { type: 'MILESTONE', count: ticketsSold, eventId }
+                        });
+                    }
+
+                    // 3. Low Inventory Checks
+                    const totalCapacity = event.tiers.reduce((sum, t) => sum + t.capacity, 0);
+                    const percentSold = ticketsSold / totalCapacity;
+
+                    // Alert at 90% (Using a small range to avoid duplicate alerts on every sale past 90%)
+                    // In production, we'd check if specific alert was already sent via NotificationLog
+                    // For MVP: Alert if we just crossed the threshold with this purchase
+                    const previousCount = ticketsSold - quantity;
+                    const previousAndCurrentCross90 = (previousCount / totalCapacity < 0.9) && (percentSold >= 0.9);
+
+                    if (previousAndCurrentCross90 && percentSold < 1.0) {
+                        await NotificationService.notifyOrganizer(event.organizerId, {
+                            title: "Low Ticket Alert ⚠️",
+                            content: `Heads up! "${event.title}" is 90% sold out. Only ${totalCapacity - ticketsSold} tickets remaining.`,
+                            channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+                            metadata: { type: 'INVENTORY_LOW', eventId }
+                        });
+                    }
+
+                    if (percentSold >= 1.0 && (previousCount / totalCapacity) < 1.0) {
+                        await NotificationService.notifyOrganizer(event.organizerId, {
+                            title: "Event Sold Out! 🎉",
+                            content: `Incredible! "${event.title}" is officially 100% sold out.`,
+                            channels: [NotificationChannel.PUSH, NotificationChannel.SMS, NotificationChannel.EMAIL],
+                            metadata: { type: 'SOLD_OUT', eventId }
+                        });
+                    }
+
+                } catch (err) {
+                    console.error("Failed to process organizer notifications:", err);
+                }
+            })();
+
         } catch (error) {
             console.error("Failed to send ticket confirmation SMS:", error);
         }
