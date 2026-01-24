@@ -102,7 +102,7 @@ export const SettingsView = () => {
                 contactPhone: profile?.contactPhone,
                 city: profile?.city,
                 payoutDetails: profile?.payoutDetails,
-                payoutDetails: profile?.payoutDetails,
+                payoutDetailsAm: profile?.payoutDetailsAm,
                 description: profile?.description,
                 adminNote: profile?.adminNote
             });

@@ -1,13 +1,41 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Filter, Calendar, Globe, Pencil, BarChart3, Loader2 } from 'lucide-react';
+import { Plus, Filter, Calendar, Globe, Pencil, BarChart3, Loader2, Copy, Send } from 'lucide-react';
+import { useToast } from '../../../core/components/Toast';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 
 export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavigate?: (tab: string) => void; onEditEvent?: (eventId: number) => void; onViewStats?: (eventId: number) => void }) => {
+    const toast = useToast();
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('All Events');
+
+    const handleDuplicate = async (eventId: number) => {
+        if (!confirm("Are you sure you want to duplicate this event?")) return;
+        try {
+            await OrganizerService.duplicateEvent(eventId);
+            toast.success("Event duplicated (Draft created)");
+            // Refresh
+            const response = await OrganizerService.getMyEvents();
+            setEvents(response.data);
+        } catch (error) {
+            toast.error("Failed to duplicate event");
+        }
+    };
+
+    const handleSubmit = async (eventId: number) => {
+        if (!confirm("Submit this event for approval?")) return;
+        try {
+            await OrganizerService.updateEvent(eventId, { status: 'PENDING' });
+            toast.success("Event submitted for approval");
+            // Refresh
+            const response = await OrganizerService.getMyEvents();
+            setEvents(response.data);
+        } catch (error) {
+            toast.error("Failed to submit event");
+        }
+    };
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -111,7 +139,23 @@ export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavig
                                         <span style={{ color: 'var(--text-muted)' }}>Ticket Sales: </span>
                                         <span style={{ color: salesPercent > 80 ? '#10B981' : '#FBBF24' }}>{salesPercent.toFixed(0)}%</span>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        {event.status === 'DRAFT' && (
+                                            <button
+                                                onClick={() => handleSubmit(event.id)}
+                                                title="Submit for Approval"
+                                                style={{ background: 'rgba(16, 185, 129, 0.1)', border: 'none', color: '#10B981', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
+                                            >
+                                                <Send size={16} />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => handleDuplicate(event.id)}
+                                            title="Duplicate Event"
+                                            style={{ background: 'var(--bg-hover)', border: 'none', color: 'var(--text-muted)', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
+                                        >
+                                            <Copy size={16} />
+                                        </button>
                                         <button
                                             onClick={() => onEditEvent?.(event.id)}
                                             title="Edit Event"

@@ -274,13 +274,18 @@ export class OrganizerController {
             const organizerId = (req as any).user.organizerId;
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-            const { title, description, venue, dateTime, categoryId, cityId, tiers, coverImage, refundPolicy } = req.body;
+            const { title, titleAm, description, descriptionAm, venue, dateTime, categoryId, cityId, tiers, coverImage, refundPolicy, minAge, additionalPolicy, status } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
+
+            // Optional: Validate status if provided
+            const initialStatus = status === 'DRAFT' ? 'DRAFT' : 'PENDING';
 
             const event = await prisma.event.create({
                 data: {
                     title,
+                    titleAm,
                     description,
+                    descriptionAm,
                     venue,
                     dateTime: new Date(dateTime),
                     organizerId,
@@ -288,6 +293,9 @@ export class OrganizerController {
                     cityId: parseInt(cityId),
                     coverImage,
                     refundPolicy,
+                    minAge: parseInt(minAge) || 0,
+                    additionalPolicy,
+                    status: initialStatus,
                     tiers: {
                         create: tiers.map((tier: any) => ({
                             name: tier.name,
@@ -410,7 +418,7 @@ export class OrganizerController {
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
             const eventId = parseInt(req.params.id);
-            const { title, description, venue, dateTime, categoryId, cityId, coverImage, refundPolicy, tiers } = req.body;
+            const { title, titleAm, description, descriptionAm, venue, dateTime, categoryId, cityId, coverImage, refundPolicy, minAge, additionalPolicy, tiers, status } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
 
             // Security check: organizer must own the event
@@ -430,13 +438,18 @@ export class OrganizerController {
             // Update basic event data
             const updateData: any = {};
             if (title) updateData.title = title;
+            if (titleAm !== undefined) updateData.titleAm = titleAm;
             if (description !== undefined) updateData.description = description;
+            if (descriptionAm !== undefined) updateData.descriptionAm = descriptionAm;
             if (venue) updateData.venue = venue;
             if (dateTime) updateData.dateTime = new Date(dateTime);
             if (categoryId) updateData.categoryId = parseInt(categoryId);
             if (cityId) updateData.cityId = parseInt(cityId);
             if (coverImage !== undefined) updateData.coverImage = coverImage;
             if (refundPolicy !== undefined) updateData.refundPolicy = refundPolicy;
+            if (minAge !== undefined) updateData.minAge = parseInt(minAge);
+            if (additionalPolicy !== undefined) updateData.additionalPolicy = additionalPolicy;
+            if (status) updateData.status = status;
 
             const updatedEvent = await prisma.event.update({
                 where: { id: eventId },
@@ -472,6 +485,58 @@ export class OrganizerController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
+    /**
+     * POST /api/organizer/events/:id/duplicate
+     */
+    static async duplicateEvent(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            const eventId = parseInt(req.params.id);
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Fetch original event
+            const original = await prisma.event.findUnique({
+                where: { id: eventId },
+                include: { tiers: true }
+            });
+
+            if (!original || original.organizerId !== organizerId) {
+                return res.status(404).json({ success: false, message: "Event not found or unauthorized" });
+            }
+
+            // Create copy
+            const copy = await prisma.event.create({
+                data: {
+                    title: `${original.title} (Copy)`,
+                    titleAm: original.titleAm,
+                    description: original.description,
+                    descriptionAm: original.descriptionAm,
+                    venue: original.venue,
+                    dateTime: original.dateTime, // Keep same date or reset? Keeping same for duplication logic
+                    organizerId,
+                    categoryId: original.categoryId,
+                    cityId: original.cityId,
+                    coverImage: original.coverImage,
+                    refundPolicy: original.refundPolicy,
+                    minAge: original.minAge,
+                    additionalPolicy: original.additionalPolicy,
+                    status: 'DRAFT', // Always start as draft
+                    tiers: {
+                        create: original.tiers.map(t => ({
+                            name: t.name,
+                            price: Number(t.price),
+                            capacity: t.capacity
+                        }))
+                    }
+                }
+            });
+
+            res.json({ success: true, data: copy });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
     /**
      * POST /api/organizer/events/:id/feature
      */

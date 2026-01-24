@@ -11,6 +11,7 @@ export const OrganizerService = {
     createEvent: (data: any) => api.post('/organizer/events', data),
     updateEvent: (id: number, data: any) => api.patch(`/organizer/events/${id}`, data),
     requestFeature: (id: number) => api.post(`/organizer/events/${id}/feature`),
+    duplicateEvent: (id: number) => api.post(`/organizer/events/${id}/duplicate`),
 
     // Financials
     getWalletBalance: () => api.get('/organizer/wallet'),

@@ -27,13 +27,17 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
 
     const [form, setForm] = useState({
         title: '',
+        titleAm: '',
         description: '',
+        descriptionAm: '',
         venue: '',
         dateTime: '',
         categoryId: '',
         cityId: '',
         coverImage: '',
         refundPolicy: 'No refunds within 24 hours of event.',
+        minAge: '0',
+        additionalPolicy: '',
         tiers: [
             { name: 'General Admission', price: '', capacity: '' }
         ]
@@ -86,12 +90,10 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const handleSubmit = async (status: 'DRAFT' | 'PENDING') => {
         // Basic Validation
-        if (!form.categoryId || !form.cityId) {
-            toast.warning("Please select a category and city.");
+        if (!form.title || !form.categoryId || !form.cityId) {
+            toast.warning("Please fill in required fields.");
             return;
         }
 
@@ -100,6 +102,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
             // Clean tiers data (convert strings to numbers)
             const cleanForm = {
                 ...form,
+                status,
                 tiers: form.tiers.map(t => ({
                     ...t,
                     price: parseFloat(t.price as string) || 0,
@@ -108,7 +111,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
             };
 
             await OrganizerService.createEvent(cleanForm);
-            toast.success("Event created successfully!");
+            toast.success(status === 'DRAFT' ? "Draft saved successfully!" : "Event submitted for approval!");
             onComplete();
         } catch (error: any) {
             console.error("Failed to create event", error);
@@ -117,6 +120,12 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Keep default for form submit
+    const onFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        handleSubmit('PENDING'); // Default to submit
     };
 
     return (
@@ -134,7 +143,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '32px' }}>
+            <form onSubmit={onFormSubmit} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '32px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {/* General Info */}
                     <div className="stat-card" style={{ padding: '32px' }}>
@@ -143,16 +152,28 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                         </h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Title</label>
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder="e.g. Summer Music Festival 2025"
-                                    value={form.title}
-                                    onChange={e => setForm({ ...form, title: e.target.value })}
-                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Title (English)</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        placeholder="e.g. Summer Music Festival 2025"
+                                        value={form.title}
+                                        onChange={e => setForm({ ...form, title: e.target.value })}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Title (Amharic)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. የበጋ ሙዚቃ በዓል 2017"
+                                        value={(form as any).titleAm || ''}
+                                        onChange={e => setForm({ ...form, titleAm: e.target.value } as any)}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                    />
+                                </div>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -182,16 +203,28 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                 </div>
                             </div>
 
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Description</label>
-                                <textarea
-                                    required
-                                    rows={5}
-                                    placeholder="Tell your audience what the event is about..."
-                                    value={form.description}
-                                    onChange={e => setForm({ ...form, description: e.target.value })}
-                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Description (English)</label>
+                                    <textarea
+                                        required
+                                        rows={5}
+                                        placeholder="Tell your audience what the event is about..."
+                                        value={form.description}
+                                        onChange={e => setForm({ ...form, description: e.target.value })}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Description (Amharic)</label>
+                                    <textarea
+                                        rows={5}
+                                        placeholder="ስለ ዝግጅቱ ለታዳሚዎችዎ ይንገሩ..."
+                                        value={(form as any).descriptionAm || ''}
+                                        onChange={e => setForm({ ...form, descriptionAm: e.target.value } as any)}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -354,28 +387,62 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                 style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
                             />
                         </div>
+
+                        <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Age Restriction</label>
+                                <select
+                                    value={form.minAge}
+                                    onChange={e => setForm({ ...form, minAge: e.target.value })}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
+                                >
+                                    <option value="0">All Ages</option>
+                                    <option value="18">18+</option>
+                                    <option value="21">21+</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Additional Rules</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. No cameras, Dress code"
+                                    value={(form as any).additionalPolicy || ''}
+                                    onChange={e => setForm({ ...form, additionalPolicy: e.target.value } as any)}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Actions */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={() => handleSubmit('PENDING')}
                             disabled={loading}
                             className="btn-blue"
                             style={{ width: '100%', justifyContent: 'center', padding: '18px', fontSize: '1.1rem', fontWeight: 900 }}
                         >
-                            {loading ? <Loader2 className="animate-spin" size={24} /> : 'Publish Event'}
+                            {loading ? <Loader2 className="animate-spin" size={24} /> : 'Submit for Review'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSubmit('DRAFT')}
+                            disabled={loading}
+                            style={{ width: '100%', justifyContent: 'center', padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '16px', cursor: 'pointer', fontWeight: 700 }}
+                        >
+                            Save as Draft
                         </button>
                         <button
                             type="button"
                             onClick={onComplete}
                             style={{ width: '100%', padding: '16px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '16px', cursor: 'pointer', fontWeight: 700 }}
                         >
-                            Discard Draft
+                            Cancel
                         </button>
                     </div>
                 </div>
             </form>
-        </motion.div>
+        </motion.div >
     );
 };

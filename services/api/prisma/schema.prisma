@@ -96,7 +96,9 @@ model City {
 model Event {
   id            Int                    @id @default(autoincrement())
   title         String
+  titleAm       String?
   description   String?
+  descriptionAm String?
   venue         String
   dateTime      DateTime
   status        EventStatus            @default(PENDING)
@@ -111,8 +113,10 @@ model Event {
   organizerId   Int
   categoryId    Int
   cityId        Int
-  refundPolicy  String                 @default("No refunds within 24 hours of event.")
-  createdAt     DateTime               @default(now())
+  refundPolicy     String                 @default("No refunds within 24 hours of event.")
+  minAge           Int                    @default(0)
+  additionalPolicy String?
+  createdAt        DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   entryMetrics  EntryMetric[]
   category      Category               @relation(fields: [categoryId], references: [id])
