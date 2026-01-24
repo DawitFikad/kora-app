@@ -226,7 +226,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _NotificationTile extends StatelessWidget {
+class _NotificationTile extends ConsumerWidget {
   final AppNotification notification;
   final Color textColor;
   final bool isDark;
