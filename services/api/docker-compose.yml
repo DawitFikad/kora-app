@@ -41,8 +41,7 @@ services:
     depends_on:
       - db
       - redis
-    command: >
-      sh -c "npm install && npx prisma generate && npm run dev"
+    command: ["npm", "run", "dev"]
 
   web:
     image: node:20-bullseye

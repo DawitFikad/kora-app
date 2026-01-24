@@ -9,7 +9,11 @@ import {
     Image as ImageIcon,
     ShieldCheck,
     ArrowLeft,
-    Loader2
+    Loader2,
+    Settings,
+    Armchair,
+    Clock,
+    AlertCircle
 } from 'lucide-react';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { ContentService } from '../../../core/api/content.service';
@@ -38,8 +42,9 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         refundPolicy: 'No refunds within 24 hours of event.',
         minAge: '0',
         additionalPolicy: '',
+        hasSeatMap: false,
         tiers: [
-            { name: 'General Admission', price: '', capacity: '' }
+            { name: 'General Admission', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', expanded: false }
         ]
     });
 
@@ -63,7 +68,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
     const handleAddTier = () => {
         setForm({
             ...form,
-            tiers: [...form.tiers, { name: '', price: '', capacity: '' }]
+            tiers: [...form.tiers, { name: '', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', expanded: false }]
         });
     };
 
@@ -106,7 +111,10 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                 tiers: form.tiers.map(t => ({
                     ...t,
                     price: parseFloat(t.price as string) || 0,
-                    capacity: parseInt(t.capacity as string) || 0
+                    capacity: parseInt(t.capacity as string) || 0,
+                    salesStart: t.salesStart ? new Date(t.salesStart) : null,
+                    salesEnd: t.salesEnd ? new Date(t.salesEnd) : null,
+                    maxPerUser: parseInt(t.maxPerUser) || 5
                 }))
             };
 
@@ -259,6 +267,50 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                         </div>
                     </div>
 
+                    {/* Seat Map Configuration */}
+                    <div className="stat-card" style={{ padding: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Armchair size={20} color="#8B5CF6" /> Reserved Seating
+                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: (form as any).hasSeatMap ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                                    {(form as any).hasSeatMap ? 'Enabled' : 'Disabled'}
+                                </span>
+                                <div
+                                    onClick={() => setForm({ ...form, hasSeatMap: !(form as any).hasSeatMap } as any)}
+                                    style={{
+                                        width: '48px', height: '26px',
+                                        background: (form as any).hasSeatMap ? '#10B981' : 'var(--bg-subtle)',
+                                        borderRadius: '100px',
+                                        position: 'relative',
+                                        cursor: 'pointer',
+                                        border: '1px solid var(--border)',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '20px', height: '20px',
+                                        background: 'white', borderRadius: '50%',
+                                        position: 'absolute', top: '2px',
+                                        left: (form as any).hasSeatMap ? '24px' : '2px',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                    }} />
+                                </div>
+                            </div>
+                        </div>
+                        {(form as any).hasSeatMap ? (
+                            <div style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '2px dashed #8B5CF6', textAlign: 'center' }}>
+                                <Armchair size={32} color="#8B5CF6" style={{ marginBottom: '12px', opacity: 0.5 }} />
+                                <p style={{ fontWeight: 700, marginBottom: '8px' }}>Seat Map Configuration</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Seat map designer will be available after creating the draft.</p>
+                            </div>
+                        ) : (
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Enable this to allow attendees to pick specific seats from a venue map.</p>
+                        )}
+                    </div>
+
                     {/* Ticket Tiers */}
                     <div className="stat-card" style={{ padding: '32px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -276,48 +328,99 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {form.tiers.map((tier, index) => (
-                                <div key={index} style={{ padding: '20px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 40px', gap: '16px', alignItems: 'end' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Name</label>
-                                        <input
-                                            required
-                                            type="text"
-                                            placeholder="VIP, Early Bird, etc."
-                                            value={tier.name}
-                                            onChange={e => handleTierChange(index, 'name', e.target.value)}
-                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
-                                        />
+                                <div key={index} style={{ padding: '20px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 40px', gap: '16px', alignItems: 'end' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Name</label>
+                                            <input
+                                                required
+                                                type="text"
+                                                placeholder="VIP, Early Bird, etc."
+                                                value={tier.name}
+                                                onChange={e => handleTierChange(index, 'name', e.target.value)}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Price (ETB)</label>
+                                            <input
+                                                required
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={tier.price}
+                                                onChange={e => handleTierChange(index, 'price', e.target.value)}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Capacity</label>
+                                            <input
+                                                required
+                                                type="number"
+                                                placeholder="100"
+                                                value={tier.capacity}
+                                                onChange={e => handleTierChange(index, 'capacity', e.target.value)}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveTier(index)}
+                                            disabled={form.tiers.length === 1}
+                                            style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', padding: '10px', borderRadius: '10px', cursor: 'pointer', opacity: form.tiers.length === 1 ? 0.3 : 1 }}
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Price (ETB)</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            placeholder="0.00"
-                                            value={tier.price}
-                                            onChange={e => handleTierChange(index, 'price', e.target.value)}
-                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
-                                        />
+                                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '12px' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newTiers = [...form.tiers];
+                                                (newTiers[index] as any).expanded = !(newTiers[index] as any).expanded;
+                                                setForm({ ...form, tiers: newTiers });
+                                            }}
+                                            style={{ background: 'transparent', border: 'none', color: '#1D90F5', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                                        >
+                                            <Settings size={14} /> {(tier as any).expanded ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
+                                        </button>
+
+                                        {(tier as any).expanded && (
+                                            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.1)', borderRadius: '12px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Sales Start</label>
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={(tier as any).salesStart}
+                                                        onChange={e => handleTierChange(index, 'salesStart', e.target.value)}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Sales End</label>
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={(tier as any).salesEnd}
+                                                        onChange={e => handleTierChange(index, 'salesEnd', e.target.value)}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Max Per User</label>
+                                                    <input
+                                                        type="number"
+                                                        value={(tier as any).maxPerUser}
+                                                        onChange={e => handleTierChange(index, 'maxPerUser', e.target.value)}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: 'rgba(29, 144, 245, 0.1)', borderRadius: '8px', fontSize: '0.75rem', color: '#1D90F5' }}>
+                                                    <AlertCircle size={14} />
+                                                    <span>Estimated Fees: 5% Platform Commission + 2% Service Fee will be deducted/added based on configuration.</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Capacity</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            placeholder="100"
-                                            value={tier.capacity}
-                                            onChange={e => handleTierChange(index, 'capacity', e.target.value)}
-                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveTier(index)}
-                                        disabled={form.tiers.length === 1}
-                                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', padding: '10px', borderRadius: '10px', cursor: 'pointer', opacity: form.tiers.length === 1 ? 0.3 : 1 }}
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -443,6 +546,6 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     </div>
                 </div>
             </form>
-        </motion.div >
+        </motion.div>
     );
 };

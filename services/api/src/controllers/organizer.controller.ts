@@ -274,7 +274,7 @@ export class OrganizerController {
             const organizerId = (req as any).user.organizerId;
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-            const { title, titleAm, description, descriptionAm, venue, dateTime, categoryId, cityId, tiers, coverImage, refundPolicy, minAge, additionalPolicy, status } = req.body;
+            const { title, titleAm, description, descriptionAm, venue, dateTime, categoryId, cityId, tiers, coverImage, refundPolicy, minAge, additionalPolicy, hasSeatMap, status } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
 
             // Optional: Validate status if provided
@@ -295,12 +295,16 @@ export class OrganizerController {
                     refundPolicy,
                     minAge: parseInt(minAge) || 0,
                     additionalPolicy,
+                    hasSeatMap: !!hasSeatMap,
                     status: initialStatus,
                     tiers: {
                         create: tiers.map((tier: any) => ({
                             name: tier.name,
                             price: parseFloat(tier.price),
-                            capacity: parseInt(tier.capacity)
+                            capacity: parseInt(tier.capacity),
+                            salesStart: tier.salesStart ? new Date(tier.salesStart) : null,
+                            salesEnd: tier.salesEnd ? new Date(tier.salesEnd) : null,
+                            maxPerUser: parseInt(tier.maxPerUser) || 5
                         }))
                     }
                 },
@@ -418,7 +422,7 @@ export class OrganizerController {
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
             const eventId = parseInt(req.params.id);
-            const { title, titleAm, description, descriptionAm, venue, dateTime, categoryId, cityId, coverImage, refundPolicy, minAge, additionalPolicy, tiers, status } = req.body;
+            const { title, titleAm, description, descriptionAm, venue, dateTime, categoryId, cityId, coverImage, refundPolicy, minAge, additionalPolicy, hasSeatMap, tiers, status } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
 
             // Security check: organizer must own the event
@@ -449,6 +453,7 @@ export class OrganizerController {
             if (refundPolicy !== undefined) updateData.refundPolicy = refundPolicy;
             if (minAge !== undefined) updateData.minAge = parseInt(minAge);
             if (additionalPolicy !== undefined) updateData.additionalPolicy = additionalPolicy;
+            if (hasSeatMap !== undefined) updateData.hasSeatMap = hasSeatMap;
             if (status) updateData.status = status;
 
             const updatedEvent = await prisma.event.update({
@@ -520,12 +525,16 @@ export class OrganizerController {
                     refundPolicy: original.refundPolicy,
                     minAge: original.minAge,
                     additionalPolicy: original.additionalPolicy,
+                    hasSeatMap: original.hasSeatMap,
                     status: 'DRAFT', // Always start as draft
                     tiers: {
                         create: original.tiers.map(t => ({
                             name: t.name,
                             price: Number(t.price),
-                            capacity: t.capacity
+                            capacity: t.capacity,
+                            salesStart: t.salesStart,
+                            salesEnd: t.salesEnd,
+                            maxPerUser: t.maxPerUser
                         }))
                     }
                 }

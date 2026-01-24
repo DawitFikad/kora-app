@@ -116,6 +116,8 @@ model Event {
   refundPolicy     String                 @default("No refunds within 24 hours of event.")
   minAge           Int                    @default(0)
   additionalPolicy String?
+  hasSeatMap       Boolean                @default(false)
+  seatMapConfig    String?
   createdAt        DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   entryMetrics  EntryMetric[]
@@ -145,13 +147,16 @@ model PromoCode {
 }
 
 model TicketTier {
-  id       Int      @id @default(autoincrement())
-  name     String
-  price    Decimal  @db.Decimal(10, 2)
-  capacity Int
-  eventId  Int
-  tickets  Ticket[]
-  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id            Int          @id @default(autoincrement())
+  name          String
+  price         Decimal      @db.Decimal(10, 2)
+  capacity      Int
+  salesStart    DateTime?
+  salesEnd      DateTime?
+  maxPerUser    Int          @default(5)
+  eventId       Int
+  tickets       Ticket[]
+  event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model Ticket {

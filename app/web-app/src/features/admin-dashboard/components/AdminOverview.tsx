@@ -1,32 +1,29 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-    DollarSign,
-    CheckCircle2,
-    Download,
-    UserPlus,
     Activity,
-    Loader2,
-
     ArrowUpRight,
-    ShieldCheck,
     BarChart3,
-    CalendarCheck,
-    ClipboardList,
-    TrendingUp,
-    LayoutDashboard,
-    Globe,
-
-    MapPin,
     Calendar,
-
+    CalendarCheck,
+    CheckCircle2,
+    ClipboardList,
+    DollarSign,
+    Download,
+    Globe,
+    LayoutDashboard,
+    Loader2,
+    MapPin,
+    ShieldCheck,
+    TrendingUp,
+    UserPlus
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
 import { exportToPDF } from '../../../core/utils/pdf';
 
-export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: any) => void }) => {
+export const AdminOverview = () => {
     const { t } = useTranslation();
     const [organizers, setOrganizers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -44,10 +41,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: any) => vo
         totalTicketsSold: 0,
         activeUsers: 0,
         activeOrganizers: 0,
-        activeEvents: 0,
-        organizerLiabilities: 0,
-        dailyVelocity: 0,
-        monthlyProjection: 0
+        activeEvents: 0
     });
     const [categoryData, setCategoryData] = useState<any[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -106,10 +100,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: any) => vo
                     totalTicketsSold: kpis.totalTicketsSold || 0,
                     activeUsers: kpis.activeUsers || 0,
                     activeOrganizers: activeOrgCount,
-                    activeEvents: activeEventCount,
-                    organizerLiabilities: kpis.organizerLiabilities || 0,
-                    dailyVelocity: kpis.dailyVelocity || 0,
-                    monthlyProjection: kpis.monthlyProjection || 0
+                    activeEvents: activeEventCount
                 });
 
                 setMonthlySales(analyticsResponse?.monthlySales || []);
@@ -173,25 +164,25 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: any) => vo
                         icon={DollarSign}
                     />
                     <StatCard
-                        label="Daily Proj."
-                        value={`ETB ${stats.dailyVelocity.toLocaleString()}`}
-                        trend="Daily Velocity"
+                        label="Platform Profit"
+                        value={`ETB ${stats.platformCommission.toLocaleString()}`}
+                        trend="Commission + Fees"
                         trendColor="#10B981"
-                        icon={TrendingUp}
-                    />
-                    <StatCard
-                        label="Monthly Proj."
-                        value={`ETB ${stats.monthlyProjection.toLocaleString()}`}
-                        trend="Projected Monthly"
-                        trendColor="#8B5CF6"
                         icon={Activity}
                     />
                     <StatCard
-                        label="Org. Liabilities"
-                        value={`ETB ${stats.organizerLiabilities.toLocaleString()}`}
-                        trend="Pending Payouts"
-                        trendColor="#EF4444"
-                        icon={DollarSign}
+                        label="Org. Earnings"
+                        value={`ETB ${stats.organizerEarnings.toLocaleString()}`}
+                        trend="Net paid to partners"
+                        trendColor="#8B5CF6"
+                        icon={TrendingUp}
+                    />
+                    <StatCard
+                        label="Active Organizers"
+                        value={stats.activeOrganizers.toLocaleString()}
+                        trend={`${stats.activeEvents} Global Events`}
+                        trendColor="#3B82F6"
+                        icon={UserPlus}
                     />
                     <StatCard
                         label="Verified Sales"
@@ -203,104 +194,39 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: any) => vo
                 </div>
 
                 {/* 2. Main High-Density Grid (DASHBOARD COMMAND CENTER) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.3fr 0.9fr', gap: '16px', marginBottom: '20px' }}>
 
-                    {/* COLUMN 1: GOVERNANCE & STATUS (Stacked) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {/* Admin Command Center */}
-                        <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                                <div style={{ background: 'var(--bg-active)', padding: '5px', borderRadius: '7px' }}>
-                                    <LayoutDashboard size={13} color="white" />
-                                </div>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Command Center</span>
+                {/* Top row: Admin Command Center (left) and Calendar (right) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '16px', marginBottom: '16px' }}>
+                    {/* Admin Command Center (Left) */}
+                    <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                            <div style={{ background: 'var(--bg-active)', padding: '5px', borderRadius: '7px' }}>
+                                <LayoutDashboard size={13} color="white" />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                {[
-                                    { label: 'Organizers', sub: 'Validate', icon: ShieldCheck, col: '#3B82F6', tab: 'Organizer Approvals' },
-                                    { label: 'Events', sub: 'Review', icon: CalendarCheck, col: '#10B981', tab: 'Event Approvals' },
-                                    { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6', tab: 'GMV Tracking' },
-                                    { label: 'Logs', sub: 'Audits', icon: ClipboardList, col: '#EC4899', tab: 'Audit Logs' }
-                                ].map((btn, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setActiveTab(btn.tab)}
-                                        className="admin-action-btn"
-                                        style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
-                                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${btn.col}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <btn.icon size={14} color={btn.col} />
-                                        </div>
-                                        <div style={{ textAlign: 'left' }}>
-                                            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{btn.label}</p>
-                                            <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', margin: 0 }}>{btn.sub}</p>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Command Center</span>
                         </div>
-
-                        {/* Organizer Status */}
-                        <div className="admin-card" style={{ flex: 1, padding: '20px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                                <UserPlus size={16} color="#10B981" />
-                                <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-main)' }}>Organizer Status</h3>
-                            </div>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '16px' }}>
-                                <div style={{ position: 'relative', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: '8px solid var(--bg-subtle)', position: 'absolute' }} />
-                                    <div style={{
-                                        width: '80px', height: '80px', borderRadius: '50%', border: '8px solid transparent',
-                                        borderTopColor: '#10B981', borderRightColor: '#10B981',
-                                        transform: `rotate(${(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 360}deg)`,
-                                        transition: 'transform 1.5s ease'
-                                    }} />
-                                    <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{stats.activeOrganizers}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>VERIFIED</p>
-                                        <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10B981' }}>{stats.activeOrganizers}</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            {[
+                                { label: 'Organizers', sub: 'Validate', icon: ShieldCheck, col: '#3B82F6' },
+                                { label: 'Events', sub: 'Review', icon: CalendarCheck, col: '#10B981' },
+                                { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6' },
+                                { label: 'Reports', sub: 'Finance', icon: ClipboardList, col: '#EC4899' }
+                            ].map((btn, i) => (
+                                <button key={i} className="admin-action-btn" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
+                                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${btn.col}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <btn.icon size={14} color={btn.col} />
                                     </div>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>PENDING</p>
-                                        <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#F59E0B' }}>{stats.pendingOrganizers}</p>
+                                    <div style={{ textAlign: 'left' }}>
+                                        <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{btn.label}</p>
+                                        <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', margin: 0 }}>{btn.sub}</p>
                                     </div>
-                                </div>
-                            </div>
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {/* COLUMN 2: CORE ANALYTICS (Expanded) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', gridColumn: 'span 2' }}>
-                        {/* Ticket Sales Trend */}
-                        <div className="admin-card" style={{ flex: 1, padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <TrendingUp size={16} color="#F59E0B" />
-                                    <h3 style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>Ticket Sales Trend</h3>
-                                </div>
-                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>MONTHLY PERFORMANCE</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flex: 1, minHeight: '120px', padding: '10px 0' }}>
-                                {monthlySales.length > 0 ? monthlySales.map((s, i) => {
-                                    const max = Math.max(...monthlySales.map(m => m.amount), 1);
-                                    const h = (s.amount / max) * 100;
-                                    return (
-                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                                                <div style={{ height: `${h}%`, width: '14px', background: 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)', borderRadius: '4px' }} />
-                                            </div>
-                                            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)' }}>{s.name}</span>
-                                        </div>
-                                    )
-                                }) : <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)' }}>Metrics loading...</div>}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* COLUMN 3: SCHEDULER (Moved up or adjusted) */}
+                    {/* Calendar (Right) */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {/* Compact Calendar */}
                         <div className="admin-card" style={{ flex: 1, padding: '18px', borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -325,7 +251,66 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: any) => vo
                             </div>
                         </div>
                     </div>
+                </div>
 
+                {/* Second row: Organizer Status (left) and Ticket Sales Trend (right) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '20px' }}>
+                    {/* Organizer Status (Left) */}
+                    <div className="admin-card" style={{ flex: 1, padding: '20px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: '320px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                            <UserPlus size={16} color="#10B981" />
+                            <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-main)' }}>Organizer Status</h3>
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '16px' }}>
+                            <div style={{ position: 'relative', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: '8px solid var(--bg-subtle)', position: 'absolute' }} />
+                                <div style={{
+                                    width: '80px', height: '80px', borderRadius: '50%', border: '8px solid transparent',
+                                    borderTopColor: '#10B981', borderRightColor: '#10B981',
+                                    transform: `rotate(${(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 360}deg)`,
+                                    transition: 'transform 1.5s ease'
+                                }} />
+                                <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{stats.activeOrganizers}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>VERIFIED</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10B981' }}>{stats.activeOrganizers}</p>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>PENDING</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#F59E0B' }}>{stats.pendingOrganizers}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Ticket Sales Trend (Right) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div className="admin-card" style={{ flex: 1, padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', minHeight: '320px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <TrendingUp size={16} color="#F59E0B" />
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>Ticket Sales Trend</h3>
+                                </div>
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>MONTHLY PERFORMANCE</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flex: 1, minHeight: '120px', padding: '10px 0' }}>
+                                {monthlySales.length > 0 ? monthlySales.map((s, i) => {
+                                    const max = Math.max(...monthlySales.map(m => m.amount), 1);
+                                    const h = (s.amount / max) * 100;
+                                    return (
+                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                                                <div style={{ height: `${h}%`, width: '14px', background: 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)', borderRadius: '4px' }} />
+                                            </div>
+                                            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)' }}>{s.name}</span>
+                                        </div>
+                                    )
+                                }) : <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)' }}>Metrics loading...</div>}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* 3. Bottom Grid: Category & Organizers */}
