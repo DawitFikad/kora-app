@@ -189,9 +189,29 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                      );
                   }),
                   
+                  
                   const SizedBox(height: 24),
-                  _buildExpandableSection("Event Policies"),
-                  _buildExpandableSection("Age Restrictions"),
+                  
+                  // Event Policies - Real Data
+                  if (event.refundPolicy != null && event.refundPolicy!.isNotEmpty)
+                    _buildExpandableSection(
+                      "Refund Policy",
+                      event.refundPolicy!,
+                    ),
+                  
+                  if (event.additionalPolicy != null && event.additionalPolicy!.isNotEmpty)
+                    _buildExpandableSection(
+                      "Event Policies",
+                      event.additionalPolicy!,
+                    ),
+                  
+                  // Age Restrictions - Real Data
+                  _buildExpandableSection(
+                    "Age Restrictions",
+                    event.minAge > 0 
+                        ? "This event is restricted to attendees aged ${event.minAge} years and above. Valid ID may be required at entry."
+                        : "This event is open to all ages. Minors may attend without age restrictions.",
+                  ),
                   
                   const SizedBox(height: 120), // Spacer for bottom bar
                 ],
@@ -393,12 +413,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "48h before event",
+                      event.refundPolicy != null && event.refundPolicy!.isNotEmpty
+                          ? (event.refundPolicy!.length > 30 
+                              ? '${event.refundPolicy!.substring(0, 30)}...'
+                              : event.refundPolicy!)
+                          : "See policy details",
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -459,7 +485,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     );
   }
 
-  Widget _buildExpandableSection(String title) {
+  Widget _buildExpandableSection(String title, String content) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: const BoxDecoration(
@@ -475,10 +501,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           trailing: const Icon(Icons.keyboard_arrow_down, color: Colors.white54),
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 16, bottom: 16, right: 16),
+              padding: const EdgeInsets.only(left: 16, bottom: 16, right: 16, top: 8),
               child: Text(
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                style: GoogleFonts.poppins(color: Colors.white54, fontSize: 14),
+                content,
+                style: GoogleFonts.poppins(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  height: 1.6,
+                ),
               ),
             ),
           ],

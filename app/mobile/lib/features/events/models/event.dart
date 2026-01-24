@@ -11,6 +11,11 @@ class Event {
   final String? coverImage;
   final bool featured;
   
+  // Policy fields
+  final String? refundPolicy;
+  final int minAge;
+  final String? additionalPolicy;
+  
   // Relations
   final List<TicketTier> tiers;
   final Category? category;
@@ -24,6 +29,9 @@ class Event {
     required this.dateTime,
     this.coverImage,
     this.featured = false,
+    this.refundPolicy,
+    this.minAge = 0,
+    this.additionalPolicy,
     this.tiers = const [],
     this.category,
     this.city,
@@ -38,6 +46,9 @@ class Event {
       dateTime: json['dateTime'] ?? DateTime.now().toIso8601String(),
       coverImage: json['coverImage'],
       featured: json['featured'] ?? false,
+      refundPolicy: json['refundPolicy'],
+      minAge: json['minAge'] ?? 0,
+      additionalPolicy: json['additionalPolicy'],
       tiers: (json['tiers'] as List<dynamic>?)
           ?.map((e) => TicketTier.fromJson(e))
           .toList() ?? [],
@@ -54,6 +65,9 @@ class Event {
       'dateTime': dateTime,
       'coverImage': coverImage,
       'featured': featured,
+      'refundPolicy': refundPolicy,
+      'minAge': minAge,
+      'additionalPolicy': additionalPolicy,
       'tiers': tiers.map((e) => e.toJson()).toList(),
       'category': category?.toJson(),
       'city': city?.toJson(),
