@@ -305,7 +305,7 @@ export class EventOperationsService {
      * Gets a detailed financial history for the organizer.
      */
     static async getOrganizerFinancials(organizerId: number) {
-        const [transactions, wallet] = await Promise.all([
+        const [transactions, wallet, events, tickets] = await Promise.all([
             prisma.financialTransaction.findMany({
                 where: { event: { organizerId } },
                 include: {
@@ -319,9 +319,36 @@ export class EventOperationsService {
             }),
             prisma.organizerWallet.findUnique({
                 where: { organizerId }
+            }),
+            prisma.event.findMany({
+                where: { organizerId },
+                include: {
+                    tiers: {
+                        include: {
+                            tickets: {
+                                where: { status: { in: ["SOLD", "USED", "VALID"] } },
+                                select: { basePrice: true, createdAt: true }
+                            }
+                        }
+                    }
+                }
+            }),
+            prisma.ticket.findMany({
+                where: {
+                    event: { organizerId },
+                    status: { in: ["SOLD", "USED", "VALID"] }
+                },
+                select: {
+                    basePrice: true,
+                    createdAt: true,
+                    tier: { select: { name: true } },
+                    event: { select: { id: true, title: true } }
+                },
+                orderBy: { createdAt: 'desc' }
             })
         ]);
 
+        // Calculate gross sales and fees
         const grossSales = await prisma.financialTransaction.aggregate({
             where: { event: { organizerId }, type: "TICKET_PURCHASE" },
             _sum: { amount: true }
@@ -332,11 +359,106 @@ export class EventOperationsService {
             _sum: { amount: true }
         });
 
+        // Calculate total revenue from tickets
+        const totalRevenue = tickets.reduce((sum, t) => sum + Number(t.basePrice), 0);
+        const totalTicketsSold = tickets.length;
+
+        // Calculate sales trend (last 30 days by default)
+        const salesTrendMap = new Map<string, { revenue: number; tickets: number }>();
+        const last30Days = new Date();
+        last30Days.setDate(last30Days.getDate() - 29);
+
+        // Initialize all days with 0
+        for (let i = 0; i < 30; i++) {
+            const date = new Date(last30Days);
+            date.setDate(date.getDate() + i);
+            const dateKey = date.toISOString().split('T')[0];
+            salesTrendMap.set(dateKey, { revenue: 0, tickets: 0 });
+        }
+
+        // Fill in actual sales data
+        tickets.forEach(ticket => {
+            const dateKey = new Date(ticket.createdAt).toISOString().split('T')[0];
+            if (salesTrendMap.has(dateKey)) {
+                const existing = salesTrendMap.get(dateKey)!;
+                existing.revenue += Number(ticket.basePrice);
+                existing.tickets += 1;
+            }
+        });
+
+        const salesTrend = Array.from(salesTrendMap.entries())
+            .map(([date, data]) => ({
+                date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                revenue: data.revenue,
+                tickets: data.tickets
+            }));
+
+        // Calculate revenue by ticket type
+        const revenueByTypeMap = new Map<string, { revenue: number; count: number }>();
+        tickets.forEach(ticket => {
+            const tierName = ticket.tier.name;
+            if (!revenueByTypeMap.has(tierName)) {
+                revenueByTypeMap.set(tierName, { revenue: 0, count: 0 });
+            }
+            const existing = revenueByTypeMap.get(tierName)!;
+            existing.revenue += Number(ticket.basePrice);
+            existing.count += 1;
+        });
+
+        const revenueByTicketType = Array.from(revenueByTypeMap.entries())
+            .map(([name, data]) => ({
+                name,
+                value: data.revenue,
+                count: data.count
+            }))
+            .sort((a, b) => b.value - a.value);
+
+        // Calculate top performing events
+        const eventRevenueMap = new Map<number, { title: string; revenue: number; tickets: number }>();
+        tickets.forEach(ticket => {
+            const eventId = ticket.event.id;
+            if (!eventRevenueMap.has(eventId)) {
+                eventRevenueMap.set(eventId, {
+                    title: ticket.event.title,
+                    revenue: 0,
+                    tickets: 0
+                });
+            }
+            const existing = eventRevenueMap.get(eventId)!;
+            existing.revenue += Number(ticket.basePrice);
+            existing.tickets += 1;
+        });
+
+        const topEvents = Array.from(eventRevenueMap.values())
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5)
+            .map(event => ({
+                name: event.title,
+                revenue: event.revenue,
+                tickets: event.tickets
+            }));
+
+        // Calculate conversion rate (tickets sold / total capacity)
+        const totalCapacity = events.reduce((sum, event) => {
+            return sum + event.tiers.reduce((tSum, tier) => tSum + tier.capacity, 0);
+        }, 0);
+        const conversionRate = totalCapacity > 0 ? (totalTicketsSold / totalCapacity) * 100 : 0;
+
+        // Calculate average ticket price
+        const averageTicketPrice = totalTicketsSold > 0 ? totalRevenue / totalTicketsSold : 0;
+
         return {
+            totalRevenue,
             grossSales: Number(grossSales._sum.amount || 0),
             totalPayouts: Number(wallet?.totalWithdrawn || 0),
             processingFees: Number(totalFees._sum.amount || 0),
             availableBalance: Number(wallet?.availableBalance || 0),
+            ticketsSold: totalTicketsSold,
+            conversionRate,
+            averageTicketPrice,
+            salesTrend,
+            revenueByTicketType,
+            topEvents,
             transactions: transactions.map(t => ({
                 id: `#ORD-${t.id}`,
                 name: t.purchase?.user.profile?.fullName || t.purchase?.user.phoneNumber || "System",

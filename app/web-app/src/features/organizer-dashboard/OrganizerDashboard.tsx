@@ -40,6 +40,7 @@ import { EventStatsView } from './components/EventStatsView';
 import { ContentManagementView } from './components/ContentManagementView';
 import { AdvancedAnalyticsView } from './components/AdvancedAnalyticsView';
 import { ReportGeneratorView } from './components/ReportGeneratorView';
+import { SalesRevenueView } from './components/SalesRevenueView';
 
 
 // --- Main Application Component ---
@@ -160,7 +161,7 @@ const OrganizerDashboard = () => {
         { icon: Layout, label: 'Dashboard' },
         { icon: Calendar, label: 'Events' },
         { icon: Ticket, label: 'Tickets' },
-        { icon: DollarSign, label: 'Payments' },
+        { icon: DollarSign, label: 'Sales' },
         { icon: BarChart3, label: 'Analytics' },
         { icon: FileText, label: 'Reports' },
         { icon: Users, label: 'Attendees' },
@@ -212,7 +213,7 @@ const OrganizerDashboard = () => {
             case 'Dashboard': return <DashboardView key="dashboard" onNavigate={setActiveTab} />;
             case 'Events': return <MyEventsView key="events" onNavigate={setActiveTab} onEditEvent={handleEditEvent} onViewStats={handleViewStats} />;
             case 'Tickets': return <TicketsView key="tickets" />;
-            case 'Payments': return <ReportsView key="payments" />;
+            case 'Sales': return <SalesRevenueView key="sales" />;
             case 'Analytics': return <AdvancedAnalyticsView key="analytics" />;
             case 'Reports': return <ReportGeneratorView key="reports" />;
             case 'Attendees': return <AttendeesView key="attendees" />;
