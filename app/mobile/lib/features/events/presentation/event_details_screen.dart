@@ -156,7 +156,29 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       color: Colors.white,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  
+                  // About Section
+                  Text(
+                    "About this event",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF8B5CF6),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    event.description,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      height: 1.6,
+                    ),
+                  ),
+                  
                   const SizedBox(height: 24),
+
                   
                   // Seat Map Card
                   _buildSeatMapCard(),
