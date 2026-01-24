@@ -6,6 +6,8 @@ class AppNotification {
   final DateTime timestamp;
   final bool isRead;
   final Map<String, dynamic>? metadata;
+  final int? userId;
+  final int? organizerId;
 
   AppNotification({
     required this.id,
@@ -15,6 +17,8 @@ class AppNotification {
     required this.timestamp,
     this.isRead = false,
     this.metadata,
+    this.userId,
+    this.organizerId,
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
@@ -34,6 +38,8 @@ class AppNotification {
       timestamp: DateTime.parse(json['createdAt']),
       isRead: json['status'] == 'READ', // Backend mostly uses SENT/FAILED
       metadata: json['metadata'],
+      userId: json['userId'] is int ? json['userId'] : (json['userId'] != null ? int.tryParse(json['userId'].toString()) : null),
+      organizerId: json['organizerId'] is int ? json['organizerId'] : (json['organizerId'] != null ? int.tryParse(json['organizerId'].toString()) : null),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:mobile/features/booking/services/payment_service.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/core/widgets/app_image.dart';
+import 'package:mobile/core/utils/error_handler.dart';
 import 'package:go_router/go_router.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
@@ -66,7 +67,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString().replaceAll('Exception: ', '');
+          _error = ErrorMessageHandler.getReadableError(e);
           _isLoading = false;
         });
       }
@@ -92,7 +93,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       );
     } catch (e) {
       setState(() {
-        _promoError = e.toString().replaceAll('Exception: ', '');
+        _promoError = ErrorMessageHandler.getReadableError(e);
       });
     }
   }
@@ -147,7 +148,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     } catch (e) {
       debugPrint('Payment Process error: $e');
       if (mounted) {
-        String errorMessage = e.toString().replaceAll('Exception: ', '');
+        String errorMessage = ErrorMessageHandler.getReadableError(e);
         
         // Handle 401 Unauthorized
         if (errorMessage.contains('401') || errorMessage.toLowerCase().contains('unauthorized')) {

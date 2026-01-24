@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -456,7 +457,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ErrorMessageHandler.getReadableError(e))),
+        );
       }
     }
   }
@@ -490,7 +493,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       debugPrint('OTP Verification Failed: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ErrorMessageHandler.getReadableError(e))),
+        );
       }
     }
   }

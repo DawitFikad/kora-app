@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/ticket.dart';
 import '../../../core/widgets/app_image.dart';
+import '../../../core/widgets/offline_banner.dart';
 
 class TicketDetailScreen extends StatelessWidget {
   final Ticket ticket;
@@ -32,10 +33,14 @@ class TicketDetailScreen extends StatelessWidget {
           style: GoogleFonts.poppins(color: textColor, fontWeight: FontWeight.w600),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        child: Column(
-          children: [
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                children: [
             Container(
               decoration: BoxDecoration(
                 color: cardColor,
@@ -301,11 +306,14 @@ class TicketDetailScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   Widget _buildInfoItem(String label, String value, Color textColor) {
     return Column(

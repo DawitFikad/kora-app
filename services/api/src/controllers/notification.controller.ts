@@ -21,6 +21,40 @@ export class NotificationController {
     }
 
     /**
+     * POST /api/notifications/mark-all-read
+     */
+    static async markAllAsRead(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user.id;
+            await prisma.notificationLog.updateMany({
+                where: { userId, isRead: false },
+                data: { isRead: true }
+            });
+            res.json({ success: true, message: "All notifications marked as read" });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * PATCH /api/notifications/:id/read
+     */
+    static async markAsRead(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user.id;
+            const { id } = req.params;
+
+            await prisma.notificationLog.updateMany({
+                where: { id: parseInt(id), userId },
+                data: { isRead: true }
+            });
+            res.json({ success: true, message: "Notification marked as read" });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
      * Internal Template Engine
      */
     static getTemplate(key: string, lang: 'en' | 'am', vars: Record<string, string>) {

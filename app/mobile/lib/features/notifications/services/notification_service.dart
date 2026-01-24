@@ -23,4 +23,20 @@ class NotificationService {
       return [];
     }
   }
+
+  Future<void> markAsRead(String id) async {
+    try {
+      await _dio.patch('${ApiConstants.notifications}/$id/read');
+    } catch (e) {
+      // Log error or handle
+    }
+  }
+
+  Future<void> markAllAsRead() async {
+    try {
+      await _dio.post('${ApiConstants.notifications}/mark-all-read');
+    } catch (e) {
+      // Log error or handle
+    }
+  }
 }

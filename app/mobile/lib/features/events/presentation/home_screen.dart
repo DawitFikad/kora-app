@@ -17,6 +17,7 @@ import 'package:mobile/features/tickets/presentation/my_tickets_screen.dart';
 import 'package:mobile/features/events/presentation/notification_screen.dart';
 import 'package:mobile/features/events/presentation/favorites_screen.dart';
 import 'package:mobile/core/widgets/app_image.dart';
+import 'package:mobile/core/widgets/offline_banner.dart';
 
 final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
 final selectedCityProvider = StateProvider<City?>((ref) => null);
@@ -113,10 +114,17 @@ class _HomeBody extends ConsumerWidget {
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
 
     return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: () async => ref.refresh(filteredEventsProvider),
-        child: CustomScrollView(
-          slivers: [
+      child: Column(
+        children: [
+          // Offline Banner
+          const OfflineBanner(),
+          
+          // Main Content
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async => ref.refresh(filteredEventsProvider),
+              child: CustomScrollView(
+                slivers: [
              SliverPadding(
                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                sliver: SliverList(
@@ -260,12 +268,15 @@ class _HomeBody extends ConsumerWidget {
                 ),
              ),
              
-             const SliverToBoxAdapter(child: SizedBox(height: 80)),
-          ],
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              ],
+            ),
+          ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, Color textColor, Color mutedColor) {
     final citiesAsync = ref.watch(citiesProvider);
@@ -343,21 +354,57 @@ class _HomeBody extends ConsumerWidget {
             context,
             MaterialPageRoute(builder: (context) => const NotificationScreen()),
           ),
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF232030) : Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: textColor.withOpacity(0.1)),
-              boxShadow: Theme.of(context).brightness == Brightness.dark ? null : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: Icon(Icons.notifications_none, color: textColor, size: 24),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF232030) : Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: textColor.withOpacity(0.1)),
+                  boxShadow: Theme.of(context).brightness == Brightness.dark ? null : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Icon(Icons.notifications_none, color: textColor, size: 24),
+              ),
+              Consumer(
+                builder: (context, ref, _) {
+                  final unreadCount = ref.watch(unreadNotificationsCountProvider);
+                  if (unreadCount == 0) return const SizedBox.shrink();
+                  
+                  return Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF8B5CF6),
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        unreadCount > 9 ? "9+" : unreadCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ],

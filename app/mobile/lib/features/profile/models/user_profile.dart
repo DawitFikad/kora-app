@@ -8,6 +8,7 @@ class UserProfile {
   final String? gender;
   final DateTime? birthDate;
   final String language;
+  final String role;
 
   UserProfile({
     required this.id,
@@ -19,6 +20,7 @@ class UserProfile {
     this.gender,
     this.birthDate,
     this.language = 'en',
+    this.role = 'USER',
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class UserProfile {
       gender: profile['gender'] as String?,
       birthDate: profile['birthDate'] != null ? DateTime.tryParse(profile['birthDate'].toString()) : null,
       language: (profile['language'] ?? 'en').toString(),
+      role: (json['role'] ?? 'USER').toString(),
     );
   }
 
@@ -46,6 +49,7 @@ class UserProfile {
     String? gender,
     DateTime? birthDate,
     String? language,
+    String? role,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -57,6 +61,7 @@ class UserProfile {
       gender: gender ?? this.gender,
       birthDate: birthDate ?? this.birthDate,
       language: language ?? this.language,
+      role: role ?? this.role,
     );
   }
 }

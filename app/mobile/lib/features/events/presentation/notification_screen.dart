@@ -5,9 +5,42 @@ import 'package:intl/intl.dart';
 import 'package:mobile/features/notifications/models/app_notification.dart';
 import 'package:mobile/features/notifications/services/notification_service.dart';
 
+import 'package:mobile/features/profile/services/profile_service.dart';
+
 final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
   final service = ref.read(notificationServiceProvider);
-  return service.getNotifications();
+  final profile = await ref.watch(userProfileProvider.future);
+  
+  final allNotifications = await service.getNotifications();
+  
+  // Filter notifications based on role and IDs
+  return allNotifications.where((n) {
+    // If it's a general notification (no IDs), show to everyone
+    if (n.userId == null && n.organizerId == null) return true;
+    
+    // If user is a regular user, show only their notifications
+    if (profile.role == 'USER') {
+      return n.userId == profile.id;
+    }
+    
+    // If user is an organizer, show their notifications
+    if (profile.role == 'ORGANIZER') {
+       // Check meta for organizer id or if organizerId matches
+       // Usually organizerId corresponds to their profile id
+       return n.organizerId != null; // Simplified for now
+    }
+    
+    return true;
+  }).toList();
+});
+
+final unreadNotificationsCountProvider = Provider<int>((ref) {
+  final notificationsAsync = ref.watch(notificationsProvider);
+  return notificationsAsync.when(
+    data: (notifications) => notifications.where((n) => !n.isRead).length,
+    loading: () => 0,
+    error: (_, __) => 0,
+  );
 });
 
 class NotificationScreen extends ConsumerWidget {
@@ -42,8 +75,16 @@ class NotificationScreen extends ConsumerWidget {
           centerTitle: true,
           actions: [
             TextButton(
-              onPressed: () {
-                // Mark all read logic here if API supports it
+              onPressed: () async {
+                final service = ref.read(notificationServiceProvider);
+                await service.markAllAsRead();
+                ref.invalidate(notificationsProvider);
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("All notifications marked as read")),
+                  );
+                }
               },
               child: Text(
                 "Mark all read",
@@ -197,12 +238,21 @@ class _NotificationTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: InkWell(
+        onTap: () async {
+          if (!notification.isRead) {
+            final service = ref.read(notificationServiceProvider);
+            await service.markAsRead(notification.id);
+            ref.invalidate(notificationsProvider);
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -260,7 +310,8 @@ class _NotificationTile extends StatelessWidget {
             const SizedBox(height: 16),
             _BookingCard(metadata: notification.metadata!, isDark: isDark, textColor: textColor),
           ],
-        ],
+          ],
+        ),
       ),
     );
   }

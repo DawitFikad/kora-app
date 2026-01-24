@@ -2,132 +2,460 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/providers.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import '../../../core/providers.dart';
 import '../../auth/services/auth_service.dart';
 import '../../profile/services/profile_service.dart';
 import '../../profile/presentation/edit_profile_screen.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String _appVersion = '';
+  bool _pushNotifications = true;
+  bool _emailNotifications = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = '${packageInfo.version} (${packageInfo.buildNumber})';
+    });
+  }
+
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF1D192B) 
+            : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(
+              Icons.logout,
+              color: Colors.red,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              "Logout",
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          "Are you sure you want to logout? You'll need to login again to access your tickets.",
+          style: GoogleFonts.poppins(fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await ref.read(authServiceProvider).logout();
+              if (mounted) context.go('/login');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: Text(
+              "Logout",
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final isDark = themeMode == ThemeMode.dark;
     final profileAsync = ref.watch(userProfileProvider);
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
       appBar: AppBar(
-        title: Text('settings.profile'.tr()),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Settings',
+          style: GoogleFonts.poppins(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         children: [
           // User Profile Card
           profileAsync.when(
-            data: (profile) => Card(
-              child: ListTile(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+            data: (profile) => GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF8B5CF6),
+                      const Color(0xFF7C3AED),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                contentPadding: const EdgeInsets.all(16),
-                leading: CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                  backgroundImage: profile.avatarUrl != null 
-                      ? NetworkImage(profile.avatarUrl!) 
-                      : null,
-                  child: profile.avatarUrl == null 
-                      ? Icon(Icons.person, size: 30, color: Theme.of(context).primaryColor)
-                      : null,
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: Colors.white,
+                      backgroundImage: profile.avatarUrl != null
+                          ? NetworkImage(profile.avatarUrl!)
+                          : null,
+                      child: profile.avatarUrl == null
+                          ? Icon(Icons.person, size: 32, color: const Color(0xFF8B5CF6))
+                          : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            profile.fullName ?? 'User',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            profile.phoneNumber,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: Colors.white),
+                  ],
                 ),
-                title: Text(
-                  profile.fullName ?? 'User',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(profile.phoneNumber),
-                trailing: const Icon(Icons.chevron_right),
               ),
             ),
-            loading: () => const Card(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Center(child: CircularProgressIndicator()),
+            loading: () => _buildSkeletonCard(),
+            error: (e, s) => Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(20),
               ),
-            ),
-            error: (e, s) => Card(
-              child: ListTile(
-                title: const Text("Error loading profile"),
-                subtitle: Text(e.toString()),
-                trailing: IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () => ref.refresh(userProfileProvider),
-                ),
-              ),
+              child: Text("Error loading profile", style: TextStyle(color: Colors.red)),
             ),
           ),
-          const SizedBox(height: 32),
-          
-          Text(
-            'Settings',
-            style: TextStyle(
-              fontSize: 14, 
-              fontWeight: FontWeight.bold, 
-              color: Theme.of(context).colorScheme.primary
-            ),
-          ).tr(),
-          const SizedBox(height: 16),
 
-          // Theme Toggle
+          const SizedBox(height: 32),
+
+          // Preferences Section
+          _buildSectionHeader("Preferences", Icons.tune),
+          const SizedBox(height: 12),
+
           _SettingsTile(
             icon: isDark ? Icons.dark_mode : Icons.light_mode,
-            title: isDark ? 'Dark Mode' : 'Light Mode',
+            title: 'Dark Mode',
             trailing: Switch(
               value: isDark,
+              activeColor: const Color(0xFF8B5CF6),
               onChanged: (val) {
                 ref.read(themeModeProvider.notifier).toggleTheme();
               },
             ),
           ),
-          
+
           const SizedBox(height: 12),
 
-          // Language
-           _SettingsTile(
+          _SettingsTile(
             icon: Icons.language,
-            title: 'settings.language'.tr(),
-            trailing: DropdownButton<Locale>(
-              value: context.locale,
-              underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(value: Locale('en'), child: Text('English')),
-                DropdownMenuItem(value: Locale('am'), child: Text('አማርኛ')),
-              ],
-              onChanged: (val) {
-                if(val != null) context.setLocale(val);
-              },
+            title: 'Language',
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButton<Locale>(
+                value: context.locale,
+                underline: const SizedBox(),
+                dropdownColor: isDark ? const Color(0xFF1D192B) : Colors.white,
+                style: GoogleFonts.poppins(
+                  color: const Color(0xFF8B5CF6),
+                  fontWeight: FontWeight.w600,
+                ),
+                items: const [
+                  DropdownMenuItem(value: Locale('en'), child: Text('🇺🇸 English')),
+                  DropdownMenuItem(value: Locale('am'), child: Text('🇪🇹 አማርኛ')),
+                ],
+                onChanged: (val) {
+                  if (val != null) context.setLocale(val);
+                },
+              ),
             ),
           ),
 
           const SizedBox(height: 32),
-          
-          // Logout
+
+          // Notifications Section
+          _buildSectionHeader("Notifications", Icons.notifications),
+          const SizedBox(height: 12),
+
+          _SettingsTile(
+            icon: Icons.notifications_active,
+            title: 'Push Notifications',
+            subtitle: 'Get updates about your tickets',
+            trailing: Switch(
+              value: _pushNotifications,
+              activeColor: const Color(0xFF8B5CF6),
+              onChanged: (val) => setState(() => _pushNotifications = val),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          _SettingsTile(
+            icon: Icons.email,
+            title: 'Email Notifications',
+            subtitle: 'Receive event reminders via email',
+            trailing: Switch(
+              value: _emailNotifications,
+              activeColor: const Color(0xFF8B5CF6),
+              onChanged: (val) => setState(() => _emailNotifications = val),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Support Section
+          _buildSectionHeader("Support & Legal", Icons.help_outline),
+          const SizedBox(height: 12),
+
+          _SettingsTile(
+            icon: Icons.support_agent,
+            title: 'Contact Support',
+            subtitle: 'Get help with your account',
+            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+            onTap: () => _launchUrl('mailto:support@etticket.com'),
+          ),
+
+          const SizedBox(height: 12),
+
+          _SettingsTile(
+            icon: Icons.description,
+            title: 'Terms of Service',
+            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+            onTap: () => _launchUrl('https://etticket.com/terms'),
+          ),
+
+          const SizedBox(height: 12),
+
+          _SettingsTile(
+            icon: Icons.privacy_tip,
+            title: 'Privacy Policy',
+            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+            onTap: () => _launchUrl('https://etticket.com/privacy'),
+          ),
+
+          const SizedBox(height: 12),
+
+          _SettingsTile(
+            icon: Icons.info_outline,
+            title: 'About',
+            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+            onTap: () {
+              showAboutDialog(
+                context: context,
+                applicationName: 'EtTicket',
+                applicationVersion: _appVersion,
+                applicationIcon: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.confirmation_number, color: Colors.white, size: 32),
+                ),
+                children: [
+                  Text(
+                    'Your trusted platform for event ticketing in Ethiopia.',
+                    style: GoogleFonts.poppins(fontSize: 14),
+                  ),
+                ],
+              );
+            },
+          ),
+
+          const SizedBox(height: 32),
+
+          // Logout Button
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () async {
-                await ref.read(authServiceProvider).logout();
-                if(context.mounted) context.go('/login');
-              },
+              onPressed: _showLogoutConfirmation,
               icon: const Icon(Icons.logout),
-              label: Text('settings.logout'.tr()),
+              label: Text(
+                'Logout',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+              ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.all(16),
-                side: const BorderSide(color: Colors.red),
+                side: const BorderSide(color: Colors.red, width: 2),
                 foregroundColor: Colors.red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // App Version
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  'EtTicket',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textColor.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Version $_appVersion',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: textColor.withOpacity(0.4),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '© 2026 EtTicket. All rights reserved.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: textColor.withOpacity(0.3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: const Color(0xFF8B5CF6)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : const Color(0xFF1A1823),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSkeletonCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1D192B) : Colors.grey[200],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: isDark ? const Color(0xFF2D2B3A) : Colors.grey[300],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 120,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2D2B3A) : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 80,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2D2B3A) : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -139,30 +467,67 @@ class SettingsScreen extends ConsumerWidget {
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final Widget trailing;
+  final VoidCallback? onTap;
 
-  const _SettingsTile({required this.icon, required this.title, required this.trailing});
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.trailing,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: Theme.of(context).cardTheme.elevation != 0 
-            ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))] 
-            : null,
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: Theme.of(context).primaryColor),
+          child: Icon(icon, color: const Color(0xFF8B5CF6), size: 22),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+        ),
+        subtitle: subtitle != null
+            ? Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  subtitle!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              )
+            : null,
         trailing: trailing,
       ),
     );

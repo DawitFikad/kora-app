@@ -8,5 +8,7 @@ router.use(authenticate);
 
 // User can view their notification history
 router.get("/", NotificationController.getMyNotifications);
+router.post("/mark-all-read", NotificationController.markAllAsRead);
+router.patch("/:id/read", NotificationController.markAsRead);
 
 export default router;
