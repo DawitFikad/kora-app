@@ -15,6 +15,7 @@ class Event {
   final String? refundPolicy;
   final int minAge;
   final String? additionalPolicy;
+  final bool hasSeatMap;
   
   // Relations
   final List<TicketTier> tiers;
@@ -32,10 +33,12 @@ class Event {
     this.refundPolicy,
     this.minAge = 0,
     this.additionalPolicy,
+    this.hasSeatMap = false,
     this.tiers = const [],
     this.category,
     this.city,
   });
+
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
@@ -49,6 +52,7 @@ class Event {
       refundPolicy: json['refundPolicy'],
       minAge: json['minAge'] ?? 0,
       additionalPolicy: json['additionalPolicy'],
+      hasSeatMap: json['hasSeatMap'] ?? false,
       tiers: (json['tiers'] as List<dynamic>?)
           ?.map((e) => TicketTier.fromJson(e))
           .toList() ?? [],
@@ -68,9 +72,11 @@ class Event {
       'refundPolicy': refundPolicy,
       'minAge': minAge,
       'additionalPolicy': additionalPolicy,
+      'hasSeatMap': hasSeatMap,
       'tiers': tiers.map((e) => e.toJson()).toList(),
       'category': category?.toJson(),
       'city': city?.toJson(),
     };
   }
 }
+

@@ -149,25 +149,29 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 children: [
                   Text(
-                    "Select Tickets",
+                    "Event Details",
                     style: GoogleFonts.poppins(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
                   
+                  // New Structured Info Section
+                  _buildEventInfoSection(event, eventDate),
+                  const SizedBox(height: 32),
+
                   // About Section
                   Text(
                     "About this event",
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF8B5CF6),
+                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     event.description,
                     style: GoogleFonts.poppins(
@@ -177,18 +181,28 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 24),
-
+                  const SizedBox(height: 32),
                   
-                  // Seat Map Card
-                  _buildSeatMapCard(),
+                  // Seat Map Card (Conditional)
+                  if (event.hasSeatMap) ...[
+                    _buildSeatMapCard(),
+                    const SizedBox(height: 32),
+                  ],
                   
-                  const SizedBox(height: 24),
-                  
-                  // Trust Signals
+                  // Availability Status & Trust Signals
                   _buildTrustSignals(event, sortedTiers),
                   
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
+
+                  Text(
+                    "Select Ticket Type",
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   
                   if (sortedTiers.isEmpty)
                     const Center(child: Text("No tickets available", style: TextStyle(color: Colors.white54))),
@@ -210,6 +224,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       onChanged: (val) => setState(() => _ticketQuantities[tier.id] = val),
                      );
                   }),
+
                   
                   
                   const SizedBox(height: 24),
@@ -614,7 +629,87 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       ),
     );
   }
+
+  Widget _buildEventInfoSection(Event event, DateTime date) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1D192B),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          _buildInfoTile(
+            Icons.location_on_outlined,
+            "Venue & Location",
+            event.venue,
+            const Color(0xFF8B5CF6),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: Colors.white10),
+          ),
+          _buildInfoTile(
+            Icons.calendar_today_outlined,
+            "Date",
+            DateFormat('EEEE, MMM d, yyyy').format(date),
+            const Color(0xFF10B981),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: Colors.white10),
+          ),
+          _buildInfoTile(
+            Icons.access_time_outlined,
+            "Booking Time",
+            DateFormat('h:mm a').format(date),
+            const Color(0xFFFF9F0A),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoTile(IconData icon, String label, String value, Color iconColor) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
+
 
 class _TicketTierTile extends StatelessWidget {
   final String title;
