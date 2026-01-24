@@ -101,13 +101,30 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             ),
             title: Column(
               children: [
-                Text(
-                  event.title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        event.title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF8B5CF6),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.verified, color: Colors.white, size: 12),
+                    ),
+                  ],
                 ),
                 Text(
                   "${DateFormat('E, MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
@@ -121,7 +138,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             centerTitle: true,
             actions: [
               IconButton(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
+                icon: const Icon(Icons.share, color: Colors.white),
                 onPressed: () {},
               ),
             ],
@@ -143,6 +160,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   
                   // Seat Map Card
                   _buildSeatMapCard(),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Trust Signals
+                  _buildTrustSignals(event, sortedTiers),
                   
                   const SizedBox(height: 32),
                   
@@ -274,6 +296,166 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTrustSignals(Event event, List<TicketTier> tiers) {
+    // Calculate total availability
+    int totalAvailable = 0;
+    int totalCapacity = 0;
+    for (var tier in tiers) {
+      totalAvailable += (tier.capacity - tier.sold);
+      totalCapacity += tier.capacity;
+    }
+    
+    final availabilityPercent = totalCapacity > 0 ? (totalAvailable / totalCapacity * 100) : 0;
+    final isLowAvailability = availabilityPercent < 20 && availabilityPercent > 0;
+    
+    return Column(
+      children: [
+        // Organizer Verification
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1D192B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.verified_user, color: Color(0xFF8B5CF6), size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          "Verified Organizer",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 16),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Trusted event organizer",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Quick Info Row
+        Row(
+          children: [
+            // Refund Policy
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1D192B),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.shield_outlined, color: Color(0xFF10B981), size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          "Refund Policy",
+                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "48h before event",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // Ticket Availability
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isLowAvailability 
+                      ? const Color(0xFFFF9F0A).withOpacity(0.1)
+                      : const Color(0xFF1D192B),
+                  borderRadius: BorderRadius.circular(12),
+                  border: isLowAvailability 
+                      ? Border.all(color: const Color(0xFFFF9F0A).withOpacity(0.3))
+                      : null,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          isLowAvailability ? Icons.warning_amber : Icons.confirmation_number_outlined,
+                          color: isLowAvailability ? const Color(0xFFFF9F0A) : const Color(0xFF8B5CF6),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Availability",
+                          style: TextStyle(
+                            color: isLowAvailability ? const Color(0xFFFF9F0A) : Colors.white70,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isLowAvailability ? "Few left!" : "$totalAvailable tickets",
+                      style: GoogleFonts.poppins(
+                        color: isLowAvailability ? const Color(0xFFFF9F0A) : Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

@@ -39,7 +39,23 @@
         "title": "Discover",
         "search": "Search events...",
         "featured": "Featured",
-        "upcoming": "Upcoming Events"
+        "upcoming": "Upcoming Events",
+        "no_events": "No events available right now",
+        "no_events_filtered": "No events match your filters",
+        "no_events_suggestion": "New events are added regularly.\nCheck back soon!",
+        "clear_filters": "Clear Filters",
+        "loading": "Loading events...",
+        "error_loading": "Unable to load events",
+        "pull_to_retry": "Pull down to retry"
+    },
+    "event_details": {
+        "verified_organizer": "Verified Organizer",
+        "trusted_organizer": "Trusted event organizer",
+        "refund_policy": "Refund Policy",
+        "refund_time": "48h before event",
+        "availability": "Availability",
+        "few_left": "Few left!",
+        "tickets_available": "tickets"
     },
     "settings": {
         "language": "Language",

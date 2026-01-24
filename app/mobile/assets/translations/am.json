@@ -39,7 +39,23 @@
         "title": "ያስሱ",
         "search": "ዝግጅቶችን ይፈልጉ...",
         "featured": "ተመራጭ",
-        "upcoming": "ቀጣይ ዝግጅቶች"
+        "upcoming": "ቀጣይ ዝግጅቶች",
+        "no_events": "በአሁኑ ጊዜ ምንም ዝግጅቶች የሉም",
+        "no_events_filtered": "ምንም ዝግጅቶች ከማጣሪያዎ ጋር አይዛመዱም",
+        "no_events_suggestion": "አዳዲስ ዝግጅቶች በየጊዜው ይጨመራሉ።\nቶሎ ይመለሱ!",
+        "clear_filters": "ማጣሪያዎችን አጽዳ",
+        "loading": "ዝግጅቶችን በመጫን ላይ...",
+        "error_loading": "ዝግጅቶችን መጫን አልተቻለም",
+        "pull_to_retry": "እንደገና ለመሞከር ወደ ታች ይጎትቱ"
+    },
+    "event_details": {
+        "verified_organizer": "የተረጋገጠ አዘጋጅ",
+        "trusted_organizer": "የታመነ የዝግጅት አዘጋጅ",
+        "refund_policy": "የመመለሻ ፖሊሲ",
+        "refund_time": "ከዝግጅቱ በፊት 48 ሰዓት",
+        "availability": "ተገኝነት",
+        "few_left": "ጥቂት ቀርቷል!",
+        "tickets_available": "ቲኬቶች"
     },
     "settings": {
         "language": "ቋንቋ",

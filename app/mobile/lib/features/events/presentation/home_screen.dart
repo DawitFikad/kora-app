@@ -163,12 +163,7 @@ class _HomeBody extends ConsumerWidget {
                data: (events) {
                  if (events.isEmpty) {
                    return SliverToBoxAdapter(
-                     child: Center(
-                       child: Padding(
-                         padding: const EdgeInsets.all(32.0),
-                         child: Text("No events found", style: TextStyle(color: mutedColor)),
-                       ),
-                     ),
+                     child: _buildEmptyState(context, ref, textColor, mutedColor),
                    );
                  }
                  
@@ -238,8 +233,31 @@ class _HomeBody extends ConsumerWidget {
                    ),
                  );
                },
-               loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
-               error: (e, s) => SliverToBoxAdapter(child: Center(child: Text("Error: $e"))),
+                loading: () => SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => _buildSkeletonCard(isDark),
+                      childCount: 3,
+                    ),
+                  ),
+                ),
+                error: (e, s) => SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(Icons.error_outline, color: mutedColor, size: 48),
+                          const SizedBox(height: 16),
+                          Text("Unable to load events", style: TextStyle(color: textColor, fontSize: 16)),
+                          const SizedBox(height: 8),
+                          Text("Pull down to retry", style: TextStyle(color: mutedColor, fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
              ),
              
              const SliverToBoxAdapter(child: SizedBox(height: 80)),
@@ -430,6 +448,132 @@ class _HomeBody extends ConsumerWidget {
         },
         loading: () => const Center(child: LinearProgressIndicator()), 
         error: (_,__) => const SizedBox.shrink()
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref, Color textColor, Color mutedColor) {
+    final selectedCity = ref.watch(selectedCityProvider);
+    final selectedCategory = ref.watch(selectedCategoryProvider);
+    
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(48.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.event_busy,
+                size: 64,
+                color: const Color(0xFF8B5CF6).withOpacity(0.5),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              selectedCity != null || selectedCategory != null
+                  ? "No events match your filters"
+                  : "No events available right now",
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              selectedCity != null || selectedCategory != null
+                  ? "Try adjusting your filters or check back later"
+                  : "New events are added regularly.\nCheck back soon!",
+              style: TextStyle(
+                fontSize: 14,
+                color: mutedColor,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (selectedCity != null || selectedCategory != null) ...[
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () {
+                  ref.read(selectedCityProvider.notifier).state = null;
+                  ref.read(selectedCategoryProvider.notifier).state = null;
+                },
+                icon: const Icon(Icons.clear_all),
+                label: const Text("Clear Filters"),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF8B5CF6),
+                  side: const BorderSide(color: Color(0xFF8B5CF6)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonCard(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF232030) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1D192B) : Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 100,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1D192B) : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1D192B) : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 120,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1D192B) : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
