@@ -1163,4 +1163,275 @@ export class OrganizerController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    /**
+     * GET /api/organizer/refunds
+     * Get all refund requests for the organizer's events
+     */
+    static async getRefunds(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user?.organizerId;
+            if (!organizerId) return res.status(403).json({ error: "Unauthorized" });
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const refunds = await prisma.refund.findMany({
+                where: {
+                    purchase: {
+                        tickets: {
+                            some: {
+                                event: { organizerId }
+                            }
+                        }
+                    }
+                },
+                include: {
+                    purchase: {
+                        include: {
+                            user: {
+                                include: { profile: true }
+                            },
+                            tickets: {
+                                include: {
+                                    event: { select: { title: true } }
+                                }
+                            }
+                        }
+                    }
+                },
+                orderBy: { createdAt: 'desc' }
+            });
+
+            const formattedRefunds = refunds.map(r => ({
+                id: r.id,
+                status: r.status,
+                amount: Number(r.amount),
+                reason: r.reason,
+                description: r.description,
+                customerName: r.purchase.user.profile?.fullName || r.purchase.user.phoneNumber,
+                eventTitle: r.purchase.tickets[0]?.event.title || 'Unknown Event',
+                ticketCount: r.purchase.tickets.length,
+                createdAt: r.createdAt,
+                updatedAt: r.updatedAt
+            }));
+
+            res.json({ success: true, data: formattedRefunds });
+        } catch (error: any) {
+            console.error("Get refunds error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/refunds/request
+     * Request a refund for a specific purchase (requires admin approval)
+     */
+    static async requestRefund(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user?.organizerId;
+            if (!organizerId) return res.status(403).json({ error: "Unauthorized" });
+
+            const { purchaseId, reason, description } = req.body;
+
+            if (!purchaseId || !reason) {
+                return res.status(400).json({ error: "Purchase ID and reason are required" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Verify the purchase belongs to this organizer's events
+            const purchase = await prisma.purchase.findFirst({
+                where: {
+                    id: parseInt(purchaseId),
+                    tickets: {
+                        some: {
+                            event: { organizerId }
+                        }
+                    }
+                },
+                include: {
+                    tickets: {
+                        include: { event: true }
+                    }
+                }
+            });
+
+            if (!purchase) {
+                return res.status(404).json({ error: "Purchase not found or you don't have permission" });
+            }
+
+            // Check if refund already exists
+            const existingRefund = await prisma.refund.findFirst({
+                where: { purchaseId: purchase.id }
+            });
+
+            if (existingRefund) {
+                return res.status(400).json({ error: "Refund request already exists for this purchase" });
+            }
+
+            // Create refund request
+            const refund = await prisma.refund.create({
+                data: {
+                    purchaseId: purchase.id,
+                    amount: purchase.totalAmount,
+                    reason: reason,
+                    description: description || null,
+                    status: 'PENDING'
+                }
+            });
+
+            // Notify admin
+            const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+            if (admin) {
+                await prisma.notificationLog.create({
+                    data: {
+                        userId: admin.id,
+                        organizerId,
+                        channel: 'PUSH',
+                        recipient: admin.email || admin.phoneNumber || 'System',
+                        title: 'Refund Request',
+                        content: `Organizer ${organizerId} requested a refund of ETB ${purchase.totalAmount} for purchase #${purchase.id}`,
+                        status: 'DELIVERED',
+                        metadata: {
+                            type: 'REFUND_REQUEST',
+                            refundId: refund.id,
+                            purchaseId: purchase.id,
+                            organizerId
+                        }
+                    }
+                });
+            }
+
+            res.json({ success: true, data: refund, message: "Refund request submitted for admin approval" });
+        } catch (error: any) {
+            console.error("Request refund error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * GET /api/organizer/events/:id/refund-impact
+     * Calculate the financial impact of cancelling an event
+     */
+    static async getRefundImpact(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user?.organizerId;
+            if (!organizerId) return res.status(403).json({ error: "Unauthorized" });
+
+            const eventId = parseInt(req.params.id);
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Verify event ownership
+            const event = await prisma.event.findFirst({
+                where: { id: eventId, organizerId },
+                include: {
+                    tickets: {
+                        where: { status: { in: ['SOLD', 'VALID'] } },
+                        include: { purchase: true }
+                    }
+                }
+            });
+
+            if (!event) {
+                return res.status(404).json({ error: "Event not found or you don't have permission" });
+            }
+
+            // Calculate impact
+            const totalTickets = event.tickets.length;
+            const totalRevenue = event.tickets.reduce((sum, t) => sum + Number(t.basePrice || 0), 0);
+            const totalRefundAmount = event.tickets.reduce((sum, t) => sum + Number(t.basePrice || 0), 0);
+
+            // Get unique purchases
+            const uniquePurchases = new Set(event.tickets.map(t => t.purchaseId).filter(Boolean));
+            const affectedCustomers = uniquePurchases.size;
+
+            const impact = {
+                eventId: event.id,
+                eventTitle: event.title,
+                eventDate: event.dateTime,
+                totalTicketsSold: totalTickets,
+                totalRevenue,
+                totalRefundAmount,
+                affectedCustomers,
+                canCancel: event.status !== 'CANCELLED' && event.status !== 'COMPLETED',
+                refundBreakdown: {
+                    ticketRevenue: totalRevenue,
+                    platformFees: event.tickets.reduce((sum, t) => sum + Number(t.platformNet || 0), 0),
+                    organizerNet: event.tickets.reduce((sum, t) => sum + Number(t.organizerNet || 0), 0)
+                }
+            };
+
+            res.json({ success: true, data: impact });
+        } catch (error: any) {
+            console.error("Get refund impact error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/events/:id/request-cancellation
+     * Request to cancel an event (requires admin approval)
+     */
+    static async requestCancellation(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user?.organizerId;
+            if (!organizerId) return res.status(403).json({ error: "Unauthorized" });
+
+            const eventId = parseInt(req.params.id);
+            const { reason } = req.body;
+
+            if (!reason) {
+                return res.status(400).json({ error: "Cancellation reason is required" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            // Verify event ownership
+            const event = await prisma.event.findFirst({
+                where: { id: eventId, organizerId }
+            });
+
+            if (!event) {
+                return res.status(404).json({ error: "Event not found or you don't have permission" });
+            }
+
+            if (event.status === 'CANCELLED') {
+                return res.status(400).json({ error: "Event is already cancelled" });
+            }
+
+            if (event.status === 'COMPLETED') {
+                return res.status(400).json({ error: "Cannot cancel a completed event" });
+            }
+
+            // Notify admin for approval
+            const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+            if (admin) {
+                await prisma.notificationLog.create({
+                    data: {
+                        userId: admin.id,
+                        organizerId,
+                        channel: 'PUSH',
+                        recipient: admin.email || admin.phoneNumber || 'System',
+                        title: 'Event Cancellation Request',
+                        content: `Organizer ${organizerId} requested to cancel event "${event.title}". Reason: ${reason}`,
+                        status: 'DELIVERED',
+                        metadata: {
+                            type: 'CANCELLATION_REQUEST',
+                            eventId: event.id,
+                            organizerId,
+                            reason
+                        }
+                    }
+                });
+            }
+
+            res.json({
+                success: true,
+                message: "Cancellation request submitted to admin for approval. You will be notified once processed."
+            });
+        } catch (error: any) {
+            console.error("Request cancellation error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
 }

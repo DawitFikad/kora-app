@@ -39,6 +39,12 @@ router.patch("/notifications/read", OrganizerController.markNotificationsRead);
 // Payouts
 router.get("/payouts", OrganizerController.getPayoutHistory);
 
+// Refunds & Cancellations
+router.get("/refunds", OrganizerController.getRefunds);
+router.post("/refunds/request", OrganizerController.requestRefund);
+router.get("/events/:id/refund-impact", OrganizerController.getRefundImpact);
+router.post("/events/:id/request-cancellation", OrganizerController.requestCancellation);
+
 // Profile Management
 router.post("/profile/upload-logo", upload.single('logo'), OrganizerController.uploadLogo);
 router.delete("/profile/remove-logo", OrganizerController.removeLogo);

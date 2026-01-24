@@ -57,6 +57,12 @@ export const OrganizerService = {
     requestPhoneChange: (newPhoneNumber: string) => api.post('/organizer/profile/change-phone-request', { newPhoneNumber }),
     verifyPhoneChange: (data: { newPhoneNumber: string, otp: string }) => api.post('/organizer/profile/change-phone-verify', data),
 
+    // Refunds & Cancellations
+    getRefunds: () => api.get('/organizer/refunds'),
+    requestRefund: (data: { purchaseId: number, reason: string, description?: string }) => api.post('/organizer/refunds/request', data),
+    getRefundImpact: (eventId: number) => api.get(`/organizer/events/${eventId}/refund-impact`),
+    requestCancellation: (eventId: number, reason: string) => api.post(`/organizer/events/${eventId}/request-cancellation`, { reason }),
+
     // Validation
     validateTicket: (qrPayload: string, gateId?: string) => api.post('/validate/scan', { qrPayload, gateId }),
     getSyncData: (eventId: number) => api.get(`/validate/sync/${eventId}`),

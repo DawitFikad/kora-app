@@ -19,7 +19,8 @@ import {
     LogOut,
     FileText,
     Sun,
-    Moon
+    Moon,
+    RefreshCw
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -27,7 +28,7 @@ import { AnimatePresence } from 'framer-motion';
 import { DashboardView } from './components/DashboardView';
 import { MyEventsView } from './components/MyEventsView';
 import { TicketsView } from './components/TicketsView';
-import { ReportsView } from './components/ReportsView';
+
 import { AttendeesView } from './components/AttendeesView';
 import { SupportView } from './components/SupportView';
 import { SettingsView } from './components/SettingsView';
@@ -41,6 +42,7 @@ import { ContentManagementView } from './components/ContentManagementView';
 import { AdvancedAnalyticsView } from './components/AdvancedAnalyticsView';
 import { ReportGeneratorView } from './components/ReportGeneratorView';
 import { SalesRevenueView } from './components/SalesRevenueView';
+import { RefundsView } from './components/RefundsView';
 
 
 // --- Main Application Component ---
@@ -166,6 +168,7 @@ const OrganizerDashboard = () => {
         { icon: FileText, label: 'Reports' },
         { icon: Users, label: 'Attendees' },
         { icon: Megaphone, label: 'Promotions' },
+        { icon: RefreshCw, label: 'Refunds' },
         { icon: Layout, label: 'Content' },
         { icon: Maximize, label: 'Scanner' },
         { icon: HelpCircle, label: 'Support' },
@@ -218,6 +221,7 @@ const OrganizerDashboard = () => {
             case 'Reports': return <ReportGeneratorView key="reports" />;
             case 'Attendees': return <AttendeesView key="attendees" />;
             case 'Promotions': return <PromotionsView key="promotions" />;
+            case 'Refunds': return <RefundsView key="refunds" />;
             case 'Content': return <ContentManagementView key="content" />;
             case 'Scanner': return <ScannerView key="scanner" />;
             case 'Support': return <SupportView key="support" />;
