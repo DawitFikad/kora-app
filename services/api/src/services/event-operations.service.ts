@@ -234,6 +234,53 @@ export class EventOperationsService {
             checkedIn: totalCheckIns
         };
 
+        // 4. Alerts
+        const alerts: any[] = [];
+
+        // Alert: Pending Approval
+        const pendingEvents = events.filter(e => e.status === EventStatus.PENDING).length;
+        if (pendingEvents > 0) {
+            alerts.push({
+                type: 'warning',
+                message: `${pendingEvents} event${pendingEvents > 1 ? 's are' : ' is'} pending approval`,
+                action: 'Events'
+            });
+        }
+
+        // Alert: Low Capacity (events with > 80% sold)
+        events.forEach(e => {
+            if (e.status === EventStatus.APPROVED && new Date(e.dateTime) > new Date()) {
+                const totalCap = e.tiers.reduce((sum, t) => sum + t.capacity, 0);
+                const sold = e._count.tickets;
+                if (totalCap > 0 && (sold / totalCap) >= 0.8) {
+                    alerts.push({
+                        type: 'critical',
+                        message: `Low capacity: ${e.title} is ${((sold / totalCap) * 100).toFixed(0)}% sold out`,
+                        action: 'Events'
+                    });
+                }
+            }
+        });
+
+        // 5. Upcoming Events (Next 7 Days)
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        const now = new Date();
+
+        const upcomingEvents = events
+            .filter(e => {
+                const eDate = new Date(e.dateTime);
+                return e.status === EventStatus.APPROVED && eDate >= now && eDate <= nextWeek;
+            })
+            .map(e => ({
+                id: e.id,
+                title: e.title,
+                date: e.dateTime,
+                sold: e._count.tickets,
+                capacity: e.tiers.reduce((sum, t) => sum + t.capacity, 0)
+            }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
         return {
             totalRevenue: netEarnings,
             grossVolume: grossVolume,
@@ -243,6 +290,8 @@ export class EventOperationsService {
             salesVelocity,
             totalCheckIns,
             activeEvents: activeEventsCount,
+            upcomingEvents,
+            alerts,
             advanced: {
                 bestEvent: { title: bestEvent.title, revenue: bestEvent.revenue },
                 peakDay: { day: peakDayEntry[0], count: peakDayEntry[1] },

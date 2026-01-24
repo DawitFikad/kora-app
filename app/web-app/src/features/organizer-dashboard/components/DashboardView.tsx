@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MoreHorizontal, Ticket, Building2, TrendingUp, Megaphone, Users, Download, Loader2, DollarSign } from 'lucide-react';
+import { MoreHorizontal, Ticket, Building2, TrendingUp, Megaphone, Users, Download, Loader2, DollarSign, AlertTriangle, CalendarDays, ArrowRight } from 'lucide-react';
 import { CreditCardIcon } from './CustomIcons';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
@@ -8,6 +8,8 @@ import { OrganizerService } from '../../../core/api/organizer.service';
 export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
     const [stats, setStats] = useState<any[]>([]);
     const [velocity, setVelocity] = useState<any[]>([]);
+    const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+    const [alerts, setAlerts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,6 +28,8 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
 
                 setStats(formattedStats);
                 setVelocity(data.salesVelocity);
+                setUpcomingEvents(data.upcomingEvents || []);
+                setAlerts(data.alerts || []);
             } catch (error) {
                 console.error("Failed to fetch dashboard stats", error);
             } finally {
@@ -57,6 +61,52 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader title="Welcome back" subtitle="Here is what’s happening with your events today." />
 
+            <PageHeader title="Welcome back" subtitle="Here is what’s happening with your events today." />
+
+            {/* Alerts Section */}
+            {alerts.length > 0 && (
+                <div style={{ marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {alerts.map((alert: any, i: number) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            style={{
+                                padding: '16px',
+                                borderRadius: '12px',
+                                background: alert.type === 'critical' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)',
+                                border: `1px solid ${alert.type === 'critical' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)'}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                color: alert.type === 'critical' ? '#EF4444' : '#EAB308'
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <AlertTriangle size={20} />
+                                <span style={{ fontWeight: 600 }}>{alert.message}</span>
+                            </div>
+                            <button
+                                onClick={() => handleQuickAction(alert.action)}
+                                style={{
+                                    background: 'transparent',
+                                    border: `1px solid ${alert.type === 'critical' ? '#EF4444' : '#EAB308'}`,
+                                    padding: '6px 16px',
+                                    borderRadius: '8px',
+                                    color: 'inherit',
+                                    fontWeight: 700,
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                View
+                            </button>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+
             <div className="stats-grid">
                 {stats.map((stat, i) => (
                     <motion.div key={i} className="stat-card" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
@@ -74,7 +124,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                 ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '24px', marginBottom: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr', gap: '24px', marginBottom: '32px' }}>
                 <div className="stat-card" style={{ padding: '32px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <div>
@@ -104,6 +154,40 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                     </div>
                 </div>
 
+
+
+                <div className="stat-card" style={{ padding: '32px' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>Upcoming Events (7 Days)</h3>
+                    {upcomingEvents.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {upcomingEvents.map((e: any) => (
+                                <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{
+                                            width: '40px', height: '40px', borderRadius: '10px',
+                                            background: 'var(--bg-subtle)', display: 'flex', flexDirection: 'column',
+                                            alignItems: 'center', justifyContent: 'center', fontWeight: 800
+                                        }}>
+                                            <span style={{ fontSize: '0.6rem', color: '#1D90F5' }}>{new Date(e.date).toLocaleString('default', { month: 'short' }).toUpperCase()}</span>
+                                            <span style={{ fontSize: '1rem', color: 'var(--text-main)', lineHeight: 1 }}>{new Date(e.date).getDate()}</span>
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>{e.title}</h4>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{e.sold} / {e.capacity} tickets sold</p>
+                                        </div>
+                                    </div>
+                                    <ArrowRight size={16} color="var(--text-muted)" style={{ cursor: 'pointer' }} onClick={() => onNavigate?.('Events')} />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                            <CalendarDays size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                            <p style={{ fontSize: '0.9rem' }}>No upcoming events.</p>
+                        </div>
+                    )}
+                </div>
+
                 <div className="stat-card" style={{ padding: '32px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>Quick Actions</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
@@ -130,6 +214,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                     </div>
                 </div>
             </div>
-        </motion.div>
+
+        </motion.div >
     );
 };
