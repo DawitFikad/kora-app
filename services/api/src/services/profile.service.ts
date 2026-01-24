@@ -48,10 +48,17 @@ export class ProfileService {
 
         // If email is provided, update the User model
         if (email) {
-            await prisma.user.update({
-                where: { id: userId },
-                data: { email }
-            });
+            try {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { email }
+                });
+            } catch (error: any) {
+                if (error.code === 'P2002') {
+                    throw new Error("This email is already in use by another account.");
+                }
+                throw error;
+            }
         }
 
         await prisma.userProfile.update({
