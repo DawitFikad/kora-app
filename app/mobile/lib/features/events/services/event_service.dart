@@ -5,6 +5,7 @@ import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/models/category.dart';
 import 'package:mobile/features/events/models/city.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/features/events/models/homepage_banner.dart';
 
 final eventServiceProvider = Provider<EventService>((ref) {
   return EventService(ref.watch(dioProvider));
@@ -22,6 +23,11 @@ final eventDetailsProvider = FutureProvider.family<Event, int>((ref, id) async {
   ref.watch(authTokenProvider);
   final service = ref.watch(eventServiceProvider);
   return service.getEventById(id);
+});
+
+final bannersProvider = FutureProvider<List<HomepageBanner>>((ref) async {
+  final service = ref.watch(eventServiceProvider);
+  return service.getBanners();
 });
 
 class EventService {
@@ -89,6 +95,19 @@ class EventService {
   Future<List<City>> getCities() async {
     final meta = await getMetadata();
     return meta['cities'] as List<City>;
+  }
+
+  Future<List<HomepageBanner>> getBanners() async {
+    try {
+      final response = await _dio.get(ApiConstants.banners);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] ?? [];
+        return data.map((json) => HomepageBanner.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
   }
 }
 

@@ -18,6 +18,7 @@ import 'package:mobile/features/events/presentation/notification_screen.dart';
 import 'package:mobile/features/events/presentation/favorites_screen.dart';
 import 'package:mobile/core/widgets/app_image.dart';
 import 'package:mobile/core/widgets/offline_banner.dart';
+import 'package:mobile/features/events/models/homepage_banner.dart';
 
 final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
 final selectedCityProvider = StateProvider<City?>((ref) => null);
@@ -34,6 +35,30 @@ final filteredEventsProvider = FutureProvider<List<Event>>((ref) async {
     cityId: city?.id,
   );
 });
+
+
+final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
+  final service = ref.watch(eventServiceProvider);
+  
+  // 1. Fetch super admin created banners
+  final adminBanners = await ref.watch(bannersProvider.future); // Assuming bannersProvider exists
+  
+  // 2. Fetch featured events
+  final featuredEvents = await service.getEvents(featured: true);
+  
+  // Combine all items for the carousel
+  final List<dynamic> combined = [...adminBanners, ...featuredEvents];
+  
+  // 3. Fallback if empty
+  if (combined.isEmpty) {
+    final allEvents = await service.getEvents();
+    return allEvents.take(5).toList();
+  }
+  
+  return combined;
+});
+
+
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -133,7 +158,10 @@ class _HomeBody extends ConsumerWidget {
                     const SizedBox(height: 24),
                     _buildSearchBar(context, isDark ? const Color(0xFF232030) : Colors.white, mutedColor),
                     const SizedBox(height: 24),
+                    const _FeaturedBanners(),
+                    const SizedBox(height: 24),
                     _buildCategories(ref, isDark),
+
                     const SizedBox(height: 32),
                     RichText(
                       text: TextSpan(
@@ -812,3 +840,296 @@ class _TrendingCard extends ConsumerWidget {
     );
   }
 }
+
+class _FeaturedBanners extends ConsumerStatefulWidget {
+  const _FeaturedBanners();
+
+  @override
+  ConsumerState<_FeaturedBanners> createState() => _FeaturedBannersState();
+}
+
+class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
+  late PageController _pageController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.9);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final carouselAsync = ref.watch(homeCarouselProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return carouselAsync.when(
+      data: (items) {
+        if (items.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          children: [
+            SizedBox(
+              height: 180,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: items.length,
+                onPageChanged: (index) => setState(() => _currentPage = index),
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  if (item is Event) {
+                    return _buildEventBannerCard(item, isDark);
+                  } else if (item is HomepageBanner) {
+                    return _buildPromotionBannerCard(item, isDark);
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                items.length,
+                (index) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  height: 6,
+                  width: _currentPage == index ? 24 : 6,
+                  decoration: BoxDecoration(
+                    color: _currentPage == index 
+                        ? const Color(0xFF8B5CF6) 
+                        : (isDark ? Colors.white24 : Colors.black12),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => Container(
+        height: 180,
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildEventBannerCard(Event event, bool isDark) {
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              // Cover Image
+              AppImage(
+                imageUrl: event.coverImage,
+                height: 180,
+                width: double.infinity,
+                placeholder: 'https://picsum.photos/800/400',
+              ),
+              
+              // Gradient Overlay
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF8B5CF6),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  "FEATURED",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                event.title,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on, color: Colors.white70, size: 12),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    event.venue,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white70,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: ClipRRect(
+                            child: BackdropFilter(
+                              filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                              child: Text(
+                                "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromotionBannerCard(HomepageBanner banner, bool isDark) {
+    return GestureDetector(
+      onTap: () {
+        if (banner.linkUrl != null && banner.linkUrl!.startsWith('/')) {
+           context.push(banner.linkUrl!);
+        } else if (banner.linkUrl != null) {
+           // Handle external link with url_launcher if needed
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              AppImage(
+                imageUrl: banner.imageUrl,
+                height: 180,
+                width: double.infinity,
+                placeholder: 'https://picsum.photos/800/400',
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (banner.title != null)
+                      Text(
+                        banner.title!,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    if (banner.subtitle != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        banner.subtitle!,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                    if (banner.ctaText != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          banner.ctaText!,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
