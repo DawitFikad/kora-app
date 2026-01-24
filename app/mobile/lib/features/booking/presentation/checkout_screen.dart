@@ -183,12 +183,69 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
            // For now, just show the raw message which is helpful for debugging.
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage), 
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 10),
-            action: SnackBarAction(label: 'Dismiss', textColor: Colors.white, onPressed: () {}),
+        // Show improved error dialog with retry option
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: const Color(0xFF1D192B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: const [
+                Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 28),
+                SizedBox(width: 12),
+                Text("Payment Failed", style: TextStyle(color: Colors.white, fontSize: 18)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  errorMessage,
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        "What to do next:",
+                        style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "• Check your internet connection\n• Verify payment details\n• Try again or contact support",
+                        style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _processPayment(); // Retry without restarting flow
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text("Try Again", style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         );
       }
@@ -265,21 +322,65 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       ),
                       const SizedBox(height: 24),
                       
+                      // Security Badge
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.lock_outline, color: Color(0xFF10B981), size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "Payment verified securely via encrypted connection",
+                                style: GoogleFonts.poppins(
+                                  color: const Color(0xFF10B981),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 32),
+                      
                       // Price Breakdown
-                      Text("Payment Detail", style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text("Payment Breakdown", style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Clear pricing with no hidden fees",
+                        style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
+                      ),
                       const SizedBox(height: 16),
                       
-                      _buildRow("Subtotal", "${(widget.unitPrice * widget.quantity).toStringAsFixed(2)} ETB"),
-                      if (_priceBreakdown != null) ...[
-                        _buildRow("Service Fee", "${(_priceBreakdown!['fee'] ?? 0).toStringAsFixed(2)} ETB"),
-                        if ((_priceBreakdown!['discount'] ?? 0) > 0)
-                          _buildRow("Discount", "-${(_priceBreakdown!['discount'] ?? 0).toStringAsFixed(2)} ETB", color: Colors.green),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Divider(color: Colors.white24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1D192B),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        _buildRow("Total", "${(_priceBreakdown!['total'] ?? 0).toStringAsFixed(2)} ETB", isBold: true, size: 20),
-                      ],
+                        child: Column(
+                          children: [
+                            _buildRow("Ticket Price (${widget.quantity}x)", "${(widget.unitPrice * widget.quantity).toStringAsFixed(2)} ETB"),
+                            if (_priceBreakdown != null) ...[
+                              _buildRow("Platform Fee", "${(_priceBreakdown!['fee'] ?? 0).toStringAsFixed(2)} ETB", subtitle: "Secure processing"),
+                              if ((_priceBreakdown!['discount'] ?? 0) > 0)
+                                _buildRow("Promo Discount", "-${(_priceBreakdown!['discount'] ?? 0).toStringAsFixed(2)} ETB", color: const Color(0xFF10B981), subtitle: "Code applied"),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Divider(color: Colors.white24),
+                              ),
+                              _buildRow("Total Amount", "${(_priceBreakdown!['total'] ?? 0).toStringAsFixed(2)} ETB", isBold: true, size: 20),
+                            ],
+                          ],
+                        ),
+                      ),
                       
                       const SizedBox(height: 32),
                       
@@ -353,13 +454,29 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  Widget _buildRow(String label, String value, {bool isBold = false, double size = 14, Color? color}) {
+  Widget _buildRow(String label, String value, {bool isBold = false, double size = 14, Color? color, String? subtitle}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: Colors.white70, fontSize: size)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: Colors.white70, fontSize: size)),
+                if (subtitle != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      subtitle,
+                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                    ),
+                  ),
+              ],
+            ),
+          ),
           Text(
             value, 
             style: GoogleFonts.poppins(

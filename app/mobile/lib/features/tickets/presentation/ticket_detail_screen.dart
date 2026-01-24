@@ -50,105 +50,233 @@ class TicketDetailScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  // Header with Event Image
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                    child: AppImage(
-                      imageUrl: ticket.event.coverImage,
-                      height: 180,
-                      width: double.infinity,
-                      placeholder: 'https://picsum.photos/800/400',
+                    child: Stack(
+                      children: [
+                        AppImage(
+                          imageUrl: ticket.event.coverImage,
+                          height: 200,
+                          width: double.infinity,
+                          placeholder: 'https://picsum.photos/800/400',
+                        ),
+                        // Gradient overlay for better text readability
+                        Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.7),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Official Badge
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.verified, color: Colors.white, size: 14),
+                                SizedBox(width: 4),
+                                Text(
+                                  "OFFICIAL",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  
                   Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Event Name - LARGE
                         Text(
-                          ticket.event.title,
+                          ticket.event.title.toUpperCase(),
                           style: GoogleFonts.poppins(
-                            fontSize: 24,
+                            fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: textColor,
+                            height: 1.2,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on, color: Color(0xFF8B5CF6), size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                ticket.event.venue,
-                                style: GoogleFonts.poppins(color: textColor.withOpacity(0.7), fontSize: 14),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Date & Venue - PROMINENT
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today, color: Color(0xFF8B5CF6), size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      "${DateFormat('EEEE, MMMM d, y').format(eventDate)}\n${DateFormat('h:mm a').format(eventDate)}",
+                                      style: GoogleFonts.poppins(
+                                        color: textColor,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 12),
+                              const Divider(color: Colors.white24, height: 1),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on, color: Color(0xFF8B5CF6), size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      ticket.event.venue,
+                                      style: GoogleFonts.poppins(
+                                        color: textColor,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, color: Color(0xFF8B5CF6), size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              "${DateFormat('EEEE, MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
-                              style: GoogleFonts.poppins(color: textColor.withOpacity(0.7), fontSize: 14),
-                            ),
-                          ],
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Ticket ID - VISIBLE
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF2D2B3A) : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "TICKET ID",
+                                style: GoogleFonts.poppins(
+                                  color: textColor.withOpacity(0.6),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              Text(
+                                ticket.ticketCode != null 
+                                    ? ticket.ticketCode!.toUpperCase() 
+                                    : ticket.id.substring(0, 12).toUpperCase(),
+                                style: GoogleFonts.robotoMono(
+                                  color: textColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                        
                         const SizedBox(height: 32),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildInfoItem("SECTION", "B", textColor),
-                            _buildInfoItem("ROW", "4", textColor),
-                            _buildInfoItem("SEAT", ticket.seatNumber ?? "12", textColor),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
+                        
+                        // QR Code Section - HIGH CONTRAST
                         Center(
                           child: Column(
                             children: [
-                              Text(
-                                "SCAN THIS QR CODE AT THE ENTRY",
-                                style: GoogleFonts.poppins(
-                                  color: textColor.withOpacity(0.38),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 1.2,
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  "SHOW AT ENTRANCE",
+                                  style: GoogleFonts.poppins(
+                                    color: const Color(0xFF8B5CF6),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
                               Container(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
+                                      color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
                                     ),
                                   ],
                                 ),
                                 child: QrImageView(
                                   data: ticket.qrPayload,
                                   version: QrVersions.auto,
-                                  size: 180.0,
+                                  size: 220.0,
                                   padding: EdgeInsets.zero,
+                                  eyeStyle: const QrEyeStyle(
+                                    eyeShape: QrEyeShape.square,
+                                    color: Colors.black,
+                                  ),
+                                  dataModuleStyle: const QrDataModuleStyle(
+                                    dataModuleShape: QrDataModuleShape.square,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
-                              Text(
-                                ticket.ticketCode != null 
-                                  ? ticket.ticketCode!.toUpperCase() 
-                                  : ticket.id.substring(0, 8).toUpperCase(),
-                                style: GoogleFonts.poppins(
-                                  color: textColor,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 4,
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "Valid for single entry",
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
