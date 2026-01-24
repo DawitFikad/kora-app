@@ -22,6 +22,7 @@ import 'package:mobile/features/events/models/homepage_banner.dart';
 
 final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
 final selectedCityProvider = StateProvider<City?>((ref) => null);
+final homeIndexProvider = StateProvider<int>((ref) => 0);
 
 final filteredEventsProvider = FutureProvider<List<Event>>((ref) async {
   // Watch for auth changes
@@ -68,7 +69,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _selectedIndex = 0;
   late List<Widget> _pages;
 
   @override
@@ -85,10 +85,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedIndex = ref.watch(homeIndexProvider);
     
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
-      body: _pages[_selectedIndex],
+      body: _pages[selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1A1823) : Colors.white,
@@ -118,8 +119,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 GButton(icon: Icons.local_activity, text: 'MyTickets'),
                 GButton(icon: Icons.person_rounded, text: 'Profile'),
               ],
-              selectedIndex: _selectedIndex,
-              onTabChange: (index) => setState(() => _selectedIndex = index),
+              selectedIndex: selectedIndex,
+              onTabChange: (index) => ref.read(homeIndexProvider.notifier).state = index,
             ),
           ),
         ),
@@ -317,8 +318,7 @@ class _HomeBody extends ConsumerWidget {
           children: [
             GestureDetector(
               onTap: () {
-                final state = context.findAncestorStateOfType<_HomeScreenState>();
-                state?.setState(() => state._selectedIndex = 3);
+                ref.read(homeIndexProvider.notifier).state = 3;
               },
               child: Container(
                 padding: const EdgeInsets.all(2),

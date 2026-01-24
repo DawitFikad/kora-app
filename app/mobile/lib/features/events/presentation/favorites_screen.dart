@@ -7,6 +7,7 @@ import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/core/widgets/app_image.dart';
 import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
+import 'home_screen.dart';
 
 class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({super.key});
@@ -54,7 +55,7 @@ class FavoritesScreen extends ConsumerWidget {
           final favoriteEvents = events.where((e) => favoriteIds.contains(e.id.toString())).toList();
 
           if (favoriteEvents.isEmpty) {
-            return _buildEmptyState(isDark, textColor);
+            return _buildEmptyState(context, ref, isDark, textColor);
           }
 
           return ListView.builder(
@@ -74,7 +75,7 @@ class FavoritesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(bool isDark, Color textColor) {
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref, bool isDark, Color textColor) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -107,7 +108,10 @@ class FavoritesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 32),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              ref.read(homeIndexProvider.notifier).state = 0;
+              context.go('/home');
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF8B5CF6),
               foregroundColor: Colors.white,

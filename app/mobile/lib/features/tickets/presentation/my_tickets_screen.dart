@@ -8,6 +8,8 @@ import 'package:mobile/core/widgets/app_image.dart';
 import 'package:mobile/features/tickets/services/ticket_service.dart';
 import 'package:mobile/features/tickets/models/ticket.dart';
 import 'package:mobile/features/tickets/presentation/ticket_detail_screen.dart';
+import '../../events/presentation/home_screen.dart';
+import 'package:go_router/go_router.dart';
 
 final myTicketsProvider = FutureProvider<List<Ticket>>((ref) async {
   // Watch for auth changes to refresh ticket list
@@ -95,7 +97,7 @@ class MyTicketsScreen extends ConsumerWidget {
                 children: [
                   _TicketsListView(ref: ref, isPast: false, isDark: isDark, textColor: textColor, cardColor: cardColor, backgroundColor: backgroundColor),
                   _TicketsListView(ref: ref, isPast: true, isDark: isDark, textColor: textColor, cardColor: cardColor, backgroundColor: backgroundColor),
-                  _buildEmptyState("No archived tickets", textColor.withOpacity(0.5)),
+                  _buildEmptyState(context, ref, "No archived tickets", textColor.withOpacity(0.5)),
                 ],
               ),
             ),
@@ -105,11 +107,27 @@ class MyTicketsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(String message, Color color) {
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref, String message, Color color) {
     return Center(
-      child: Text(
-        message,
-        style: GoogleFonts.poppins(color: color),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            message,
+            style: GoogleFonts.poppins(color: color),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () {
+              ref.read(homeIndexProvider.notifier).state = 0;
+              context.go('/home');
+            },
+            child: const Text(
+              "Explore Events",
+              style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -155,7 +173,28 @@ class _TicketsListView extends StatelessWidget {
           }).toList();
 
           if (filteredTickets.isEmpty) {
-            return Center(child: Text(isPast ? "No past tickets" : "No upcoming tickets", style: TextStyle(color: textColor.withOpacity(0.5))));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    isPast ? "No past tickets" : "No upcoming tickets",
+                    style: TextStyle(color: textColor.withOpacity(0.5)),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      ref.read(homeIndexProvider.notifier).state = 0;
+                      context.go('/home');
+                    },
+                    child: const Text(
+                      "Explore Events",
+                      style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
           return ListView.builder(
