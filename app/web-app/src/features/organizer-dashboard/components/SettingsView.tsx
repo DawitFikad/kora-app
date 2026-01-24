@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Trash2, CreditCard, Bell, Shield, DollarSign, Users } from 'lucide-react';
+import { Loader2, Plus, Trash2, CreditCard, Bell, Shield, DollarSign, Users, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
@@ -102,6 +102,8 @@ export const SettingsView = () => {
                 contactPhone: profile?.contactPhone,
                 city: profile?.city,
                 payoutDetails: profile?.payoutDetails,
+                payoutDetails: profile?.payoutDetails,
+                description: profile?.description,
                 adminNote: profile?.adminNote
             });
             toast.success("Settings saved successfully!");
@@ -378,6 +380,40 @@ export const SettingsView = () => {
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Public Profile</h3>
 
+                            {/* Profile Status Card */}
+                            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', marginBottom: '32px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                        <div style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '20px',
+                                            background: profile?.status === 'APPROVED' ? 'rgba(16, 185, 129, 0.1)' : profile?.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                                            color: profile?.status === 'APPROVED' ? '#10B981' : profile?.status === 'REJECTED' ? '#EF4444' : '#FBBF24',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            {profile?.status === 'APPROVED' ? <CheckCircle2 size={16} /> : profile?.status === 'REJECTED' ? <AlertCircle size={16} /> : <Loader2 size={16} />}
+                                            {profile?.status || 'PENDING'}
+                                        </div>
+                                        {profile?.status === 'APPROVED' && <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Authorized Organizer</span>}
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1 }}>{profile?.completeness || 0}%</span>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>Profile Completion</p>
+                                    </div>
+                                </div>
+                                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${profile?.completeness || 0}%` }}
+                                        style={{ height: '100%', background: '#1D90F5', borderRadius: '4px' }}
+                                    />
+                                </div>
+                            </div>
+
                             {/* Profile Picture Section */}
                             <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', alignItems: 'center' }}>
                                 <div style={{ width: '120px', height: '120px', borderRadius: '24px', background: 'linear-gradient(45deg, #1D90F5, #D946EF', padding: '4px', position: 'relative' }}>
@@ -430,8 +466,15 @@ export const SettingsView = () => {
                                         type="text"
                                         value={profile?.organizationName || ''}
                                         onChange={e => setProfile({ ...profile, organizationName: e.target.value })}
-                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
+                                        disabled={profile?.status === 'APPROVED'}
+                                        style={{ width: '100%', background: profile?.status === 'APPROVED' ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: profile?.status === 'APPROVED' ? 'var(--text-muted)' : 'var(--text-main)', outline: 'none', cursor: profile?.status === 'APPROVED' ? 'not-allowed' : 'text' }}
                                     />
+                                    {profile?.status === 'APPROVED' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            <Lock size={12} />
+                                            <span>Locked after verification</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Contact Email</label>
@@ -473,16 +516,23 @@ export const SettingsView = () => {
                                     placeholder="e.g. CBE - 1000123456789"
                                     value={profile?.payoutDetails || ''}
                                     onChange={e => setProfile({ ...profile, payoutDetails: e.target.value })}
-                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
+                                    disabled={profile?.status === 'APPROVED'}
+                                    style={{ width: '100%', background: profile?.status === 'APPROVED' ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: profile?.status === 'APPROVED' ? 'var(--text-muted)' : 'var(--text-main)', outline: 'none', cursor: profile?.status === 'APPROVED' ? 'not-allowed' : 'text' }}
                                 />
+                                {profile?.status === 'APPROVED' && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        <Lock size={12} />
+                                        <span>Locked after verification</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ marginBottom: '32px' }}>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>About the Organizer</label>
                                 <textarea
                                     rows={4}
-                                    value={profile?.adminNote || ''}
-                                    onChange={e => setProfile({ ...profile, adminNote: e.target.value })}
+                                    value={profile?.description || ''}
+                                    onChange={e => setProfile({ ...profile, description: e.target.value })}
                                     style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', resize: 'none', outline: 'none' }}
                                 />
                             </div>

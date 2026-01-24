@@ -192,6 +192,23 @@ export class OrganizerController {
                 include: { user: { select: { email: true, phoneNumber: true } } }
             });
 
+            if (profile) {
+                // Calculate Completeness
+                const fields = [
+                    profile.organizationName,
+                    profile.contactPhone,
+                    profile.contactEmail,
+                    profile.city,
+                    profile.payoutDetails,
+                    profile.description,
+                    profile.logoUrl
+                ];
+                const filled = fields.filter(f => f && f.toString().length > 0).length;
+                const completeness = Math.round((filled / fields.length) * 100);
+
+                (profile as any).completeness = completeness;
+            }
+
             res.json({ success: true, data: profile });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
@@ -206,19 +223,41 @@ export class OrganizerController {
             const organizerId = (req as any).user.organizerId;
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-            const { organizationName, contactEmail, contactPhone, city, payoutDetails, adminNote } = req.body;
+            const { organizationName, contactEmail, contactPhone, city, payoutDetails, adminNote, description } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
+
+            // Check current status for locking
+            const currentProfile = await prisma.organizerProfile.findUnique({ where: { id: organizerId } });
+
+            // Prepare update data
+            const updateData: any = {
+                contactEmail,
+                contactPhone,
+                city,
+                adminNote,
+                description
+            };
+
+            // Lock critical fields if APPROVED
+            if (currentProfile?.status !== 'APPROVED') {
+                if (organizationName) updateData.organizationName = organizationName;
+                if (payoutDetails) updateData.payoutDetails = payoutDetails;
+            } else {
+                // Determine if user TRIED to update locked fields
+                const attemptedRestrictedUpdate =
+                    (organizationName && organizationName !== currentProfile.organizationName) ||
+                    (payoutDetails && payoutDetails !== currentProfile.payoutDetails);
+
+                if (attemptedRestrictedUpdate) {
+                    // We can either throw an error or just ignore it. 
+                    // Let's just ignore it but maybe log it? 
+                    // For better UX during development, we'll silently ignore locked fields.
+                }
+            }
 
             const profile = await prisma.organizerProfile.update({
                 where: { id: organizerId },
-                data: {
-                    organizationName,
-                    contactEmail,
-                    contactPhone,
-                    city,
-                    payoutDetails,
-                    adminNote
-                }
+                data: updateData
             });
 
             res.json({ success: true, data: profile });

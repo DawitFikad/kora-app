@@ -58,6 +58,7 @@ model OrganizerProfile {
   id               Int               @id @default(autoincrement())
   userId           Int               @unique
   organizationName String
+  description      String?
   contactPhone     String
   contactEmail     String?
   city             String
