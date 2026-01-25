@@ -221,5 +221,43 @@ export class PaymentService {
     static validateChapaWebhook(signature: string, payload: string): boolean {
         return ChapaProvider.validateWebhook(signature, payload);
     }
+
+    /**
+     * Automated reconciliation for payments that are stuck in PENDING.
+     * Checks purchases created in the last 2 hours that are still PENDING.
+     */
+    static async reconcileStuckPayments() {
+        logger.info("Starting automated payment reconciliation...");
+
+        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+        const twoHoursAgo = new Date(Date.now() - 120 * 60 * 1000);
+
+        const stuckPurchases = await prisma.purchase.findMany({
+            where: {
+                status: PaymentStatus.PENDING,
+                createdAt: {
+                    gte: twoHoursAgo,
+                    lte: fifteenMinutesAgo
+                }
+            },
+            take: 20 // Batch processing
+        });
+
+        if (stuckPurchases.length === 0) {
+            logger.info("No stuck payments found for reconciliation.");
+            return;
+        }
+
+        logger.info({ count: stuckPurchases.length }, "Found stuck payments, processing...");
+
+        for (const purchase of stuckPurchases) {
+            try {
+                logger.info({ paymentRef: purchase.paymentRef }, "Reconciling stuck payment");
+                await this.verifyPayment(purchase.paymentRef);
+            } catch (error: any) {
+                logger.error({ error: error.message, paymentRef: purchase.paymentRef }, "Reconciliation attempt failed");
+            }
+        }
+    }
 }
 

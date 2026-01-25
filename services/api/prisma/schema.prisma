@@ -130,6 +130,15 @@ model Event {
   additionalPolicy String?
   hasSeatMap       Boolean                @default(false)
   seatMapConfig    String?
+  
+  // Movie Metadata
+  isMovie          Boolean                @default(false)
+  director         String?
+  cast             String?
+  duration         Int?
+  rating           String?
+  trailerUrl       String?
+
   createdAt        DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   entryMetrics  EntryMetric[]

@@ -693,6 +693,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             DateFormat('h:mm a').format(date),
             const Color(0xFFFF9F0A),
           ),
+          if (event.isMovie || (event.category != null && event.category!.name == 'Movies')) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Divider(color: Colors.white10),
+            ),
+            _buildInfoTile(
+              Icons.movie_outlined,
+              "Movie Detail",
+              "${event.duration ?? 120} min • ${event.rating ?? 'PG-13'}",
+              const Color(0xFFD8B4FE),
+            ),
+          ],
         ],
       ),
     );

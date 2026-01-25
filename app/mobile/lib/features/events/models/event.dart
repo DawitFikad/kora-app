@@ -21,6 +21,14 @@ class Event {
   final List<TicketTier> tiers;
   final Category? category;
   final City? city;
+  
+  // Movie Metadata
+  final bool isMovie;
+  final String? director;
+  final String? cast;
+  final int? duration;
+  final String? rating;
+  final String? trailerUrl;
 
   Event({
     required this.id,
@@ -37,6 +45,12 @@ class Event {
     this.tiers = const [],
     this.category,
     this.city,
+    this.isMovie = false,
+    this.director,
+    this.cast,
+    this.duration,
+    this.rating,
+    this.trailerUrl,
   });
 
 
@@ -58,6 +72,12 @@ class Event {
           .toList() ?? [],
       category: json['category'] != null ? Category.fromJson(json['category']) : null,
       city: json['city'] != null ? City.fromJson(json['city']) : null,
+      isMovie: json['isMovie'] ?? false,
+      director: json['director'],
+      cast: json['cast'],
+      duration: json['duration'],
+      rating: json['rating'],
+      trailerUrl: json['trailerUrl'],
     );
   }
   Map<String, dynamic> toJson() {
@@ -76,6 +96,12 @@ class Event {
       'tiers': tiers.map((e) => e.toJson()).toList(),
       'category': category?.toJson(),
       'city': city?.toJson(),
+      'isMovie': isMovie,
+      'director': director,
+      'cast': cast,
+      'duration': duration,
+      'rating': rating,
+      'trailerUrl': trailerUrl,
     };
   }
 }
