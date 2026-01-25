@@ -9,6 +9,6 @@ const scannerAuth = [authenticate, authorize(["ADMIN", "ORGANIZER", "SCANNER"])]
 
 router.post("/scan", scannerAuth, ValidationController.scan);
 router.post("/sync", scannerAuth, ValidationController.sync);
-router.get("/sync-data/:eventId", scannerAuth, ValidationController.downloadSyncData);
+router.get("/gate-list/:eventId", scannerAuth, ValidationController.downloadSyncData);
 
 export default router;

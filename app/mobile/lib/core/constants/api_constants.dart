@@ -14,6 +14,7 @@ class ApiConstants {
   static const String paymentMethods = '$baseUrl/profiles/payment-methods';
   static const String banners = '$baseUrl/content/banners';
   static const String validateScan = '$baseUrl/validate/scan';
+  static const String validateGateList = '$baseUrl/validate/gate-list';
   static const String validateSync = '$baseUrl/validate/sync';
 }
 

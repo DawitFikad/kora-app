@@ -127,9 +127,24 @@ export class ValidationService {
     static async getOfflineSyncData(eventId: number) {
         const tickets = await prisma.ticket.findMany({
             where: { eventId, status: TicketStatus.VALID },
-            select: { id: true, qrPayload: true }
+            include: {
+                user: {
+                    include: { profile: true }
+                },
+                tier: true
+            }
         });
-        return tickets;
+
+        // Map to a lightweight format for the mobile app
+        return tickets.map(t => ({
+            id: t.id,
+            eventId: t.eventId,
+            tierId: t.tierId,
+            seatNumber: t.seatNumber,
+            attendeeName: t.user.profile?.fullName || t.user.phoneNumber,
+            status: t.status,
+            qrPayload: t.qrPayload // although we might not need this if we just check ID
+        }));
     }
 
     /**
@@ -137,41 +152,42 @@ export class ValidationService {
      */
     static async syncOfflineLogs(logs: any[]) {
         const results = [];
+        const syncedIds: number[] = [];
 
         for (const log of logs) {
-            const { qrPayload, gateId, deviceId, deviceTime } = log;
+            const { ticketId, eventId, scannedAt, id } = log;
 
             try {
-                const payload = jwt.verify(qrPayload, this.QR_SECRET) as any;
-                const { tid, eid } = payload;
-
                 const syncResult = await prisma.$transaction(async (tx) => {
-                    const ticket = await tx.ticket.findUnique({ where: { id: tid } });
+                    const ticket = await tx.ticket.findUnique({ where: { id: ticketId } });
 
                     if (!ticket || ticket.status === TicketStatus.USED) {
                         const fraud = ticket?.status === TicketStatus.USED;
-                        const log = await this.logScan(tx, tid, eid, gateId, deviceId, "OFFLINE", "REJECTED", fraud ? "Duplicate during sync" : "Invalid", fraud, deviceTime);
+                        const scanLog = await this.logScan(tx, ticketId, eventId, undefined, undefined, "OFFLINE", "REJECTED", fraud ? "Duplicate during sync" : "Invalid", fraud, scannedAt);
                         return {
-                            res: { tid, status: "CONFLICT", message: fraud ? "Already Used" : "Not Found" },
-                            log
+                            res: { ticketId, status: "CONFLICT", message: fraud ? "Already Used" : "Not Found" },
+                            scanLog
                         };
                     }
 
                     await tx.ticket.update({
-                        where: { id: tid },
+                        where: { id: ticketId },
                         data: { status: TicketStatus.USED }
                     });
 
-                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "OFFLINE", "SUCCESS", undefined, false, deviceTime);
-                    return { res: { tid, status: "SYNCED" }, log };
+                    const scanLog = await this.logScan(tx, ticketId, eventId, undefined, undefined, "OFFLINE", "SUCCESS", undefined, false, scannedAt);
+                    return { res: { ticketId, status: "SYNCED" }, scanLog };
                 });
 
                 // Background tasks after commit
-                if (syncResult.log) {
-                    FraudService.analyzeScan(syncResult.log.id).catch((err: any) => console.error("Fraud analysis failed:", err));
+                if (syncResult.scanLog) {
+                    FraudService.analyzeScan(syncResult.scanLog.id).catch((err: any) => console.error("Fraud analysis failed:", err));
                     const status = syncResult.res.status === "SYNCED" ? "SUCCESS" as const : "REJECTED" as const;
-                    // Here we can use eid because it is defined in the loop scope
-                    AnalyticsService.recordEntryMetric(eid, gateId || null, status).catch((err: any) => console.error("Analytics failed:", err));
+                    AnalyticsService.recordEntryMetric(eventId, null, status).catch((err: any) => console.error("Analytics failed:", err));
+                }
+
+                if (syncResult.res.status === "SYNCED" || syncResult.res.status === "CONFLICT") {
+                    syncedIds.push(id);
                 }
 
                 results.push(syncResult.res);
@@ -180,7 +196,7 @@ export class ValidationService {
             }
         }
 
-        return results;
+        return { results, syncedIds };
     }
 
     private static async logScan(tx: any, ticketId: string, eventId: number, gateId?: string, deviceId?: string, mode: string = "ONLINE", status: string = "SUCCESS", reason?: string, fraudDetected: boolean = false, deviceTime?: string) {

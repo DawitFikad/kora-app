@@ -373,7 +373,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           children: [
                             _buildRow("Ticket Price (${widget.quantity}x)", "${(widget.unitPrice * widget.quantity).toStringAsFixed(2)} ETB"),
                             if (_priceBreakdown != null) ...[
-                              _buildRow("Platform Fee", "${(_priceBreakdown!['fee'] ?? 0).toStringAsFixed(2)} ETB", subtitle: "Secure processing"),
+                              _buildRow("Commission", "${(_priceBreakdown!['commission'] ?? 0).toStringAsFixed(2)} ETB", subtitle: "Platform service"),
+                              _buildRow("Convenience Fee", "${(_priceBreakdown!['convenienceFee'] ?? 0).toStringAsFixed(2)} ETB", subtitle: "Secure processing"),
                               if ((_priceBreakdown!['discount'] ?? 0) > 0)
                                 _buildRow("Promo Discount", "-${(_priceBreakdown!['discount'] ?? 0).toStringAsFixed(2)} ETB", color: const Color(0xFF10B981), subtitle: "Code applied"),
                               const Padding(

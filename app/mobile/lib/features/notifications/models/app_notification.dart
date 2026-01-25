@@ -36,7 +36,7 @@ class AppNotification {
       description: json['content'] ?? '',
       type: type,
       timestamp: DateTime.parse(json['createdAt']),
-      isRead: json['status'] == 'READ', // Backend mostly uses SENT/FAILED
+      isRead: json['isRead'] ?? false,
       metadata: json['metadata'],
       userId: json['userId'] is int ? json['userId'] : (json['userId'] != null ? int.tryParse(json['userId'].toString()) : null),
       organizerId: json['organizerId'] is int ? json['organizerId'] : (json['organizerId'] != null ? int.tryParse(json['organizerId'].toString()) : null),

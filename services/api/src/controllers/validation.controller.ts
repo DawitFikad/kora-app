@@ -34,9 +34,9 @@ export class ValidationController {
         try {
             const { eventId } = req.params;
             const data = await ValidationService.getOfflineSyncData(parseInt(eventId));
-            res.json(data);
+            res.json({ success: true, data });
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ success: false, error: error.message });
         }
     }
 
@@ -47,13 +47,13 @@ export class ValidationController {
         try {
             const { logs } = req.body;
             if (!Array.isArray(logs)) {
-                return res.status(400).json({ error: "Logs array is required" });
+                return res.status(400).json({ success: false, error: "Logs array is required" });
             }
 
-            const results = await ValidationService.syncOfflineLogs(logs);
-            res.json({ message: "Sync complete", results });
+            const { results, syncedIds } = await ValidationService.syncOfflineLogs(logs);
+            res.json({ success: true, message: "Sync complete", results, syncedIds });
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ success: false, error: error.message });
         }
     }
 }

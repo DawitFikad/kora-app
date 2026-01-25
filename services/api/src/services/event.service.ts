@@ -72,12 +72,17 @@ export class EventService {
         // Note: For 'reReview', we might not notify yet until approved/rejected. 
         // But if organizer explicitly CANCELS (if we allowed that transition via update), we should notify.
 
-        // Check if critical info changed while it was APPROVED
-        if (oldStatus === EventStatus.APPROVED) {
+        // Check if critical info changed while it was APPROVED or if event was CANCELLED
+        if (oldStatus === EventStatus.APPROVED || data.status === EventStatus.CANCELLED) {
             const dateChanged = data.dateTime && new Date(data.dateTime).getTime() !== new Date(event.dateTime).getTime();
             const venueChanged = data.venue && data.venue !== event.venue;
+            const cancelled = data.status === EventStatus.CANCELLED && oldStatus !== EventStatus.CANCELLED;
 
-            if (dateChanged || venueChanged) {
+            if (cancelled) {
+                await EventService.notifyTicketHolders(id, "Event Cancelled",
+                    `We regret to inform you that "${event.title}" has been cancelled. Please check the app for refund details.`
+                );
+            } else if (dateChanged || venueChanged) {
                 await EventService.notifyTicketHolders(id, "Event Update",
                     `Important update for ${event.title}: The event ` +
                     (dateChanged ? `date has been moved to ${new Date(data.dateTime).toDateString()} ` : "") +
