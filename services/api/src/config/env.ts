@@ -22,6 +22,7 @@ const clean = (val?: string) => val ? val.replace(/["']/g, "").trim() : '';
 
 export const env = {
     databaseUrl: clean(process.env.DATABASE_URL),
+    apiUrl: clean(process.env.API_URL) || 'http://localhost:4000',
     jwtSecret: clean(process.env.JWT_SECRET),
     redisUrl: clean(process.env.REDIS_URL),
     teleBirrMerchantAppId: clean(process.env.TELEBIRR_MERCHANT_APP_ID),
@@ -34,4 +35,10 @@ export const env = {
     amoleKey: clean(process.env.AMOLE_API_KEY),
     chapaSecretKey: clean(process.env.CHAPA_SECRET_KEY),
     smsProviderKey: clean(process.env.SMS_PROVIDER_API_KEY),
+    // Storage
+    storageType: (process.env.STORAGE_TYPE || 'DISK') as 'DISK' | 'S3',
+    awsRegion: clean(process.env.AWS_REGION) || 'us-east-1',
+    awsAccessKey: clean(process.env.AWS_ACCESS_KEY_ID),
+    awsSecretKey: clean(process.env.AWS_SECRET_ACCESS_KEY),
+    s3BucketName: clean(process.env.S3_BUCKET_NAME),
 };
