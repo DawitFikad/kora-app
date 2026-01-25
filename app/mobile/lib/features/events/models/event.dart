@@ -56,7 +56,9 @@ class Event {
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      id: json['id'] is int 
+          ? json['id'] 
+          : (int.tryParse(json['id']?.toString() ?? '') ?? 0),
       title: json['title'] ?? 'Untitled',
       description: json['description'] ?? '',
       venue: json['venue'] ?? 'TBA',

@@ -32,8 +32,9 @@ export class PaymentService {
             });
         }
 
-        const baseUrl = process.env.API_URL || "http://localhost:4000";
-        const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+        // Use 10.0.2.2 for Android Emulator compatibility
+        const baseUrl = process.env.API_URL || "http://10.0.2.2:4000";
+        const clientUrl = process.env.CLIENT_URL || "http://10.0.2.2:4000/api/payments/completion";
         let checkoutUrl = "";
         let providerPayload: any = {};
 

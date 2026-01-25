@@ -81,7 +81,9 @@ export class PaymentController {
     static async verifyCallback(req: Request, res: Response) {
         try {
             const { ref } = req.query;
-            const clientUrl = process.env.CLIENT_URL || "http://10.0.2.2:4000/api/payments/completion";
+            // Use 10.0.2.2 for Android Emulator compatibility when running in Dev
+            const defaultUrl = "http://10.0.2.2:4000/api/payments/completion";
+            const clientUrl = process.env.CLIENT_URL || defaultUrl;
 
             if (!ref) {
                 res.redirect(`${clientUrl}?status=error&message=Missing+Payment+Reference`);
@@ -96,7 +98,8 @@ export class PaymentController {
                 res.redirect(`${clientUrl}?status=failed&ref=${ref}&reason=${encodeURIComponent(result.failureReason || 'Verification failed')}&purchaseId=${result.id}`);
             }
         } catch (error: any) {
-            const clientUrl = process.env.CLIENT_URL || "http://10.0.2.2:4000/api/payments/completion";
+            const defaultUrl = "http://10.0.2.2:4000/api/payments/completion";
+            const clientUrl = process.env.CLIENT_URL || defaultUrl;
             res.redirect(`${clientUrl}?status=error&message=${encodeURIComponent(error.message)}`);
         }
     }
@@ -105,17 +108,33 @@ export class PaymentController {
      * Renders a simple completion page (to avoid localhost redirect issues on mobile).
      */
     static async completion(req: Request, res: Response) {
-        const { status, message } = req.query;
+        const { status, message, purchaseId, ref } = req.query;
         const isSuccess = status === 'success';
         const color = isSuccess ? '#34a853' : '#ea4335';
         const title = isSuccess ? 'Payment Successful' : 'Payment Failed';
-        const msg = message || (isSuccess ? 'Your payment has been verified. You can return to the app.' : 'Something went wrong.');
+        const msg = message || (isSuccess ? 'Your payment has been verified. Redirecting to app...' : 'Something went wrong.');
+
+        // Deep link to return to app
+        const deepLink = isSuccess
+            ? `etticket://payment/success?purchaseId=${purchaseId}&ref=${ref}`
+            : `etticket://payment/failed?reason=${encodeURIComponent(message as string || 'Payment failed')}`;
 
         res.send(`
             <html>
                 <head>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>${title}</title>
+                    <script>
+                        // Auto-redirect to app after 2 seconds
+                        setTimeout(function() {
+                            window.location.href = '${deepLink}';
+                        }, 2000);
+                        
+                        // Fallback: try to close window after 5 seconds if still open
+                        setTimeout(function() {
+                            window.close();
+                        }, 5000);
+                    </script>
                 </head>
                 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5; margin: 0; padding: 20px; text-align: center;">
                     <div style="background: white; padding: 2.5rem 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; box-sizing: border-box;">
@@ -125,10 +144,10 @@ export class PaymentController {
                         <h2 style="color: #1a1a1a; margin: 0 0 0.5rem; font-size: 24px; font-weight: 700;">${title}</h2>
                         <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 2rem;">${msg}</p>
                         
-                        <a href="javascript:window.close()" style="background: ${color}; color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; display: block; width: 100%; text-decoration: none; font-size: 16px; box-sizing: border-box;">
+                        <a href="${deepLink}" style="background: ${color}; color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; display: block; width: 100%; text-decoration: none; font-size: 16px; box-sizing: border-box;">
                            Return to App
                         </a>
-                        <p style="margin-top: 1rem; color: #999; font-size: 13px;">If the button doesn't work, please close this tab manually.</p>
+                        <p style="margin-top: 1rem; color: #999; font-size: 13px;">Redirecting automatically in 2 seconds...</p>
                     </div>
                 </body>
             </html>
