@@ -6,6 +6,7 @@ import '../services/profile_service.dart';
 import '../../../core/providers.dart';
 import 'edit_profile_screen.dart';
 import '../../scanner/services/scanner_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -16,32 +17,32 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF232030),
-        title: Text('Join Staff Team', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('profile.join_staff'.tr(), style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: codeController,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'Enter 6-digit Invite Code',
-            hintStyle: TextStyle(color: Colors.white38),
-            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+          decoration: InputDecoration(
+            hintText: 'profile.enter_invite_code'.tr(),
+            hintStyle: const TextStyle(color: Colors.white38),
+            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('profile.cancel'.tr())),
           ElevatedButton(
             onPressed: () async {
               try {
                 await ref.read(scannerServiceProvider).acceptInvitation(codeController.text);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Joined staff team successfully!')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile.join_success'.tr())));
                   ref.invalidate(userProfileProvider);
                 }
               } catch (e) {
                 if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
               }
             },
-            child: const Text('JOIN'),
+            child: Text('profile.join'.tr()),
           ),
         ],
       ),
@@ -59,7 +60,7 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
       appBar: AppBar(
-        title: Text('Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: textColor)),
+        title: Text('profile.title'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -153,7 +154,7 @@ class ProfileScreen extends ConsumerWidget {
                 _buildMenuItem(
                   context, 
                   icon: Icons.confirmation_number_outlined, 
-                  title: "My Tickets",
+                  title: "profile.my_tickets".tr(),
                   color: cardColor,
                   textColor: textColor,
                   onTap: () => context.push('/my-tickets'),
@@ -162,7 +163,7 @@ class ProfileScreen extends ConsumerWidget {
                 _buildMenuItem(
                   context, 
                   icon: Icons.favorite_border, 
-                  title: "Favorites",
+                  title: "profile.favorites".tr(),
                   color: cardColor,
                   textColor: textColor,
                   onTap: () => context.push('/favorites'),
@@ -174,7 +175,7 @@ class ProfileScreen extends ConsumerWidget {
                     _buildMenuItem(
                       context,
                       icon: Icons.qr_code_scanner,
-                      title: "Scan Tickets",
+                      title: "profile.scan_tickets".tr(),
                       color: cardColor,
                       textColor: textColor,
                       onTap: () => context.push('/scanner'),
@@ -183,7 +184,7 @@ class ProfileScreen extends ConsumerWidget {
                     _buildMenuItem(
                       context,
                       icon: Icons.people_outline,
-                      title: "Staff Management",
+                      title: "profile.staff_mgmt".tr(),
                       color: cardColor,
                       textColor: textColor,
                       onTap: () => context.push('/staff-management'),
@@ -196,7 +197,7 @@ class ProfileScreen extends ConsumerWidget {
                     _buildMenuItem(
                       context,
                       icon: Icons.group_add_outlined,
-                      title: "Join Staff Team",
+                      title: "profile.join_staff".tr(),
                       color: cardColor,
                       textColor: textColor,
                       onTap: () => _showAcceptInviteDialog(context, ref),
@@ -207,7 +208,7 @@ class ProfileScreen extends ConsumerWidget {
                 _buildMenuItem(
                   context, 
                   icon: Icons.settings_outlined, 
-                  title: "Settings",
+                  title: "profile.settings".tr(),
                   color: cardColor,
                   textColor: textColor,
                   onTap: () => context.push('/settings'),
@@ -238,7 +239,7 @@ class ProfileScreen extends ConsumerWidget {
                         const Icon(Icons.logout, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          "Log Out", 
+                          "profile.logout".tr(), 
                           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                         ),
                       ],

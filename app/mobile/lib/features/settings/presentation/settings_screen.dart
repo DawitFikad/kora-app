@@ -46,14 +46,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.logout,
               color: Colors.red,
               size: 28,
             ),
             const SizedBox(width: 12),
             Text(
-              "Logout",
+              "settings.logout".tr(),
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -62,15 +62,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
         content: Text(
-          "Are you sure you want to logout? You'll need to login again to access your tickets.",
+          "settings.logout_confirm".tr(),
           style: GoogleFonts.poppins(fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              "Cancel",
-              style: TextStyle(color: Colors.grey),
+              "common.cancel".tr(),
+              style: const TextStyle(color: Colors.grey),
             ),
           ),
           ElevatedButton(
@@ -85,20 +85,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             child: Text(
-              "Logout",
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              "settings.logout".tr(),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 
   @override
@@ -115,7 +108,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Settings',
+          'settings.title'.tr(),
           style: GoogleFonts.poppins(
             color: textColor,
             fontWeight: FontWeight.bold,
@@ -135,10 +128,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [
-                      const Color(0xFF8B5CF6),
-                      const Color(0xFF7C3AED),
+                      Color(0xFF8B5CF6),
+                      Color(0xFF7C3AED),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -159,7 +152,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ? NetworkImage(profile.avatarUrl!)
                           : null,
                       child: profile.avatarUrl == null
-                          ? Icon(Icons.person, size: 32, color: const Color(0xFF8B5CF6))
+                          ? const Icon(Icons.person, size: 32, color: Color(0xFF8B5CF6))
                           : null,
                     ),
                     const SizedBox(width: 16),
@@ -186,7 +179,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: Colors.white),
+                    const Icon(Icons.chevron_right, color: Colors.white),
                   ],
                 ),
               ),
@@ -198,24 +191,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text("Error loading profile", style: TextStyle(color: Colors.red)),
+              child: const Text("Error loading profile", style: TextStyle(color: Colors.red)),
             ),
           ),
 
           const SizedBox(height: 32),
 
-          // Staff Operations (Visible to Organizers/Admins/Scanners)
+          // Staff Operations
           profileAsync.maybeWhen(
             data: (profile) => profile.role != 'USER' ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader("Staff Operations", Icons.admin_panel_settings),
+                _buildSectionHeader("settings.staff_ops".tr(), Icons.admin_panel_settings),
                 const SizedBox(height: 12),
                 _SettingsTile(
                   icon: Icons.qr_code_scanner,
-                  title: 'Ticket Scanner',
-                  subtitle: 'Validate entry at the gate',
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                  title: 'scanner.title'.tr(),
+                  subtitle: 'scanner.align_qr'.tr(),
+                  trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                   onTap: () => context.push('/scanner'),
                 ),
                 const SizedBox(height: 32),
@@ -225,12 +218,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Preferences Section
-          _buildSectionHeader("Preferences", Icons.tune),
+          _buildSectionHeader("settings.preferences".tr(), Icons.tune),
           const SizedBox(height: 12),
 
           _SettingsTile(
             icon: isDark ? Icons.dark_mode : Icons.light_mode,
-            title: 'Dark Mode',
+            title: 'settings.dark_mode'.tr(),
             trailing: Switch(
               value: isDark,
               activeColor: const Color(0xFF8B5CF6),
@@ -244,7 +237,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _SettingsTile(
             icon: Icons.language,
-            title: 'Language',
+            title: 'settings.language'.tr(),
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -273,13 +266,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 32),
 
           // Notifications Section
-          _buildSectionHeader("Notifications", Icons.notifications),
+          _buildSectionHeader("settings.notifications".tr(), Icons.notifications),
           const SizedBox(height: 12),
 
           _SettingsTile(
             icon: Icons.notifications_active,
-            title: 'Push Notifications',
-            subtitle: 'Get updates about your tickets',
+            title: 'settings.push_notif'.tr(),
             trailing: Switch(
               value: ref.watch(localStorageProvider).pushNotifications,
               activeColor: const Color(0xFF8B5CF6),
@@ -291,8 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _SettingsTile(
             icon: Icons.email,
-            title: 'Email Notifications',
-            subtitle: 'Receive event reminders via email',
+            title: 'settings.email_notif'.tr(),
             trailing: Switch(
               value: ref.watch(localStorageProvider).emailNotifications,
               activeColor: const Color(0xFF8B5CF6),
@@ -303,14 +294,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 32),
 
           // Support Section
-          _buildSectionHeader("Support & Legal", Icons.help_outline),
+          _buildSectionHeader("settings.support_legal".tr(), Icons.help_outline),
           const SizedBox(height: 12),
 
           _SettingsTile(
             icon: Icons.support_agent,
-            title: 'Help & Support',
-            subtitle: 'Get help with your account',
-            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+            title: 'settings.help'.tr(),
+            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const SupportScreen()),
@@ -321,9 +311,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _SettingsTile(
             icon: Icons.description,
-            title: 'Terms & Privacy',
-            subtitle: 'Legals and policies',
-            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+            title: 'settings.terms_privacy'.tr(),
+            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const LegalScreen()),
@@ -334,8 +323,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _SettingsTile(
             icon: Icons.info_outline,
-            title: 'About',
-            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+            title: 'settings.about'.tr(),
+            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => AboutScreen(appVersion: _appVersion)),
@@ -351,7 +340,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onPressed: _showLogoutConfirmation,
               icon: const Icon(Icons.logout),
               label: Text(
-                'Logout',
+                'settings.logout'.tr(),
                 style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(

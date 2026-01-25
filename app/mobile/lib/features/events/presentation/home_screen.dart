@@ -113,11 +113,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               duration: const Duration(milliseconds: 400),
               tabBackgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
               color: isDark ? Colors.white54 : Colors.black54,
-              tabs: const [
-                GButton(icon: Icons.home_rounded, text: 'Home'),
-                GButton(icon: Icons.favorite_rounded, text: 'Favorites'),
-                GButton(icon: Icons.local_activity, text: 'MyTickets'),
-                GButton(icon: Icons.person_rounded, text: 'Profile'),
+              tabs: [
+                GButton(icon: Icons.home_rounded, text: 'home.nav_home'.tr()),
+                GButton(icon: Icons.favorite_rounded, text: 'home.nav_favorites'.tr()),
+                GButton(icon: Icons.local_activity, text: 'home.nav_tickets'.tr()),
+                GButton(icon: Icons.person_rounded, text: 'home.nav_profile'.tr()),
               ],
               selectedIndex: selectedIndex,
               onTabChange: (index) => ref.read(homeIndexProvider.notifier).state = index,
@@ -173,9 +173,9 @@ class _HomeBody extends ConsumerWidget {
                           color: textColor,
                         ),
                         children: [
-                          const TextSpan(text: 'Discover the pulse of \n'),
+                          TextSpan(text: 'home.pulse_prefix'.tr()),
                           TextSpan(
-                            text: 'Events.',
+                            text: 'home.pulse_suffix'.tr(),
                             style: TextStyle(
                               color: const Color(0xFF8B5CF6),
                               shadows: [
@@ -241,7 +241,7 @@ class _HomeBody extends ConsumerWidget {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      'Trending Now',
+                                      'home.featured'.tr(),
                                       style: GoogleFonts.poppins(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
@@ -251,7 +251,7 @@ class _HomeBody extends ConsumerWidget {
                                     TextButton(
                                       onPressed: () {},
                                       child: Text(
-                                        'See All',
+                                        'common.all'.tr(),
                                         style: TextStyle(color: const Color(0xFF8B5CF6).withOpacity(0.8)),
                                       ),
                                     )
@@ -292,9 +292,9 @@ class _HomeBody extends ConsumerWidget {
                         children: [
                           Icon(Icons.error_outline, color: mutedColor, size: 48),
                           const SizedBox(height: 16),
-                          Text("Unable to load events", style: TextStyle(color: textColor, fontSize: 16)),
+                          Text("home.error_loading".tr(), style: TextStyle(color: textColor, fontSize: 16)),
                           const SizedBox(height: 8),
-                          Text("Pull down to retry", style: TextStyle(color: mutedColor, fontSize: 14)),
+                          Text("home.pull_to_retry".tr(), style: TextStyle(color: mutedColor, fontSize: 14)),
                         ],
                       ),
                     ),
@@ -342,7 +342,7 @@ class _HomeBody extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Location", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                Text("home.location".tr(), style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 PopupMenuButton<City>(
                   color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1D192B) : Colors.white,
                   onSelected: (city) {
@@ -351,9 +351,9 @@ class _HomeBody extends ConsumerWidget {
                   itemBuilder: (context) {
                     return citiesAsync.when(
                       data: (cities) => [
-                        const PopupMenuItem<City>(
+                        PopupMenuItem<City>(
                            value: null, 
-                           child: Text("All Cities"),
+                           child: Text("home.all_cities".tr()),
                         ),
                         ...cities.map((c) => PopupMenuItem<City>(
                           value: c,
@@ -367,7 +367,7 @@ class _HomeBody extends ConsumerWidget {
                   child: Row(
                     children: [
                       Text(
-                        selectedCity?.name ?? "All Cities",
+                        selectedCity?.name ?? "home.all_cities".tr(),
                         style: GoogleFonts.poppins(
                           color: textColor,
                           fontWeight: FontWeight.w600,
@@ -463,7 +463,7 @@ class _HomeBody extends ConsumerWidget {
             Icon(Icons.search, color: mutedColor),
             const SizedBox(width: 12),
             Text(
-              "Search events, artists...",
+              "home.search".tr(),
               style: TextStyle(color: mutedColor),
             ),
           ],
@@ -480,7 +480,7 @@ class _HomeBody extends ConsumerWidget {
       height: 38,
       child: categoriesAsync.when(
         data: (categories) {
-           final allCategories = [Category(id: 0, name: "All"), ...categories];
+           final allCategories = [Category(id: 0, name: "home.all_categories".tr()), ...categories];
            return ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: allCategories.length,
@@ -557,8 +557,8 @@ class _HomeBody extends ConsumerWidget {
             const SizedBox(height: 24),
             Text(
               selectedCity != null || selectedCategory != null
-                  ? "No events match your filters"
-                  : "No events available right now",
+                  ? "home.no_events_filtered".tr()
+                  : "home.no_events".tr(),
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -569,8 +569,8 @@ class _HomeBody extends ConsumerWidget {
             const SizedBox(height: 12),
             Text(
               selectedCity != null || selectedCategory != null
-                  ? "Try adjusting your filters or check back later"
-                  : "New events are added regularly.\nCheck back soon!",
+                  ? "home.clear_filters".tr()
+                  : "home.no_events_suggestion".tr(),
               style: TextStyle(
                 fontSize: 14,
                 color: mutedColor,
@@ -586,7 +586,7 @@ class _HomeBody extends ConsumerWidget {
                   ref.read(selectedCategoryProvider.notifier).state = null;
                 },
                 icon: const Icon(Icons.clear_all),
-                label: const Text("Clear Filters"),
+                label: Text("home.clear_filters".tr()),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF8B5CF6),
                   side: const BorderSide(color: Color(0xFF8B5CF6)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../booking/services/booking_service.dart';
 
 class SeatSelectionScreen extends ConsumerStatefulWidget {
@@ -79,7 +80,7 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          "Select Seats",
+          "tickets.select_seats".tr(),
           style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -97,183 +98,162 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("Error: $_error", style: const TextStyle(color: Colors.red)),
+                      Text("${'common.error'.tr()}: $_error", style: const TextStyle(color: Colors.red)),
                       const SizedBox(height: 16),
-                      ElevatedButton(onPressed: _fetchSeats, child: const Text("Retry")),
+                      ElevatedButton(
+                        onPressed: _fetchSeats,
+                        child: Text("common.retry".tr()),
+                      ),
                     ],
                   ),
                 )
-              : Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    // Stage
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 40),
-                      height: 8,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.5),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          )
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text("STAGE", style: TextStyle(color: Colors.white24, fontSize: 10, letterSpacing: 4)),
-                    const SizedBox(height: 40),
-                    
-                    // Seat Grid
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 12,
-                          alignment: WrapAlignment.center,
-                          children: _seats.map((seat) {
-                            final seatId = seat['seatNumber'];
-                            final status = seat['status']; // available, locked, sold
-                            final isTaken = status == 'sold' || status == 'locked';
-                            final isSelected = _selectedSeats.contains(seatId);
-                            
-                            return GestureDetector(
-                              onTap: isTaken ? null : () {
-                                setState(() {
-                                  if (isSelected) {
-                                    _selectedSeats.remove(seatId);
-                                  } else {
-                                    _selectedSeats.add(seatId);
-                                  }
-                                });
-                              },
-                              child: Container(
-                                height: 40,
-                                width: 40,
-                                decoration: BoxDecoration(
-                                  color: isTaken 
-                                      ? Colors.white10 
-                                      : (isSelected ? const Color(0xFF8B5CF6) : Colors.white12),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isSelected ? Colors.white38 : Colors.transparent,
-                                  ),
-                                ),
-                                child: isTaken 
-                                    ? Icon(
-                                        status == 'sold' ? Icons.close : Icons.lock_outline, 
-                                        size: 16, 
-                                        color: Colors.white24
-                                      )
-                                    : Center(
-                                        child: Text(
-                                          seatId,
-                                          style: TextStyle(
-                                            color: isSelected ? Colors.white : Colors.white38,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                    
-                    // Legend
-                    _buildLegend(),
-                    
-                    // Selection Info & Confirm
-                    _buildBottomBar(),
-                  ],
-                ),
+              : _buildSeatGrid(),
+      bottomNavigationBar: _selectedSeats.isNotEmpty ? _buildBottomBar() : null,
     );
   }
 
-  Widget _buildLegend() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildSeatGrid() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
         children: [
-          _legendItem("Available", Colors.white12),
-          const SizedBox(width: 15),
-          _legendItem("Selected", const Color(0xFF8B5CF6)),
-          const SizedBox(width: 15),
-          _legendItem("Taken", Colors.white10),
-          const SizedBox(width: 15),
-          _legendItem("Locked", Colors.white10, icon: Icons.lock_outline),
+          // Stage indicator
+          Container(
+             width: double.infinity,
+             height: 40,
+             decoration: BoxDecoration(
+               color: Colors.white10,
+               borderRadius: BorderRadius.circular(40),
+             ),
+             child: Center(
+               child: Text("STAGE", style: GoogleFonts.poppins(color: Colors.white38, letterSpacing: 10, fontWeight: FontWeight.bold)),
+             ),
+          ),
+          const SizedBox(height: 60),
+          
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 6,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+            ),
+            itemCount: _seats.length,
+            itemBuilder: (context, index) {
+              final seat = _seats[index];
+              final seatNum = seat['seatNumber'] as String;
+              final isBooked = seat['status'] == 'BOOKED';
+              final isLocked = seat['status'] == 'LOCKED';
+              final isSelected = _selectedSeats.contains(seatNum);
+              final isAvailable = !isBooked && !isLocked;
+
+              return GestureDetector(
+                onTap: isAvailable ? () {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedSeats.remove(seatNum);
+                    } else {
+                      _selectedSeats.add(seatNum);
+                    }
+                  });
+                } : null,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isBooked || isLocked 
+                        ? Colors.white12 
+                        : (isSelected ? const Color(0xFF8B5CF6) : Colors.transparent),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isAvailable ? (isSelected ? const Color(0xFF8B5CF6) : Colors.white24) : Colors.transparent,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      seatNum,
+                      style: TextStyle(
+                        color: isAvailable ? Colors.white : Colors.white24,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          
+          const SizedBox(height: 40),
+          _buildLegend(),
         ],
       ),
     );
   }
 
-  Widget _legendItem(String label, Color color, {IconData? icon}) {
+  Widget _buildLegend() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _legendItem("Available", Colors.white24, false),
+        _legendItem("Selected", const Color(0xFF8B5CF6), true),
+        _legendItem("Booked", Colors.white12, true),
+      ],
+    );
+  }
+
+  Widget _legendItem(String label, Color color, bool fill) {
     return Row(
       children: [
         Container(
           width: 16,
           height: 16,
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
-          child: icon != null ? Icon(icon, size: 10, color: Colors.white24) : null,
+          decoration: BoxDecoration(
+            color: fill ? color : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: color),
+          ),
         ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        const SizedBox(width: 8),
+        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
       ],
     );
   }
 
   Widget _buildBottomBar() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).padding.bottom + 24),
-      decoration: const BoxDecoration(
-        color: Color(0xFF15131C),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${_selectedSeats.length} Seats Selected",
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _selectedSeats.isEmpty ? "-" : _selectedSeats.join(", "),
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton(
-            onPressed: _selectedSeats.isEmpty || _isLoading ? null : _onConfirm,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF8B5CF6),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            child: _isLoading 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text("Confirm"),
-          ),
-        ],
-      ),
-    );
+     return SafeArea(
+       child: Container(
+         padding: const EdgeInsets.all(24),
+         decoration: const BoxDecoration(
+           color: Color(0xFF1D192B),
+           borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+         ),
+         child: Row(
+           children: [
+             Expanded(
+               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("${_selectedSeats.length} Seats Selected", style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(_selectedSeats.join(", "), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+               ),
+             ),
+             const SizedBox(width: 16),
+             ElevatedButton(
+               onPressed: _isLoading ? null : _onConfirm,
+               style: ElevatedButton.styleFrom(
+                 backgroundColor: const Color(0xFF8B5CF6),
+                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+               ),
+               child: _isLoading 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text("CONFIRM", style: TextStyle(fontWeight: FontWeight.bold)),
+             ),
+           ],
+         ),
+       ),
+     );
   }
 }

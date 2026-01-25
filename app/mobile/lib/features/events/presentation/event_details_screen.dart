@@ -8,6 +8,7 @@ import 'package:mobile/features/booking/presentation/checkout_screen.dart';
 import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'seat_selection_screen.dart';
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
@@ -59,7 +60,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     // 2. Enforce single tier selection for MVP (due to API limitation)
     if (selectedEntries.length > 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select only one ticket type per order.")),
+        SnackBar(content: Text("event_details.single_tier_only".tr())),
       );
       return;
     }
@@ -424,7 +425,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     Row(
                       children: [
                         Text(
-                          "Verified Organizer",
+                          "event_details.verified_organizer".tr(),
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 14,
@@ -437,7 +438,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "Trusted event organizer",
+                      "event_details.trusted_organizer".tr(),
                       style: GoogleFonts.poppins(
                         color: Colors.white54,
                         fontSize: 12,
@@ -467,12 +468,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.shield_outlined, color: Color(0xFF10B981), size: 16),
-                        SizedBox(width: 6),
+                      children: [
+                        const Icon(Icons.shield_outlined, color: Color(0xFF10B981), size: 16),
+                        const SizedBox(width: 6),
                         Text(
-                          "Refund Policy",
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                          "event_details.refund_policy".tr(),
+                          style: const TextStyle(color: Colors.white70, fontSize: 11),
                         ),
                       ],
                     ),
@@ -523,7 +524,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          "Availability",
+                          "event_details.availability".tr(),
                           style: TextStyle(
                             color: isLowAvailability ? const Color(0xFFFF9F0A) : Colors.white70,
                             fontSize: 11,
@@ -533,7 +534,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isLowAvailability ? "Few left!" : "$totalAvailable tickets",
+                      isLowAvailability ? "event_details.few_left".tr() : "event_details.tickets_available".tr(args: [totalAvailable.toString()]),
                       style: GoogleFonts.poppins(
                         color: isLowAvailability ? const Color(0xFFFF9F0A) : Colors.white,
                         fontSize: 13,
@@ -646,9 +647,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
-                child: const Text(
-                  "Checkout",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                child: Text(
+                  "event_details.checkout".tr(),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -847,9 +848,9 @@ class _TicketTierTile extends StatelessWidget {
                       color: Colors.white10,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      "Sold Out",
-                      style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold),
+                    child: Text(
+                      "event_details.sold_out".tr(),
+                      style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ),
               ],

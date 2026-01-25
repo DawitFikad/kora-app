@@ -10,6 +10,7 @@ import 'package:mobile/features/tickets/models/ticket.dart';
 import 'package:mobile/features/tickets/presentation/ticket_detail_screen.dart';
 import '../../events/presentation/home_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 final myTicketsProvider = FutureProvider<List<Ticket>>((ref) async {
   // Watch for auth changes to refresh ticket list
@@ -40,7 +41,7 @@ class MyTicketsScreen extends ConsumerWidget {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            "My Tickets",
+            "tickets.title".tr(),
             style: GoogleFonts.poppins(
               color: textColor,
               fontWeight: FontWeight.w600,
@@ -85,10 +86,10 @@ class MyTicketsScreen extends ConsumerWidget {
                 ),
                 tabAlignment: TabAlignment.start,
                 labelPadding: const EdgeInsets.symmetric(horizontal: 24),
-                tabs: const [
-                  Tab(height: 38, text: "Upcoming"),
-                  Tab(height: 38, text: "Past"),
-                  Tab(height: 38, text: "Archived"),
+                tabs: [
+                  Tab(height: 38, text: "tickets.upcoming".tr()),
+                  Tab(height: 38, text: "tickets.past".tr()),
+                  Tab(height: 38, text: "tickets.archived".tr()),
                 ],
               ),
             ),
@@ -122,9 +123,9 @@ class MyTicketsScreen extends ConsumerWidget {
               ref.read(homeIndexProvider.notifier).state = 0;
               context.go('/home');
             },
-            child: const Text(
-              "Explore Events",
-              style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+            child: Text(
+              "tickets.buy_now".tr(),
+              style: const TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -178,7 +179,7 @@ class _TicketsListView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    isPast ? "No past tickets" : "No upcoming tickets",
+                    isPast ? "tickets.no_past".tr() : "tickets.no_tickets".tr(),
                     style: TextStyle(color: textColor.withOpacity(0.5)),
                   ),
                   const SizedBox(height: 16),
@@ -187,9 +188,9 @@ class _TicketsListView extends StatelessWidget {
                       ref.read(homeIndexProvider.notifier).state = 0;
                       context.go('/home');
                     },
-                    child: const Text(
-                      "Explore Events",
-                      style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+                    child: Text(
+                      "tickets.buy_now".tr(),
+                      style: const TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
