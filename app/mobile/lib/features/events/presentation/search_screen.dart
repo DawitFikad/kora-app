@@ -6,6 +6,7 @@ import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/core/widgets/app_image.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -40,7 +41,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Search",
+                    "search.title".tr(),
                     style: GoogleFonts.poppins(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -66,7 +67,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             onChanged: (val) => setState(() => _searchQuery = val),
                             style: TextStyle(color: textColor),
                             decoration: InputDecoration(
-                              hintText: "Search events, artists, venues...",
+                              hintText: "search.hint".tr(),
                               hintStyle: TextStyle(color: mutedColor),
                               border: InputBorder.none,
                             ),
@@ -104,7 +105,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           Icon(Icons.search_off, size: 64, color: mutedColor),
                           const SizedBox(height: 16),
                           Text(
-                            "No events found",
+                            "search.no_results".tr(),
                             style: TextStyle(color: mutedColor, fontSize: 16),
                           ),
                         ],
@@ -123,7 +124,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text('Error loading events')),
+                error: (err, stack) => Center(child: Text("search.error".tr())),
               ),
             ),
           ],

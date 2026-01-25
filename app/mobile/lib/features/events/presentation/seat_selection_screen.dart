@@ -126,7 +126,7 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
                borderRadius: BorderRadius.circular(40),
              ),
              child: Center(
-               child: Text("STAGE", style: GoogleFonts.poppins(color: Colors.white38, letterSpacing: 10, fontWeight: FontWeight.bold)),
+                child: Text("tickets.stage".tr(), style: GoogleFonts.poppins(color: Colors.white38, letterSpacing: 10, fontWeight: FontWeight.bold)),
              ),
           ),
           const SizedBox(height: 60),
@@ -194,9 +194,9 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        _legendItem("Available", Colors.white24, false),
-        _legendItem("Selected", const Color(0xFF8B5CF6), true),
-        _legendItem("Booked", Colors.white12, true),
+        _legendItem("tickets.available".tr(), Colors.white24, false),
+        _legendItem("tickets.selected".tr(), const Color(0xFF8B5CF6), true),
+        _legendItem("tickets.booked".tr(), Colors.white12, true),
       ],
     );
   }
@@ -234,7 +234,7 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("${_selectedSeats.length} Seats Selected", style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                   Text("tickets.n_selected".tr(args: [_selectedSeats.length.toString()]), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                   Text(_selectedSeats.join(", "), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 ],
                ),
@@ -247,9 +247,9 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                ),
-               child: _isLoading 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text("CONFIRM", style: TextStyle(fontWeight: FontWeight.bold)),
+                child: _isLoading 
+                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                 : Text("common.confirm".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
              ),
            ],
          ),

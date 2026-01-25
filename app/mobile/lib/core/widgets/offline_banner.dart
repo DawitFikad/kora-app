@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 // Connectivity state provider
 final connectivityProvider = StreamProvider<ConnectivityResult>((ref) {
@@ -46,7 +47,7 @@ class OfflineBanner extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "You're offline",
+                          "common.offline_title".tr(),
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 14,
@@ -54,7 +55,7 @@ class OfflineBanner extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          "Your tickets are still available",
+                          "common.offline_desc".tr(),
                           style: GoogleFonts.poppins(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 12,
@@ -82,7 +83,7 @@ class OfflineBanner extends ConsumerWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          "Syncing",
+                          "common.syncing".tr(),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 11,

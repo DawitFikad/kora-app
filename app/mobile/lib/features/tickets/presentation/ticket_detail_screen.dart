@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../models/ticket.dart';
 import '../../../core/widgets/app_image.dart';
 import '../../../core/widgets/offline_banner.dart';
@@ -29,7 +30,7 @@ class TicketDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Ticket Details",
+          "ticket_details.title".tr(),
           style: GoogleFonts.poppins(color: textColor, fontWeight: FontWeight.w600),
         ),
       ),
@@ -92,12 +93,12 @@ class TicketDetailScreen extends StatelessWidget {
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.verified, color: Colors.white, size: 14),
-                                SizedBox(width: 4),
+                              children: [
+                                const Icon(Icons.verified, color: Colors.white, size: 14),
+                                const SizedBox(width: 4),
                                 Text(
-                                  "OFFICIAL",
-                                  style: TextStyle(
+                                  "ticket_details.official".tr(),
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -194,7 +195,7 @@ class TicketDetailScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "TICKET ID",
+                                "ticket_details.ticket_id".tr(),
                                 style: GoogleFonts.poppins(
                                   color: textColor.withOpacity(0.6),
                                   fontSize: 11,
@@ -230,7 +231,7 @@ class TicketDetailScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
-                                  "SHOW AT ENTRANCE",
+                                  "ticket_details.show_at_entrance".tr(),
                                   style: GoogleFonts.poppins(
                                     color: const Color(0xFF8B5CF6),
                                     fontSize: 12,
@@ -276,7 +277,7 @@ class TicketDetailScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  "Valid for single entry",
+                                  "ticket_details.valid_entry".tr(),
                                   style: GoogleFonts.poppins(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -297,7 +298,7 @@ class TicketDetailScreen extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.download_rounded),
-              label: const Text("Download PDF"),
+              label: Text("ticket_details.download_pdf".tr()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
                 foregroundColor: textColor,

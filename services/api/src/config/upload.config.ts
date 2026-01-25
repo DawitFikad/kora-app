@@ -34,10 +34,10 @@ if (env.storageType === 'S3' && s3) {
         bucket: env.s3BucketName,
         acl: 'public-read',
         contentType: multerS3.AUTO_CONTENT_TYPE,
-        metadata: (req, file, cb) => {
+        metadata: (req: any, file: any, cb: any) => {
             cb(null, { fieldName: file.fieldname });
         },
-        key: (req, file, cb) => {
+        key: (req: any, file: any, cb: any) => {
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
             const folder = file.fieldname === 'avatar' ? 'profiles' : 'events';
             cb(null, `${folder}/${uniqueSuffix}${path.extname(file.originalname)}`);

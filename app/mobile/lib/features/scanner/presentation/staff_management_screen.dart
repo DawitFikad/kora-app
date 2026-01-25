@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../services/scanner_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class StaffManagementScreen extends ConsumerStatefulWidget {
   const StaffManagementScreen({super.key});
@@ -33,7 +34,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invitation sent successfully!')),
+          SnackBar(content: Text('staff.invite_success'.tr())),
         );
         _phoneController.clear();
         ref.invalidate(staffListProvider);
@@ -41,7 +42,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('${'staff.error_prefix'.tr()}: $e')),
         );
       }
     } finally {
@@ -56,7 +57,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF15131C),
       appBar: AppBar(
-        title: Text('Staff Management', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text('staff.title'.tr(), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -66,7 +67,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Invite New Staff',
+              'staff.invite_title'.tr(),
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -86,7 +87,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     controller: _phoneController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Phone Number (e.g., 09...)',
+                      hintText: 'staff.phone_hint'.tr(),
                       hintStyle: const TextStyle(color: Colors.white38),
                       prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF8B5CF6)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -101,9 +102,9 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                       prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF8B5CF6)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'SCANNER', child: Text('Gate Scanner')),
-                      DropdownMenuItem(value: 'MANAGER', child: Text('Event Manager')),
+                    items: [
+                      DropdownMenuItem(value: 'SCANNER', child: Text('staff.role_scanner'.tr())),
+                      DropdownMenuItem(value: 'MANAGER', child: Text('staff.role_manager'.tr())),
                     ],
                     onChanged: (val) => setState(() => _selectedRole = val!),
                   ),
@@ -119,7 +120,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                       ),
                       child: _isLoading 
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('SEND INVITATION', style: TextStyle(fontWeight: FontWeight.bold)),
+                        : Text('staff.send_invite'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -127,7 +128,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
             ),
             const SizedBox(height: 40),
             Text(
-              'Current Staff',
+              'staff.current_staff'.tr(),
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -137,7 +138,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
             const SizedBox(height: 16),
             staffAsync.when(
               data: (staff) => staff.isEmpty 
-                ? const Center(child: Text('No staff members yet.', style: TextStyle(color: Colors.white54)))
+                ? Center(child: Text('staff.no_staff'.tr(), style: const TextStyle(color: Colors.white54)))
                 : ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),

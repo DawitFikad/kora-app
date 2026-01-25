@@ -59,6 +59,7 @@
         "nav_profile": "መገለጫ"
     },
     "event_details": {
+        "title": "የዝግጅት ዝርዝር",
         "verified_organizer": "የተረጋገጠ አዘጋጅ",
         "trusted_organizer": "የታመነ የዝግጅት አዘጋጅ",
         "refund_policy": "የመመለሻ ፖሊሲ",
@@ -74,8 +75,60 @@
         "checkout": "ክፍያ ፈጽም",
         "sold_out": "አልቋል"
     },
+    "search": {
+        "title": "ፍለጋ",
+        "hint": "ዝግጅቶችን፣ አርቲስቶችን፣ ቦታዎችን ይፈልጉ...",
+        "no_results": "ምንም ዝግጅት አልተገኘም",
+        "error": "ዝግጅቶችን መጫን አልተቻለም"
+    },
+    "favorites": {
+        "title": "የምኞት ዝርዝር",
+        "empty_title": "እስካሁን ምንም የለም",
+        "empty_desc": "ዝግጅቶችን በኋላ ላይ ለማየት የልብ ምልክቱን ይጫኑ።",
+        "explore_btn": "ዝግጅቶችን ይመልከቱ",
+        "free": "ነጻ",
+        "remove": "አስወግድ",
+        "buy_ticket": "ቲኬት ግዛ"
+    },
+    "notifications": {
+        "title": "ማሳወቂያዎች",
+        "mark_all_read": "ሁሉንም አንብብ",
+        "mark_all_success": "ሁሉም ማሳወቂያዎች እንደተነበቡ ተደርገዋል",
+        "all_tab": "ሁሉም",
+        "bookings_tab": "ቦታ ማስያዝ",
+        "updates_tab": "ዝመናዎች",
+        "no_notif": "ምንም ማሳወቂያ የለም",
+        "today": "ዛሬ",
+        "earlier": "ቀደም ብሎ",
+        "yesterday": "ትናንት",
+        "m_ago": "ከ{} ደቂቃ በፊት",
+        "h_ago": "ከ{} ሰዓት በፊት",
+        "days_ago": "ከ{} ቀን በፊት",
+        "order_prefix": "ትዕዛዝ"
+    },
+    "staff": {
+        "title": "የሰራተኞች አስተዳደር",
+        "invite_title": "አዲስ ሰራተኛ ይጋብዙ",
+        "phone_hint": "ስልክ ቁጥር (ምሳሌ፡ 09...)",
+        "role_scanner": "በር ጠባቂ",
+        "role_manager": "የዝግጅት ስራ አስኪያጅ",
+        "send_invite": "ግብዣ ላክ",
+        "current_staff": "የአሁኑ ሰራተኞች",
+        "no_staff": "እስካሁን ምንም ሰራተኛ የለም።",
+        "invite_success": "ግብዣው በስኬት ተልኳል!",
+        "error_prefix": "ስህተት"
+    },
+    "ticket_details": {
+        "title": "የቲኬት ዝርዝር",
+        "official": "ኦፊሴላዊ",
+        "ticket_id": "የቲኬት መለያ",
+        "show_at_entrance": "መግቢያ ላይ ያሳዩ",
+        "valid_entry": "ለአንድ ሰው መግቢያ ብቻ የሚያገለግል",
+        "download_pdf": "PDF አውርድ"
+    },
     "profile": {
         "title": "መገለጫ",
+        "edit_profile_title": "መገለጫ ያርሙ",
         "my_tickets": "የእኔ ቲኬቶች",
         "favorites": "ምርጦች",
         "settings": "ቅንብሮች",
@@ -87,7 +140,26 @@
         "join_success": "በስኬት ተቀላቅለዋል!",
         "enter_invite_code": "ባለ 6 ድጂት ኮድ ያስገቡ",
         "join": "ይቀላቀሉ",
-        "cancel": "ይቅር"
+        "cancel": "ይቅር",
+        "full_name": "ሙሉ ስም",
+        "full_name_hint": "ሙሉ ስምዎን ያስገቡ",
+        "email_address": "ኢሜይል",
+        "email_hint": "ኢሜይልዎን ያስገቡ",
+        "bio": "ስለ እኔ",
+        "bio_hint": "ስለ እራስዎ የሆነ ነገር ይንገሩን",
+        "language": "ቋንቋ",
+        "gender": "ጾታ",
+        "gender_select": "ይምረጡ",
+        "male": "ወንድ",
+        "female": "ሴት",
+        "other": "ሌላ",
+        "birth_date": "የትውልድ ቀን",
+        "select_date": "ቀን ይምረጡ",
+        "save_changes": "ለውጦችን አስቀምጥ",
+        "default_user": "ተጠቃሚ",
+        "update_success": "መገለጫው በስኬት ተዘምኗል!",
+        "english": "እንግሊዝኛ",
+        "amharic": "አማርኛ"
     },
     "tickets": {
         "title": "የእኔ ቲኬቶች",
@@ -111,7 +183,12 @@
         "add_wallet": "ወደ አፕል ዋሌት ይጨምሩ",
         "offline_available": "ኦፍላይን ይገኛል",
         "details": "ዝርዝር",
-        "select_seats": "ወንበር ይምረጡ"
+        "select_seats": "ወንበር ይምረጡ",
+        "stage": "መድረክ",
+        "available": "ክፍት",
+        "selected": "የተመረጠ",
+        "booked": "የተያዘ",
+        "n_selected": "{} ወንበሮች ተመርጠዋል"
     },
     "scanner": {
         "title": "ስካነር",
@@ -141,6 +218,31 @@
         "logout_confirm": "በእርግጥ መውጣት ይፈልጋሉ? ቲኬቶችዎን ለማግኘት እንደገና መግባት ይኖርብዎታል።",
         "logout": "ውጣ"
     },
+    "errors": {
+        "network": "የኔትወርክ መቆራረጥ አጋጥሟል። እባክዎን ግንኙነትዎን ያረጋግጡ።",
+        "server": "ከአገልጋዩ ጋር መገናኘት አልተቻለም። እባክዎን ቆይተው እንደገና ይሞክሩ።",
+        "timeout": "የጊዜ ገደብ አልፏል። እባክዎን ግንኙነትዎን ያረጋግጡ።",
+        "otp_expired": "የማረጋገጫ ኮዱ ጊዜው አልፏል። እባክዎን አዲስ ኮድ ይጠይቁ።",
+        "otp_invalid": "ትክክል ያልሆነ የማረጋገጫ ኮድ። እባክዎን አረጋግጠው እንደገና ይሞክሩ።",
+        "unauthorized": "የቆይታ ጊዜዎ አልፏል። እባክዎን እንደገና ይግቡ።",
+        "forbidden": "ይህንን ተግባር ለማከናወን ፈቃድ የለዎትም።",
+        "not_found": "የተጠየቀው መረጃ አልተገኘም።",
+        "internal_server": "የአገልጋይ ስህተት አጋጥሟል። እባክዎን ቆይተው እንደገና ይሞክሩ።",
+        "payment_pending": "ክፍያው በመረጋገጥ ላይ ነው። እባክዎን ጥቂት ደቂቃዎችን ይጠብቁ።",
+        "payment_failed": "ክፍያው አልተሳካም። እባክዎን የክፍያ መረጃዎን አረጋግጠው እንደገና ይሞክሩ።",
+        "insufficient": "በቂ ቀሪ ሂሳብ ወይም ቦታ የለም። እባክዎን አረጋግጠው እንደገና ይሞክሩ።",
+        "duplicate": "ይህ መረጃ ቀደም ብሎ ተመዝግቧል። እባክዎን በሌላ መረጃ ይሞክሩ።",
+        "invalid_request": "ትክክል ያልሆነ ጥያቄ። እባክዎን መረጃዎን አረጋግጠው እንደገና ይሞክሩ።",
+        "invalid_data": "ትክክል ያልሆነ መረጃ ቀርቧል። እባክዎን አረጋግጠው እንደገና ይሞክሩ።",
+        "too_many_requests": "ከመጠን በላይ ሙከራ ተደርጓል። እባክዎን ጥቂት ቆይተው እንደገና ይሞክሩ።",
+        "cancelled": "ጥያቄው ተሰርዟል።",
+        "security": "የደህንነት ሰርተፍኬት ስህተት። እባክዎን ድጋፍ ሰጪዎችን ያነጋግሩ።",
+        "unexpected": "ያልተጠበቀ ስህተት አጋጥሟል። እባክዎን እንደገና ይሞክሩ።",
+        "action_retry": "እንደገና ሞክር",
+        "action_login": "ግባ",
+        "action_request_otp": "አዲስ ኮድ ጠይቅ",
+        "action_contact_support": "ድጋፍ ሰጪዎችን አግኝ"
+    },
     "common": {
         "loading": "በመጫን ላይ...",
         "error": "ችግር ተፈጥሯል",
@@ -150,6 +252,9 @@
         "search": "ፈልግ",
         "all": "ሁሉም",
         "cancel": "ይቅር",
-        "confirm": "አረጋግጥ"
+        "confirm": "አረጋግጥ",
+        "offline_title": "ኢንተርኔት ተቋርጧል",
+        "offline_desc": "ቲኬቶችዎ አሁንም ይገኛሉ",
+        "syncing": "በማመሳሰል ላይ"
     }
 }

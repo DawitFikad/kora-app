@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ErrorMessageHandler {
   static String getReadableError(dynamic error) {
@@ -11,57 +12,57 @@ class ErrorMessageHandler {
     // Remove "Exception: " prefix
     String cleanError = errorString.replaceAll('Exception: ', '');
     
-    // Check for common error patterns and return user-friendly messages
+    // Check for common error patterns and return translated messages
     if (cleanError.contains('SocketException') || cleanError.contains('Failed host lookup')) {
-      return "Network is unstable. Please check your connection and try again.";
+      return "errors.network".tr();
     }
     
     if (cleanError.contains('Connection refused') || cleanError.contains('Connection closed')) {
-      return "Unable to connect to server. Please try again later.";
+      return "errors.server".tr();
     }
     
     if (cleanError.contains('Connection timeout') || cleanError.contains('Timeout')) {
-      return "Request timed out. Please check your connection and try again.";
+      return "errors.timeout".tr();
     }
     
     if (cleanError.contains('OTP') && cleanError.contains('expired')) {
-      return "OTP code has expired. Please request a new one.";
+      return "errors.otp_expired".tr();
     }
     
     if (cleanError.contains('OTP') && cleanError.contains('invalid')) {
-      return "Invalid OTP code. Please check and try again.";
+      return "errors.otp_invalid".tr();
     }
     
     if (cleanError.contains('401') || cleanError.toLowerCase().contains('unauthorized')) {
-      return "Session expired. Please login again.";
+      return "errors.unauthorized".tr();
     }
     
     if (cleanError.contains('403') || cleanError.toLowerCase().contains('forbidden')) {
-      return "You don't have permission to perform this action.";
+      return "errors.forbidden".tr();
     }
     
     if (cleanError.contains('404') || cleanError.toLowerCase().contains('not found')) {
-      return "Requested resource not found.";
+      return "errors.not_found".tr();
     }
     
     if (cleanError.contains('500') || cleanError.contains('Internal Server Error')) {
-      return "Server error occurred. Please try again later.";
+      return "errors.internal_server".tr();
     }
     
     if (cleanError.contains('payment') && cleanError.contains('pending')) {
-      return "Payment verification is pending. Please check back in a few minutes.";
+      return "errors.payment_pending".tr();
     }
     
     if (cleanError.contains('payment') && cleanError.contains('failed')) {
-      return "Payment failed. Please verify your payment details and try again.";
+      return "errors.payment_failed".tr();
     }
     
     if (cleanError.contains('insufficient')) {
-      return "Insufficient balance or capacity. Please check and try again.";
+      return "errors.insufficient".tr();
     }
     
     if (cleanError.contains('already exists') || cleanError.contains('duplicate')) {
-      return "This item already exists. Please try with different details.";
+      return "errors.duplicate".tr();
     }
     
     // Return cleaned error if no pattern matched
@@ -73,7 +74,7 @@ class ErrorMessageHandler {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return "Request timed out. Please check your connection and try again.";
+        return "errors.timeout".tr();
         
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
@@ -94,55 +95,55 @@ class ErrorMessageHandler {
         // Fallback to status code messages
         switch (statusCode) {
           case 400:
-            return "Invalid request. Please check your input and try again.";
+            return "errors.invalid_request".tr();
           case 401:
-            return "Session expired. Please login again.";
+            return "errors.unauthorized".tr();
           case 403:
-            return "You don't have permission to perform this action.";
+            return "errors.forbidden".tr();
           case 404:
-            return "Requested resource not found.";
+            return "errors.not_found".tr();
           case 409:
-            return "Conflict occurred. This item may already exist.";
+            return "errors.duplicate".tr();
           case 422:
-            return "Invalid data provided. Please check and try again.";
+            return "errors.invalid_data".tr();
           case 429:
-            return "Too many requests. Please wait a moment and try again.";
+            return "errors.too_many_requests".tr();
           case 500:
           case 502:
           case 503:
-            return "Server error occurred. Please try again later.";
+            return "errors.internal_server".tr();
           default:
-            return "An error occurred (Code: $statusCode). Please try again.";
+            return "errors.unexpected".tr();
         }
         
       case DioExceptionType.cancel:
-        return "Request was cancelled.";
+        return "errors.cancelled".tr();
         
       case DioExceptionType.connectionError:
-        return "Network is unstable. Please check your connection and try again.";
+        return "errors.network".tr();
         
       case DioExceptionType.badCertificate:
-        return "Security certificate error. Please contact support.";
+        return "errors.security".tr();
         
       case DioExceptionType.unknown:
       default:
         if (error.message?.contains('SocketException') ?? false) {
-          return "Network is unstable. Please check your connection and try again.";
+          return "errors.network".tr();
         }
-        return "An unexpected error occurred. Please try again.";
+        return "errors.unexpected".tr();
     }
   }
   
   static Map<String, String> getErrorWithAction(dynamic error) {
     final message = getReadableError(error);
-    String action = "Try Again";
+    String action = "errors.action_retry".tr();
     
-    if (message.contains("Session expired") || message.contains("login again")) {
-      action = "Login";
-    } else if (message.contains("OTP") && message.contains("request")) {
-      action = "Request New OTP";
-    } else if (message.contains("contact support")) {
-      action = "Contact Support";
+    if (message == "errors.unauthorized".tr()) {
+      action = "errors.action_login".tr();
+    } else if (message == "errors.otp_expired".tr()) {
+      action = "errors.action_request_otp".tr();
+    } else if (message == "errors.security".tr()) {
+      action = "errors.action_contact_support".tr();
     }
     
     return {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/core/widgets/app_image.dart';
@@ -36,7 +37,7 @@ class FavoritesScreen extends ConsumerWidget {
               )
             : null,
         title: Text(
-          "My Wishlist",
+          "favorites.title".tr(),
           style: GoogleFonts.poppins(
             color: textColor,
             fontWeight: FontWeight.bold,
@@ -70,7 +71,7 @@ class FavoritesScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
-        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        error: (err, stack) => Center(child: Text("${"common.error".tr()}: $err", style: const TextStyle(color: Colors.red))),
       ),
     );
   }
@@ -90,7 +91,7 @@ class FavoritesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            "Nothing here yet",
+            "favorites.empty_title".tr(),
             style: GoogleFonts.poppins(
               color: textColor,
               fontSize: 20,
@@ -99,7 +100,7 @@ class FavoritesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            "Tap the heart on any event to save it for later.",
+            "favorites.empty_desc".tr(),
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               color: textColor.withOpacity(0.5),
@@ -118,7 +119,7 @@ class FavoritesScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: const Text("Explore Events"),
+            child: Text("favorites.explore_btn".tr()),
           ),
         ],
       ),
@@ -205,7 +206,7 @@ class _FavoriteCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Text(
                         // Display price range or base price
-                        (event.tiers.isNotEmpty) ? "${event.tiers.first.price} ETB" : "Free",
+                        (event.tiers.isNotEmpty) ? "${event.tiers.first.price} ETB" : "favorites.free".tr(),
                         style: GoogleFonts.poppins(
                           color: const Color(0xFF8B5CF6),
                           fontSize: 16,
@@ -250,7 +251,7 @@ class _FavoriteCard extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text("Remove"),
+                          child: Text("favorites.remove".tr()),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -266,7 +267,7 @@ class _FavoriteCard extends ConsumerWidget {
                             elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text("Buy Ticket"),
+                          child: Text("favorites.buy_ticket".tr()),
                         ),
                       ),
                     ],

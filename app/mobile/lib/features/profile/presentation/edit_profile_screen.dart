@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../services/profile_service.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -82,14 +83,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!')),
+          SnackBar(content: Text('profile.update_success'.tr())),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${'common.error'.tr()}: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -107,7 +108,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
       appBar: AppBar(
-        title: Text('Edit Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: textColor)),
+        title: Text('profile.edit_profile_title'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -165,29 +166,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               const SizedBox(height: 32),
 
-              _buildLabel("Full Name"),
+              _buildLabel("profile.full_name".tr()),
               _buildTextField(
                 controller: _nameController,
-                hint: "Enter your full name",
+                hint: "profile.full_name_hint".tr(),
                 backgroundColor: inputColor!,
                 textColor: textColor,
               ),
               const SizedBox(height: 20),
 
-              _buildLabel("Email Address"),
+              _buildLabel("profile.email_address".tr()),
               _buildTextField(
                 controller: _emailController,
-                hint: "Enter your email",
+                hint: "profile.email_hint".tr(),
                 backgroundColor: inputColor,
                 textColor: textColor,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 20),
 
-              _buildLabel("Bio"),
+              _buildLabel("profile.bio".tr()),
               _buildTextField(
                 controller: _bioController,
-                hint: "Tell us something about yourself",
+                hint: "profile.bio_hint".tr(),
                 backgroundColor: inputColor,
                 textColor: textColor,
                 maxLines: 3,
@@ -200,7 +201,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel("Language"),
+                        _buildLabel("profile.language".tr()),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
@@ -213,8 +214,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               isExpanded: true,
                               dropdownColor: cardColor,
                               items: [
-                                const DropdownMenuItem(value: 'en', child: Text('English')),
-                                const DropdownMenuItem(value: 'am', child: Text('Amharic')),
+                                DropdownMenuItem(value: 'en', child: Text('profile.english'.tr())),
+                                DropdownMenuItem(value: 'am', child: Text('profile.amharic'.tr())),
                               ],
                               onChanged: (val) => setState(() => _selectedLanguage = val!),
                             ),
@@ -228,7 +229,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel("Gender"),
+                        _buildLabel("profile.gender".tr()),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
@@ -238,13 +239,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _selectedGender,
-                              hint: Text("Select", style: TextStyle(color: textColor.withOpacity(0.5))),
+                              hint: Text("profile.gender_select".tr(), style: TextStyle(color: textColor.withOpacity(0.5))),
                               isExpanded: true,
                               dropdownColor: cardColor,
-                              items: ['Male', 'Female', 'Other'].map((String value) {
+                              items: {
+                                'Male': 'profile.male'.tr(),
+                                'Female': 'profile.female'.tr(),
+                                'Other': 'profile.other'.tr(),
+                              }.entries.map((entry) {
                                 return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value, style: TextStyle(color: textColor)),
+                                  value: entry.key,
+                                  child: Text(entry.value, style: TextStyle(color: textColor)),
                                 );
                               }).toList(),
                               onChanged: (val) => setState(() => _selectedGender = val),
@@ -258,7 +263,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               const SizedBox(height: 20),
 
-              _buildLabel("Birth Date"),
+              _buildLabel("profile.birth_date".tr()),
               GestureDetector(
                 onTap: () async {
                   final date = await showDatePicker(
@@ -279,7 +284,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _selectedBirthDate == null 
-                        ? "Select Date" 
+                        ? "profile.select_date".tr() 
                         : DateFormat('yyyy-MM-dd').format(_selectedBirthDate!),
                     style: TextStyle(
                       color: _selectedBirthDate == null 
@@ -305,7 +310,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                   child: _isLoading 
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text("Save Changes", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+                      : Text("profile.save_changes".tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
             ],

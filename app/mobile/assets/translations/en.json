@@ -59,6 +59,7 @@
         "nav_profile": "Profile"
     },
     "event_details": {
+        "title": "Event Details",
         "verified_organizer": "Verified Organizer",
         "trusted_organizer": "Trusted event organizer",
         "refund_policy": "Refund Policy",
@@ -74,8 +75,60 @@
         "checkout": "Checkout",
         "sold_out": "Sold Out"
     },
+    "search": {
+        "title": "Search",
+        "hint": "Search events, artists, venues...",
+        "no_results": "No events found",
+        "error": "Error loading events"
+    },
+    "favorites": {
+        "title": "My Wishlist",
+        "empty_title": "Nothing here yet",
+        "empty_desc": "Tap the heart on any event to save it for later.",
+        "explore_btn": "Explore Events",
+        "free": "Free",
+        "remove": "Remove",
+        "buy_ticket": "Buy Ticket"
+    },
+    "notifications": {
+        "title": "Notifications",
+        "mark_all_read": "Mark all read",
+        "mark_all_success": "All notifications marked as read",
+        "all_tab": "All",
+        "bookings_tab": "Bookings",
+        "updates_tab": "Updates",
+        "no_notif": "No notifications",
+        "today": "Today",
+        "earlier": "Earlier",
+        "yesterday": "Yesterday",
+        "m_ago": "{}m ago",
+        "h_ago": "{}h ago",
+        "days_ago": "{} days ago",
+        "order_prefix": "ORDER"
+    },
+    "staff": {
+        "title": "Staff Management",
+        "invite_title": "Invite New Staff",
+        "phone_hint": "Phone Number (e.g., 09...)",
+        "role_scanner": "Gate Scanner",
+        "role_manager": "Event Manager",
+        "send_invite": "SEND INVITATION",
+        "current_staff": "Current Staff",
+        "no_staff": "No staff members yet.",
+        "invite_success": "Invitation sent successfully!",
+        "error_prefix": "Error"
+    },
+    "ticket_details": {
+        "title": "Ticket Details",
+        "official": "OFFICIAL",
+        "ticket_id": "TICKET ID",
+        "show_at_entrance": "SHOW AT ENTRANCE",
+        "valid_entry": "Valid for single entry",
+        "download_pdf": "Download PDF"
+    },
     "profile": {
         "title": "Profile",
+        "edit_profile_title": "Edit Profile",
         "my_tickets": "My Tickets",
         "favorites": "Favorites",
         "settings": "Settings",
@@ -87,7 +140,26 @@
         "join_success": "Joined staff team successfully!",
         "enter_invite_code": "Enter 6-digit Invite Code",
         "join": "JOIN",
-        "cancel": "CANCEL"
+        "cancel": "CANCEL",
+        "full_name": "Full Name",
+        "full_name_hint": "Enter your full name",
+        "email_address": "Email Address",
+        "email_hint": "Enter your email",
+        "bio": "Bio",
+        "bio_hint": "Tell us something about yourself",
+        "language": "Language",
+        "gender": "Gender",
+        "gender_select": "Select",
+        "male": "Male",
+        "female": "Female",
+        "other": "Other",
+        "birth_date": "Birth Date",
+        "select_date": "Select Date",
+        "save_changes": "Save Changes",
+        "default_user": "User",
+        "update_success": "Profile updated successfully!",
+        "english": "English",
+        "amharic": "Amharic"
     },
     "tickets": {
         "title": "My Tickets",
@@ -111,7 +183,12 @@
         "add_wallet": "Add to Apple Wallet",
         "offline_available": "Available Offline",
         "details": "Details",
-        "select_seats": "Select Seats"
+        "select_seats": "Select Seats",
+        "stage": "STAGE",
+        "available": "Available",
+        "selected": "Selected",
+        "booked": "Booked",
+        "n_selected": "{} Seats Selected"
     },
     "scanner": {
         "title": "Scanner",
@@ -141,6 +218,31 @@
         "logout_confirm": "Are you sure you want to logout? You'll need to login again to access your tickets.",
         "logout": "Logout"
     },
+    "errors": {
+        "network": "Network is unstable. Please check your connection and try again.",
+        "server": "Unable to connect to server. Please try again later.",
+        "timeout": "Request timed out. Please check your connection and try again.",
+        "otp_expired": "OTP code has expired. Please request a new one.",
+        "otp_invalid": "Invalid OTP code. Please check and try again.",
+        "unauthorized": "Session expired. Please login again.",
+        "forbidden": "You don't have permission to perform this action.",
+        "not_found": "Requested resource not found.",
+        "internal_server": "Server error occurred. Please try again later.",
+        "payment_pending": "Payment verification is pending. Please check back in a few minutes.",
+        "payment_failed": "Payment failed. Please verify your payment details and try again.",
+        "insufficient": "Insufficient balance or capacity. Please check and try again.",
+        "duplicate": "This item already exists. Please try with different details.",
+        "invalid_request": "Invalid request. Please check your input and try again.",
+        "invalid_data": "Invalid data provided. Please check and try again.",
+        "too_many_requests": "Too many requests. Please wait a moment and try again.",
+        "cancelled": "Request was cancelled.",
+        "security": "Security certificate error. Please contact support.",
+        "unexpected": "An unexpected error occurred. Please try again.",
+        "action_retry": "Try Again",
+        "action_login": "Login",
+        "action_request_otp": "Request New OTP",
+        "action_contact_support": "Contact Support"
+    },
     "common": {
         "loading": "Loading...",
         "error": "Something went wrong",
@@ -150,6 +252,9 @@
         "search": "Search",
         "all": "All",
         "cancel": "Cancel",
-        "confirm": "CONFIRM"
+        "confirm": "CONFIRM",
+        "offline_title": "You're offline",
+        "offline_desc": "Your tickets are still available",
+        "syncing": "Syncing"
     }
 }

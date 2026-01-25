@@ -101,7 +101,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        profile.fullName ?? "User",
+                        profile.fullName ?? "profile.default_user".tr(),
                         style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -132,7 +132,7 @@ class ProfileScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                                 Text(
-                                    "Bio",
+                                    "profile.bio".tr(),
                                     style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -254,11 +254,11 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Error: $err', style: const TextStyle(color: Colors.red)),
+                Text("${"common.error".tr()}: $err", style: const TextStyle(color: Colors.red)),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => ref.refresh(userProfileProvider),
-                  child: const Text("Retry"),
+                  child: Text("common.retry".tr()),
                 ),
               ],
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:mobile/features/notifications/models/app_notification.dart';
 import 'package:mobile/features/notifications/services/notification_service.dart';
 
@@ -65,7 +66,7 @@ class NotificationScreen extends ConsumerWidget {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            "Notifications",
+            "notifications.title".tr(),
             style: GoogleFonts.poppins(
               color: textColor,
               fontWeight: FontWeight.w600,
@@ -82,12 +83,12 @@ class NotificationScreen extends ConsumerWidget {
                 
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("All notifications marked as read")),
+                    SnackBar(content: Text("notifications.mark_all_success".tr())),
                   );
                 }
               },
               child: Text(
-                "Mark all read",
+                "notifications.mark_all_read".tr(),
                 style: GoogleFonts.poppins(
                   color: const Color(0xFF8B5CF6),
                   fontWeight: FontWeight.w500,
@@ -115,10 +116,10 @@ class NotificationScreen extends ConsumerWidget {
                 unselectedLabelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
                 tabAlignment: TabAlignment.start,
                 labelPadding: const EdgeInsets.symmetric(horizontal: 24),
-                tabs: const [
-                  Tab(height: 38, text: "All"),
-                  Tab(height: 38, text: "Bookings"),
-                  Tab(height: 38, text: "Updates"),
+                tabs: [
+                  Tab(height: 38, text: "notifications.all_tab".tr()),
+                  Tab(height: 38, text: "notifications.bookings_tab".tr()),
+                  Tab(height: 38, text: "notifications.updates_tab".tr()),
                 ],
               ),
             ),
@@ -126,7 +127,7 @@ class NotificationScreen extends ConsumerWidget {
               child: notificationsAsync.when(
                 data: (notifications) {
                     if (notifications.isEmpty) {
-                        return Center(child: Text("No notifications", style: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.black45)));
+                        return Center(child: Text("notifications.no_notif".tr(), style: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.black45)));
                     }
                     
                     final now = DateTime.now();
@@ -159,7 +160,7 @@ class NotificationScreen extends ConsumerWidget {
                     );
                 },
                 loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
-                error: (err, stack) => Center(child: Text("Error: $err", style: const TextStyle(color: Colors.red))),
+                error: (err, stack) => Center(child: Text("${"common.error".tr()}: $err", style: const TextStyle(color: Colors.red))),
               ),
             ),
           ],
@@ -192,13 +193,13 @@ class _NotificationListView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
         if (today.isNotEmpty) ...[
-          _SectionHeader(title: "Today", textColor: textColor),
+          _SectionHeader(title: "notifications.today".tr(), textColor: textColor),
           const SizedBox(height: 16),
           ...today.map((n) => _NotificationTile(notification: n, textColor: textColor, isDark: isDark)),
         ],
         if (earlier.isNotEmpty) ...[
           const SizedBox(height: 24),
-          _SectionHeader(title: "Earlier", textColor: textColor),
+          _SectionHeader(title: "notifications.earlier".tr(), textColor: textColor),
           const SizedBox(height: 16),
           ...earlier.map((n) => _NotificationTile(notification: n, textColor: textColor, isDark: isDark)),
         ],
@@ -320,10 +321,10 @@ class _NotificationTile extends ConsumerWidget {
     final now = DateTime.now();
     final diff = now.difference(dt);
 
-    if (diff.inMinutes < 60) return "${diff.inMinutes}m ago";
-    if (diff.inHours < 24) return "${diff.inHours}h ago";
-    if (diff.inDays == 1) return "Yesterday";
-    if (diff.inDays < 7) return "${diff.inDays} days ago";
+    if (diff.inMinutes < 60) return "notifications.m_ago".tr(args: [diff.inMinutes.toString()]);
+    if (diff.inHours < 24) return "notifications.h_ago".tr(args: [diff.inHours.toString()]);
+    if (diff.inDays == 1) return "notifications.yesterday".tr();
+    if (diff.inDays < 7) return "notifications.days_ago".tr(args: [diff.inDays.toString()]);
     return DateFormat('MMM d').format(dt);
   }
 }
@@ -415,7 +416,7 @@ class _BookingCard extends StatelessWidget {
                     const Icon(Icons.confirmation_num, color: Color(0xFF8B5CF6), size: 14),
                     const SizedBox(width: 8),
                     Text(
-                      "ORDER $orderId".toUpperCase(),
+                      "${"notifications.order_prefix".tr()} $orderId".toUpperCase(),
                       style: GoogleFonts.poppins(
                         color: textColor.withOpacity(0.38),
                         fontSize: 11,
