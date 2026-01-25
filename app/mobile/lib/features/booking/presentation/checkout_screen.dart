@@ -15,6 +15,7 @@ class CheckoutScreen extends ConsumerStatefulWidget {
   final String tierName;
   final double unitPrice;
   final int quantity;
+  final List<String>? selectedSeats;
 
   const CheckoutScreen({
     super.key,
@@ -23,6 +24,7 @@ class CheckoutScreen extends ConsumerStatefulWidget {
     required this.tierName,
     required this.unitPrice,
     required this.quantity,
+    this.selectedSeats,
   });
 
   @override
@@ -107,6 +109,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         eventId: widget.event.id,
         tierId: widget.tierId,
         quantity: widget.quantity,
+        seatNumbers: widget.selectedSeats,
         promoCode: _appliedPromoCode,
         paymentMethod: _selectedPaymentMethod, // Using selected method
       );

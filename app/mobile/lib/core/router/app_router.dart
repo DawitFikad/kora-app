@@ -10,6 +10,8 @@ import '../../features/events/presentation/event_details_screen.dart';
 import '../../features/tickets/presentation/my_tickets_screen.dart';
 import '../../features/events/presentation/favorites_screen.dart';
 import '../../features/events/presentation/notification_screen.dart';
+import '../../features/scanner/presentation/scanner_screen.dart';
+import '../../features/events/presentation/seat_selection_screen.dart';
 
 class AppRouter {
   final LocalStorage storage;
@@ -79,6 +81,21 @@ class AppRouter {
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationScreen(),
+      ),
+      GoRoute(
+        path: '/scanner',
+        builder: (context, state) => const ScannerScreen(),
+      ),
+      GoRoute(
+        path: '/event/:eventId/tiers/:tierId/seats',
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId']!;
+          final tierId = state.pathParameters['tierId']!;
+          return SeatSelectionScreen(
+            eventId: int.parse(eventId),
+            tierId: int.parse(tierId),
+          );
+        },
       ),
     ],
   );

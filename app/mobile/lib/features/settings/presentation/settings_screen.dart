@@ -204,6 +204,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: 32),
 
+          // Staff Operations (Visible to Organizers/Admins/Scanners)
+          profileAsync.maybeWhen(
+            data: (profile) => profile.role != 'USER' ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader("Staff Operations", Icons.admin_panel_settings),
+                const SizedBox(height: 12),
+                _SettingsTile(
+                  icon: Icons.qr_code_scanner,
+                  title: 'Ticket Scanner',
+                  subtitle: 'Validate entry at the gate',
+                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                  onTap: () => context.push('/scanner'),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ) : const SizedBox.shrink(),
+            orElse: () => const SizedBox.shrink(),
+          ),
+
           // Preferences Section
           _buildSectionHeader("Preferences", Icons.tune),
           const SizedBox(height: 12),

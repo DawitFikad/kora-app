@@ -37,13 +37,37 @@ export class PaymentController {
      */
     static async webhook(req: Request, res: Response) {
         try {
-            const { paymentRef, status, externalRef } = req.body;
-            // In a real app, verify signature here
-            if (status === "SUCCESS") {
+            const body = req.body;
+            let paymentRef = "";
+            let status = "";
+            let externalRef = "";
+
+            // 1. Detection & Signature Verification
+            const chapaSignature = req.headers['chapa-signature'] as string;
+
+            if (chapaSignature) {
+                // Handle Chapa Webhook
+                const isValid = PaymentService.validateChapaWebhook(chapaSignature, JSON.stringify(body));
+                if (!isValid) return res.status(401).send("Invalid Signature");
+
+                paymentRef = body.tx_ref;
+                status = body.status === "success" ? "SUCCESS" : "FAILED";
+                externalRef = body.reference;
+            } else {
+                // Fallback for Telebirr / Generic
+                paymentRef = body.paymentRef || body.outTradeNo || body.merch_order_id;
+                status = body.status || "SUCCESS";
+                externalRef = body.externalRef || body.transactionId;
+            }
+
+            // 2. Processing
+            if (status === "SUCCESS" && paymentRef) {
                 await PaymentService.verifyPayment(paymentRef, externalRef);
             }
+
             res.json({ received: true });
         } catch (error: any) {
+            console.error("Webhook Error:", error.message);
             res.status(500).json({ error: error.message });
         }
     }

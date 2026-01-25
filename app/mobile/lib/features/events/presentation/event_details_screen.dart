@@ -8,6 +8,7 @@ import 'package:mobile/features/booking/presentation/checkout_screen.dart';
 import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
+import 'seat_selection_screen.dart';
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final int eventId;
@@ -42,7 +43,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     return _ticketQuantities.values.fold(0, (a, b) => a + b);
   }
 
-  void _onCheckout(Event event) {
+  void _onCheckout(Event event) async {
     // 0. Check Auth
     final isAuthenticated = ref.read(localStorageProvider).authToken != null;
     if (!isAuthenticated) {
@@ -65,6 +66,32 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
     final entry = selectedEntries.first;
     final tier = event.tiers.firstWhere((t) => t.id == entry.key);
+    List<String>? selectedSeats;
+
+    // 3. Handle Seat Selection if needed
+    if (event.hasSeatMap) {
+      // Navigate to Seat Selection
+      final result = await Navigator.push<List<String>>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SeatSelectionScreen(
+            eventId: event.id,
+            tierId: tier.id,
+          ),
+        ),
+      );
+
+      if (result == null || result.isEmpty) return; // Cancelled
+      selectedSeats = result;
+      
+      // Update quantity to match selected seats if mismatch occurs
+      if (selectedSeats.length != entry.value) {
+         // This shouldn't normally happen if SeatSelection enforces quanity, 
+         // but we'll use the seat count as the final source of truth.
+      }
+    }
+
+    if (!mounted) return;
 
     Navigator.push(
       context,
@@ -74,7 +101,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           tierId: tier.id,
           tierName: tier.name,
           unitPrice: tier.price,
-          quantity: entry.value,
+          quantity: selectedSeats?.length ?? entry.value,
+          selectedSeats: selectedSeats,
         ),
       ),
     );

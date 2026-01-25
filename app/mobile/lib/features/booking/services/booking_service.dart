@@ -49,6 +49,7 @@ class BookingService {
     required int eventId,
     required int tierId,
     required int quantity,
+    List<String>? seatNumbers,
     String? paymentMethod,
     String? promoCode,
   }) async {
@@ -59,11 +60,61 @@ class BookingService {
           'eventId': eventId,
           'tierId': tierId,
           'quantity': quantity,
+          if (seatNumbers != null) 'seatNumbers': seatNumbers,
           if (paymentMethod != null) 'paymentMethod': paymentMethod,
           if (promoCode != null) 'promoCode': promoCode,
         },
       );
       return response.data['data'];
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getSeatStatus(int eventId, int tierId) async {
+    try {
+      final response = await _dio.get('/booking/events/$eventId/tiers/$tierId/seats');
+      return response.data['data'];
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> lockSeats({
+    required int eventId,
+    required int tierId,
+    required List<String> seatNumbers,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/booking/lock-seats',
+        data: {
+          'eventId': eventId,
+          'tierId': tierId,
+          'seatNumbers': seatNumbers,
+        },
+      );
+      return response.data['data'];
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<bool> releaseSeats({
+    required int eventId,
+    required int tierId,
+    required List<String> seatNumbers,
+  }) async {
+    try {
+      await _dio.post(
+        '/booking/release-seats',
+        data: {
+          'eventId': eventId,
+          'tierId': tierId,
+          'seatNumbers': seatNumbers,
+        },
+      );
+      return true;
     } catch (e) {
       throw _handleError(e);
     }

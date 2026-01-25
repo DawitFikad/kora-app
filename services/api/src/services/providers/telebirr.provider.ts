@@ -23,7 +23,9 @@ interface TelebirrResponse {
 }
 
 export class TelebirrProvider {
-    private static readonly GATEWAY_URL = 'https://196.188.120.3:38443/apiaccess/payment/gateway';
+    private static get GATEWAY_URL() {
+        return env.teleBirrApiUrl || 'https://196.188.120.3:38443/apiaccess/payment/gateway';
+    }
     private static readonly TOKEN_ENDPOINT = '/payment/v1/token';
     private static readonly PREORDER_ENDPOINT = '/payment/v1/merchant/preOrder';
 
@@ -168,12 +170,17 @@ export class TelebirrProvider {
                     `trade_type=Checkout`
                 ].join('&');
 
-                // Using the IP address directly often helps Android Chrome show the "Advanced" button
-                const checkoutUrl = `https://196.188.120.3:38443/payment/web/paygate?${queryStrings}`;
+                // Determine the H5 checkout base URL (Prod vs Sandbox)
+                const h5Base = this.GATEWAY_URL.includes('196.188')
+                    ? 'https://196.188.120.3:38443/payment/web/paygate'
+                    : 'https://app.ethiotelebirr.et:9091/payment/web/paygate';
+
+                const checkoutUrl = `${h5Base}?${queryStrings}`;
 
                 return { checkoutUrl, prepayId };
             }
-            throw new Error(response.data.header?.errorCause || response.data.msg || 'Pre-order failed');
+            const errorReason = response.data.header?.errorCause || response.data.msg || response.data.biz_content?.error_msg || 'Pre-order failed';
+            throw new Error(`Telebirr PreOrder Failed: ${errorReason}`);
         } catch (error: any) {
             logger.error({ error: error.response?.data || error.message }, 'Telebirr PreOrder Error');
             throw error;

@@ -217,4 +217,9 @@ export class PaymentService {
             throw error;
         }
     }
+
+    static validateChapaWebhook(signature: string, payload: string): boolean {
+        return ChapaProvider.validateWebhook(signature, payload);
+    }
 }
+
