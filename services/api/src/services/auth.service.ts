@@ -240,7 +240,7 @@ export class AuthService {
     }
 
     private static generateAccessToken(userId: number, role: Role, organizerId?: number) {
-        return jwt.sign({ userId, role, organizerId }, getAccessTokenSecret(), { expiresIn: "24h" });
+        return jwt.sign({ userId, id: userId, role, organizerId }, getAccessTokenSecret(), { expiresIn: "24h" });
     }
 
     private static generateRefreshToken(userId: number) {

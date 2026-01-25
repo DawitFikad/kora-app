@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../services/scanner_service.dart';
 import 'package:easy_localization/easy_localization.dart';
+import '../../../core/providers.dart';
 
 class StaffManagementScreen extends ConsumerStatefulWidget {
   const StaffManagementScreen({super.key});
@@ -28,13 +29,21 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await ref.read(scannerServiceProvider).inviteStaff(
+      final result = await ref.read(scannerServiceProvider).inviteStaff(
         _phoneController.text,
         _selectedRole,
       );
       if (mounted) {
+        final code = result['inviteCode'];
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('staff.invite_success'.tr())),
+          SnackBar(
+            content: Text('Invite sent! Code: $code (Keep this safe)'),
+            duration: const Duration(seconds: 10),
+            action: SnackBarAction(
+              label: 'COPY',
+              onPressed: () {},
+            ),
+          ),
         );
         _phoneController.clear();
         ref.invalidate(staffListProvider);
@@ -179,7 +188,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     },
                   ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
+              error: (e, _) => Text("${"common.error".tr()}: $e", style: const TextStyle(color: Colors.red)),
             ),
           ],
         ),
@@ -197,6 +206,9 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   }
 }
 
-final staffListProvider = FutureProvider<List<dynamic>>((ref) async {
+final staffListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+  final token = ref.watch(authTokenProvider);
+  if (token == null) return [];
+  
   return ref.read(scannerServiceProvider).listStaff();
 });

@@ -94,6 +94,7 @@ app.use("/api/disputes", disputeRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/content", contentRoutes);
 app.use("/api/booking", bookingRoutes);
+app.use("/api/staff", staffRoutes);
 app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {

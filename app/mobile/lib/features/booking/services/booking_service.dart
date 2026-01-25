@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/core/providers.dart';
+import '../../../core/constants/api_constants.dart';
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
   return BookingService(ref.watch(dioProvider));
@@ -19,7 +20,7 @@ class BookingService {
   }) async {
     try {
       final response = await _dio.post(
-        '/booking/calculate-price',
+        ApiConstants.bookingCalculate,
         data: {
           'eventId': eventId,
           'tierId': tierId,
@@ -36,7 +37,7 @@ class BookingService {
   Future<Map<String, dynamic>> validatePromoCode(String code, int eventId) async {
     try {
       final response = await _dio.post(
-        '/booking/validate-promo',
+        ApiConstants.bookingValidatePromo,
         data: {'code': code, 'eventId': eventId},
       );
       return response.data;
@@ -55,7 +56,7 @@ class BookingService {
   }) async {
     try {
       final response = await _dio.post(
-        '/booking/reserve',
+        ApiConstants.bookingReserve,
         data: {
           'eventId': eventId,
           'tierId': tierId,
@@ -73,7 +74,7 @@ class BookingService {
 
   Future<List<dynamic>> getSeatStatus(int eventId, int tierId) async {
     try {
-      final response = await _dio.get('/booking/events/$eventId/tiers/$tierId/seats');
+      final response = await _dio.get('${ApiConstants.bookingSeats}/$eventId/tiers/$tierId/seats');
       return response.data['data'];
     } catch (e) {
       throw _handleError(e);
@@ -87,7 +88,7 @@ class BookingService {
   }) async {
     try {
       final response = await _dio.post(
-        '/booking/lock-seats',
+        ApiConstants.bookingLockSeats,
         data: {
           'eventId': eventId,
           'tierId': tierId,
@@ -107,7 +108,7 @@ class BookingService {
   }) async {
     try {
       await _dio.post(
-        '/booking/release-seats',
+        ApiConstants.bookingReleaseSeats,
         data: {
           'eventId': eventId,
           'tierId': tierId,

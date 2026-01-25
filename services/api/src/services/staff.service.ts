@@ -2,6 +2,8 @@ import { prisma } from "../lib/prisma";
 import crypto from "crypto";
 import { StaffRole } from "@prisma/client";
 
+import { SmsService } from "./sms.service";
+
 export class StaffService {
     /**
      * Creates an invitation for a staff member.
@@ -31,7 +33,10 @@ export class StaffService {
             }
         });
 
-        // In a real app, send SMS here.
+        // Send SMS to the invited staff member
+        const message = `You have been invited to join the staff team on ET-Ticket. Use code: ${inviteCode} to join. Expires in 24 hours.`;
+        await SmsService.sendSms(phoneNumber, message);
+
         console.log(`[STAFF INVITE] Created invite for ${phoneNumber}: ${inviteCode}`);
 
         return invitation;
@@ -60,6 +65,13 @@ export class StaffService {
                     userId: user.id,
                     role: invitation.role
                 }
+            });
+
+            // 1.5 Update User Role 
+            //(Assuming we want to reflect their new main role, or at least grant permissions)
+            await tx.user.update({
+                where: { id: user.id },
+                data: { role: invitation.role as any } // "SCANNER" or "MANAGER"
             });
 
             // 2. Mark invitation as used

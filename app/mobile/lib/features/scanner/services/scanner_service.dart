@@ -170,7 +170,7 @@ class ScannerService {
 
   Future<List<dynamic>> listStaff() async {
      try {
-      final response = await _dio.get('/staff');
+      final response = await _dio.get(ApiConstants.staff);
       return response.data;
     } catch (e) {
       throw Exception('Failed to list staff: $e');
@@ -179,7 +179,7 @@ class ScannerService {
 
   Future<dynamic> inviteStaff(String phone, String role) async {
     try {
-      final response = await _dio.post('/staff/invite', data: {
+      final response = await _dio.post(ApiConstants.staffInvite, data: {
         'phoneNumber': phone,
         'role': role,
       });
@@ -191,7 +191,7 @@ class ScannerService {
 
   Future<void> acceptInvitation(String code) async {
     try {
-      await _dio.post('/staff/accept', data: {
+      await _dio.post(ApiConstants.staffAccept, data: {
         'inviteCode': code,
       });
     } catch (e) {
@@ -201,7 +201,7 @@ class ScannerService {
 
   Future<void> removeStaff(int staffId) async {
     try {
-      await _dio.delete('/staff/$staffId');
+      await _dio.delete('${ApiConstants.staff}/$staffId');
     } catch (e) {
       throw Exception('Failed to remove staff: $e');
     }

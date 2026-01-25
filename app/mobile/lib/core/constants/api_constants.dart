@@ -16,5 +16,14 @@ class ApiConstants {
   static const String validateScan = '$baseUrl/validate/scan';
   static const String validateGateList = '$baseUrl/validate/gate-list';
   static const String validateSync = '$baseUrl/validate/sync';
+  static const String staff = '$baseUrl/staff';
+  static const String staffInvite = '$baseUrl/staff/invite';
+  static const String staffAccept = '$baseUrl/staff/accept';
+  static const String bookingCalculate = '$baseUrl/booking/calculate-price';
+  static const String bookingReserve = '$baseUrl/booking/reserve';
+  static const String bookingSeats = '$baseUrl/booking/events';
+  static const String bookingValidatePromo = '$baseUrl/booking/validate-promo';
+  static const String bookingLockSeats = '$baseUrl/booking/lock-seats';
+  static const String bookingReleaseSeats = '$baseUrl/booking/release-seats';
 }
 

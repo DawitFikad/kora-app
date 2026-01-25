@@ -11,7 +11,7 @@ final eventServiceProvider = Provider<EventService>((ref) {
   return EventService(ref.watch(dioProvider));
 });
 
-final eventsProvider = FutureProvider<List<Event>>((ref) async {
+final eventsProvider = FutureProvider.autoDispose<List<Event>>((ref) async {
   // Watch storage so we refresh when user logs in/out
   ref.watch(authTokenProvider);
   final service = ref.watch(eventServiceProvider);

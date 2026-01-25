@@ -12,9 +12,11 @@ import '../../events/presentation/home_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-final myTicketsProvider = FutureProvider<List<Ticket>>((ref) async {
+final myTicketsProvider = FutureProvider.autoDispose<List<Ticket>>((ref) async {
   // Watch for auth changes to refresh ticket list
-  ref.watch(authTokenProvider);
+  final token = ref.watch(authTokenProvider);
+  if (token == null) return [];
+  
   final service = ref.watch(ticketServiceProvider);
   return service.getMyTickets();
 });

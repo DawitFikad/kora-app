@@ -8,7 +8,7 @@ export class NotificationController {
      */
     static async getMyNotifications(req: Request, res: Response) {
         try {
-            const userId = (req as any).user.id;
+            const userId = (req as any).user.userId;
             const notifications = await prisma.notificationLog.findMany({
                 where: { userId },
                 orderBy: { createdAt: 'desc' },
@@ -25,7 +25,7 @@ export class NotificationController {
      */
     static async markAllAsRead(req: Request, res: Response) {
         try {
-            const userId = (req as any).user.id;
+            const userId = (req as any).user.userId;
             await prisma.notificationLog.updateMany({
                 where: { userId, isRead: false },
                 data: { isRead: true }
@@ -41,7 +41,7 @@ export class NotificationController {
      */
     static async markAsRead(req: Request, res: Response) {
         try {
-            const userId = (req as any).user.id;
+            const userId = (req as any).user.userId;
             const { id } = req.params;
 
             await prisma.notificationLog.updateMany({

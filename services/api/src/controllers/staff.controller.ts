@@ -11,7 +11,7 @@ export class StaffController {
             const { phoneNumber, role } = req.body;
             // Get organizer profile for current user
             const organizer = await prisma.organizerProfile.findUnique({
-                where: { userId: (req as any).user.id }
+                where: { userId: (req as any).user.userId }
             });
 
             if (!organizer) return res.status(403).json({ error: "Only organizers can invite staff." });
@@ -29,7 +29,7 @@ export class StaffController {
     static async acceptInvite(req: Request, res: Response) {
         try {
             const { inviteCode } = req.body;
-            const staff = await StaffService.acceptInvitation((req as any).user.id, inviteCode);
+            const staff = await StaffService.acceptInvitation((req as any).user.userId, inviteCode);
             res.json({ message: "Invitation accepted successfully", staff });
         } catch (error: any) {
             res.status(400).json({ error: error.message });
@@ -42,7 +42,7 @@ export class StaffController {
     static async listMyStaff(req: Request, res: Response) {
         try {
             const organizer = await prisma.organizerProfile.findUnique({
-                where: { userId: (req as any).user.id }
+                where: { userId: (req as any).user.userId }
             });
 
             if (!organizer) return res.status(403).json({ error: "Not an organizer profile." });
@@ -61,7 +61,7 @@ export class StaffController {
         try {
             const { id } = req.params;
             const organizer = await prisma.organizerProfile.findUnique({
-                where: { userId: (req as any).user.id }
+                where: { userId: (req as any).user.userId }
             });
 
             if (!organizer) return res.status(403).json({ error: "Unauthorized." });

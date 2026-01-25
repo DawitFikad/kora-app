@@ -7,9 +7,17 @@ import 'package:mobile/features/notifications/models/app_notification.dart';
 import 'package:mobile/features/notifications/services/notification_service.dart';
 
 import 'package:mobile/features/profile/services/profile_service.dart';
+import '../../../../core/providers.dart';
 
-final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
+final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>((ref) async {
+  // Watch token to ensure refresh on logout/login
+  final token = ref.watch(authTokenProvider);
+  if (token == null) return [];
+
   final service = ref.read(notificationServiceProvider);
+  // We don't necessarily need to wait for profile if the token is enough, 
+  // but filtering relies on profile role. 
+  // Since userProfileProvider is watched, it will trigger this provider update when profile loads.
   final profile = await ref.watch(userProfileProvider.future);
   
   final allNotifications = await service.getNotifications();

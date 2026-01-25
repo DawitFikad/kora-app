@@ -33,7 +33,7 @@ export class PayoutController {
      */
     static async approvePayout(req: Request, res: Response) {
         try {
-            const adminId = (req as any).user.id;
+            const adminId = (req as any).user.userId;
             const { batchId } = req.params;
 
             const payout = await PayoutService.approvePayout(parseInt(batchId), adminId);
@@ -75,7 +75,7 @@ export class PayoutController {
      */
     static async rejectPayout(req: Request, res: Response) {
         try {
-            const adminId = (req as any).user.id;
+            const adminId = (req as any).user.userId;
             const { batchId } = req.params;
             const { reason } = req.body;
 

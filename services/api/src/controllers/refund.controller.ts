@@ -8,7 +8,7 @@ export class RefundController {
      */
     static async requestRefund(req: Request, res: Response) {
         try {
-            const userId = (req as any).user.id;
+            const userId = req.user.userId;
             const { purchaseId, reason, description } = req.body;
 
             if (!purchaseId || !reason) {
@@ -27,7 +27,7 @@ export class RefundController {
      */
     static async approveRefund(req: Request, res: Response) {
         try {
-            const adminId = (req as any).user.id;
+            const adminId = (req as any).user.userId;
             const refundId = parseInt(req.params.id);
 
             const refund = await RefundService.approveRefund(refundId, adminId);
@@ -42,7 +42,7 @@ export class RefundController {
      */
     static async rejectRefund(req: Request, res: Response) {
         try {
-            const adminId = (req as any).user.id;
+            const adminId = (req as any).user.userId;
             const refundId = parseInt(req.params.id);
             const { reason } = req.body;
 

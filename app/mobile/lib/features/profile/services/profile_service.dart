@@ -8,7 +8,11 @@ final profileServiceProvider = Provider<ProfileService>((ref) {
   return ProfileService(ref.watch(dioProvider));
 });
 
-final userProfileProvider = FutureProvider<UserProfile>((ref) async {
+final userProfileProvider = FutureProvider.autoDispose<UserProfile>((ref) async {
+  // Watch token to ensure this re-runs on logout/login
+  final token = ref.watch(authTokenProvider);
+  if (token == null) throw Exception("Unauthorized");
+  
   final service = ref.read(profileServiceProvider);
   return service.getMyProfile();
 });

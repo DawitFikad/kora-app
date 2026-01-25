@@ -26,6 +26,8 @@ class ProfileScreen extends ConsumerWidget {
             hintStyle: const TextStyle(color: Colors.white38),
             enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
           ),
+          keyboardType: TextInputType.number,
+          maxLength: 6,
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text('profile.cancel'.tr())),
@@ -169,8 +171,8 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/favorites'),
                 ),
                 
-                // Organizer Exclusive
-                if (profile.role == 'ORGANIZER') ...[
+                // Organizer or Staff showing Scanner
+                if (profile.role == 'ORGANIZER' || profile.role == 'SCANNER') ...[
                     const SizedBox(height: 16),
                     _buildMenuItem(
                       context,
@@ -180,6 +182,10 @@ class ProfileScreen extends ConsumerWidget {
                       textColor: textColor,
                       onTap: () => context.push('/scanner'),
                     ),
+                ],
+
+                // Organizer Only Features
+                if (profile.role == 'ORGANIZER') ...[
                     const SizedBox(height: 16),
                     _buildMenuItem(
                       context,

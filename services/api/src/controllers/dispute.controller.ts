@@ -8,7 +8,7 @@ export class DisputeController {
      */
     static async createDispute(req: Request, res: Response) {
         try {
-            const userId = (req as any).user.id;
+            const userId = (req as any).user.userId;
             const { purchaseId, refundId, source, reason, metadata } = req.body;
 
             if (!reason || !source) {
