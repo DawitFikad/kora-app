@@ -138,6 +138,20 @@ class ProfileScreen extends ConsumerWidget {
                   textColor: textColor,
                   onTap: () => context.push('/favorites'),
                 ),
+                
+                // Organizer Exclusive: QR Scanner
+                if (profile.role == 'ORGANIZER') ...[
+                    const SizedBox(height: 16),
+                    _buildMenuItem(
+                      context,
+                      icon: Icons.qr_code_scanner,
+                      title: "Scan Tickets",
+                      color: cardColor,
+                      textColor: textColor,
+                      onTap: () => context.push('/scanner'),
+                    ),
+                ],
+
                 const SizedBox(height: 16),
                 _buildMenuItem(
                   context, 

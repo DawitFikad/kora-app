@@ -26,6 +26,7 @@ model User {
   savedPaymentMethods SavedPaymentMethod[]
   tickets             Ticket[]
   profile             UserProfile?
+  staffAssignments    OrganizerStaff[]
 }
 
 model SavedPaymentMethod {
@@ -89,6 +90,41 @@ model OrganizerProfile {
   
   defaultConfig     Json?
   notificationPrefs Json?
+  
+  staff             OrganizerStaff[]
+  invitations       StaffInvitation[]
+}
+
+enum StaffRole {
+  SCANNER
+  MANAGER
+}
+
+model OrganizerStaff {
+  id              Int              @id @default(autoincrement())
+  organizerId     Int
+  userId          Int
+  role            StaffRole        @default(SCANNER)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  organizer       OrganizerProfile @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizerId, userId])
+}
+
+model StaffInvitation {
+  id              Int              @id @default(autoincrement())
+  organizerId     Int
+  inviteCode      String           @unique
+  phoneNumber     String
+  role            StaffRole        @default(SCANNER)
+  expiresAt       DateTime
+  isUsed          Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  
+  organizer       OrganizerProfile @relation(fields: [organizerId], references: [id], onDelete: Cascade)
 }
 
 model Category {
