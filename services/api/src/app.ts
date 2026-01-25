@@ -40,6 +40,24 @@ const globalLimiter = rateLimit({
 });
 
 app.use(globalLimiter);
+
+// Specific Rate Limiting for Auth/OTP
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 10, // 10 OTP requests per hour per IP
+  message: { error: "Too many login attempts. Please try again in an hour." }
+});
+
+// Specific Rate Limiting for Payments
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  limit: 20, // 20 payment attempts
+  message: { error: "Payment frequency exceeded. Please wait before trying again." }
+});
+
+app.use("/api/auth/otp", authLimiter);
+app.use("/api/payments/initialize", paymentLimiter);
+app.use("/api/tickets/reserve", paymentLimiter);
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));

@@ -79,6 +79,12 @@ export class EventService {
             const cancelled = data.status === EventStatus.CANCELLED && oldStatus !== EventStatus.CANCELLED;
 
             if (cancelled) {
+                const { TicketStatus } = await import("@prisma/client");
+                await prisma.ticket.updateMany({
+                    where: { eventId: id, status: TicketStatus.VALID },
+                    data: { status: TicketStatus.CANCELLED }
+                });
+
                 await EventService.notifyTicketHolders(id, "Event Cancelled",
                     `We regret to inform you that "${event.title}" has been cancelled. Please check the app for refund details.`
                 );
