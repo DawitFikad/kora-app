@@ -17,6 +17,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   bool _isProcessing = false;
   bool _isOnline = true;
   bool _isBulkMode = false;
+  bool _isTorchOn = false;
   int _sessionScanCount = 0;
   ScannerResponse? _lastResult;
 
@@ -284,17 +285,13 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                 Row(
                   children: [
                     IconButton(
-                      onPressed: () => controller.toggleTorch(),
-                      icon: ValueListenableBuilder(
-                        valueListenable: controller.torchState,
-                        builder: (context, state, child) {
-                          switch (state as TorchState) {
-                            case TorchState.off:
-                              return const Icon(Icons.flash_off, color: Colors.white);
-                            case TorchState.on:
-                              return const Icon(Icons.flash_on, color: Colors.yellow);
-                          }
-                        },
+                      onPressed: () {
+                        setState(() => _isTorchOn = !_isTorchOn);
+                        controller.toggleTorch();
+                      },
+                      icon: Icon(
+                        _isTorchOn ? Icons.flash_on : Icons.flash_off,
+                        color: _isTorchOn ? Colors.yellow : Colors.white,
                       ),
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.black26,
