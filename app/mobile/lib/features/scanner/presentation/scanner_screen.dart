@@ -16,6 +16,10 @@ class ScannerScreen extends ConsumerStatefulWidget {
 class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   bool _isProcessing = false;
   bool _isOnline = true;
+  bool _isBulkMode = false;
+  int _sessionScanCount = 0;
+  ScannerResponse? _lastResult;
+
   MobileScannerController controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
@@ -48,8 +52,10 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       _isProcessing = true;
     });
 
-    // Pause camera while processing to prevent duplicate scans
-    await controller.stop();
+    if (!_isBulkMode) {
+      // Pause camera while processing to prevent duplicate scans
+      await controller.stop();
+    }
 
     try {
       final scannerService = ref.read(scannerServiceProvider);
@@ -57,12 +63,36 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
 
       if (!mounted) return;
 
-      _showResultSheet(result);
+      if (_isBulkMode) {
+        // Show temporary result and increment counter
+        setState(() {
+           _lastResult = result;
+           if (result.success) _sessionScanCount++;
+           _isProcessing = false;
+        });
+
+        // Vibrate or Beep would be good here effectively via result flash
+        // Auto-clear last result after 2 seconds
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && _lastResult == result) {
+            setState(() => _lastResult = null);
+          }
+        });
+      } else {
+        _showResultSheet(result);
+      }
     } catch (e) {
       if (!mounted) return;
-      _showErrorSheet('An unexpected error occurred: $e');
+      if (_isBulkMode) {
+         setState(() {
+           _lastResult = ScannerResponse(success: false, message: 'System Error');
+           _isProcessing = false;
+         });
+      } else {
+        _showErrorSheet('An unexpected error occurred: $e');
+      }
     } finally {
-      if (mounted) {
+      if (mounted && !_isBulkMode) {
         setState(() {
           _isProcessing = false;
         });
@@ -188,6 +218,19 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           // Overlay
           _buildScannerOverlay(),
           
+          // Bulk Mode Feedback Overlay
+          if (_isBulkMode && _lastResult != null)
+            _buildBulkFeedbackOverlay(),
+
+          // Session Stats
+          if (_isBulkMode)
+            Positioned(
+              bottom: 40,
+              left: 20,
+              right: 20,
+              child: _buildSessionStats(),
+            ),
+
           // Header
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
@@ -203,62 +246,166 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                     backgroundColor: Colors.black26,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _isOnline ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(
-                      color: _isOnline ? Colors.green.withOpacity(0.5) : Colors.red.withOpacity(0.5),
+                
+                // Bulk Mode Toggle
+                GestureDetector(
+                  onTap: () => setState(() => _isBulkMode = !_isBulkMode),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _isBulkMode ? const Color(0xFF8B5CF6) : Colors.black45,
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(
+                        color: _isBulkMode ? Colors.white24 : Colors.white12,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isBulkMode ? Icons.bolt : Icons.bolt_outlined,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Bulk Mode',
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isOnline ? Icons.wifi : Icons.wifi_off,
-                        size: 16,
-                        color: _isOnline ? Colors.green : Colors.red,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _isOnline ? 'Online' : 'Offline Mode',
-                        style: GoogleFonts.outfit(
-                          color: _isOnline ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-                IconButton(
-                  onPressed: () => controller.toggleTorch(),
-                  icon: ValueListenableBuilder(
-                    valueListenable: controller.torchState,
-                    builder: (context, state, child) {
-                      switch (state as TorchState) {
-                        case TorchState.off:
-                          return const Icon(Icons.flash_off, color: Colors.white);
-                        case TorchState.on:
-                          return const Icon(Icons.flash_on, color: Colors.yellow);
-                      }
-                    },
-                  ),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black26,
-                  ),
+
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => controller.toggleTorch(),
+                      icon: ValueListenableBuilder(
+                        valueListenable: controller.torchState,
+                        builder: (context, state, child) {
+                          switch (state as TorchState) {
+                            case TorchState.off:
+                              return const Icon(Icons.flash_off, color: Colors.white);
+                            case TorchState.on:
+                              return const Icon(Icons.flash_on, color: Colors.yellow);
+                          }
+                        },
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black26,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           
-          if (_isProcessing)
+          if (_isProcessing && !_isBulkMode)
             Container(
               color: Colors.black54,
               child: const Center(
                 child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBulkFeedbackOverlay() {
+    final success = _lastResult!.success;
+    return Positioned(
+      top: 100,
+      left: 40,
+      right: 40,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 200),
+        builder: (context, value, child) => Transform.scale(
+          scale: value,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: (success ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withOpacity(0.9),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  success ? Icons.check_circle : Icons.error,
+                  color: Colors.white,
+                  size: 32,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        success ? 'GRANTED' : 'DENIED',
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      ),
+                      Text(
+                        _lastResult!.message,
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSessionStats() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'SESSION TOTAL',
+                style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
+              Text(
+                '$_sessionScanCount Attendees',
+                style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          IconButton(
+            onPressed: () => setState(() => _sessionScanCount = 0),
+            icon: const Icon(Icons.refresh, color: Colors.white54),
+          ),
         ],
       ),
     );

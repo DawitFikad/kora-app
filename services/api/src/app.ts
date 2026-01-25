@@ -21,6 +21,7 @@ import bookingRoutes from "./routes/booking.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import cron from "node-cron";
 import { EventService } from "./services/event.service";
+import { PaymentService } from "./services/payment.service";
 
 const app = express();
 
@@ -28,6 +29,12 @@ const app = express();
 cron.schedule("0 * * * *", async () => {
   console.log("[SCHEDULER] Running Event Reminders...");
   await EventService.sendReminders();
+});
+
+// Scheduler: Reconcile Stuck Payments every 15 minutes
+cron.schedule("*/15 * * * *", async () => {
+  console.log("[SCHEDULER] Running Payment Reconciliation...");
+  await PaymentService.reconcileStuckPayments();
 });
 
 // Global Rate Limiting
@@ -59,7 +66,12 @@ app.use("/api/auth/otp", authLimiter);
 app.use("/api/payments/initialize", paymentLimiter);
 app.use("/api/tickets/reserve", paymentLimiter);
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Serve uploaded files

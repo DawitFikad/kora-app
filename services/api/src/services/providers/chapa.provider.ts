@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { env } from '../../config/env';
 import logger from '../../utils/logger';
+import { withRetry } from '../../utils/retry';
 
 interface ChapaInitializeParams {
     amount: number;
@@ -86,7 +87,7 @@ export class ChapaProvider {
 
             logger.info({ txRef: params.txRef }, 'Initializing Chapa payment');
 
-            const response = await axios.post<ChapaInitializeResponse>(
+            const response = await withRetry<any>(() => axios.post(
                 `${this.getBaseUrl()}/transaction/initialize`,
                 payload,
                 {
@@ -96,7 +97,7 @@ export class ChapaProvider {
                     },
                     timeout: 30000,
                 }
-            );
+            ));
 
             if (response.data.status === 'success') {
                 logger.info({ txRef: params.txRef }, 'Chapa payment initialized successfully');
@@ -136,7 +137,7 @@ export class ChapaProvider {
         try {
             logger.info({ txRef }, 'Verifying Chapa payment');
 
-            const response = await axios.get<ChapaVerifyResponse>(
+            const response = await withRetry<any>(() => axios.get(
                 `${this.getBaseUrl()}/transaction/verify/${txRef}`,
                 {
                     headers: {
@@ -144,7 +145,7 @@ export class ChapaProvider {
                     },
                     timeout: 30000,
                 }
-            );
+            ));
 
             if (response.data.status === 'success' && response.data.data.status === 'success') {
                 logger.info(

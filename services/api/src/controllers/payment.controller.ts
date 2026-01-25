@@ -46,8 +46,9 @@ export class PaymentController {
             const chapaSignature = req.headers['chapa-signature'] as string;
 
             if (chapaSignature) {
-                // Handle Chapa Webhook
-                const isValid = PaymentService.validateChapaWebhook(chapaSignature, JSON.stringify(body));
+                // Handle Chapa Webhook using Raw Body for precise Signature verification
+                const payload = (req as any).rawBody || JSON.stringify(body);
+                const isValid = PaymentService.validateChapaWebhook(chapaSignature, payload.toString());
                 if (!isValid) return res.status(401).send("Invalid Signature");
 
                 paymentRef = body.tx_ref;

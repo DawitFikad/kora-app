@@ -1,8 +1,8 @@
-import axios from 'axios';
 import https from 'https';
 import crypto from 'crypto';
 import { env } from '../../config/env';
 import logger from '../../utils/logger';
+import { withRetry } from '../../utils/retry';
 
 interface TelebirrInitializeParams {
     amount: number;
@@ -72,8 +72,10 @@ export class TelebirrProvider {
     private static async applyFabricToken(): Promise<string> {
         try {
             logger.info('Applying for Official Telebirr Fabric Token');
+            const axios = require('axios');
             const agent = new https.Agent({ rejectUnauthorized: false });
-            const response = await axios.post(`${this.GATEWAY_URL}${this.TOKEN_ENDPOINT}`, {
+
+            const response = await withRetry<any>(() => axios.post(`${this.GATEWAY_URL}${this.TOKEN_ENDPOINT}`, {
                 appSecret: env.teleBirrAppSecret
             }, {
                 headers: {
@@ -82,7 +84,7 @@ export class TelebirrProvider {
                 },
                 httpsAgent: agent,
                 timeout: 30000
-            });
+            }));
 
             if (response.data.token) return response.data.token;
             throw new Error(`Fabric token failed: ${JSON.stringify(response.data)}`);
@@ -125,8 +127,9 @@ export class TelebirrProvider {
 
             const sign = this.generateSignature(requestData);
 
+            const axios = require('axios');
             const agent = new https.Agent({ rejectUnauthorized: false });
-            const response = await axios.post(`${this.GATEWAY_URL}${this.PREORDER_ENDPOINT}`, {
+            const response = await withRetry<any>(() => axios.post(`${this.GATEWAY_URL}${this.PREORDER_ENDPOINT}`, {
                 ...requestData,
                 sign,
                 sign_type: 'SHA256WithRSA'
@@ -138,7 +141,7 @@ export class TelebirrProvider {
                 },
                 httpsAgent: agent,
                 timeout: 30000
-            });
+            }));
 
             logger.info({ telebirrResponse: response.data }, 'Telebirr PreOrder Response');
 
@@ -210,8 +213,10 @@ export class TelebirrProvider {
 
             const sign = this.generateSignature(requestData);
 
+            const axios = require('axios');
+            const https = require('https');
             const agent = new https.Agent({ rejectUnauthorized: false });
-            const response = await axios.post(`${this.GATEWAY_URL}/payment/v1/merchant/queryOrder`, {
+            const response = await withRetry<any>(() => axios.post(`${this.GATEWAY_URL}/payment/v1/merchant/queryOrder`, {
                 ...requestData,
                 sign,
                 sign_type: 'SHA256WithRSA'
@@ -223,7 +228,7 @@ export class TelebirrProvider {
                 },
                 httpsAgent: agent,
                 timeout: 30000
-            });
+            }));
 
             console.log('RAW TELEBIRR QUERY RESPONSE:', JSON.stringify(response.data, null, 2));
             logger.info({ telebirrQueryResponse: response.data }, 'Telebirr QueryOrder Response');
