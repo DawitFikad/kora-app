@@ -165,4 +165,45 @@ class ScannerService {
       debugPrint('Sync failed: $e');
     }
   }
+
+  // --- STAFF MANAGEMENT ---
+
+  Future<List<dynamic>> listStaff() async {
+     try {
+      final response = await _dio.get('/staff');
+      return response.data;
+    } catch (e) {
+      throw Exception('Failed to list staff: $e');
+    }
+  }
+
+  Future<dynamic> inviteStaff(String phone, String role) async {
+    try {
+      final response = await _dio.post('/staff/invite', data: {
+        'phoneNumber': phone,
+        'role': role,
+      });
+      return response.data;
+    } catch (e) {
+      throw Exception('Failed to invite staff: $e');
+    }
+  }
+
+  Future<void> acceptInvitation(String code) async {
+    try {
+      await _dio.post('/staff/accept', data: {
+        'inviteCode': code,
+      });
+    } catch (e) {
+      throw Exception('Failed to accept invitation: $e');
+    }
+  }
+
+  Future<void> removeStaff(int staffId) async {
+    try {
+      await _dio.delete('/staff/$staffId');
+    } catch (e) {
+      throw Exception('Failed to remove staff: $e');
+    }
+  }
 }

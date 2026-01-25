@@ -18,6 +18,7 @@ import disputeRoutes from "./routes/dispute.routes";
 import notificationRoutes from "./routes/notification.routes";
 import contentRoutes from "./routes/content.routes";
 import bookingRoutes from "./routes/booking.routes";
+import staffRoutes from "./routes/staff.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import cron from "node-cron";
 import { EventService } from "./services/event.service";

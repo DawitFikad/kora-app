@@ -11,6 +11,7 @@ import '../../features/tickets/presentation/my_tickets_screen.dart';
 import '../../features/events/presentation/favorites_screen.dart';
 import '../../features/events/presentation/notification_screen.dart';
 import '../../features/scanner/presentation/scanner_screen.dart';
+import '../../features/scanner/presentation/staff_management_screen.dart';
 import '../../features/events/presentation/seat_selection_screen.dart';
 
 class AppRouter {
@@ -85,6 +86,10 @@ class AppRouter {
       GoRoute(
         path: '/scanner',
         builder: (context, state) => const ScannerScreen(),
+      ),
+      GoRoute(
+        path: '/staff-management',
+        builder: (context, state) => const StaffManagementScreen(),
       ),
       GoRoute(
         path: '/event/:eventId/tiers/:tierId/seats',

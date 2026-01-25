@@ -5,9 +5,48 @@ import 'package:go_router/go_router.dart';
 import '../services/profile_service.dart';
 import '../../../core/providers.dart';
 import 'edit_profile_screen.dart';
+import '../../scanner/services/scanner_service.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  void _showAcceptInviteDialog(BuildContext context, WidgetRef ref) {
+    final codeController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF232030),
+        title: Text('Join Staff Team', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: codeController,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Enter 6-digit Invite Code',
+            hintStyle: TextStyle(color: Colors.white38),
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await ref.read(scannerServiceProvider).acceptInvitation(codeController.text);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Joined staff team successfully!')));
+                  ref.invalidate(userProfileProvider);
+                }
+              } catch (e) {
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+              }
+            },
+            child: const Text('JOIN'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -75,16 +114,6 @@ class ProfileScreen extends ConsumerWidget {
                           fontSize: 14,
                         ),
                       ),
-                      if (profile.email != null && profile.email!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          profile.email!,
-                          style: TextStyle(
-                            color: isDark ? Colors.white38 : Colors.grey[500],
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -120,7 +149,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                 ],
 
-                // Menu Items
+                // --- SHARED MENU ---
                 _buildMenuItem(
                   context, 
                   icon: Icons.confirmation_number_outlined, 
@@ -139,7 +168,7 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/favorites'),
                 ),
                 
-                // Organizer Exclusive: QR Scanner
+                // Organizer Exclusive
                 if (profile.role == 'ORGANIZER') ...[
                     const SizedBox(height: 16),
                     _buildMenuItem(
@@ -149,6 +178,28 @@ class ProfileScreen extends ConsumerWidget {
                       color: cardColor,
                       textColor: textColor,
                       onTap: () => context.push('/scanner'),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildMenuItem(
+                      context,
+                      icon: Icons.people_outline,
+                      title: "Staff Management",
+                      color: cardColor,
+                      textColor: textColor,
+                      onTap: () => context.push('/staff-management'),
+                    ),
+                ],
+
+                // Invitation Acceptance for regular users
+                if (profile.role == 'USER') ...[
+                   const SizedBox(height: 16),
+                    _buildMenuItem(
+                      context,
+                      icon: Icons.group_add_outlined,
+                      title: "Join Staff Team",
+                      color: cardColor,
+                      textColor: textColor,
+                      onTap: () => _showAcceptInviteDialog(context, ref),
                     ),
                 ],
 
