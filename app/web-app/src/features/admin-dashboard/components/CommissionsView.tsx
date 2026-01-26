@@ -13,9 +13,18 @@ export const CommissionsView = () => {
     const [overrides, setOverrides] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [selectedOrganizer, setSelectedOrganizer] = useState('ALL');
+
+    const filteredTransactions = selectedOrganizer === 'ALL'
+        ? transactions
+        : transactions.filter(tx => tx.event?.organizer?.organizationName === selectedOrganizer);
+
+    const organizerOptions = Array.from(
+        new Set(transactions.map(tx => tx.event?.organizer?.organizationName).filter(Boolean))
+    );
 
     const handleExport = () => {
-        const exportData = transactions.map(tx => ({
+        const exportData = filteredTransactions.map(tx => ({
             id: tx.id,
             event: tx.event?.title || 'N/A',
             organizer: tx.event?.organizer?.organizationName || 'N/A',
@@ -76,7 +85,38 @@ export const CommissionsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader title="Commissions & Revenue" subtitle="Detailed audit of platform fees, commission rates, and real-time revenue collection." />
+            <AdminPageHeader
+                title="Commissions & Revenue"
+                subtitle="Detailed audit of platform fees, commission rates, and real-time revenue collection."
+                actions={(
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <select
+                            value={selectedOrganizer}
+                            onChange={(e) => setSelectedOrganizer(e.target.value)}
+                            style={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                color: 'var(--text-main)',
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700
+                            }}
+                        >
+                            <option value="ALL">All organizers</option>
+                            {organizerOptions.map((org) => (
+                                <option key={org} value={org}>{org}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={handleExport}
+                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                        >
+                            <Download size={16} /> Download Ledger
+                        </button>
+                    </div>
+                )}
+            />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main">
@@ -190,12 +230,9 @@ export const CommissionsView = () => {
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Incoming Transaction Audit</h3>
-                    <button
-                        onClick={handleExport}
-                        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-                    >
-                        <Download size={16} /> Download Ledger
-                    </button>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                        {selectedOrganizer === 'ALL' ? 'All organizers' : selectedOrganizer}
+                    </span>
                 </div>
                 <table className="admin-table">
                     <thead>
@@ -210,10 +247,10 @@ export const CommissionsView = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {transactions.length === 0 ? (
+                        {filteredTransactions.length === 0 ? (
                             <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No transactions found</td></tr>
                         ) : (
-                            transactions.map((tx) => (
+                            filteredTransactions.map((tx) => (
                                 <tr key={tx.id}>
                                     <td style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.8rem' }}>TX-{tx.id.toString().padStart(4, '0')}</td>
                                     <td>
