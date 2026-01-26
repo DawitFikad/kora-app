@@ -53,6 +53,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
 
                 {/* Desktop Nav */}
                 <div className="desktop-nav" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                    <a href="#home" className="nav-link">Home</a>
                     <a href="#how-it-works" className="nav-link">{t('nav.howItWorks')}</a>
                     <a href="#features" className="nav-link">{t('nav.features')}</a>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -137,6 +138,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                         style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border)', overflow: 'hidden' }}
                     >
                         <div style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem 2rem', gap: '1.5rem' }}>
+                            <a href="#home" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>Home</a>
                             <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.howItWorks')}</a>
                             <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.features')}</a>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
@@ -636,7 +638,7 @@ const OrganizerLanding = () => {
             <LoginModal isOpen={isLoginOpen} mode={authMode} onClose={() => setIsLoginOpen(false)} />
 
             {/* 1. Hero Section */}
-            <section style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
+            <section id="home" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
                 <div className="container" style={{ textAlign: 'center' }}>
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}

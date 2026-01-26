@@ -109,22 +109,8 @@ export class AuthService {
     }
 
     static async registerOrganizer(data: { phoneNumber: string; email?: string | null; name: string; city: string; payoutDetails: string }) {
-        // TODO: Add OTP verification step for registration too, or assume verified before calling this?
-        // The plan said "Verify OTP first". 
-        // For simplicity in this step, let's assume the client verifies OTP and then calls register within a short window, 
-        // OR we implement a registration flow that includes OTP.
-        // Let's stick to: User Requests OTP -> Verifies -> If new, they are User. 
-        // If they want to be Organizer, maybe a separate endpoint `auth/organizer/register`?
-        // Let's implement `registerOrganizer` which starts the flow or completes it.
-
-        // Better flow: 
-        // 1. Request OTP for `phoneNumber`.
-        // 2. Verify OTP. 
-        // 3. Call `registerOrganizer` with a "verification token" or similar?
-        // Or just trusted client flow for now?
-
-        // Let's assume `registerOrganizer` creates the Pending user.
-
+        console.log(`[AuthService] Starting organizer registration for phone: ${data.phoneNumber}`);
+        
         const email = data.email && data.email.trim() !== '' ? data.email.trim() : null;
 
         const existingUser = await prisma.user.findUnique({
@@ -133,80 +119,110 @@ export class AuthService {
         });
 
         if (existingUser?.organizer) {
+            console.log(`[AuthService] User ${existingUser.id} already has organizer profile`);
             throw new Error("User is already an organizer or has a pending application.");
         }
 
         let user;
         if (existingUser) {
+            console.log(`[AuthService] Upgrading existing user ${existingUser.id} to organizer`);
             // Update existing user to Organizer role
-            user = await prisma.user.update({
-                where: { id: existingUser.id },
-                data: {
-                    role: Role.ORGANIZER,
-                    status: AccountStatus.PENDING,
-                    email: email || existingUser.email, // Update email if provided, otherwise keep existing
-                    profile: {
-                        update: {
-                            fullName: data.name, // Update profile name
+            try {
+                user = await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        role: Role.ORGANIZER,
+                        status: AccountStatus.PENDING,
+                        email: email || existingUser.email, // Update email if provided, otherwise keep existing
+                        profile: {
+                            update: {
+                                fullName: data.name, // Update profile name
+                            }
+                        },
+                        organizer: {
+                            create: { // Create organizer profile
+                                organizationName: data.name,
+                                contactPhone: data.phoneNumber,
+                                contactEmail: email,
+                                city: data.city,
+                                payoutDetails: data.payoutDetails,
+                                status: "PENDING",
+                            }
                         }
                     },
-                    organizer: {
-                        create: { // Create organizer profile
-                            organizationName: data.name,
-                            contactPhone: data.phoneNumber,
-                            contactEmail: email,
-                            city: data.city,
-                            payoutDetails: data.payoutDetails,
-                            status: "PENDING",
-                        }
-                    }
-                },
-                include: { organizer: true }
-            });
+                    include: { organizer: true }
+                });
+                console.log(`[AuthService] Successfully upgraded user to organizer`);
+            } catch (updateError: any) {
+                console.error(`[AuthService] Error upgrading user to organizer:`, updateError);
+                throw new Error(`Failed to upgrade user: ${updateError.message}`);
+            }
         } else {
+            console.log(`[AuthService] Creating new organizer user`);
             // Create brand new user as Organizer
-            user = await prisma.user.create({
-                data: {
-                    phoneNumber: data.phoneNumber,
-                    email: email,
-                    role: Role.ORGANIZER,
-                    status: AccountStatus.PENDING,
-                    profile: {
-                        create: {
-                            fullName: data.name,
+            try {
+                user = await prisma.user.create({
+                    data: {
+                        phoneNumber: data.phoneNumber,
+                        email: email,
+                        role: Role.ORGANIZER,
+                        status: AccountStatus.PENDING,
+                        profile: {
+                            create: {
+                                fullName: data.name,
+                            }
+                        },
+                        organizer: {
+                            create: {
+                                organizationName: data.name,
+                                contactPhone: data.phoneNumber,
+                                contactEmail: email,
+                                city: data.city,
+                                payoutDetails: data.payoutDetails,
+                                status: "PENDING",
+                            }
                         }
                     },
-                    organizer: {
-                        create: {
-                            organizationName: data.name,
-                            contactPhone: data.phoneNumber,
-                            contactEmail: email,
-                            city: data.city,
-                            payoutDetails: data.payoutDetails,
-                            status: "PENDING",
-                        }
-                    }
-                },
-                include: { organizer: true }
-            });
+                    include: { organizer: true }
+                });
+                console.log(`[AuthService] Successfully created new organizer user`);
+            } catch (createError: any) {
+                console.error(`[AuthService] Error creating new organizer:`, createError);
+                throw new Error(`Failed to create organizer: ${createError.message}`);
+            }
         }
 
         // Get the organizerId from the newly created organizer profile
         const organizerId = user.organizer?.id;
+        console.log(`[AuthService] Organizer ID: ${organizerId}`);
 
         // Generate tokens
+        console.log(`[AuthService] Generating tokens for organizer`);
         const accessToken = this.generateAccessToken(user.id, user.role, organizerId);
         const refreshToken = this.generateRefreshToken(user.id);
 
-        // Store refresh token
-        await prisma.refreshToken.create({
-            data: {
-                token: refreshToken,
-                userId: user.id,
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            },
-        });
+        // Store refresh token - delete any existing ones first to avoid unique constraint
+        try {
+            // Delete any existing refresh tokens for this user
+            await prisma.refreshToken.deleteMany({
+                where: { userId: user.id }
+            });
+            
+            // Create new refresh token
+            await prisma.refreshToken.create({
+                data: {
+                    token: refreshToken,
+                    userId: user.id,
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                },
+            });
+            console.log(`[AuthService] Refresh token stored successfully`);
+        } catch (tokenError: any) {
+            console.error(`[AuthService] Error storing refresh token:`, tokenError);
+            throw new Error(`Failed to store refresh token: ${tokenError.message}`);
+        }
 
+        console.log(`[AuthService] Organizer registration completed successfully`);
         return { user, accessToken, refreshToken };
     }
 

@@ -57,6 +57,14 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
 
                 // Otherwise, complete registration with the data from step 1
                 try {
+                    console.log('Attempting organizer registration with data:', {
+                        phoneNumber,
+                        email,
+                        name,
+                        city,
+                        payoutDetails
+                    });
+                    
                     const regRes: any = await AuthService.registerOrganizer({
                         phoneNumber,
                         email,
@@ -64,10 +72,14 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         city,
                         payoutDetails
                     });
+                    
+                    console.log('Registration successful:', regRes);
                     await login({ accessToken: regRes.accessToken, user: regRes.user });
                     onClose();
                 } catch (regErr: any) {
-                    setError(regErr.response?.data?.error || 'Registration failed after verification.');
+                    console.error('Registration error details:', regErr);
+                    console.error('Error response:', regErr.response?.data);
+                    setError(regErr.response?.data?.error || regErr.error || regErr.message || 'Registration failed after verification.');
                 }
             } else {
                 // Regular login mode

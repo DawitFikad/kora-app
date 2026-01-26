@@ -87,22 +87,9 @@ export class ContentService {
     }
 
     static async listActiveBanners() {
-        const now = new Date();
         return prisma.homepageBanner.findMany({
             where: {
-                isActive: true,
-                OR: [
-                    { startDate: null },
-                    { startDate: { lte: now } }
-                ],
-                AND: [
-                    {
-                        OR: [
-                            { endDate: null },
-                            { endDate: { gte: now } }
-                        ]
-                    }
-                ]
+                isActive: true
             },
             orderBy: [
                 { priority: 'desc' },
