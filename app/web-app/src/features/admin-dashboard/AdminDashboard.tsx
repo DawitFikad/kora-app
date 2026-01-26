@@ -38,7 +38,7 @@ import { TeamManagementView } from './components/TeamManagementView';
 import { ActivityLogView } from './components/ActivityLogView';
 
 // --- Types ---
-type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud Monitoring' | 'Content' | 'Invite Admin' | 'Settings' | 'Platform Health' | 'Audit Logs';
+export type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud Monitoring' | 'Content' | 'Invite Admin' | 'Settings' | 'Platform Health' | 'Audit Logs';
 
 // --- Main Admin Dashboard Component ---
 

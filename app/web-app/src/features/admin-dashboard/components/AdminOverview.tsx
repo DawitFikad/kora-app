@@ -20,10 +20,11 @@ import {
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AdminService } from '../../../core/api/admin.service';
+import type { AdminTab } from '../AdminDashboard';
 import { exportToCSV } from '../../../core/utils/export';
 import { exportToPDF } from '../../../core/utils/pdf';
 
-export const AdminOverview = () => {
+export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) => void }) => {
     const { t } = useTranslation();
     const [organizers, setOrganizers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -31,6 +32,7 @@ export const AdminOverview = () => {
     const [recentEvents, setRecentEvents] = useState<any[]>([]);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
+    const [currentTime, setCurrentTime] = useState(new Date());
     const [stats, setStats] = useState({
         pendingOrganizers: 0,
         pendingEvents: 0,
@@ -45,6 +47,15 @@ export const AdminOverview = () => {
     });
     const [categoryData, setCategoryData] = useState<any[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
+
+    // Update current time every second
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -116,7 +127,14 @@ export const AdminOverview = () => {
             }
         };
 
+        // Initial fetch
         fetchDashboardData();
+        
+        // Set up real-time updates every 30 seconds
+        const interval = setInterval(fetchDashboardData, 30000);
+        
+        // Cleanup interval on component unmount
+        return () => clearInterval(interval);
     }, []);
 
     const handleExportOrganizers = (type: 'csv' | 'pdf') => {
@@ -153,6 +171,32 @@ export const AdminOverview = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {/* Add global styles for animations */}
+            <style>{`
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.7; transform: scale(1.1); }
+                }
+                
+                @keyframes slideInUp {
+                    from { transform: translateY(20px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                
+                .admin-card {
+                    animation: slideInUp 0.6s ease-out;
+                }
+                
+                .admin-action-btn:hover {
+                    transform: translateY(-2px) scale(1.02);
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                }
+                
+                .stat-card-value {
+                    animation: slideInUp 0.8s ease-out;
+                }
+            `}</style>
+            
             <div style={{ paddingBottom: '40px' }}>
                 {/* 1. Header KPIs (4 Cards) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '16px' }}>
@@ -162,6 +206,7 @@ export const AdminOverview = () => {
                         trend="Gross Sales Volume"
                         trendColor="var(--text-muted)"
                         icon={DollarSign}
+                        isLive={true}
                     />
                     <StatCard
                         label="Platform Profit"
@@ -169,6 +214,7 @@ export const AdminOverview = () => {
                         trend="Commission + Fees"
                         trendColor="#10B981"
                         icon={Activity}
+                        isLive={true}
                     />
                     <StatCard
                         label="Org. Earnings"
@@ -176,6 +222,7 @@ export const AdminOverview = () => {
                         trend="Net paid to partners"
                         trendColor="#8B5CF6"
                         icon={TrendingUp}
+                        isLive={true}
                     />
                     <StatCard
                         label="Active Organizers"
@@ -190,6 +237,7 @@ export const AdminOverview = () => {
                         trend="Total Tickets Issued"
                         trendColor="var(--text-muted)"
                         icon={CheckCircle2}
+                        isLive={true}
                     />
                 </div>
 
@@ -207,12 +255,38 @@ export const AdminOverview = () => {
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             {[
-                                { label: 'Organizers', sub: 'Validate', icon: ShieldCheck, col: '#3B82F6' },
-                                { label: 'Events', sub: 'Review', icon: CalendarCheck, col: '#10B981' },
-                                { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6' },
-                                { label: 'Reports', sub: 'Finance', icon: ClipboardList, col: '#EC4899' }
+                                { label: 'Organizers', sub: `${stats.pendingOrganizers} Pending`, icon: ShieldCheck, col: '#3B82F6', tab: 'Organizer Approvals' },
+                                { label: 'Events', sub: `${stats.pendingEvents} Review`, icon: CalendarCheck, col: '#10B981', tab: 'Event Approvals' },
+                                { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6', tab: 'Analytics' },
+                                { label: 'Reports', sub: 'Finance', icon: ClipboardList, col: '#EC4899', tab: 'Reports' }
                             ].map((btn, i) => (
-                                <button key={i} className="admin-action-btn" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '10px', borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
+                                <button 
+                                    key={i} 
+                                    className="admin-action-btn" 
+                                    onClick={() => setActiveTab(btn.tab as AdminTab)}
+                                    style={{ 
+                                        background: 'var(--bg-main)', 
+                                        border: '1px solid var(--border)', 
+                                        padding: '10px', 
+                                        borderRadius: '14px', 
+                                        cursor: 'pointer', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '8px', 
+                                        transition: 'all 0.2s',
+                                        position: 'relative'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'var(--bg-hover)';
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'var(--bg-main)';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                >
                                     <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${btn.col}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <btn.icon size={14} color={btn.col} />
                                     </div>
@@ -220,6 +294,18 @@ export const AdminOverview = () => {
                                         <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{btn.label}</p>
                                         <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', margin: 0 }}>{btn.sub}</p>
                                     </div>
+                                    {(btn.label === 'Organizers' && stats.pendingOrganizers > 0) || (btn.label === 'Events' && stats.pendingEvents > 0) ? (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '8px',
+                                            right: '8px',
+                                            width: '8px',
+                                            height: '8px',
+                                            background: '#EF4444',
+                                            borderRadius: '50%',
+                                            animation: 'pulse 2s infinite'
+                                        }} />
+                                    ) : null}
                                 </button>
                             ))}
                         </div>
@@ -231,23 +317,110 @@ export const AdminOverview = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Globe size={14} color="var(--text-muted)" />
-                                    <h3 style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--text-main)' }}>{new Date().toLocaleString('default', { month: 'short' })} '{new Date().getFullYear().toString().slice(-2)}</h3>
+                                   
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                                        {currentTime.toLocaleDateString('default', { weekday: 'short' })}
+                                    </div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                        {currentTime.toLocaleTimeString('default', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </div>
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.65rem', fontWeight: 700 }}>
                                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <span key={d} style={{ color: 'var(--text-muted)', opacity: 0.6 }}>{d}</span>)}
-                                {Array.from({ length: 31 }).map((_, i) => {
-                                    const day = i + 1;
-                                    const isToday = day === new Date().getDate();
-                                    return (
-                                        <span key={i} style={{
-                                            background: isToday ? 'var(--bg-active)' : 'transparent',
-                                            color: isToday ? 'white' : 'var(--text-main)',
-                                            borderRadius: '8px', padding: '4px 0',
-                                            fontWeight: isToday ? 900 : 600
-                                        }}>{day}</span>
-                                    )
-                                })}
+                                {(() => {
+                                    const currentYear = currentTime.getFullYear();
+                                    const currentMonth = currentTime.getMonth();
+                                    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+                                    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                                    const today = currentTime.getDate();
+                                    
+                                    const days = [];
+                                    
+                                    // Empty cells for days before month starts
+                                    for (let i = 0; i < firstDay; i++) {
+                                        days.push(<span key={`empty-${i}`} style={{ opacity: 0.2 }}>-</span>);
+                                    }
+                                    
+                                    // Days of the month
+                                    for (let day = 1; day <= daysInMonth; day++) {
+                                        const isToday = day === today;
+                                        const isPast = day < today;
+                                        const isFuture = day > today;
+                                        
+                                        days.push(
+                                            <span 
+                                                key={day} 
+                                                style={{
+                                                    background: isToday 
+                                                        ? 'var(--bg-active)' 
+                                                        : isPast 
+                                                            ? 'rgba(16, 185, 129, 0.1)' 
+                                                            : isFuture 
+                                                                ? 'rgba(59, 130, 246, 0.05)' 
+                                                                : 'transparent',
+                                                    color: isToday 
+                                                        ? 'white' 
+                                                        : isPast 
+                                                            ? '#10B981' 
+                                                            : isFuture 
+                                                                ? '#3B82F6' 
+                                                                : 'var(--text-main)',
+                                                    borderRadius: '8px', 
+                                                    padding: '4px 0',
+                                                    fontWeight: isToday ? 900 : isPast ? 700 : 600,
+                                                    fontSize: isToday ? '0.7rem' : '0.62rem',
+                                                    border: isToday ? '2px solid var(--primary)' : 'none',
+                                                    position: 'relative',
+                                                    cursor: isToday ? 'pointer' : 'default'
+                                                }}
+                                            >
+                                                {day}
+                                                {isToday && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '-2px',
+                                                        right: '-2px',
+                                                        width: '6px',
+                                                        height: '6px',
+                                                        background: '#EF4444',
+                                                        borderRadius: '50%',
+                                                        animation: 'pulse 2s infinite'
+                                                    }} />
+                                                )}
+                                            </span>
+                                        );
+                                    }
+                                    
+                                    return days;
+                                })()}
+                            </div>
+                            
+                            {/* Current time indicator */}
+                            <div style={{ 
+                                marginTop: '12px', 
+                                padding: '8px', 
+                                background: 'rgba(16, 185, 129, 0.1)', 
+                                borderRadius: '8px',
+                                textAlign: 'center',
+                                border: '1px solid rgba(16, 185, 129, 0.2)'
+                            }}>
+                                <div style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 700 }}>
+                                    CURRENT TIME
+                                </div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                                    {currentTime.toLocaleTimeString()}
+                                </div>
+                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                    {currentTime.toLocaleDateString('default', { 
+                                        weekday: 'long', 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -261,25 +434,91 @@ export const AdminOverview = () => {
                             <UserPlus size={16} color="#10B981" />
                             <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-main)' }}>Organizer Status</h3>
                         </div>
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '16px' }}>
-                            <div style={{ position: 'relative', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: '8px solid var(--bg-subtle)', position: 'absolute' }} />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
+                            {/* Improved Donut Chart */}
+                            <div style={{ position: 'relative', width: '140px', height: '140px' }}>
+                                <svg width="140" height="140" style={{ transform: 'rotate(-90deg)' }}>
+                                    {/* Background circle */}
+                                    <circle
+                                        cx="70"
+                                        cy="70"
+                                        r="60"
+                                        fill="none"
+                                        stroke="var(--bg-subtle)"
+                                        strokeWidth="12"
+                                    />
+                                    {/* Active organizers arc */}
+                                    <circle
+                                        cx="70"
+                                        cy="70"
+                                        r="60"
+                                        fill="none"
+                                        stroke="#10B981"
+                                        strokeWidth="12"
+                                        strokeDasharray={`${(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 2 * Math.PI * 60} ${2 * Math.PI * 60}`}
+                                        style={{
+                                            transition: 'stroke-dasharray 1.5s ease',
+                                            strokeLinecap: 'round'
+                                        }}
+                                    />
+                                    {/* Pending organizers arc */}
+                                    <circle
+                                        cx="70"
+                                        cy="70"
+                                        r="60"
+                                        fill="none"
+                                        stroke="#F59E0B"
+                                        strokeWidth="12"
+                                        strokeDasharray={`${(stats.pendingOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 2 * Math.PI * 60} ${2 * Math.PI * 60}`}
+                                        strokeDashoffset={`-(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 2 * Math.PI * 60}`}
+                                        style={{
+                                            transition: 'stroke-dasharray 1.5s ease',
+                                            strokeLinecap: 'round'
+                                        }}
+                                    />
+                                </svg>
+                                {/* Center text */}
                                 <div style={{
-                                    width: '80px', height: '80px', borderRadius: '50%', border: '8px solid transparent',
-                                    borderTopColor: '#10B981', borderRightColor: '#10B981',
-                                    transform: `rotate(${(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 360}deg)`,
-                                    transition: 'transform 1.5s ease'
-                                }} />
-                                <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{stats.activeOrganizers}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>VERIFIED</p>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10B981' }}>{stats.activeOrganizers}</p>
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                                        {stats.activeOrganizers + stats.pendingOrganizers}
+                                    </div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                        TOTAL
+                                    </div>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
-                                    <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)' }}>PENDING</p>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#F59E0B' }}>{stats.pendingOrganizers}</p>
+                            </div>
+                            
+                            {/* Legend with better styling */}
+                            <div style={{ display: 'flex', gap: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10B981' }} />
+                                    <div>
+                                        <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', margin: '0 0 2px 0' }}>VERIFIED</p>
+                                        <p style={{ fontSize: '1rem', fontWeight: 900, color: '#10B981', margin: 0 }}>{stats.activeOrganizers}</p>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#F59E0B' }} />
+                                    <div>
+                                        <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', margin: '0 0 2px 0' }}>PENDING</p>
+                                        <p style={{ fontSize: '1rem', fontWeight: 900, color: '#F59E0B', margin: 0 }}>{stats.pendingOrganizers}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Percentage indicator */}
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                                    Verification Rate
+                                </div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10B981' }}>
+                                    {((stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 100).toFixed(1)}%
                                 </div>
                             </div>
                         </div>
@@ -288,26 +527,152 @@ export const AdminOverview = () => {
                     {/* Ticket Sales Trend (Right) */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div className="admin-card" style={{ flex: 1, padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', minHeight: '320px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <TrendingUp size={16} color="#F59E0B" />
                                     <h3 style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>Ticket Sales Trend</h3>
                                 </div>
-                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>MONTHLY PERFORMANCE</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>MONTHLY PERFORMANCE</span>
+                                    <div style={{ 
+                                        width: '8px', 
+                                        height: '8px', 
+                                        background: '#10B981', 
+                                        borderRadius: '50%',
+                                        animation: 'pulse 2s infinite'
+                                    }} />
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flex: 1, minHeight: '120px', padding: '10px 0' }}>
-                                {monthlySales.length > 0 ? monthlySales.map((s, i) => {
-                                    const max = Math.max(...monthlySales.map(m => m.amount), 1);
-                                    const h = (s.amount / max) * 100;
-                                    return (
-                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                                                <div style={{ height: `${h}%`, width: '14px', background: 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)', borderRadius: '4px' }} />
-                                            </div>
-                                            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)' }}>{s.name}</span>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                                {monthlySales.length > 0 ? (
+                                    <>
+                                        {/* Chart bars */}
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'flex-end', 
+                                            gap: '8px', 
+                                            flex: 1, 
+                                            minHeight: '140px',
+                                            padding: '10px 0',
+                                            position: 'relative'
+                                        }}>
+                                            {monthlySales.map((s, i) => {
+                                                const max = Math.max(...monthlySales.map(m => m.amount), 1);
+                                                const h = (s.amount / max) * 100;
+                                                const isCurrentMonth = i === monthlySales.length - 1;
+                                                
+                                                return (
+                                                    <div key={i} style={{ 
+                                                        flex: 1, 
+                                                        display: 'flex', 
+                                                        flexDirection: 'column', 
+                                                        alignItems: 'center', 
+                                                        gap: '8px',
+                                                        position: 'relative'
+                                                    }}>
+                                                        <div style={{ 
+                                                            position: 'relative', 
+                                                            width: '100%', 
+                                                            display: 'flex', 
+                                                            justifyContent: 'center',
+                                                            alignItems: 'flex-end'
+                                                        }}>
+                                                            <div 
+                                                                style={{ 
+                                                                    height: `${h}%`, 
+                                                                    width: isCurrentMonth ? '18px' : '14px', 
+                                                                    background: isCurrentMonth 
+                                                                        ? 'linear-gradient(180deg, #10B981 0%, #059669 100%)' 
+                                                                        : 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)', 
+                                                                    borderRadius: '4px',
+                                                                    transition: 'all 0.3s ease',
+                                                                    cursor: 'pointer',
+                                                                    boxShadow: isCurrentMonth ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.transform = 'scaleY(1.05)';
+                                                                    e.currentTarget.style.filter = 'brightness(1.1)';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.transform = 'scaleY(1)';
+                                                                    e.currentTarget.style.filter = 'brightness(1)';
+                                                                }}
+                                                            />
+                                                            {/* Value tooltip */}
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                bottom: `${h}%`,
+                                                                transform: 'translateY(-8px)',
+                                                                background: 'var(--bg-tooltip)',
+                                                                color: 'var(--text-main)',
+                                                                padding: '4px 8px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.6rem',
+                                                                fontWeight: 700,
+                                                                whiteSpace: 'nowrap',
+                                                                opacity: 0,
+                                                                transition: 'opacity 0.2s',
+                                                                pointerEvents: 'none',
+                                                                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+                                                            >
+                                                                ETB {s.amount.toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                        <span style={{ 
+                                                            fontSize: '0.62rem', 
+                                                            fontWeight: isCurrentMonth ? 900 : 600,
+                                                            color: isCurrentMonth ? '#10B981' : 'var(--text-muted)' 
+                                                        }}>
+                                                            {s.name}
+                                                        </span>
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
-                                    )
-                                }) : <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)' }}>Metrics loading...</div>}
+                                        
+                                        {/* Summary stats */}
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center',
+                                            padding: '12px 0 0 0',
+                                            borderTop: '1px solid var(--border)',
+                                            marginTop: '8px'
+                                        }}>
+                                            <div>
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>TOTAL SALES</div>
+                                                <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                                                    ETB {monthlySales.reduce((sum, s) => sum + s.amount, 0).toLocaleString()}
+                                                </div>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>AVERAGE</div>
+                                                <div style={{ fontSize: '1rem', fontWeight: 900, color: '#F59E0B' }}>
+                                                    ETB {Math.round(monthlySales.reduce((sum, s) => sum + s.amount, 0) / monthlySales.length).toLocaleString()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div style={{ 
+                                        flex: 1, 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        color: 'var(--text-muted)',
+                                        gap: '12px'
+                                    }}>
+                                        <TrendingUp size={32} style={{ opacity: 0.3 }} />
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>Loading sales data...</div>
+                                            <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Real-time metrics will appear here</div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -500,22 +865,107 @@ export const AdminOverview = () => {
     );
 };
 
-const StatCard = ({ label, value, trend, trendColor, icon: Icon }: any) => (
-    <div style={{
-        background: 'var(--bg-card)', borderRadius: '24px', padding: '20px',
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)', border: '1px solid var(--border)',
-        minHeight: '100px'
-    }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon size={14} color="var(--text-muted)" />
+const StatCard = ({ label, value, trend, trendColor, icon: Icon, isLive = false }: any) => (
+    <motion.div
+        whileHover={{ 
+            y: -4, 
+            boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
+            transition: { duration: 0.2 }
+        }}
+        style={{
+            background: 'var(--bg-card)', 
+            borderRadius: '24px', 
+            padding: '20px',
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)', 
+            border: '1px solid var(--border)',
+            minHeight: '100px',
+            position: 'relative',
+            overflow: 'hidden'
+        }}
+    >
+        {/* Live indicator */}
+        {isLive && (
+            <div style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(16, 185, 129, 0.1)',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                border: '1px solid rgba(16, 185, 129, 0.2)'
+            }}>
+                <div style={{
+                    width: '6px',
+                    height: '6px',
+                    background: '#10B981',
+                    borderRadius: '50%',
+                    animation: 'pulse 2s infinite'
+                }} />
+                <span style={{ fontSize: '0.6rem', color: '#10B981', fontWeight: 700 }}>LIVE</span>
             </div>
+        )}
+        
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <p style={{ 
+                color: 'var(--text-muted)', 
+                fontSize: '0.75rem', 
+                fontWeight: 800, 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.05em' 
+            }}>
+                {label}
+            </p>
+            <motion.div
+                whileHover={{ rotate: 15, scale: 1.1 }}
+                transition={{ duration: 0.2 }}
+                style={{ 
+                    width: '28px', 
+                    height: '28px', 
+                    borderRadius: '8px', 
+                    background: 'var(--bg-subtle)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                }}
+            >
+                <Icon size={14} color="var(--text-muted)" />
+            </motion.div>
         </div>
         <div>
-            <h3 style={{ fontSize: '1.3rem', fontWeight: 1000, color: 'var(--text-main)', marginBottom: '2px' }}>{value}</h3>
-            {trend && <span style={{ fontSize: '0.7rem', color: trendColor, fontWeight: 800, opacity: 0.8 }}>{trend}</span>}
+            <motion.h3 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                style={{ 
+                    fontSize: '1.3rem', 
+                    fontWeight: 1000, 
+                    color: 'var(--text-main)', 
+                    marginBottom: '2px' 
+                }}
+                className="stat-card-value"
+            >
+                {value}
+            </motion.h3>
+            {trend && (
+                <motion.span 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.8 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    style={{ 
+                        fontSize: '0.7rem', 
+                        color: trendColor, 
+                        fontWeight: 800 
+                    }}
+                >
+                    {trend}
+                </motion.span>
+            )}
         </div>
-    </div>
+    </motion.div>
 );
