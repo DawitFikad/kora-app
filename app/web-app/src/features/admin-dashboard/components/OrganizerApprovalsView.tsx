@@ -10,6 +10,7 @@ export const OrganizerApprovalsView = () => {
     const { t } = useTranslation();
     const [pendingOrganizers, setPendingOrganizers] = useState<any[]>([]);
     const [approvedOrganizers, setApprovedOrganizers] = useState<any[]>([]);
+    const [rejectedOrganizers, setRejectedOrganizers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [processingId, setProcessingId] = useState<number | null>(null);
@@ -18,12 +19,14 @@ export const OrganizerApprovalsView = () => {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [pending, approved]: any = await Promise.all([
+            const [pending, approved, rejected]: any = await Promise.all([
                 AdminService.getPendingOrganizers(),
-                AdminService.getApprovedOrganizers()
+                AdminService.getApprovedOrganizers(),
+                AdminService.getRejectedOrganizers()
             ]);
             setPendingOrganizers(pending);
             setApprovedOrganizers(approved);
+            setRejectedOrganizers(rejected);
         } catch (err: any) {
             setError(err.error || 'Failed to load organizers');
         } finally {
@@ -240,7 +243,20 @@ export const OrganizerApprovalsView = () => {
                 <div className="admin-card" style={{ padding: '24px' }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#EF4444', marginBottom: '20px' }}>Rejected Applications</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>History currently unavailable.</p>
+                        {rejectedOrganizers.length > 0 ? rejectedOrganizers.map((org) => (
+                            <div key={org.id} style={{ display: 'flex', flexDirection: 'column', padding: '16px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div>
+                                        <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>{org.organizationName}</p>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{org.city || '—'} · {org.contactEmail || 'No email'}</p>
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#EF4444' }}>Rejected</span>
+                                </div>
+                                <p style={{ marginTop: '8px', fontSize: '0.7rem', color: 'var(--text-muted)' }}>Submitted {new Date(org.createdAt).toLocaleDateString()}</p>
+                            </div>
+                        )) : (
+                            <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No rejected applications yet.</p>
+                        )}
                     </div>
                 </div>
             </div>

@@ -4,6 +4,7 @@ export const AdminService = {
     // Organizer Management
     getPendingOrganizers: () => api.get('/profiles/admin/organizers?status=PENDING'),
     getApprovedOrganizers: () => api.get('/profiles/admin/organizers?status=APPROVED'),
+    getRejectedOrganizers: () => api.get('/profiles/admin/organizers?status=REJECTED'),
 
     reviewOrganizer: (id: number, status: 'APPROVED' | 'REJECTED', adminNote?: string, commission?: any) =>
         api.post(`/profiles/admin/organizers/${id}/review`, { status, adminNote, ...commission }),
