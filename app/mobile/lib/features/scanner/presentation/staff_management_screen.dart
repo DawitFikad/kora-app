@@ -207,7 +207,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                              onPressed: () => _removeStaff(member['id']),
+                              onPressed: () => _confirmRemoveStaff(context, member['id'], name),
                             ),
                           ],
                         ),
@@ -230,6 +230,50 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     } catch (e) {
        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
+  }
+
+  void _confirmRemoveStaff(BuildContext context, int id, String name) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1D192B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.delete_outline, color: Colors.redAccent, size: 26),
+            const SizedBox(width: 12),
+            Text(
+              'Remove staff',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          'Remove $name from staff?',
+          style: GoogleFonts.outfit(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _removeStaff(id);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('Remove', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 }
 
