@@ -20,6 +20,10 @@ final myTicketsProvider = FutureProvider.autoDispose<List<Ticket>>((ref) async {
   return service.getMyTickets();
 });
 
+enum TicketSort { date, name, mostBooked }
+
+final ticketSortProvider = StateProvider<TicketSort>((ref) => TicketSort.date);
+
 class MyTicketsScreen extends ConsumerStatefulWidget {
   const MyTicketsScreen({super.key});
 
@@ -31,6 +35,7 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
   bool _isNavigating = false;
 
   void _showMenu(BuildContext context, Color textColor, Color backgroundColor) {
+    final currentSort = ref.read(ticketSortProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: backgroundColor,
@@ -42,6 +47,36 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Sort Tickets",
+                style: GoogleFonts.poppins(color: textColor, fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildSortTile(
+              context,
+              label: "Date booked",
+              value: TicketSort.date,
+              current: currentSort,
+              textColor: textColor,
+            ),
+            _buildSortTile(
+              context,
+              label: "Name",
+              value: TicketSort.name,
+              current: currentSort,
+              textColor: textColor,
+            ),
+            _buildSortTile(
+              context,
+              label: "Most Booked",
+              value: TicketSort.mostBooked,
+              current: currentSort,
+              textColor: textColor,
+            ),
+            Divider(color: textColor.withOpacity(0.1)),
             ListTile(
               leading: Icon(Icons.refresh, color: textColor),
               title: Text("Refresh", style: TextStyle(color: textColor)),
@@ -61,6 +96,26 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSortTile(
+    BuildContext context, {
+    required String label,
+    required TicketSort value,
+    required TicketSort current,
+    required Color textColor,
+  }) {
+    final isSelected = value == current;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(Icons.sort, color: textColor),
+      title: Text(label, style: TextStyle(color: textColor)),
+      trailing: isSelected ? Icon(Icons.check, color: textColor) : null,
+      onTap: () {
+        ref.read(ticketSortProvider.notifier).state = value;
+        Navigator.pop(context);
+      },
     );
   }
 
@@ -217,6 +272,7 @@ class _TicketsListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ticketsAsync = ref.watch(myTicketsProvider);
+    final sort = ref.watch(ticketSortProvider);
 
     return RefreshIndicator(
       onRefresh: () async => ref.refresh(myTicketsProvider),
@@ -235,6 +291,29 @@ class _TicketsListView extends StatelessWidget {
                return ticket.status == 'VALID' && (eventDate.isAfter(now) || isToday);
             }
           }).toList();
+
+          if (sort == TicketSort.mostBooked) {
+            final counts = <int, int>{};
+            for (final ticket in filteredTickets) {
+              counts[ticket.event.id] = (counts[ticket.event.id] ?? 0) + 1;
+            }
+            filteredTickets.sort((a, b) {
+              final countA = counts[a.event.id] ?? 0;
+              final countB = counts[b.event.id] ?? 0;
+              if (countA != countB) return countB.compareTo(countA);
+              final dateA = DateTime.parse(a.event.dateTime);
+              final dateB = DateTime.parse(b.event.dateTime);
+              return isPast ? dateB.compareTo(dateA) : dateA.compareTo(dateB);
+            });
+          } else if (sort == TicketSort.name) {
+            filteredTickets.sort((a, b) => a.event.title.toLowerCase().compareTo(b.event.title.toLowerCase()));
+          } else {
+            filteredTickets.sort((a, b) {
+              final dateA = a.createdAt;
+              final dateB = b.createdAt;
+              return isPast ? dateB.compareTo(dateA) : dateA.compareTo(dateB);
+            });
+          }
 
           if (filteredTickets.isEmpty) {
             return Center(

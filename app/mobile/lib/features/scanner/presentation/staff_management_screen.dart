@@ -62,13 +62,24 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final staffAsync = ref.watch(staffListProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
+    final cardColor = isDark ? const Color(0xFF232030) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white54 : Colors.black54;
+    final inputBorderColor = isDark ? Colors.white10 : Colors.black12;
+    final dropdownBg = isDark ? const Color(0xFF232030) : Colors.white;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF15131C),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text('staff.title'.tr(), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text(
+          'staff.title'.tr(),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textColor),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -80,40 +91,56 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF232030),
+                color: cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
                 children: [
                   TextField(
                     controller: _phoneController,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: textColor),
                     decoration: InputDecoration(
                       hintText: 'staff.phone_hint'.tr(),
-                      hintStyle: const TextStyle(color: Colors.white38),
+                      hintStyle: TextStyle(color: mutedColor),
                       prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF8B5CF6)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: inputBorderColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF8B5CF6)),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedRole,
-                    dropdownColor: const Color(0xFF232030),
-                    style: const TextStyle(color: Colors.white),
+                    dropdownColor: dropdownBg,
+                    style: TextStyle(color: textColor),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF8B5CF6)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: inputBorderColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF8B5CF6)),
+                      ),
                     ),
                     items: [
-                      DropdownMenuItem(value: 'SCANNER', child: Text('staff.role_scanner'.tr())),
-                      DropdownMenuItem(value: 'MANAGER', child: Text('staff.role_manager'.tr())),
+                      DropdownMenuItem(value: 'SCANNER', child: Text('staff.role_scanner'.tr(), style: TextStyle(color: textColor))),
+                      DropdownMenuItem(value: 'MANAGER', child: Text('staff.role_manager'.tr(), style: TextStyle(color: textColor))),
                     ],
                     onChanged: (val) => setState(() => _selectedRole = val!),
                   ),
@@ -141,13 +168,13 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 16),
             staffAsync.when(
               data: (staff) => staff.isEmpty 
-                ? Center(child: Text('staff.no_staff'.tr(), style: const TextStyle(color: Colors.white54)))
+                ? Center(child: Text('staff.no_staff'.tr(), style: TextStyle(color: mutedColor)))
                 : ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -159,7 +186,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                       return Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF232030),
+                          color: cardColor,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
@@ -173,8 +200,8 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  Text(member['role'], style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                  Text(name, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+                                  Text(member['role'], style: TextStyle(color: mutedColor, fontSize: 12)),
                                 ],
                               ),
                             ),
