@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SupportScreen extends StatefulWidget {
@@ -11,46 +12,46 @@ class SupportScreen extends StatefulWidget {
 
 class _SupportScreenState extends State<SupportScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCategory = 'All';
+  String _selectedCategory = 'all';
 
   final List<String> _categories = const [
-    'All',
-    'Tickets',
-    'Payments',
-    'Account',
-    'Event Day',
+    'all',
+    'tickets',
+    'payments',
+    'account',
+    'event_day',
   ];
 
   final List<_FaqItem> _faqItems = const [
     _FaqItem(
-      category: 'Tickets',
-      question: 'How do I buy a ticket?',
-      answer: 'Find your event on the home screen, select your ticket type, and complete payment using Telebirr or other methods.',
+      categoryKey: 'tickets',
+      questionKey: 'support.faq.buy_ticket_q',
+      answerKey: 'support.faq.buy_ticket_a',
     ),
     _FaqItem(
-      category: 'Tickets',
-      question: 'Where can I find my ticket?',
-      answer: 'Go to My Tickets to see your ticket and QR code. You can use it offline at the venue.',
+      categoryKey: 'tickets',
+      questionKey: 'support.faq.find_ticket_q',
+      answerKey: 'support.faq.find_ticket_a',
     ),
     _FaqItem(
-      category: 'Payments',
-      question: 'Payment failed but money was deducted',
-      answer: 'Payments usually reverse automatically. If it doesn’t within 24 hours, contact support with the transaction ID.',
+      categoryKey: 'payments',
+      questionKey: 'support.faq.payment_failed_q',
+      answerKey: 'support.faq.payment_failed_a',
     ),
     _FaqItem(
-      category: 'Payments',
-      question: 'Is my ticket refundable?',
-      answer: 'Refund policies vary by event. Check the refund policy on the event details page before purchasing.',
+      categoryKey: 'payments',
+      questionKey: 'support.faq.refund_q',
+      answerKey: 'support.faq.refund_a',
     ),
     _FaqItem(
-      category: 'Account',
-      question: 'I changed my phone number',
-      answer: 'Contact support to update your account if you no longer have access to your original number.',
+      categoryKey: 'account',
+      questionKey: 'support.faq.phone_change_q',
+      answerKey: 'support.faq.phone_change_a',
     ),
     _FaqItem(
-      category: 'Event Day',
-      question: 'How do I enter the event?',
-      answer: 'Show the QR code from My Tickets at the entrance for scanning.',
+      categoryKey: 'event_day',
+      questionKey: 'support.faq.entry_q',
+      answerKey: 'support.faq.entry_a',
     ),
   ];
 
@@ -78,7 +79,7 @@ class _SupportScreenState extends State<SupportScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
       appBar: AppBar(
-        title: Text('Support & Help', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: textColor)),
+        title: Text('support.title'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -109,7 +110,7 @@ class _SupportScreenState extends State<SupportScreen> {
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Text(
-                      category,
+                      'support.categories.$category'.tr(),
                       style: GoogleFonts.poppins(
                         color: isSelected ? Colors.white : textColor,
                         fontSize: 12,
@@ -125,7 +126,7 @@ class _SupportScreenState extends State<SupportScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Quick Actions',
+            'support.quick_actions'.tr(),
             style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
           ),
           const SizedBox(height: 12),
@@ -134,7 +135,7 @@ class _SupportScreenState extends State<SupportScreen> {
               Expanded(
                 child: _buildQuickAction(
                   icon: Icons.email_outlined,
-                  title: 'Email',
+                  title: 'support.actions.email'.tr(),
                   subtitle: 'support@etticket.com',
                   onTap: () => _launchUrl('mailto:support@etticket.com'),
                   color: const Color(0xFFF59E0B),
@@ -147,7 +148,7 @@ class _SupportScreenState extends State<SupportScreen> {
               Expanded(
                 child: _buildQuickAction(
                   icon: Icons.phone_outlined,
-                  title: 'Call',
+                  title: 'support.actions.call'.tr(),
                   subtitle: '+251 911 223 344',
                   onTap: () => _launchUrl('tel:+251911223344'),
                   color: const Color(0xFF10B981),
@@ -164,10 +165,10 @@ class _SupportScreenState extends State<SupportScreen> {
               Expanded(
                 child: _buildQuickAction(
                   icon: Icons.chat_bubble_outline,
-                  title: 'Live Chat',
-                  subtitle: 'Usually replies in minutes',
+                  title: 'support.actions.live_chat'.tr(),
+                  subtitle: 'support.actions.live_chat_subtitle'.tr(),
                   onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Live chat is currently unavailable. Please email us.")),
+                    SnackBar(content: Text('support.live_chat_unavailable'.tr())),
                   ),
                   color: const Color(0xFF3B82F6),
                   cardColor: cardColor,
@@ -179,8 +180,8 @@ class _SupportScreenState extends State<SupportScreen> {
               Expanded(
                 child: _buildQuickAction(
                   icon: Icons.support_agent,
-                  title: 'WhatsApp',
-                  subtitle: 'Start a chat',
+                  title: 'support.actions.whatsapp'.tr(),
+                  subtitle: 'support.actions.whatsapp_subtitle'.tr(),
                   onTap: () => _launchUrl('https://wa.me/251911223344'),
                   color: const Color(0xFF22C55E),
                   cardColor: cardColor,
@@ -192,7 +193,7 @@ class _SupportScreenState extends State<SupportScreen> {
           ),
           const SizedBox(height: 28),
           Text(
-            'Frequently Asked Questions',
+            'support.faq_title'.tr(),
             style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
           ),
           const SizedBox(height: 12),
@@ -205,10 +206,12 @@ class _SupportScreenState extends State<SupportScreen> {
   List<_FaqItem> _filteredFaqs() {
     final query = _searchController.text.toLowerCase().trim();
     return _faqItems.where((item) {
-      final matchesCategory = _selectedCategory == 'All' || item.category == _selectedCategory;
+      final matchesCategory = _selectedCategory == 'all' || item.categoryKey == _selectedCategory;
       if (!matchesCategory) return false;
       if (query.isEmpty) return true;
-      return item.question.toLowerCase().contains(query) || item.answer.toLowerCase().contains(query);
+      final question = item.questionKey.tr().toLowerCase();
+      final answer = item.answerKey.tr().toLowerCase();
+      return question.contains(query) || answer.contains(query);
     }).toList();
   }
 
@@ -235,9 +238,9 @@ class _SupportScreenState extends State<SupportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('How can we help?', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+                Text('support.hero_title'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
                 const SizedBox(height: 4),
-                Text('Find answers, contact support, or report an issue.', style: GoogleFonts.poppins(fontSize: 12, color: mutedColor)),
+                Text('support.hero_subtitle'.tr(), style: GoogleFonts.poppins(fontSize: 12, color: mutedColor)),
               ],
             ),
           ),
@@ -252,7 +255,7 @@ class _SupportScreenState extends State<SupportScreen> {
       onChanged: (_) => setState(() {}),
       style: TextStyle(color: textColor),
       decoration: InputDecoration(
-        hintText: 'Search help articles',
+        hintText: 'support.search_hint'.tr(),
         hintStyle: TextStyle(color: mutedColor),
         prefixIcon: Icon(Icons.search, color: mutedColor),
         filled: true,
@@ -307,7 +310,7 @@ class _SupportScreenState extends State<SupportScreen> {
       child: ExpansionTile(
         tilePadding: EdgeInsets.zero,
         title: Text(
-          item.question,
+          item.questionKey.tr(),
           style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: textColor),
         ),
         trailing: Icon(Icons.expand_more, color: mutedColor),
@@ -315,7 +318,7 @@ class _SupportScreenState extends State<SupportScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
             child: Text(
-              item.answer,
+              item.answerKey.tr(),
               style: GoogleFonts.poppins(fontSize: 13, color: mutedColor, height: 1.5),
             ),
           ),
@@ -327,13 +330,13 @@ class _SupportScreenState extends State<SupportScreen> {
 }
 
 class _FaqItem {
-  final String category;
-  final String question;
-  final String answer;
+  final String categoryKey;
+  final String questionKey;
+  final String answerKey;
 
   const _FaqItem({
-    required this.category,
-    required this.question,
-    required this.answer,
+    required this.categoryKey,
+    required this.questionKey,
+    required this.answerKey,
   });
 }

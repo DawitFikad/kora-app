@@ -218,6 +218,44 @@
         "logout_confirm": "Are you sure you want to logout? You'll need to login again to access your tickets.",
         "logout": "Logout"
     },
+    "support": {
+        "title": "Support & Help",
+        "hero_title": "How can we help?",
+        "hero_subtitle": "Find answers, contact support, or report an issue.",
+        "search_hint": "Search help articles",
+        "quick_actions": "Quick Actions",
+        "faq_title": "Frequently Asked Questions",
+        "live_chat_unavailable": "Live chat is currently unavailable. Please email us.",
+        "categories": {
+            "all": "All",
+            "tickets": "Tickets",
+            "payments": "Payments",
+            "account": "Account",
+            "event_day": "Event Day"
+        },
+        "actions": {
+            "email": "Email",
+            "call": "Call",
+            "live_chat": "Live Chat",
+            "live_chat_subtitle": "Usually replies in minutes",
+            "whatsapp": "WhatsApp",
+            "whatsapp_subtitle": "Start a chat"
+        },
+        "faq": {
+            "buy_ticket_q": "How do I buy a ticket?",
+            "buy_ticket_a": "Find your event on the home screen, select your ticket type, and complete payment using Telebirr or other methods.",
+            "find_ticket_q": "Where can I find my ticket?",
+            "find_ticket_a": "Go to My Tickets to see your ticket and QR code. You can use it offline at the venue.",
+            "payment_failed_q": "Payment failed but money was deducted",
+            "payment_failed_a": "Payments usually reverse automatically. If it doesn’t within 24 hours, contact support with the transaction ID.",
+            "refund_q": "Is my ticket refundable?",
+            "refund_a": "Refund policies vary by event. Check the refund policy on the event details page before purchasing.",
+            "phone_change_q": "I changed my phone number",
+            "phone_change_a": "Contact support to update your account if you no longer have access to your original number.",
+            "entry_q": "How do I enter the event?",
+            "entry_a": "Show the QR code from My Tickets at the entrance for scanning."
+        }
+    },
     "errors": {
         "network": "Network is unstable. Please check your connection and try again.",
         "server": "Unable to connect to server. Please try again later.",
