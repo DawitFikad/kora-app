@@ -39,15 +39,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "search.title".tr(),
-                    style: GoogleFonts.poppins(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.chevron_left, color: textColor, size: 28),
+                        onPressed: () => context.pop(),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "search.title".tr(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     height: 56,
