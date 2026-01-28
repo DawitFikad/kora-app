@@ -30,6 +30,40 @@ class MyTicketsScreen extends ConsumerStatefulWidget {
 class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
   bool _isNavigating = false;
 
+  void _showMenu(BuildContext context, Color textColor, Color backgroundColor) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.refresh, color: textColor),
+              title: Text("Refresh", style: TextStyle(color: textColor)),
+              onTap: () {
+                ref.refresh(myTicketsProvider);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.home_rounded, color: textColor),
+              title: Text("Go Home", style: TextStyle(color: textColor)),
+              onTap: () {
+                ref.read(homeIndexProvider.notifier).state = 0;
+                context.go('/home');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleBack(BuildContext context) async {
     if (_isNavigating) return;
     setState(() => _isNavigating = true);
@@ -86,7 +120,7 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
               ),
               child: IconButton(
                 icon: Icon(Icons.tune, color: textColor, size: 20),
-                onPressed: () {},
+                onPressed: () => _showMenu(context, textColor, cardColor),
               ),
             ),
           ],

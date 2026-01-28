@@ -51,6 +51,11 @@ class LocalStorage extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> clearFavorites() async {
+    await _prefs.setStringList(keyFavorites, []);
+    notifyListeners();
+  }
+
   String? get authToken => _prefs.getString(keyAuthToken);
 
   Future<void> setAuthToken(String token) async {

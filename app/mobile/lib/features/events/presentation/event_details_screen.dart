@@ -9,6 +9,7 @@ import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'seat_selection_screen.dart';
+import 'package:share_plus/share_plus.dart';
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final int eventId;
@@ -167,7 +168,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.share, color: Colors.white),
-                onPressed: () {},
+                onPressed: () {
+                  final dateText = DateFormat('E, MMM d • h:mm a').format(eventDate);
+                  final deepLink = "etticket://event/${event.id}";
+                  final message = "${event.title}\n${event.venue}\n$dateText\n$deepLink";
+                  Share.share(message, subject: event.title);
+                },
               ),
             ],
           ),

@@ -12,6 +12,40 @@ import 'home_screen.dart';
 class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({super.key});
 
+  void _showMenu(BuildContext context, WidgetRef ref, Color textColor, Color backgroundColor) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.delete_outline, color: textColor),
+              title: Text("Clear all favorites", style: TextStyle(color: textColor)),
+              onTap: () async {
+                await ref.read(localStorageProvider).clearFavorites();
+                if (context.mounted) Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.home_rounded, color: textColor),
+              title: Text("Go Home", style: TextStyle(color: textColor)),
+              onTap: () {
+                ref.read(homeIndexProvider.notifier).state = 0;
+                context.go('/home');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // In a real app, you might have a dedicated favorites provider
@@ -46,7 +80,7 @@ class FavoritesScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.more_horiz, color: textColor),
-            onPressed: () {},
+            onPressed: () => _showMenu(context, ref, textColor, isDark ? const Color(0xFF1D192B) : Colors.white),
           ),
         ],
       ),
