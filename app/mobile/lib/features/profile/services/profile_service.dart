@@ -45,4 +45,13 @@ class ProfileService {
       throw e.response?.data['error'] ?? 'Failed to update profile';
     }
   }
+
+  Future<Map<String, dynamic>> getOrganizerProfile() async {
+    try {
+      final response = await _dio.get(ApiConstants.organizerProfile);
+      return response.data;
+    } on DioException catch (e) {
+      throw e.response?.data['error'] ?? 'Failed to fetch organizer profile';
+    }
+  }
 }

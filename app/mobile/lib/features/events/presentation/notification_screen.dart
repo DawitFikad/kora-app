@@ -20,6 +20,17 @@ final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>(
   final profile = await ref.watch(userProfileProvider.future);
   
   final allNotifications = await service.getNotifications();
+  int? organizerId;
+  if (profile.role == 'ORGANIZER') {
+    try {
+      final organizerProfile = await ref.read(profileServiceProvider).getOrganizerProfile();
+      organizerId = organizerProfile['id'] is int
+          ? organizerProfile['id']
+          : int.tryParse(organizerProfile['id']?.toString() ?? '');
+    } catch (_) {
+      organizerId = null;
+    }
+  }
   
   // Filter notifications based on role and IDs
   return allNotifications.where((n) {
@@ -35,7 +46,7 @@ final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>(
     if (profile.role == 'ORGANIZER') {
        // Check meta for organizer id or if organizerId matches
        // Usually organizerId corresponds to their profile id
-       return n.organizerId != null; // Simplified for now
+       return (organizerId != null && n.organizerId == organizerId) || n.userId == profile.id;
     }
     
     return true;
