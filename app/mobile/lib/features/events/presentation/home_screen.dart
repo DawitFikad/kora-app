@@ -329,6 +329,7 @@ class _HomeBody extends ConsumerWidget {
   Widget _buildHeader(BuildContext context, WidgetRef ref, Color textColor, Color mutedColor) {
     final citiesAsync = ref.watch(citiesProvider);
     final selectedCity = ref.watch(selectedCityProvider);
+    final allCities = City(id: 0, name: "home.all_cities".tr());
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -360,13 +361,13 @@ class _HomeBody extends ConsumerWidget {
                 PopupMenuButton<City>(
                   color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1D192B) : Colors.white,
                   onSelected: (city) {
-                    ref.read(selectedCityProvider.notifier).state = city;
+                    ref.read(selectedCityProvider.notifier).state = city.id == 0 ? null : city;
                   },
                   itemBuilder: (context) {
                     return citiesAsync.when(
                       data: (cities) => [
                         PopupMenuItem<City>(
-                           value: null, 
+                           value: allCities,
                            child: Text("home.all_cities".tr()),
                         ),
                         ...cities.map((c) => PopupMenuItem<City>(
