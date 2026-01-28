@@ -4,7 +4,6 @@ import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'dart:ui' as ui; 
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:mobile/features/events/services/event_service.dart';

@@ -15,8 +15,8 @@ export const AdminService = {
         api.post(`/events/${id}/review`, { status, ...commission }),
 
     // Financials
-    getFinancialTransactions: () => api.get('/financials/transactions'),
-    getFinancialMetrics: () => api.get('/financials/dashboard'),
+    getFinancialTransactions: (params?: any) => api.get('/financials/transactions', { params }),
+    getFinancialMetrics: (params?: any) => api.get('/financials/dashboard', { params }),
     // Content & Discovery
     getCategories: () => api.get('/content/categories'),
     getCities: () => api.get('/content/cities'),
@@ -35,7 +35,7 @@ export const AdminService = {
 
     // Platform KPIs
     getStats: () => api.get('/admin/stats'),
-    getAnalytics: () => api.get('/admin/analytics'),
+    getAnalytics: (params?: any) => api.get('/admin/analytics', { params }),
     getNotifications: () => api.get('/admin/notifications'),
     getAuditLogs: () => api.get('/admin/notifications?recipient=Audit Log'),
     respondToFeatureRequest: (notificationId: number, approved: boolean) => api.post(`/admin/feature-requests/${notificationId}/respond`, { approved }),

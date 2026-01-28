@@ -104,7 +104,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _selectedRole,
+                    initialValue: _selectedRole,
                     dropdownColor: const Color(0xFF232030),
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(

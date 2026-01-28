@@ -11,20 +11,12 @@ export const CommissionsView = () => {
     const [metrics, setMetrics] = useState<any>(null);
     const [fees, setFees] = useState<any[]>([]);
     const [overrides, setOverrides] = useState<any[]>([]);
+    const [organizerFilter, setOrganizerFilter] = useState('all');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [selectedOrganizer, setSelectedOrganizer] = useState('ALL');
-
-    const filteredTransactions = selectedOrganizer === 'ALL'
-        ? transactions
-        : transactions.filter(tx => tx.event?.organizer?.organizationName === selectedOrganizer);
-
-    const organizerOptions = Array.from(
-        new Set(transactions.map(tx => tx.event?.organizer?.organizationName).filter(Boolean))
-    );
 
     const handleExport = () => {
-        const exportData = filteredTransactions.map(tx => ({
+        const exportData = transactions.map(tx => ({
             id: tx.id,
             event: tx.event?.title || 'N/A',
             organizer: tx.event?.organizer?.organizationName || 'N/A',
@@ -83,40 +75,21 @@ export const CommissionsView = () => {
         );
     }
 
+    const organizerOptions = Array.from(
+        new Map(
+            transactions
+                .filter((tx) => tx.event?.organizer?.id)
+                .map((tx) => [tx.event.organizer.id, tx.event.organizer])
+        ).values()
+    ).sort((a: any, b: any) => (a.organizationName || '').localeCompare(b.organizationName || ''));
+
+    const filteredTransactions = organizerFilter === 'all'
+        ? transactions
+        : transactions.filter((tx) => String(tx.event?.organizer?.id) === organizerFilter);
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader
-                title="Commissions & Revenue"
-                subtitle="Detailed audit of platform fees, commission rates, and real-time revenue collection."
-                actions={(
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <select
-                            value={selectedOrganizer}
-                            onChange={(e) => setSelectedOrganizer(e.target.value)}
-                            style={{
-                                background: 'var(--bg-card)',
-                                border: '1px solid var(--border)',
-                                color: 'var(--text-main)',
-                                padding: '8px 12px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700
-                            }}
-                        >
-                            <option value="ALL">All organizers</option>
-                            {organizerOptions.map((org) => (
-                                <option key={org} value={org}>{org}</option>
-                            ))}
-                        </select>
-                        <button
-                            onClick={handleExport}
-                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-                        >
-                            <Download size={16} /> Download Ledger
-                        </button>
-                    </div>
-                )}
-            />
+            <AdminPageHeader title="Commissions & Revenue" subtitle="Detailed audit of platform fees, commission rates, and real-time revenue collection." />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main">
@@ -230,9 +203,26 @@ export const CommissionsView = () => {
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Incoming Transaction Audit</h3>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                        {selectedOrganizer === 'ALL' ? 'All organizers' : selectedOrganizer}
-                    </span>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <select
+                            value={organizerFilter}
+                            onChange={(e) => setOrganizerFilter(e.target.value)}
+                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.85rem' }}
+                        >
+                            <option value="all">All organizers</option>
+                            {organizerOptions.map((org: any) => (
+                                <option key={org.id} value={String(org.id)}>
+                                    {org.organizationName}
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={handleExport}
+                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                        >
+                            <Download size={16} /> Download Ledger
+                        </button>
+                    </div>
                 </div>
                 <table className="admin-table">
                     <thead>

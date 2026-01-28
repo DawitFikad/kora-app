@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/core/providers.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile/core/widgets/app_image.dart';
 import 'package:mobile/features/tickets/services/ticket_service.dart';
@@ -21,11 +20,34 @@ final myTicketsProvider = FutureProvider.autoDispose<List<Ticket>>((ref) async {
   return service.getMyTickets();
 });
 
-class MyTicketsScreen extends ConsumerWidget {
+class MyTicketsScreen extends ConsumerStatefulWidget {
   const MyTicketsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyTicketsScreen> createState() => _MyTicketsScreenState();
+}
+
+class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
+  bool _isNavigating = false;
+
+  Future<void> _handleBack(BuildContext context) async {
+    if (_isNavigating) return;
+    setState(() => _isNavigating = true);
+    try {
+      if (!Navigator.of(context).canPop()) {
+        context.go('/home');
+        return;
+      }
+      await Navigator.maybePop(context);
+    } finally {
+      if (mounted) {
+        setState(() => _isNavigating = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
@@ -40,7 +62,15 @@ class MyTicketsScreen extends ConsumerWidget {
           elevation: 0,
           leading: IconButton(
             icon: Icon(Icons.arrow_back, color: textColor),
-            onPressed: () => Navigator.pop(context),
+            onPressed: _isNavigating
+                ? null
+                : () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/home');
+                    }
+                  },
           ),
           title: Text(
             "tickets.title".tr(),

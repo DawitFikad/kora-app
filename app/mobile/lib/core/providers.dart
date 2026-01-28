@@ -43,6 +43,13 @@ final dioProvider = Provider<Dio>((ref) {
       }
       return handler.next(options);
     },
+    onError: (error, handler) async {
+      final statusCode = error.response?.statusCode;
+      if (statusCode == 401) {
+        await storage.clearAuth();
+      }
+      return handler.next(error);
+    },
   ));
 
   dio.interceptors.add(LogInterceptor(

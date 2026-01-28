@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/models/ticket_tier.dart';
@@ -795,7 +794,10 @@ class _TicketTierTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             title,
@@ -805,8 +807,7 @@ class _TicketTierTile extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          if (badge != null) ...[
-                            const SizedBox(width: 12),
+                          if (badge != null)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
@@ -822,7 +823,6 @@ class _TicketTierTile extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          ],
                         ],
                       ),
                       const SizedBox(height: 4),

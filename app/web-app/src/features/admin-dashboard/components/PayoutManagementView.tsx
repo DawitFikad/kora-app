@@ -18,21 +18,25 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
     const { t } = useTranslation();
     const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
     const [processedPayouts, setProcessedPayouts] = useState<any[]>([]);
+    const [settlementLedger, setSettlementLedger] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
+    const [organizerSummaries, setOrganizerSummaries] = useState<any[]>([]);
 
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [payoutsRes, processedRes, metricsRes]: any = await Promise.all([
+            const [payoutsRes, processedRes, metricsRes, ledgerRes]: any = await Promise.all([
                 AdminService.getPendingPayouts(),
                 AdminService.getProcessedPayouts(),
-                AdminService.getFinancialMetrics()
+                AdminService.getFinancialMetrics(),
+                AdminService.getFinancialTransactions()
             ]);
             setPendingPayouts(payoutsRes.data || []);
             setProcessedPayouts(processedRes.data || []);
             setMetrics(metricsRes.data || null);
+            setSettlementLedger(ledgerRes.data || ledgerRes || []);
         } catch (err) {
             console.error('Failed to fetch payout data', err);
         } finally {
@@ -43,6 +47,25 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
     useEffect(() => {
         fetchData();
     }, []);
+
+    useEffect(() => {
+        // Build simple organizer summary from fetched data if backend summary not provided
+        const summaries: Record<string, any> = {};
+        (pendingPayouts || []).forEach(p => {
+            const key = p.wallet?.organizer?.id || p.organizerId || p.organizerName || 'unknown';
+            summaries[key] = summaries[key] || { organizerName: p.wallet?.organizer?.organizationName || p.organizerName || 'Unknown', pending: 0, paid: 0, total: 0, nextSettlement: p.nextSettlement || null };
+            summaries[key].pending += Number(p.amount || 0);
+            summaries[key].total += Number(p.amount || 0);
+            if (!summaries[key].nextSettlement && p.nextSettlement) summaries[key].nextSettlement = p.nextSettlement;
+        });
+        (processedPayouts || []).forEach(p => {
+            const key = p.wallet?.organizer?.id || p.organizerId || p.organizerName || 'unknown';
+            summaries[key] = summaries[key] || { organizerName: p.wallet?.organizer?.organizationName || p.organizerName || 'Unknown', pending: 0, paid: 0, total: 0, nextSettlement: p.nextSettlement || null };
+            summaries[key].paid += Number(p.amount || 0);
+            summaries[key].total += Number(p.amount || 0);
+        });
+        setOrganizerSummaries(Object.values(summaries));
+    }, [pendingPayouts, processedPayouts]);
 
     const handleReject = async (batchId: number) => {
         const reason = prompt('Please enter the reason for rejection:');
@@ -101,13 +124,16 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                             </button>
                         )}
                         <button
-                            onClick={() => exportToCSV((view === 'SETTLEMENTS' ? processedPayouts : pendingPayouts).map(p => ({
-                                Organizer: p.wallet?.organizer?.organizationName,
-                                Amount: p.amount,
-                                Method: p.method,
-                                Details: p.payoutDetails,
-                                Requested: p.createdAt
-                            })), `${view.toLowerCase()}_export.csv`)}
+                            onClick={() => exportToCSV((viewMode === 'SETTLEMENTS' ? settlementLedger : pendingPayouts).map(p => ({
+                                Transaction: p.transactionId || p.id,
+                                Organizer: p.wallet?.organizer?.organizationName || p.organizerName,
+                                Event: p.eventTitle || p.event?.title || '',
+                                Gross: p.grossAmount || p.amount,
+                                PlatformCut: p.platformCut || '',
+                                OrganizerNet: p.netAmount || '',
+                                Status: p.status,
+                                Timestamp: p.processedAt || p.createdAt
+                            })), `${viewMode.toLowerCase()}_export.csv`)}
                             className="btn-blue" style={{ background: '#12171F', color: 'white', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
                         >
                             <Download size={16} /> {t('admin.export_queue', 'Export List')}
@@ -212,35 +238,39 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                     <table className="admin-table">
                         <thead>
                             <tr>
+                                <th>TRANSACTION ID</th>
+                                <th>EVENT</th>
                                 <th>ORGANIZER</th>
-                                <th>AMOUNT</th>
-                                <th>METHOD</th>
-                                <th>PROCESSED AT</th>
-                                <th>FISCAL STATUS</th>
+                                <th>GROSS</th>
+                                <th>PLATFORM CUT</th>
+                                <th>ORGANIZER NET</th>
+                                <th>STATUS</th>
+                                <th>TIMESTAMP</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {processedPayouts.length === 0 ? (
-                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No settlement history found.</td></tr>
+                            {settlementLedger.length === 0 ? (
+                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No settlement history found.</td></tr>
                             ) : (
-                                processedPayouts.map((p) => (
-                                    <tr key={p.id}>
-                                        <td>
-                                            <p style={{ fontWeight: 800 }}>{p.wallet?.organizer?.organizationName}</p>
-                                        </td>
-                                        <td style={{ fontWeight: 900 }}>ETB {Number(p.amount).toLocaleString()}</td>
-                                        <td>{p.method}</td>
-                                        <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(p.processedAt).toLocaleString()}</td>
+                                settlementLedger.map((t) => (
+                                    <tr key={t.transactionId || t.id}>
+                                        <td style={{ fontFamily: 'monospace', fontWeight: 800 }}>{t.transactionId || t.id}</td>
+                                        <td>{t.eventTitle || t.event?.title || '-'}</td>
+                                        <td style={{ fontWeight: 800 }}>{t.organizerName || t.wallet?.organizer?.organizationName || '-'}</td>
+                                        <td style={{ fontWeight: 900 }}>ETB {(t.grossAmount || t.amount || 0).toLocaleString()}</td>
+                                        <td>ETB {(t.platformCut || t.platformFee || 0).toLocaleString()}</td>
+                                        <td style={{ fontWeight: 900 }}>ETB {(t.netAmount || t.organizerNet || 0).toLocaleString()}</td>
                                         <td>
                                             <span style={{
                                                 fontSize: '0.75rem', fontWeight: 800,
-                                                background: p.status === 'PAID_OUT' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                color: p.status === 'PAID_OUT' ? '#10B981' : '#EF4444',
+                                                background: t.status === 'SETTLED' || t.status === 'PAID_OUT' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                color: t.status === 'SETTLED' || t.status === 'PAID_OUT' ? '#10B981' : '#EF4444',
                                                 padding: '4px 10px', borderRadius: '6px'
                                             }}>
-                                                {p.status}
+                                                {t.status}
                                             </span>
                                         </td>
+                                        <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(t.processedAt || t.timestamp || t.createdAt).toLocaleString()}</td>
                                     </tr>
                                 ))
                             )}

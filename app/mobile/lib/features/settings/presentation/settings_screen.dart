@@ -226,7 +226,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'settings.dark_mode'.tr(),
             trailing: Switch(
               value: isDark,
-              activeColor: const Color(0xFF8B5CF6),
+              activeThumbColor: const Color(0xFF8B5CF6),
               onChanged: (val) {
                 ref.read(themeModeProvider.notifier).toggleTheme();
               },
@@ -274,7 +274,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'settings.push_notif'.tr(),
             trailing: Switch(
               value: ref.watch(localStorageProvider).pushNotifications,
-              activeColor: const Color(0xFF8B5CF6),
+              activeThumbColor: const Color(0xFF8B5CF6),
               onChanged: (val) => ref.read(localStorageProvider).setPushNotifications(val),
             ),
           ),
@@ -286,7 +286,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'settings.email_notif'.tr(),
             trailing: Switch(
               value: ref.watch(localStorageProvider).emailNotifications,
-              activeColor: const Color(0xFF8B5CF6),
+              activeThumbColor: const Color(0xFF8B5CF6),
               onChanged: (val) => ref.read(localStorageProvider).setEmailNotifications(val),
             ),
           ),
