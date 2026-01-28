@@ -112,6 +112,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedTextColor = isDark ? Colors.white54 : Colors.black54;
+    final bodyTextColor = isDark ? Colors.white70 : Colors.black87;
+    final backgroundColor = isDark ? const Color(0xFF0F0D15) : const Color(0xFFF8F7FA);
 
     return eventAsync.when(
       data: (event) {
@@ -120,12 +125,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         final sortedTiers = List<TicketTier>.from(event.tiers)..sort((a, b) => a.price.compareTo(b.price));
 
         return Scaffold(
-          backgroundColor: const Color(0xFF0F0D15),
+          backgroundColor: backgroundColor,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+              icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
             title: Column(
@@ -139,7 +144,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: textColor,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -159,7 +164,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   "${DateFormat('E, MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.white54,
+                    color: mutedTextColor,
                   ),
                 ),
               ],
@@ -167,7 +172,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             centerTitle: true,
             actions: [
               IconButton(
-                icon: const Icon(Icons.share, color: Colors.white),
+                icon: Icon(Icons.share, color: textColor),
                 onPressed: () {
                   final dateText = DateFormat('E, MMM d • h:mm a').format(eventDate);
                   final deepLink = "etticket://event/${event.id}";
@@ -187,7 +192,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -202,14 +207,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     event.description,
                     style: GoogleFonts.poppins(
-                      color: Colors.white70,
+                      color: bodyTextColor,
                       fontSize: 14,
                       height: 1.6,
                     ),
@@ -233,13 +238,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 16),
                   
                   if (sortedTiers.isEmpty)
-                    const Center(child: Text("No tickets available", style: TextStyle(color: Colors.white54))),
+                    Center(child: Text("No tickets available", style: TextStyle(color: mutedTextColor))),
 
                   // Ticket Tiers
                   ...sortedTiers.map((tier) {
@@ -299,16 +304,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         body: Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
       ),
       error: (err, stack) => Scaffold(
-        backgroundColor: Color(0xFF0F0D15),
-        body: Center(child: Text("Error: $err", style: TextStyle(color: Colors.red))),
+        backgroundColor: backgroundColor,
+        body: Center(child: Text("Error: $err", style: const TextStyle(color: Colors.red))),
       ),
     );
   }
 
   Widget _buildSeatMapCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white54 : Colors.black54;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1D192B),
+        color: cardColor,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -357,7 +367,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       Text(
                         "Seat Map",
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: textColor,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -366,7 +376,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       Text(
                         "Tap sections to see view from seat",
                         style: GoogleFonts.poppins(
-                          color: Colors.white54,
+                          color: mutedColor,
                           fontSize: 13,
                         ),
                       ),
@@ -391,6 +401,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   Widget _buildTrustSignals(Event event, List<TicketTier> tiers) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white54 : Colors.black54;
+
     // Calculate total availability
     int totalAvailable = 0;
     int totalCapacity = 0;
@@ -408,7 +423,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1D192B),
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
           ),
@@ -432,7 +447,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         Text(
                           "event_details.verified_organizer".tr(),
                           style: GoogleFonts.poppins(
-                            color: Colors.white,
+                            color: textColor,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -445,7 +460,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     Text(
                       "event_details.trusted_organizer".tr(),
                       style: GoogleFonts.poppins(
-                        color: Colors.white54,
+                        color: mutedColor,
                         fontSize: 12,
                       ),
                     ),
@@ -466,7 +481,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1D192B),
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -478,7 +493,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         const SizedBox(width: 6),
                         Text(
                           "event_details.refund_policy".tr(),
-                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          style: TextStyle(color: mutedColor, fontSize: 11),
                         ),
                       ],
                     ),
@@ -490,7 +505,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               : event.refundPolicy!)
                           : "See policy details",
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: textColor,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -511,7 +526,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 decoration: BoxDecoration(
                   color: isLowAvailability 
                       ? const Color(0xFFFF9F0A).withOpacity(0.1)
-                      : const Color(0xFF1D192B),
+                      : cardColor,
                   borderRadius: BorderRadius.circular(12),
                   border: isLowAvailability 
                       ? Border.all(color: const Color(0xFFFF9F0A).withOpacity(0.3))
@@ -531,7 +546,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         Text(
                           "event_details.availability".tr(),
                           style: TextStyle(
-                            color: isLowAvailability ? const Color(0xFFFF9F0A) : Colors.white70,
+                            color: isLowAvailability ? const Color(0xFFFF9F0A) : mutedColor,
                             fontSize: 11,
                           ),
                         ),
@@ -541,7 +556,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     Text(
                       isLowAvailability ? "event_details.few_left".tr() : "event_details.tickets_available".tr(args: [totalAvailable.toString()]),
                       style: GoogleFonts.poppins(
-                        color: isLowAvailability ? const Color(0xFFFF9F0A) : Colors.white,
+                        color: isLowAvailability ? const Color(0xFFFF9F0A) : textColor,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -557,26 +572,32 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   Widget _buildExpandableSection(String title, String content) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white54 : Colors.black54;
+    final bodyColor = isDark ? Colors.white70 : Colors.black87;
+    final borderColor = isDark ? Colors.white10 : Colors.black12;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: borderColor)),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           title: Text(
             title,
-            style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+            style: GoogleFonts.poppins(color: textColor, fontSize: 16, fontWeight: FontWeight.w500),
           ),
-          trailing: const Icon(Icons.keyboard_arrow_down, color: Colors.white54),
+          trailing: Icon(Icons.keyboard_arrow_down, color: mutedColor),
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 16, bottom: 16, right: 16, top: 8),
               child: Text(
                 content,
                 style: GoogleFonts.poppins(
-                  color: Colors.white70,
+                  color: bodyColor,
                   fontSize: 14,
                   height: 1.6,
                 ),
@@ -591,6 +612,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Widget _buildBottomBar(Event event) {
     final total = _calculateTotal(event);
     final count = _totalTickets();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white54 : Colors.black54;
+    final barColor = isDark ? const Color(0xFF15131C) : Colors.white;
+    final borderColor = isDark ? Colors.white10 : Colors.black12;
     
     return Positioned(
       bottom: 0,
@@ -599,11 +625,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       child: Container(
         padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 20),
         decoration: BoxDecoration(
-          color: const Color(0xFF15131C),
-          border: const Border(top: BorderSide(color: Colors.white10)),
+          color: barColor,
+          border: Border(top: BorderSide(color: borderColor)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
               blurRadius: 20,
               offset: const Offset(0, -10),
             ),
@@ -615,7 +641,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("TOTAL", style: TextStyle(color: Colors.white54, fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                Text("TOTAL", style: TextStyle(color: mutedColor, fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 RichText(
                   text: TextSpan(
@@ -623,7 +649,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       TextSpan(
                         text: "${total.toStringAsFixed(2)} ETB",
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: textColor,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
@@ -631,7 +657,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       TextSpan(
                         text: " /$count tix",
                         style: GoogleFonts.poppins(
-                          color: Colors.white54,
+                          color: mutedColor,
                           fontSize: 14,
                         ),
                       ),
@@ -646,7 +672,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 onPressed: count > 0 ? () => _onCheckout(event) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
-                  disabledBackgroundColor: Colors.white10,
+                  disabledBackgroundColor: isDark ? Colors.white10 : Colors.black12,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -665,10 +691,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   Widget _buildEventInfoSection(Event event, DateTime date) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final dividerColor = isDark ? Colors.white10 : Colors.black12;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D192B),
+        color: cardColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -679,9 +709,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             event.venue,
             const Color(0xFF8B5CF6),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(color: Colors.white10),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: dividerColor),
           ),
           _buildInfoTile(
             Icons.calendar_today_outlined,
@@ -689,9 +719,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             DateFormat('EEEE, MMM d, yyyy').format(date),
             const Color(0xFF10B981),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(color: Colors.white10),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: dividerColor),
           ),
           _buildInfoTile(
             Icons.access_time_outlined,
@@ -700,9 +730,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             const Color(0xFFFF9F0A),
           ),
           if (event.isMovie || (event.category != null && event.category!.name == 'Movies')) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Divider(color: Colors.white10),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Divider(color: dividerColor),
             ),
             _buildInfoTile(
               Icons.movie_outlined,
@@ -717,6 +747,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   Widget _buildInfoTile(IconData icon, String label, String value, Color iconColor) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white54 : Colors.black54;
+
     return Row(
       children: [
         Container(
@@ -735,7 +769,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               Text(
                 label,
                 style: GoogleFonts.poppins(
-                  color: Colors.white54,
+                  color: mutedColor,
                   fontSize: 12,
                 ),
               ),
@@ -743,7 +777,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               Text(
                 value,
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: textColor,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -782,11 +816,17 @@ class _TicketTierTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white54 : Colors.black54;
+    final cardBorder = isDark ? Colors.white10 : Colors.black12;
+    final soldOutBg = isDark ? Colors.white10 : Colors.black12;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.only(bottom: 24),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: cardBorder)),
       ),
       child: Opacity(
         opacity: isSoldOut ? 0.4 : 1.0,
@@ -808,7 +848,7 @@ class _TicketTierTile extends StatelessWidget {
                           Text(
                             title,
                             style: GoogleFonts.poppins(
-                              color: Colors.white,
+                              color: textColor,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -835,7 +875,7 @@ class _TicketTierTile extends StatelessWidget {
                       Text(
                         desc,
                         style: GoogleFonts.poppins(
-                          color: Colors.white54,
+                          color: mutedColor,
                           fontSize: 13,
                         ),
                       ),
@@ -851,12 +891,12 @@ class _TicketTierTile extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white10,
+                      color: soldOutBg,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       "event_details.sold_out".tr(),
-                      style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: mutedColor, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ),
               ],
@@ -885,46 +925,57 @@ class _QuantitySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final borderColor = isDark ? Colors.white10 : Colors.black12;
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D192B),
+        color: isDark ? const Color(0xFF1D192B) : Colors.white,
         borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
           _buildButton(
             icon: Icons.remove,
             onTap: quantity > 0 ? () => onChanged(quantity - 1) : null,
+            isDark: isDark,
           ),
           SizedBox(
             width: 32,
             child: Text(
               "$quantity",
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
           _buildButton(
             icon: Icons.add,
             onTap: () => onChanged(quantity + 1),
             isPrimary: true,
+            isDark: isDark,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildButton({required IconData icon, VoidCallback? onTap, bool isPrimary = false}) {
+  Widget _buildButton({required IconData icon, VoidCallback? onTap, bool isPrimary = false, required bool isDark}) {
+    final baseBg = isPrimary ? const Color(0xFF8B5CF6) : (isDark ? Colors.white10 : Colors.black12);
+    final baseIcon = isPrimary ? Colors.white : (isDark ? Colors.white : const Color(0xFF1A1823));
+    final iconColor = onTap == null ? (isDark ? Colors.white38 : Colors.black38) : baseIcon;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isPrimary ? const Color(0xFF8B5CF6) : Colors.white10,
+          color: baseBg,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
+        child: Icon(icon, color: iconColor, size: 20),
       ),
     );
   }
