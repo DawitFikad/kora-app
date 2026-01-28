@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -364,7 +366,7 @@ class _NotificationTile extends ConsumerWidget {
   }
 }
 
-class _DismissibleNotificationTile extends ConsumerWidget {
+class _DismissibleNotificationTile extends ConsumerStatefulWidget {
   final AppNotification notification;
   final Color textColor;
   final bool isDark;
@@ -376,25 +378,89 @@ class _DismissibleNotificationTile extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DismissibleNotificationTile> createState() => _DismissibleNotificationTileState();
+}
+
+class _DismissibleNotificationTileState extends ConsumerState<_DismissibleNotificationTile> {
+  Timer? _deleteTimer;
+  bool _pendingDelete = false;
+  bool _isProcessing = false;
+
+  @override
+  void dispose() {
+    _deleteTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Dismissible(
-      key: ValueKey('notification-${notification.id}'),
+      key: ValueKey('notification-${widget.notification.id}'),
       direction: DismissDirection.horizontal,
       background: _buildDismissBackground(Alignment.centerLeft),
       secondaryBackground: _buildDismissBackground(Alignment.centerRight),
-      onDismissed: (_) async {
-        final service = ref.read(notificationServiceProvider);
-        await service.deleteNotification(notification.id);
-        ref.invalidate(notificationsProvider);
+      confirmDismiss: (_) async {
+        if (_isProcessing) return false;
+        _isProcessing = true;
+        _startDeleteWithUndo();
+        _isProcessing = false;
+        return false;
       },
       child: Column(
         children: [
-          _NotificationTile(notification: notification, textColor: textColor, isDark: isDark),
-          Divider(height: 1, color: textColor.withOpacity(0.06)),
+          _NotificationTile(notification: widget.notification, textColor: widget.textColor, isDark: widget.isDark),
+          Divider(height: 1, color: widget.textColor.withOpacity(0.06)),
           const SizedBox(height: 16),
         ],
       ),
     );
+  }
+
+  void _startDeleteWithUndo() {
+    if (_pendingDelete) return;
+    _pendingDelete = true;
+    _deleteTimer?.cancel();
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Notification deleted'),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: _undoDelete,
+        ),
+      ),
+    );
+
+    _deleteTimer = Timer(const Duration(seconds: 4), () async {
+      if (!_pendingDelete) return;
+      if (!mounted) return;
+
+      try {
+        final service = ref.read(notificationServiceProvider);
+        await service.deleteNotification(widget.notification.id);
+        if (!mounted) return;
+        ref.invalidate(notificationsProvider);
+      } catch (e) {
+        if (!mounted) return;
+        ref.invalidate(notificationsProvider);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete notification: $e')),
+        );
+      } finally {
+        _pendingDelete = false;
+      }
+    });
+  }
+
+  void _undoDelete() {
+    if (!mounted) return;
+    _pendingDelete = false;
+    _deleteTimer?.cancel();
+    _deleteTimer = null;
+    ref.invalidate(notificationsProvider);
   }
 
   Widget _buildDismissBackground(Alignment alignment) {

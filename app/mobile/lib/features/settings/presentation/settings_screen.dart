@@ -1,17 +1,17 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+
 import '../../../core/providers.dart';
 import '../../auth/services/auth_service.dart';
-import '../../profile/services/profile_service.dart';
 import '../../profile/presentation/edit_profile_screen.dart';
-import 'support_screen.dart';
-import 'legal_screen.dart';
+import '../../profile/services/profile_service.dart';
 import 'about_screen.dart';
+import 'legal_screen.dart';
+import 'support_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
