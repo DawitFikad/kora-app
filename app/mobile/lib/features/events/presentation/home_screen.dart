@@ -212,6 +212,7 @@ class _HomeBody extends ConsumerWidget {
                         if (index == 0) {
                           // Featured Section (Horizontal)
                           final featured = events.take(3).toList();
+                          final recommended = events.take(4).toList();
                           if (featured.isEmpty) return const SizedBox.shrink();
 
                           return Column(
@@ -234,26 +235,40 @@ class _HomeBody extends ConsumerWidget {
                                 isDark: isDark,
                                 textColor: textColor,
                               ),
+                              if (recommended.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: Text(
+                                    'home.recommended'.tr(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ...recommended.map(
+                                  (event) => Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                    child: _VerticalEventCard(event: event, isDark: isDark),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 20),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      'home.featured'.tr(),
+                                      'home.all_events'.tr(),
                                       style: GoogleFonts.poppins(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
                                         color: textColor,
                                       ),
                                     ),
-                                    TextButton(
-                                      onPressed: () {},
-                                      child: Text(
-                                        'common.all'.tr(),
-                                        style: TextStyle(color: const Color(0xFF8B5CF6).withOpacity(0.8)),
-                                      ),
-                                    )
                                   ],
                                 ),
                               ),
@@ -984,6 +999,107 @@ class _TrendingCard extends ConsumerWidget {
                 isFavorited ? Icons.favorite : Icons.favorite_border,
                 color: isFavorited ? const Color(0xFF8B5CF6) : Colors.grey,
                 size: 20,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VerticalEventCard extends ConsumerWidget {
+  final Event event;
+  final bool isDark;
+
+  const _VerticalEventCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorited = ref.watch(localStorageProvider).favorites.contains(event.id.toString());
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white60 : Colors.black54;
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF232030) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              child: AppImage(
+                imageUrl: event.coverImage,
+                width: double.infinity,
+                height: 160,
+                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/600/400',
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          event.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => ref.read(localStorageProvider).toggleFavorite(event.id.toString()),
+                        child: Icon(
+                          isFavorited ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorited ? const Color(0xFF8B5CF6) : mutedColor,
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    DateFormat('EEE, MMM d • h:mm a').format(DateTime.parse(event.dateTime)),
+                    style: TextStyle(color: const Color(0xFF8B5CF6), fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          event.venue,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: mutedColor, fontSize: 12),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

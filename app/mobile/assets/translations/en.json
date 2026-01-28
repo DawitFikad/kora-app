@@ -39,6 +39,8 @@
         "title": "Discover",
         "search": "Search events, artists...",
         "featured": "Featured",
+        "recommended": "Recommended for you",
+        "all_events": "All Events",
         "upcoming": "Upcoming Events",
         "pulse_prefix": "Discover the pulse of \n",
         "pulse_suffix": "Events.",

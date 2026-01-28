@@ -39,6 +39,8 @@
         "title": "ያስሱ",
         "search": "ዝግጅቶችን፣ አርቲስቶችን ይፈልጉ...",
         "featured": "ተመራጭ",
+        "recommended": "ለእርስዎ የተመረጠ",
+        "all_events": "ሁሉም ክስተቶች",
         "upcoming": "ቀጣይ ዝግጅቶች",
         "pulse_prefix": "የአካባቢዎን ምርጥ \n",
         "pulse_suffix": "ዝግጅቶች ያስሱ።",
