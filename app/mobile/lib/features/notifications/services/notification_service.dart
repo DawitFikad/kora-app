@@ -19,8 +19,10 @@ class NotificationService {
       // Backend returns { success: true, data: [...] }
       final List<dynamic> data = response.data['data'] ?? [];
       return data.map((json) => AppNotification.fromJson(json)).toList();
+    } on DioException catch (e) {
+      throw e.response?.data['error'] ?? 'Failed to fetch notifications';
     } catch (e) {
-      return [];
+      throw 'Failed to fetch notifications';
     }
   }
 
@@ -35,6 +37,14 @@ class NotificationService {
   Future<void> markAllAsRead() async {
     try {
       await _dio.post('${ApiConstants.notifications}/mark-all-read');
+    } catch (e) {
+      // Log error or handle
+    }
+  }
+
+  Future<void> deleteNotification(String id) async {
+    try {
+      await _dio.delete('${ApiConstants.notifications}/$id');
     } catch (e) {
       // Log error or handle
     }

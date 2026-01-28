@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { EventType, PaymentStatus } from "@prisma/client";
+import { EventType, PaymentStatus, NotificationChannel } from "@prisma/client";
 import { LockService } from "./lock.service";
 import { PromoCodeService } from "./promo-code.service";
 import { PriceCalculator } from "../utils/price-calculator";
@@ -475,6 +475,35 @@ export class BookingService {
                     priceBreakdown,
                     promoCodeId: promoId
                 }))
+            }
+        });
+
+        // Create a user notification for the reservation
+        const eventInfo = await prisma.event.findUnique({
+            where: { id: eventId },
+            select: { title: true, dateTime: true, venue: true }
+        });
+
+        await prisma.notificationLog.create({
+            data: {
+                userId,
+                channel: NotificationChannel.PUSH,
+                recipient: "APP",
+                title: "Booking Started",
+                content: eventInfo
+                    ? `Your booking for "${eventInfo.title}" is started. Complete payment to confirm.`
+                    : "Your booking is started. Complete payment to confirm.",
+                status: "DELIVERED",
+                metadata: {
+                    type: "BOOKING",
+                    purchaseId: purchase.id,
+                    eventId,
+                    tierId,
+                    quantity,
+                    eventTitle: eventInfo?.title,
+                    eventTime: eventInfo?.dateTime,
+                    eventVenue: eventInfo?.venue
+                }
             }
         });
 

@@ -60,6 +60,10 @@ class NotificationScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
+    final unreadCount = notificationsAsync.maybeWhen(
+      data: (notifications) => notifications.where((n) => !n.isRead).length,
+      orElse: () => 0,
+    );
 
     return DefaultTabController(
       length: 3,
@@ -82,27 +86,28 @@ class NotificationScreen extends ConsumerWidget {
           ),
           centerTitle: true,
           actions: [
-            TextButton(
-              onPressed: () async {
-                final service = ref.read(notificationServiceProvider);
-                await service.markAllAsRead();
-                ref.invalidate(notificationsProvider);
-                
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("notifications.mark_all_success".tr())),
-                  );
-                }
-              },
-              child: Text(
-                "notifications.mark_all_read".tr(),
-                style: GoogleFonts.poppins(
-                  color: const Color(0xFF8B5CF6),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
+            if (unreadCount > 0)
+              TextButton(
+                onPressed: () async {
+                  final service = ref.read(notificationServiceProvider);
+                  await service.markAllAsRead();
+                  ref.invalidate(notificationsProvider);
+                  
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("notifications.mark_all_success".tr())),
+                    );
+                  }
+                },
+                child: Text(
+                  "notifications.mark_all_read".tr(),
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF8B5CF6),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
         body: Column(
@@ -202,13 +207,25 @@ class _NotificationListView extends StatelessWidget {
         if (today.isNotEmpty) ...[
           _SectionHeader(title: "notifications.today".tr(), textColor: textColor),
           const SizedBox(height: 16),
-          ...today.map((n) => _NotificationTile(notification: n, textColor: textColor, isDark: isDark)),
+          ...today.map(
+            (n) => _DismissibleNotificationTile(
+              notification: n,
+              textColor: textColor,
+              isDark: isDark,
+            ),
+          ),
         ],
         if (earlier.isNotEmpty) ...[
           const SizedBox(height: 24),
           _SectionHeader(title: "notifications.earlier".tr(), textColor: textColor),
           const SizedBox(height: 16),
-          ...earlier.map((n) => _NotificationTile(notification: n, textColor: textColor, isDark: isDark)),
+          ...earlier.map(
+            (n) => _DismissibleNotificationTile(
+              notification: n,
+              textColor: textColor,
+              isDark: isDark,
+            ),
+          ),
         ],
         const SizedBox(height: 32),
       ],
@@ -336,6 +353,62 @@ class _NotificationTile extends ConsumerWidget {
   }
 }
 
+class _DismissibleNotificationTile extends ConsumerWidget {
+  final AppNotification notification;
+  final Color textColor;
+  final bool isDark;
+
+  const _DismissibleNotificationTile({
+    required this.notification,
+    required this.textColor,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Dismissible(
+      key: ValueKey('notification-${notification.id}'),
+      direction: DismissDirection.horizontal,
+      background: _buildDismissBackground(Alignment.centerLeft),
+      secondaryBackground: _buildDismissBackground(Alignment.centerRight),
+      onDismissed: (_) async {
+        final service = ref.read(notificationServiceProvider);
+        await service.deleteNotification(notification.id);
+        ref.invalidate(notificationsProvider);
+      },
+      child: Column(
+        children: [
+          _NotificationTile(notification: notification, textColor: textColor, isDark: isDark),
+          Divider(height: 1, color: textColor.withOpacity(0.06)),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDismissBackground(Alignment alignment) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      alignment: alignment,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: alignment == Alignment.centerLeft
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.end,
+        children: const [
+          Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
+          SizedBox(width: 8),
+          Text('Delete', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
 class _NotificationIcon extends StatelessWidget {
   final String type;
   const _NotificationIcon({required this.type});
@@ -404,7 +477,7 @@ class _BookingCard extends StatelessWidget {
       final eventTime = metadata['eventTime'] ?? '';
 
     return Container(
-      margin: const EdgeInsets.only(left: 64),
+      margin: const EdgeInsets.only(left: 64, top: 8),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1D192B) : Colors.grey[100],
         borderRadius: BorderRadius.circular(16),

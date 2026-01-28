@@ -55,6 +55,28 @@ export class NotificationController {
     }
 
     /**
+     * DELETE /api/notifications/:id
+     */
+    static async deleteNotification(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user.userId;
+            const { id } = req.params;
+
+            const result = await prisma.notificationLog.deleteMany({
+                where: { id: parseInt(id), userId }
+            });
+
+            if (result.count === 0) {
+                return res.status(404).json({ success: false, message: "Notification not found" });
+            }
+
+            res.json({ success: true, message: "Notification deleted" });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
      * Internal Template Engine
      */
     static getTemplate(key: string, lang: 'en' | 'am', vars: Record<string, string>) {

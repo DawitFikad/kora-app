@@ -190,6 +190,35 @@ export class PaymentService {
                     }
                 });
 
+                const metadata = purchase.metadata as any;
+                const eventInfo = await prisma.event.findUnique({
+                    where: { id: metadata.eventId },
+                    select: { title: true, dateTime: true, venue: true }
+                });
+
+                await prisma.notificationLog.create({
+                    data: {
+                        userId: purchase.userId,
+                        channel: 'PUSH',
+                        recipient: 'APP',
+                        title: 'Payment Successful',
+                        content: eventInfo
+                            ? `Payment successful for "${eventInfo.title}". Your tickets are ready.`
+                            : 'Payment successful. Your tickets are ready.',
+                        status: 'DELIVERED',
+                        metadata: {
+                            type: 'BOOKING',
+                            purchaseId: purchase.id,
+                            eventId: metadata.eventId,
+                            tierId: metadata.tierId,
+                            quantity: metadata.quantity,
+                            eventTitle: eventInfo?.title,
+                            eventTime: eventInfo?.dateTime,
+                            eventVenue: eventInfo?.venue
+                        }
+                    }
+                });
+
                 // Trigger Ticket Issuance
                 await TicketService.completePurchase(updatedPurchase.id);
 
@@ -205,13 +234,45 @@ export class PaymentService {
             } else {
                 logger.warn({ paymentRef, reason: verificationResult.message }, "Payment verification failed");
 
-                return prisma.purchase.update({
+                const failedPurchase = await prisma.purchase.update({
                     where: { id: purchase.id },
                     data: {
                         status: PaymentStatus.FAILED,
                         failureReason: verificationResult.message || "Payment verification failed or was cancelled"
                     }
                 });
+
+                const metadata = purchase.metadata as any;
+                const eventInfo = await prisma.event.findUnique({
+                    where: { id: metadata.eventId },
+                    select: { title: true, dateTime: true, venue: true }
+                });
+
+                await prisma.notificationLog.create({
+                    data: {
+                        userId: purchase.userId,
+                        channel: 'PUSH',
+                        recipient: 'APP',
+                        title: 'Payment Failed',
+                        content: eventInfo
+                            ? `Payment failed for "${eventInfo.title}". Please try again.`
+                            : 'Payment failed. Please try again.',
+                        status: 'DELIVERED',
+                        metadata: {
+                            type: 'BOOKING',
+                            purchaseId: purchase.id,
+                            eventId: metadata.eventId,
+                            tierId: metadata.tierId,
+                            quantity: metadata.quantity,
+                            eventTitle: eventInfo?.title,
+                            eventTime: eventInfo?.dateTime,
+                            eventVenue: eventInfo?.venue,
+                            reason: failedPurchase.failureReason
+                        }
+                    }
+                });
+
+                return failedPurchase;
             }
         } catch (error: any) {
             logger.error({ error: error.message, paymentRef }, "Payment verification error");

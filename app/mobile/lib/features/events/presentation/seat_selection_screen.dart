@@ -39,8 +39,18 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      final errorText = e.toString();
+      if (errorText.toLowerCase().contains('only for seat map')) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("tickets.seatmap_not_available".tr())),
+          );
+          context.pop();
+        }
+        return;
+      }
       setState(() {
-        _error = e.toString();
+        _error = errorText;
         _isLoading = false;
       });
     }
