@@ -6,6 +6,7 @@ import '../services/profile_service.dart';
 import '../../../core/providers.dart';
 import 'edit_profile_screen.dart';
 import '../../scanner/services/scanner_service.dart';
+import '../../auth/services/auth_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -45,6 +46,53 @@ class ProfileScreen extends ConsumerWidget {
               }
             },
             child: Text('profile.join'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1D192B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.logout, color: Colors.red, size: 28),
+            const SizedBox(width: 12),
+            Text(
+              "profile.logout".tr(),
+              style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          "settings.logout_confirm".tr(),
+          style: GoogleFonts.poppins(fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("common.cancel".tr(), style: const TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await ref.read(authServiceProvider).logout();
+              if (context.mounted) context.go('/login');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: Text(
+              "profile.logout".tr(),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -226,11 +274,7 @@ class ProfileScreen extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: () async {
-                       final storage = ref.read(localStorageProvider);
-                       await storage.clearAuth();
-                       if(context.mounted) context.go('/login');
-                    },
+                    onPressed: () => _showLogoutConfirmation(context, ref),
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFFFF4B4B),
                       padding: const EdgeInsets.symmetric(vertical: 16),

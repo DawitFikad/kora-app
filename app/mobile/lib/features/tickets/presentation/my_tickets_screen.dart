@@ -533,7 +533,10 @@ class _LargeTicketCard extends StatelessWidget {
                       ],
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: ticket)),
+                      ),
                       child: Text(
                         "Details",
                         style: GoogleFonts.poppins(
