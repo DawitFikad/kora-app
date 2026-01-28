@@ -61,15 +61,12 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: textColor),
+            icon: Icon(Icons.chevron_left, color: textColor, size: 28),
             onPressed: _isNavigating
                 ? null
                 : () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/home');
-                    }
+                    ref.read(homeIndexProvider.notifier).state = 0;
+                    context.go('/home');
                   },
           ),
           title: Text(
