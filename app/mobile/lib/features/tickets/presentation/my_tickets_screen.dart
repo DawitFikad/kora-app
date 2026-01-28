@@ -533,8 +533,7 @@ class _LargeTicketCard extends StatelessWidget {
                       ],
                     ),
                     TextButton(
-                      onPressed: () => Navigator.push(
-                        context,
+                      onPressed: () => Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: ticket)),
                       ),
                       child: Text(
