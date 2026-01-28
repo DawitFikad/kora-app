@@ -137,6 +137,12 @@
         "logout": "ውጣ",
         "join_staff": "ቡድኑን ይቀላቀሉ",
         "staff_mgmt": "የሰራተኞች አስተዳደር",
+    "organizer_purchase": {
+        "title": "እርስዎ የክስተት አዘጋጅ ነዎት",
+        "subtitle": "ለጓደኞች ወይም ለቤተሰብ ቲኬት መግዛት ይፈልጋሉ?",
+        "cancel": "አይ፣ ሰርዝ",
+        "confirm": "አዎ፣ ቀጥል"
+    },
         "scan_tickets": "ቲኬት ስካን ያድርጉ",
         "edit_profile": "መገለጫ ያርሙ",
         "join_success": "በስኬት ተቀላቅለዋል!",

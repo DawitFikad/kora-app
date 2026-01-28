@@ -77,6 +77,12 @@
         "checkout": "Checkout",
         "sold_out": "Sold Out"
     },
+    "organizer_purchase": {
+        "title": "You are an event organizer",
+        "subtitle": "Do you want to buy tickets for friends or family?",
+        "cancel": "No, cancel",
+        "confirm": "Yes, continue"
+    },
     "search": {
         "title": "Search",
         "hint": "Search events, artists, venues...",

@@ -8,6 +8,7 @@ import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:mobile/features/profile/services/profile_service.dart';
 import 'seat_selection_screen.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -56,6 +57,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final selectedEntries = _ticketQuantities.entries.where((e) => e.value > 0).toList();
 
     if (selectedEntries.isEmpty) return;
+
+    // Organizer confirmation
+    try {
+      final profile = await ref.read(userProfileProvider.future);
+      if (profile.role == 'ORGANIZER') {
+        if (!mounted) return;
+        final proceed = await _showOrganizerPurchaseDialog();
+        if (!proceed) return;
+      }
+    } catch (_) {
+      // If profile fails, continue without blocking
+    }
 
     // 2. Enforce single tier selection for MVP (due to API limitation)
     if (selectedEntries.length > 1) {
@@ -107,6 +120,110 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _showOrganizerPurchaseDialog() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final mutedColor = isDark ? Colors.white70 : Colors.black54;
+
+    final result = await showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'organizer_purchase.title'.tr(),
+      transitionDuration: const Duration(milliseconds: 250),
+      pageBuilder: (context, _, __) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.86,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.people_alt_outlined, color: Color(0xFF8B5CF6), size: 28),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'organizer_purchase.title'.tr(),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'organizer_purchase.subtitle'.tr(),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(fontSize: 12, color: mutedColor, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF8B5CF6),
+                            side: const BorderSide(color: Color(0xFF8B5CF6)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text('organizer_purchase.cancel'.tr()),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8B5CF6),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text('organizer_purchase.confirm'.tr()),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, _, child) {
+        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(scale: curved, child: child),
+        );
+      },
+    );
+
+    return result ?? false;
   }
 
   @override
