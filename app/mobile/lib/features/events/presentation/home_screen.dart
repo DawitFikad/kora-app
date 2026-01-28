@@ -1029,19 +1029,61 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
           children: [
             SizedBox(
               height: 180,
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: items.length,
-                onPageChanged: (index) => setState(() => _currentPage = index),
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  if (item is Event) {
-                    return _buildEventBannerCard(item, isDark);
-                  } else if (item is HomepageBanner) {
-                    return _buildPromotionBannerCard(item, isDark);
-                  }
-                  return const SizedBox.shrink();
-                },
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    itemCount: items.length,
+                    onPageChanged: (index) => setState(() => _currentPage = index),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      if (item is Event) {
+                        return _buildEventBannerCard(item, isDark);
+                      } else if (item is HomepageBanner) {
+                        return _buildPromotionBannerCard(item, isDark);
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                  if (items.length > 1) ...[
+                    Positioned(
+                      left: 8,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: _BannerNavButton(
+                          icon: Icons.chevron_left,
+                          onTap: () {
+                            final prev = (_currentPage - 1) < 0 ? items.length - 1 : _currentPage - 1;
+                            _pageController.animateToPage(
+                              prev,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 8,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: _BannerNavButton(
+                          icon: Icons.chevron_right,
+                          onTap: () {
+                            final next = (_currentPage + 1) >= items.length ? 0 : _currentPage + 1;
+                            _pageController.animateToPage(
+                              next,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -1271,6 +1313,30 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BannerNavButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _BannerNavButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 36,
+        width: 36,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.35),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Icon(icon, color: Colors.white, size: 22),
       ),
     );
   }
