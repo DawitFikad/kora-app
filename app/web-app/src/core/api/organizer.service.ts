@@ -25,6 +25,9 @@ export const OrganizerService = {
     // Attendees
     getAttendees: () => api.get('/organizer/attendees'),
     getEventAttendees: (eventId: string) => api.get(`/organizer/events/${eventId}/attendees`),
+    resendTicket: (ticketId: string, channel: 'SMS' | 'EMAIL') => api.post(`/organizer/attendees/${ticketId}/resend`, { channel }),
+    manualCheckIn: (ticketId: string) => api.post(`/organizer/attendees/${ticketId}/check-in`),
+    tagVip: (ticketId: string, isVip: boolean) => api.post(`/organizer/attendees/${ticketId}/vip`, { isVip }),
 
     // Promotions
     createPromoCode: (data: any) => api.post('/organizer/promos', data),

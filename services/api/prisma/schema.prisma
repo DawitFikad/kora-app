@@ -225,6 +225,7 @@ model Ticket {
   id             String       @id @default(uuid())
   qrPayload      String       @unique
   status         TicketStatus @default(VALID)
+  isVip          Boolean      @default(false)
   basePrice      Decimal?     @db.Decimal(10, 2)
   commissionRate Decimal?     @db.Decimal(10, 2)
   commissionAmt  Decimal?     @db.Decimal(10, 2)

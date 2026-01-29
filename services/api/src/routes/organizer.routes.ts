@@ -25,6 +25,9 @@ router.get("/events/:id", OrganizerController.getEventById);
 router.patch("/events/:id", OrganizerController.updateEvent);
 router.post("/events/:id/duplicate", OrganizerController.duplicateEvent);
 router.post("/events/:id/feature", OrganizerController.requestFeature);
+router.post("/attendees/:id/resend", OrganizerController.resendTicket);
+router.post("/attendees/:id/check-in", OrganizerController.manualCheckIn);
+router.post("/attendees/:id/vip", OrganizerController.tagVip);
 router.post("/support", OrganizerController.contactSupport);
 
 // Payment Methods

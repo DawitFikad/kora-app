@@ -141,35 +141,211 @@ export class OrganizerController {
             const organizerId = (req as any).user.organizerId;
             const prisma = (await import("../lib/prisma")).prisma;
 
-            const tickets = await prisma.ticket.findMany({
-                where: {
-                    event: { organizerId }
-                },
-                include: {
-                    user: {
-                        include: { profile: true }
+            let tickets: any[] = [];
+            try {
+                tickets = await prisma.ticket.findMany({
+                    where: {
+                        event: { organizerId }
                     },
-                    event: {
-                        select: { title: true }
+                    select: {
+                        id: true,
+                        status: true,
+                        isVip: true,
+                        createdAt: true,
+                        user: {
+                            select: {
+                                phoneNumber: true,
+                                email: true,
+                                profile: { select: { fullName: true } }
+                            }
+                        },
+                        purchase: { select: { status: true } },
+                        event: { select: { title: true } },
+                        tier: { select: { name: true } }
                     },
-                    tier: {
-                        select: { name: true }
-                    }
-                },
-                orderBy: { createdAt: 'desc' },
-                take: 50 // Limit for now
-            });
+                    orderBy: { createdAt: 'desc' },
+                    take: 50
+                } as any);
+            } catch (error: any) {
+                const msg = (error?.message || '').toLowerCase();
+                if (msg.includes('isvip') || (msg.includes('column') && msg.includes('does not exist'))) {
+                    tickets = await prisma.ticket.findMany({
+                        where: {
+                            event: { organizerId }
+                        },
+                        select: {
+                            id: true,
+                            status: true,
+                            createdAt: true,
+                            user: {
+                                select: {
+                                    phoneNumber: true,
+                                    email: true,
+                                    profile: { select: { fullName: true } }
+                                }
+                            },
+                            purchase: { select: { status: true } },
+                            event: { select: { title: true } },
+                            tier: { select: { name: true } }
+                        },
+                        orderBy: { createdAt: 'desc' },
+                        take: 50
+                    } as any);
+                } else {
+                    throw error;
+                }
+            }
 
             const formattedAttendees = tickets.map(t => ({
                 id: t.id,
-                name: t.user.profile?.fullName || t.user.phoneNumber,
+                name: t.user?.profile?.fullName || 'Guest',
+                phone: t.user?.phoneNumber,
+                email: t.user?.email,
                 event: t.event.title,
                 type: t.tier.name,
                 date: t.createdAt,
-                status: t.status === "USED" ? "Checked In" : "Valid"
+                status: t.purchase?.status === "REFUNDED" || t.status === "CANCELLED"
+                    ? "Refunded"
+                    : t.status === "USED" ? "Used" : "Valid",
+                isVip: (t as any).isVip === true
             }));
 
             res.json({ success: true, data: formattedAttendees });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/attendees/:id/resend
+     */
+    static async resendTicket(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const ticketId = req.params.id;
+            const { channel } = req.body;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const ticket = await prisma.ticket.findUnique({
+                where: { id: ticketId },
+                include: {
+                    user: true,
+                    event: { select: { title: true, dateTime: true, venue: true, organizerId: true } },
+                    tier: { select: { name: true } }
+                }
+            });
+
+            if (!ticket || ticket.event?.organizerId !== organizerId) {
+                return res.status(404).json({ success: false, message: "Ticket not found" });
+            }
+
+            const jwt = await import("jsonwebtoken");
+            const secret = process.env.JWT_SECRET || "et-ticket-qr-secret";
+            let code = ticket.id;
+            try {
+                const payload: any = jwt.default.verify(ticket.qrPayload, secret);
+                if (payload?.code) code = payload.code;
+            } catch {
+                // fallback
+            }
+
+            const { NotificationService } = await import("../services/notification.service");
+            const { NotificationChannel } = await import("@prisma/client");
+
+            const channels = [channel === "EMAIL" ? NotificationChannel.EMAIL : NotificationChannel.SMS];
+            await NotificationService.notifyUser(ticket.userId, {
+                title: "Your Ticket Details",
+                content: `Ticket for "${ticket.event?.title}" (${ticket.tier?.name}). Code: ${code}. Venue: ${ticket.event?.venue}. Date: ${new Date(ticket.event?.dateTime || '').toLocaleString()}`,
+                channels
+            });
+
+            res.json({ success: true, message: "Ticket resent" });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/attendees/:id/check-in
+     */
+    static async manualCheckIn(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const ticketId = req.params.id;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const ticket = await prisma.ticket.findUnique({
+                where: { id: ticketId },
+                include: { event: { select: { organizerId: true } } }
+            });
+
+            if (!ticket || ticket.event?.organizerId !== organizerId) {
+                return res.status(404).json({ success: false, message: "Ticket not found" });
+            }
+
+            if (ticket.status === "USED") {
+                return res.json({ success: true, data: ticket });
+            }
+
+            const updated = await prisma.ticket.update({
+                where: { id: ticketId },
+                data: { status: "USED" }
+            });
+
+            res.json({ success: true, data: updated });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/attendees/:id/vip
+     */
+    static async tagVip(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const ticketId = req.params.id;
+            const { isVip } = req.body;
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const ticket = await prisma.ticket.findUnique({
+                where: { id: ticketId },
+                include: { event: { select: { organizerId: true } } }
+            });
+
+            if (!ticket || ticket.event?.organizerId !== organizerId) {
+                return res.status(404).json({ success: false, message: "Ticket not found" });
+            }
+
+            try {
+                const updated = await prisma.ticket.update({
+                    where: { id: ticketId },
+                    data: { isVip: !!isVip } as any
+                });
+                res.json({ success: true, data: updated });
+            } catch (error: any) {
+                const msg = (error?.message || '').toLowerCase();
+                if (msg.includes('unknown arg') || (msg.includes('column') && msg.includes('does not exist'))) {
+                    try {
+                        await prisma.$executeRawUnsafe('ALTER TABLE "Ticket" ADD COLUMN IF NOT EXISTS "isVip" BOOLEAN NOT NULL DEFAULT false');
+                        await prisma.$executeRawUnsafe(
+                            'UPDATE "Ticket" SET "isVip" = $1 WHERE id = $2',
+                            !!isVip,
+                            ticketId
+                        );
+                        return res.json({ success: true, data: { id: ticketId, isVip: !!isVip } });
+                    } catch (sqlError: any) {
+                        return res.status(400).json({ success: false, message: "VIP tagging requires database migration." });
+                    }
+                }
+                throw error;
+            }
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
         }
