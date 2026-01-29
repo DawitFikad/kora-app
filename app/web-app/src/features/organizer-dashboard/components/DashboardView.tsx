@@ -42,6 +42,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
             case 'Create Event': onNavigate?.('CreateEvent'); break;
             case 'Scan Tickets': onNavigate?.('Scanner'); break;
             case 'Promote Event': onNavigate?.('Promotions'); break;
+            case 'Events': onNavigate?.('Events'); break;
         }
     };
 
@@ -92,10 +93,11 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
             const soonDays = (upcomingCountdown as any).days;
             if (soonDays <= 3) {
                 const nextEvent = (upcomingCountdown as any).event;
+                const templateKey = soonDays === 1 ? 'org.dashboard.alertEventSoonSingle' : 'org.dashboard.alertEventSoon';
                 baseAlerts.unshift({
                     type: 'warning',
                     action: 'Events',
-                    message: t('org.dashboard.alertEventSoon', 'Event starting in {days} days: {title}')
+                    message: t(templateKey, soonDays === 1 ? 'Event starting in {days} day: {title}' : 'Event starting in {days} days: {title}')
                         .replace('{days}', String(soonDays))
                         .replace('{title}', nextEvent?.title || t('org.dashboard.unknownEvent', 'Event'))
                 });
@@ -174,7 +176,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                     ] : []
                 ).map((stat, i) => (
                     <motion.div key={i} className="stat-card" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                        <MoreHorizontal size={20} color="#57606A" style={{ position: 'absolute', top: 24, right: 24, cursor: 'pointer' }} />
                         <div className="stat-icon-box" style={{ background: stat.bgColor, color: stat.iconColor }}>
                             <stat.icon size={22} color={stat.iconColor} strokeWidth={2.5} />
                         </div>
