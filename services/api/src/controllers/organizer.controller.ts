@@ -341,11 +341,14 @@ export class OrganizerController {
                 tiers: {
                     create: tiers.map((tier: any) => ({
                         name: tier.name,
+                        type: tier.type || 'GENERAL',
                         price: parseFloat(tier.price),
                         capacity: parseInt(tier.capacity),
                         salesStart: tier.salesStart ? new Date(tier.salesStart) : null,
                         salesEnd: tier.salesEnd ? new Date(tier.salesEnd) : null,
-                        maxPerUser: parseInt(tier.maxPerUser) || 5
+                        maxPerUser: parseInt(tier.maxPerUser) || 5,
+                        isTransferable: tier.isTransferable !== undefined ? !!tier.isTransferable : true,
+                        isResellable: tier.isResellable !== undefined ? !!tier.isResellable : false
                     }))
                 }
             };
@@ -359,6 +362,18 @@ export class OrganizerController {
                     const fallbackData = { ...baseData };
                     delete fallbackData.additionalDates;
                     delete fallbackData.isPublic;
+                    if (fallbackData.tiers?.create) {
+                        fallbackData.tiers = {
+                            create: fallbackData.tiers.create.map((tier: any) => ({
+                                name: tier.name,
+                                price: tier.price,
+                                capacity: tier.capacity,
+                                salesStart: tier.salesStart,
+                                salesEnd: tier.salesEnd,
+                                maxPerUser: tier.maxPerUser
+                            }))
+                        };
+                    }
                     event = await prisma.event.create({ data: fallbackData, include: { tiers: true } } as any);
                 } else {
                     throw error;
@@ -547,13 +562,16 @@ export class OrganizerController {
                         where: { id: Number(t.id) },
                         data: {
                             name: t.name,
+                            type: t.type || undefined,
                             price: parseFloat(t.price),
                             capacity: parseInt(t.capacity),
                             salesStart: t.salesStart ? new Date(t.salesStart) : undefined,
                             salesEnd: t.salesEnd ? new Date(t.salesEnd) : undefined,
-                            maxPerUser: t.maxPerUser ? parseInt(t.maxPerUser) : undefined
-                        }
-                    })
+                            maxPerUser: t.maxPerUser ? parseInt(t.maxPerUser) : undefined,
+                            isTransferable: t.isTransferable !== undefined ? !!t.isTransferable : undefined,
+                            isResellable: t.isResellable !== undefined ? !!t.isResellable : undefined
+                        } as any
+                    } as any)
                 ));
 
                 // Create new tiers
@@ -562,16 +580,56 @@ export class OrganizerController {
                         data: {
                             eventId,
                             name: t.name,
+                            type: t.type || 'GENERAL',
                             price: parseFloat(t.price),
                             capacity: parseInt(t.capacity),
                             salesStart: t.salesStart ? new Date(t.salesStart) : null,
                             salesEnd: t.salesEnd ? new Date(t.salesEnd) : null,
-                            maxPerUser: t.maxPerUser ? parseInt(t.maxPerUser) : 5
-                        }
-                    })
+                            maxPerUser: t.maxPerUser ? parseInt(t.maxPerUser) : 5,
+                            isTransferable: t.isTransferable !== undefined ? !!t.isTransferable : true,
+                            isResellable: t.isResellable !== undefined ? !!t.isResellable : false
+                        } as any
+                    } as any)
                 ));
 
-                await Promise.all([...updates, ...creates]);
+                try {
+                    await Promise.all([...updates, ...creates]);
+                } catch (error: any) {
+                    const msg = (error?.message || '').toLowerCase();
+                    if (msg.includes('unknown arg') || (msg.includes('column') && msg.includes('does not exist'))) {
+                        const fallbackUpdates = incoming.filter(t => t.id).map(t => (
+                            prisma.ticketTier.update({
+                                where: { id: Number(t.id) },
+                                data: {
+                                    name: t.name,
+                                    price: parseFloat(t.price),
+                                    capacity: parseInt(t.capacity),
+                                    salesStart: t.salesStart ? new Date(t.salesStart) : undefined,
+                                    salesEnd: t.salesEnd ? new Date(t.salesEnd) : undefined,
+                                    maxPerUser: t.maxPerUser ? parseInt(t.maxPerUser) : undefined
+                                }
+                            })
+                        ));
+
+                        const fallbackCreates = incoming.filter(t => !t.id).map(t => (
+                            prisma.ticketTier.create({
+                                data: {
+                                    eventId,
+                                    name: t.name,
+                                    price: parseFloat(t.price),
+                                    capacity: parseInt(t.capacity),
+                                    salesStart: t.salesStart ? new Date(t.salesStart) : null,
+                                    salesEnd: t.salesEnd ? new Date(t.salesEnd) : null,
+                                    maxPerUser: t.maxPerUser ? parseInt(t.maxPerUser) : 5
+                                }
+                            })
+                        ));
+
+                        await Promise.all([...fallbackUpdates, ...fallbackCreates]);
+                    } else {
+                        throw error;
+                    }
+                }
 
                 // Delete tiers removed from payload only if they have no tickets
                 const removableIds = existing.map(t => t.id).filter(id => !incomingIds.has(id));
@@ -638,11 +696,14 @@ export class OrganizerController {
                 tiers: {
                     create: original.tiers.map(t => ({
                         name: t.name,
+                        type: (t as any).type || 'GENERAL',
                         price: Number(t.price),
                         capacity: t.capacity,
                         salesStart: t.salesStart,
                         salesEnd: t.salesEnd,
-                        maxPerUser: t.maxPerUser
+                        maxPerUser: t.maxPerUser,
+                        isTransferable: (t as any).isTransferable !== undefined ? !!(t as any).isTransferable : true,
+                        isResellable: (t as any).isResellable !== undefined ? !!(t as any).isResellable : false
                     }))
                 }
             };
@@ -656,6 +717,18 @@ export class OrganizerController {
                     const fallback = { ...duplicateData };
                     delete fallback.additionalDates;
                     delete fallback.isPublic;
+                    if (fallback.tiers?.create) {
+                        fallback.tiers = {
+                            create: fallback.tiers.create.map((tier: any) => ({
+                                name: tier.name,
+                                price: tier.price,
+                                capacity: tier.capacity,
+                                salesStart: tier.salesStart,
+                                salesEnd: tier.salesEnd,
+                                maxPerUser: tier.maxPerUser
+                            }))
+                        };
+                    }
                     copy = await prisma.event.create({ data: fallback } as any);
                 } else {
                     throw error;

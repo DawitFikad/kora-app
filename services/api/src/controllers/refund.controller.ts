@@ -8,7 +8,10 @@ export class RefundController {
      */
     static async requestRefund(req: Request, res: Response) {
         try {
-            const userId = req.user.userId;
+            const userId = (req as any).user?.userId;
+            if (!userId) {
+                return res.status(401).json({ success: false, message: "Unauthorized" });
+            }
             const { purchaseId, reason, description } = req.body;
 
             if (!purchaseId || !reason) {

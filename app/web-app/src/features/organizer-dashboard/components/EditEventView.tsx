@@ -9,7 +9,9 @@ import {
     Image as ImageIcon,
     ShieldCheck,
     ArrowLeft,
-    Loader2
+    Loader2,
+    Settings,
+    AlertCircle
 } from 'lucide-react';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { ContentService } from '../../../core/api/content.service';
@@ -38,7 +40,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
         cityId: '',
         coverImage: '',
         refundPolicy: '',
-        tiers: [{ id: undefined as number | undefined, name: '', price: '', capacity: '' }]
+        tiers: [{ id: undefined as number | undefined, name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
     });
 
     useEffect(() => {
@@ -67,8 +69,20 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                         isPublic: event.isPublic !== false,
                         refundPolicy: event.refundPolicy || '',
                         tiers: event.tiers?.length > 0
-                            ? event.tiers.map((t: any) => ({ id: t.id, name: t.name, price: String(t.price), capacity: String(t.capacity) }))
-                            : [{ id: undefined, name: '', price: '', capacity: '' }]
+                            ? event.tiers.map((t: any) => ({
+                                id: t.id,
+                                name: t.name,
+                                type: t.type || 'GENERAL',
+                                price: String(t.price),
+                                capacity: String(t.capacity),
+                                salesStart: t.salesStart ? new Date(t.salesStart).toISOString().slice(0, 16) : '',
+                                salesEnd: t.salesEnd ? new Date(t.salesEnd).toISOString().slice(0, 16) : '',
+                                maxPerUser: String(t.maxPerUser ?? '5'),
+                                isTransferable: t.isTransferable !== false,
+                                isResellable: !!t.isResellable,
+                                expanded: false
+                            }))
+                            : [{ id: undefined, name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
                     });
                 }
             } catch (error) {
@@ -84,7 +98,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
     const handleAddTier = () => {
         setForm({
             ...form,
-            tiers: [...form.tiers, { id: undefined, name: '', price: '', capacity: '' }]
+            tiers: [...form.tiers, { id: undefined, name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
         });
     };
 
@@ -94,7 +108,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
         setForm({ ...form, tiers: newTiers });
     };
 
-    const handleTierChange = (index: number, field: string, value: string) => {
+    const handleTierChange = (index: number, field: string, value: any) => {
         const newTiers = [...form.tiers];
         newTiers[index] = { ...newTiers[index], [field]: value };
         setForm({ ...form, tiers: newTiers });
@@ -143,8 +157,14 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                 tiers: form.tiers.map(t => ({
                     id: (t as any).id,
                     name: t.name,
+                    type: (t as any).type || 'GENERAL',
                     price: parseFloat(t.price as string) || 0,
-                    capacity: parseInt(t.capacity as string) || 0
+                    capacity: parseInt(t.capacity as string) || 0,
+                    salesStart: (t as any).salesStart ? new Date((t as any).salesStart) : null,
+                    salesEnd: (t as any).salesEnd ? new Date((t as any).salesEnd) : null,
+                    maxPerUser: parseInt((t as any).maxPerUser) || 5,
+                    isTransferable: (t as any).isTransferable !== undefined ? !!(t as any).isTransferable : true,
+                    isResellable: (t as any).isResellable !== undefined ? !!(t as any).isResellable : false
                 }))
             };
 
@@ -352,45 +372,162 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {form.tiers.map((tier, index) => (
-                                <div key={index} style={{ padding: '20px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 40px', gap: '16px', alignItems: 'end' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Name</label>
-                                        <input
-                                            required
-                                            type="text"
-                                            value={tier.name}
-                                            onChange={e => handleTierChange(index, 'name', e.target.value)}
-                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
-                                        />
+                                <div key={index} style={{ padding: '20px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 40px', gap: '16px', alignItems: 'end' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Name</label>
+                                            <input
+                                                required
+                                                type="text"
+                                                value={tier.name}
+                                                onChange={e => handleTierChange(index, 'name', e.target.value)}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Price (ETB)</label>
+                                            <input
+                                                required
+                                                type="number"
+                                                value={tier.price}
+                                                onChange={e => handleTierChange(index, 'price', e.target.value)}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Capacity</label>
+                                            <input
+                                                required
+                                                type="number"
+                                                value={tier.capacity}
+                                                onChange={e => handleTierChange(index, 'capacity', e.target.value)}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveTier(index)}
+                                            disabled={form.tiers.length === 1}
+                                            style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', padding: '10px', borderRadius: '10px', cursor: 'pointer', opacity: form.tiers.length === 1 ? 0.3 : 1 }}
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Price (ETB)</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            value={tier.price}
-                                            onChange={e => handleTierChange(index, 'price', e.target.value)}
-                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
-                                        />
+                                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '12px' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newTiers = [...form.tiers];
+                                                (newTiers[index] as any).expanded = !(newTiers[index] as any).expanded;
+                                                setForm({ ...form, tiers: newTiers });
+                                            }}
+                                            style={{ background: 'transparent', border: 'none', color: '#1D90F5', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                                        >
+                                            <Settings size={14} /> {(tier as any).expanded ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
+                                        </button>
+
+                                        {(tier as any).expanded && (
+                                            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.1)', borderRadius: '12px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Type</label>
+                                                    <select
+                                                        value={(tier as any).type || 'GENERAL'}
+                                                        onChange={e => handleTierChange(index, 'type', e.target.value)}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                    >
+                                                        <option value="GENERAL">General</option>
+                                                        <option value="VIP">VIP</option>
+                                                        <option value="EARLY_BIRD">Early Bird</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Sales Start</label>
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={(tier as any).salesStart}
+                                                        onChange={e => handleTierChange(index, 'salesStart', e.target.value)}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Sales End</label>
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={(tier as any).salesEnd}
+                                                        onChange={e => handleTierChange(index, 'salesEnd', e.target.value)}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Max Per User</label>
+                                                    <input
+                                                        type="number"
+                                                        value={(tier as any).maxPerUser}
+                                                        onChange={e => handleTierChange(index, 'maxPerUser', e.target.value)}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px' }}>
+                                                    <div>
+                                                        <p style={{ fontWeight: 700, fontSize: '0.8rem' }}>Allow Transfer</p>
+                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ticket can be transferred</p>
+                                                    </div>
+                                                    <div
+                                                        onClick={() => handleTierChange(index, 'isTransferable', !(tier as any).isTransferable)}
+                                                        style={{
+                                                            width: '42px', height: '22px',
+                                                            background: (tier as any).isTransferable ? '#10B981' : 'var(--bg-subtle)',
+                                                            borderRadius: '100px',
+                                                            position: 'relative',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid var(--border)',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            width: '18px', height: '18px',
+                                                            background: 'white', borderRadius: '50%',
+                                                            position: 'absolute', top: '1px',
+                                                            left: (tier as any).isTransferable ? '21px' : '2px',
+                                                            transition: 'all 0.2s',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px' }}>
+                                                    <div>
+                                                        <p style={{ fontWeight: 700, fontSize: '0.8rem' }}>Allow Resale</p>
+                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ticket can be resold</p>
+                                                    </div>
+                                                    <div
+                                                        onClick={() => handleTierChange(index, 'isResellable', !(tier as any).isResellable)}
+                                                        style={{
+                                                            width: '42px', height: '22px',
+                                                            background: (tier as any).isResellable ? '#10B981' : 'var(--bg-subtle)',
+                                                            borderRadius: '100px',
+                                                            position: 'relative',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid var(--border)',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            width: '18px', height: '18px',
+                                                            background: 'white', borderRadius: '50%',
+                                                            position: 'absolute', top: '1px',
+                                                            left: (tier as any).isResellable ? '21px' : '2px',
+                                                            transition: 'all 0.2s',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: 'rgba(29, 144, 245, 0.1)', borderRadius: '8px', fontSize: '0.75rem', color: '#1D90F5' }}>
+                                                    <AlertCircle size={14} />
+                                                    <span>Estimated Fees: 5% Platform Commission + 2% Service Fee will be deducted/added based on configuration.</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Capacity</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            value={tier.capacity}
-                                            onChange={e => handleTierChange(index, 'capacity', e.target.value)}
-                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveTier(index)}
-                                        disabled={form.tiers.length === 1}
-                                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', padding: '10px', borderRadius: '10px', cursor: 'pointer', opacity: form.tiers.length === 1 ? 0.3 : 1 }}
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
                                 </div>
                             ))}
                         </div>

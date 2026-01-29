@@ -208,11 +208,14 @@ model PromoCode {
 model TicketTier {
   id            Int          @id @default(autoincrement())
   name          String
+  type          TicketTierType @default(GENERAL)
   price         Decimal      @db.Decimal(10, 2)
   capacity      Int
   salesStart    DateTime?
   salesEnd      DateTime?
   maxPerUser    Int          @default(5)
+  isTransferable Boolean     @default(true)
+  isResellable   Boolean     @default(false)
   eventId       Int
   tickets       Ticket[]
   event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -507,6 +510,12 @@ enum EventStatus {
 enum EventType {
   CAPACITY
   SEAT_MAP
+}
+
+enum TicketTierType {
+  GENERAL
+  VIP
+  EARLY_BIRD
 }
 
 enum TicketStatus {

@@ -46,7 +46,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         additionalPolicy: '',
         hasSeatMap: false,
         tiers: [
-            { name: 'General Admission', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', expanded: false }
+            { name: 'General Admission', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }
         ]
     });
 
@@ -70,7 +70,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
     const handleAddTier = () => {
         setForm({
             ...form,
-            tiers: [...form.tiers, { name: '', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', expanded: false }]
+            tiers: [...form.tiers, { name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
         });
     };
 
@@ -80,7 +80,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         setForm({ ...form, tiers: newTiers });
     };
 
-    const handleTierChange = (index: number, field: string, value: string) => {
+    const handleTierChange = (index: number, field: string, value: any) => {
         const newTiers = [...form.tiers];
         newTiers[index] = { ...newTiers[index], [field]: value };
         setForm({ ...form, tiers: newTiers });
@@ -133,7 +133,10 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     capacity: parseInt(t.capacity as string) || 0,
                     salesStart: t.salesStart ? new Date(t.salesStart) : null,
                     salesEnd: t.salesEnd ? new Date(t.salesEnd) : null,
-                    maxPerUser: parseInt(t.maxPerUser) || 5
+                    maxPerUser: parseInt(t.maxPerUser) || 5,
+                    type: (t as any).type || 'GENERAL',
+                    isTransferable: (t as any).isTransferable !== undefined ? !!(t as any).isTransferable : true,
+                    isResellable: (t as any).isResellable !== undefined ? !!(t as any).isResellable : false
                 }))
             };
 
@@ -470,6 +473,18 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                         {(tier as any).expanded && (
                                             <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.1)', borderRadius: '12px' }}>
                                                 <div>
+                                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Type</label>
+                                                    <select
+                                                        value={(tier as any).type || 'GENERAL'}
+                                                        onChange={e => handleTierChange(index, 'type', e.target.value)}
+                                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                    >
+                                                        <option value="GENERAL">General</option>
+                                                        <option value="VIP">VIP</option>
+                                                        <option value="EARLY_BIRD">Early Bird</option>
+                                                    </select>
+                                                </div>
+                                                <div>
                                                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Sales Start</label>
                                                     <input
                                                         type="datetime-local"
@@ -495,6 +510,60 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                                         onChange={e => handleTierChange(index, 'maxPerUser', e.target.value)}
                                                         style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}
                                                     />
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px' }}>
+                                                    <div>
+                                                        <p style={{ fontWeight: 700, fontSize: '0.8rem' }}>Allow Transfer</p>
+                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ticket can be transferred</p>
+                                                    </div>
+                                                    <div
+                                                        onClick={() => handleTierChange(index, 'isTransferable', !(tier as any).isTransferable)}
+                                                        style={{
+                                                            width: '42px', height: '22px',
+                                                            background: (tier as any).isTransferable ? '#10B981' : 'var(--bg-subtle)',
+                                                            borderRadius: '100px',
+                                                            position: 'relative',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid var(--border)',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            width: '18px', height: '18px',
+                                                            background: 'white', borderRadius: '50%',
+                                                            position: 'absolute', top: '1px',
+                                                            left: (tier as any).isTransferable ? '21px' : '2px',
+                                                            transition: 'all 0.2s',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px' }}>
+                                                    <div>
+                                                        <p style={{ fontWeight: 700, fontSize: '0.8rem' }}>Allow Resale</p>
+                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ticket can be resold</p>
+                                                    </div>
+                                                    <div
+                                                        onClick={() => handleTierChange(index, 'isResellable', !(tier as any).isResellable)}
+                                                        style={{
+                                                            width: '42px', height: '22px',
+                                                            background: (tier as any).isResellable ? '#10B981' : 'var(--bg-subtle)',
+                                                            borderRadius: '100px',
+                                                            position: 'relative',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid var(--border)',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            width: '18px', height: '18px',
+                                                            background: 'white', borderRadius: '50%',
+                                                            position: 'absolute', top: '1px',
+                                                            left: (tier as any).isResellable ? '21px' : '2px',
+                                                            transition: 'all 0.2s',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                        }} />
+                                                    </div>
                                                 </div>
                                                 <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: 'rgba(29, 144, 245, 0.1)', borderRadius: '8px', fontSize: '0.75rem', color: '#1D90F5' }}>
                                                     <AlertCircle size={14} />

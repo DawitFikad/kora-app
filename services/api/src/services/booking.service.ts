@@ -102,6 +102,9 @@ export class BookingService {
                         name: true,
                         price: true,
                         capacity: true,
+                        salesStart: true,
+                        salesEnd: true,
+                        maxPerUser: true,
                         _count: {
                             select: { tickets: true }
                         }
@@ -135,6 +138,9 @@ export class BookingService {
             name: tier.name,
             price: tier.price.toNumber(),
             capacity: tier.capacity,
+            salesStart: tier.salesStart,
+            salesEnd: tier.salesEnd,
+            maxPerUser: tier.maxPerUser,
             soldCount: tier._count.tickets,
             available: tier.capacity - tier._count.tickets
         }));
@@ -411,6 +417,40 @@ export class BookingService {
         const tier = event.tiers[0];
         if (!tier) {
             return { success: false, error: "Ticket tier not found" };
+        }
+
+        const now = new Date();
+        if (tier.salesStart && now < tier.salesStart) {
+            return { success: false, error: "Ticket sales for this tier have not started yet" };
+        }
+        if (tier.salesEnd && now > tier.salesEnd) {
+            return { success: false, error: "Ticket sales for this tier have ended" };
+        }
+
+        if (tier.maxPerUser && tier.maxPerUser > 0) {
+            const userTicketCount = await prisma.ticket.count({
+                where: { userId, tierId }
+            });
+
+            const pendingPurchases = await prisma.purchase.findMany({
+                where: { userId, status: PaymentStatus.PENDING },
+                select: { metadata: true }
+            });
+
+            const pendingQty = pendingPurchases.reduce((sum, purchase) => {
+                const metadata = purchase.metadata as any;
+                if (metadata?.tierId === tierId) {
+                    return sum + (parseInt(metadata?.quantity, 10) || 0);
+                }
+                return sum;
+            }, 0);
+
+            if (userTicketCount + pendingQty + quantity > tier.maxPerUser) {
+                return {
+                    success: false,
+                    error: `Maximum ${tier.maxPerUser} tickets per user for this tier`
+                };
+            }
         }
 
         // Handle seat locking based on event type
