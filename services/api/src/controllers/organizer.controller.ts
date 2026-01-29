@@ -383,6 +383,51 @@ export class OrganizerController {
     }
 
     /**
+     * PATCH /api/organizer/tiers/:id
+     * Update a ticket tier (capacity only)
+     */
+    static async updateTicketTier(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const tierId = parseInt(req.params.id);
+            const capacity = Number(req.body?.capacity);
+            if (!tierId || !Number.isFinite(capacity) || capacity <= 0) {
+                return res.status(400).json({ success: false, message: "Invalid capacity" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const tier = await prisma.ticketTier.findUnique({
+                where: { id: tierId },
+                include: {
+                    event: { select: { organizerId: true } },
+                    _count: { select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } } }
+                }
+            });
+
+            if (!tier) return res.status(404).json({ success: false, message: "Tier not found" });
+            if (tier.event.organizerId !== organizerId) {
+                return res.status(403).json({ success: false, message: "You don't own this event" });
+            }
+
+            const sold = tier._count.tickets || 0;
+            if (capacity < sold) {
+                return res.status(400).json({ success: false, message: `Capacity cannot be less than sold (${sold}).` });
+            }
+
+            const updated = await prisma.ticketTier.update({
+                where: { id: tierId },
+                data: { capacity: Math.floor(capacity) }
+            });
+
+            res.json({ success: true, data: updated });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
      * GET /api/organizer/settings
      */
     static async getSettings(req: Request, res: Response) {

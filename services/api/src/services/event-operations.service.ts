@@ -637,6 +637,7 @@ export class EventOperationsService {
 
         const allTiers = (events as any[]).flatMap(e => e.tiers.map((t: any) => ({
             eventId: e.id,
+            tierId: t.id,
             name: t.name,
             eventName: e.title,
             price: Number(t.price),

@@ -21,6 +21,7 @@ export const OrganizerService = {
 
     // Tickets
     getTicketStats: () => api.get('/organizer/ticket-stats'),
+    updateTicketTier: (id: number, data: { capacity: number }) => api.patch(`/organizer/tiers/${id}`, data),
 
     // Attendees
     getAttendees: () => api.get('/organizer/attendees'),

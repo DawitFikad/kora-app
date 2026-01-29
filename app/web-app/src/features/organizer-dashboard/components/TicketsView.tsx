@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Ticket, Settings, Loader2 } from 'lucide-react';
+import { Ticket, Loader2 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 
 export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [capacityEdits, setCapacityEdits] = useState<Record<number, string>>({});
+    const [savingTierId, setSavingTierId] = useState<number | null>(null);
+    const [capacityErrors, setCapacityErrors] = useState<Record<number, string>>({});
+    const [editingTierId, setEditingTierId] = useState<number | null>(null);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -35,6 +39,20 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
         ? (stats.totalSold / stats.totalCapacity) * 100
         : 0;
 
+    const ticketTypeTotals = useMemo(() => {
+        const tiers = stats?.tiers || [];
+        const totals: Record<string, { capacity: number; sold: number }> = {};
+        tiers.forEach((tier: any) => {
+            const name = tier.name || 'General';
+            if (!totals[name]) totals[name] = { capacity: 0, sold: 0 };
+            totals[name].capacity += Number(tier.capacity || 0);
+            totals[name].sold += Number(tier.sold || 0);
+        });
+        return Object.entries(totals)
+            .map(([name, value]) => ({ name, ...value }))
+            .sort((a, b) => b.capacity - a.capacity);
+    }, [stats]);
+
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const filteredTiers = (stats?.tiers || []).filter((tier: any) => {
         if (!normalizedQuery) return true;
@@ -42,6 +60,54 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
         const eventName = (tier.eventName || '').toLowerCase();
         return name.includes(normalizedQuery) || eventName.includes(normalizedQuery);
     });
+
+    const getTierStatus = (sold: number, capacity: number) => {
+        if (sold >= capacity) return 'Sold Out';
+        if (sold > capacity * 0.8) return 'Few Left';
+        return 'Active';
+    };
+
+    const handleCapacitySave = async (tier: any) => {
+        const tierId = Number(tier.tierId ?? tier.id);
+        if (!tierId) return;
+        const rawValue = capacityEdits[tierId] ?? String(tier.capacity ?? '');
+        const nextCapacity = Number(rawValue);
+
+        if (!Number.isFinite(nextCapacity) || nextCapacity <= 0) {
+            setCapacityErrors(prev => ({ ...prev, [tierId]: 'Enter a valid capacity.' }));
+            return;
+        }
+
+        if (nextCapacity < Number(tier.sold || 0)) {
+            setCapacityErrors(prev => ({ ...prev, [tierId]: `Capacity cannot be less than sold (${tier.sold}).` }));
+            return;
+        }
+
+        setSavingTierId(tierId);
+        setCapacityErrors(prev => ({ ...prev, [tierId]: '' }));
+        try {
+            await OrganizerService.updateTicketTier(tierId, { capacity: Math.floor(nextCapacity) });
+            setStats((prev: any) => {
+                if (!prev) return prev;
+                const updatedTiers = (prev.tiers || []).map((t: any) => {
+                    const id = Number(t.tierId ?? t.id);
+                    if (id !== tierId) return t;
+                    const newCapacity = Math.floor(nextCapacity);
+                    return {
+                        ...t,
+                        capacity: newCapacity,
+                        status: getTierStatus(Number(t.sold || 0), newCapacity)
+                    };
+                });
+                const totalCapacity = updatedTiers.reduce((sum: number, t: any) => sum + Number(t.capacity || 0), 0);
+                return { ...prev, tiers: updatedTiers, totalCapacity };
+            });
+        } catch (error) {
+            setCapacityErrors(prev => ({ ...prev, [tierId]: 'Failed to update capacity.' }));
+        } finally {
+            setSavingTierId(null);
+        }
+    };
 
     return (
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
@@ -51,7 +117,6 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
                 <div className="stat-card" style={{ padding: '32px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Active Ticket Tiers</h3>
-                        <button className="btn-blue" style={{ padding: '8px 16px', fontSize: '0.85rem' }}><Plus size={16} /> Add Tier</button>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -61,6 +126,9 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
                                 'Active': '#10B981',
                                 'Few Left': '#FBBF24'
                             };
+
+                            const tierId = Number(tier.tierId ?? tier.id);
+                            const editedCapacity = capacityEdits[tierId] ?? String(tier.capacity ?? '');
 
                             return (
                                 <div key={i} style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -79,8 +147,48 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Tickets Sold</p>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: colors[tier.status] || '#1D90F5', display: 'block', marginBottom: '4px' }}>{tier.status}</span>
-                                        <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)' }}><Settings size={16} /></button>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: colors[tier.status] || '#1D90F5', display: 'block', marginBottom: '8px' }}>{tier.status}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <input
+                                                type="number"
+                                                min={tier.sold}
+                                                value={editedCapacity}
+                                                disabled={editingTierId !== tierId}
+                                                onChange={e => setCapacityEdits(prev => ({ ...prev, [tierId]: e.target.value }))}
+                                                style={{ width: '90px', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '6px 8px', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.8rem', opacity: editingTierId === tierId ? 1 : 0.6 }}
+                                            />
+                                            {editingTierId === tierId ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleCapacitySave(tier)}
+                                                        disabled={savingTierId === tierId}
+                                                        style={{ background: 'var(--bg-active)', border: 'none', color: 'white', padding: '6px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', opacity: savingTierId === tierId ? 0.6 : 1 }}
+                                                    >
+                                                        {savingTierId === tierId ? 'Saving...' : 'Save'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingTierId(null);
+                                                            setCapacityEdits(prev => ({ ...prev, [tierId]: String(tier.capacity ?? '') }));
+                                                            setCapacityErrors(prev => ({ ...prev, [tierId]: '' }));
+                                                        }}
+                                                        style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '6px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setEditingTierId(tierId)}
+                                                    style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '6px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                                >
+                                                    Edit
+                                                </button>
+                                            )}
+                                        </div>
+                                        {capacityErrors[tierId] && (
+                                            <p style={{ marginTop: '6px', fontSize: '0.7rem', color: '#EF4444', fontWeight: 600 }}>{capacityErrors[tierId]}</p>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -118,11 +226,20 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
                             </div>
                         </div>
 
-                        <div style={{ marginTop: 'auto' }}>
-                            <button className="btn-blue" style={{ width: '100%', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', color: 'white' }}>
-                                Manage Hold & Allocations
-                            </button>
-                        </div>
+                        {ticketTypeTotals.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, letterSpacing: '0.08em' }}>TICKET TYPES</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {ticketTypeTotals.map((type) => (
+                                        <div key={type.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{type.name}</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{type.capacity} total</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </div>

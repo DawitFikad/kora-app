@@ -16,6 +16,7 @@ router.post("/events", OrganizerController.createEvent);
 router.get("/attendees", OrganizerController.getAttendees);
 router.get("/financials", OrganizerController.getFinancials);
 router.get("/ticket-stats", OrganizerController.getTicketStats);
+router.patch("/tiers/:id", OrganizerController.updateTicketTier);
 router.get("/settings", OrganizerController.getSettings);
 router.patch("/settings", OrganizerController.updateSettings);
 router.post("/promos", OrganizerController.createPromoCode);
