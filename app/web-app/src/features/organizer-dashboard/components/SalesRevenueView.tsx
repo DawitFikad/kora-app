@@ -75,6 +75,18 @@ export const SalesRevenueView = () => {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all');
     const [events, setEvents] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [salesFilters, setSalesFilters] = useState({
+        eventId: 'all',
+        customer: '',
+        paymentMethod: 'all',
+        date: ''
+    });
+    const [failedFilters, setFailedFilters] = useState({
+        eventId: 'all',
+        customer: '',
+        paymentMethod: 'all',
+        date: ''
+    });
 
     const COLORS = ['#1D90F5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
@@ -202,24 +214,40 @@ export const SalesRevenueView = () => {
         date: new Date(row.date)
     }));
 
+    const normalizedFailedPayments = (salesData?.failedPayments || []).map(row => ({
+        ...row,
+        date: new Date(row.date)
+    }));
+
+    const matchesFilters = (row: any, filters: { eventId: string; customer: string; paymentMethod: string; date: string }) => {
+        if (filters.eventId !== 'all' && String(row.eventId) !== String(filters.eventId)) return false;
+        if (filters.paymentMethod !== 'all' && row.paymentMethod !== filters.paymentMethod) return false;
+        if (filters.customer && !String(row.customer || '').toLowerCase().includes(filters.customer.toLowerCase())) return false;
+        if (filters.date) {
+            const start = new Date(filters.date);
+            const end = new Date(filters.date);
+            end.setHours(23, 59, 59, 999);
+            if (row.date < start || row.date > end) return false;
+        }
+        return true;
+    };
+
     const filteredSalesTable = normalizedSalesTable.filter(row => {
         if (selectedEvent !== 'all' && String(row.eventId) !== String(selectedEvent)) return false;
         if (selectedPaymentMethod !== 'all' && row.paymentMethod !== selectedPaymentMethod) return false;
         if (rangeStart && row.date < rangeStart) return false;
-        return true;
+        return matchesFilters(row, salesFilters);
     });
 
-    const filteredFailedPayments = (salesData?.failedPayments || []).map(row => ({
-        ...row,
-        date: new Date(row.date)
-    })).filter(row => {
+    const filteredFailedPayments = normalizedFailedPayments.filter(row => {
         if (selectedEvent !== 'all' && String(row.eventId) !== String(selectedEvent)) return false;
         if (selectedPaymentMethod !== 'all' && row.paymentMethod !== selectedPaymentMethod) return false;
         if (rangeStart && row.date < rangeStart) return false;
-        return true;
+        return matchesFilters(row, failedFilters);
     });
 
     const paymentMethods = Array.from(new Set(normalizedSalesTable.map(row => row.paymentMethod))).filter(Boolean);
+    const failedPaymentMethods = Array.from(new Set(normalizedFailedPayments.map(row => row.paymentMethod))).filter(Boolean);
 
     const exportToCSV = () => {
         if (!salesData) return;
@@ -595,6 +623,47 @@ export const SalesRevenueView = () => {
                 <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border)' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Real-time Sales Table</h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Transparent revenue tracking in ETB</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', marginTop: '16px' }}>
+                        <select
+                            value={salesFilters.eventId}
+                            onChange={(e) => setSalesFilters(prev => ({ ...prev, eventId: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        >
+                            <option value="all">All Events</option>
+                            {events.map((event) => (
+                                <option key={event.id} value={event.id}>{event.title}</option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            placeholder="Customer"
+                            value={salesFilters.customer}
+                            onChange={(e) => setSalesFilters(prev => ({ ...prev, customer: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        />
+                        <input
+                            type="date"
+                            value={salesFilters.date}
+                            onChange={(e) => setSalesFilters(prev => ({ ...prev, date: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        />
+                        <select
+                            value={salesFilters.paymentMethod}
+                            onChange={(e) => setSalesFilters(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        >
+                            <option value="all">All Payment Methods</option>
+                            {paymentMethods.map((method) => (
+                                <option key={method} value={method}>{method}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={() => setSalesFilters({ eventId: 'all', customer: '', paymentMethod: 'all', date: '' })}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, gridColumn: 'span 4' }}
+                        >
+                            Reset Filters
+                        </button>
+                    </div>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
                     <table className="event-table">
@@ -662,6 +731,47 @@ export const SalesRevenueView = () => {
                 <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border)' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Failed Payments</h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Track failed or cancelled payments</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', marginTop: '16px' }}>
+                        <select
+                            value={failedFilters.eventId}
+                            onChange={(e) => setFailedFilters(prev => ({ ...prev, eventId: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        >
+                            <option value="all">All Events</option>
+                            {events.map((event) => (
+                                <option key={event.id} value={event.id}>{event.title}</option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            placeholder="Customer"
+                            value={failedFilters.customer}
+                            onChange={(e) => setFailedFilters(prev => ({ ...prev, customer: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        />
+                        <input
+                            type="date"
+                            value={failedFilters.date}
+                            onChange={(e) => setFailedFilters(prev => ({ ...prev, date: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        />
+                        <select
+                            value={failedFilters.paymentMethod}
+                            onChange={(e) => setFailedFilters(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        >
+                            <option value="all">All Payment Methods</option>
+                            {failedPaymentMethods.map((method) => (
+                                <option key={method} value={method}>{method}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={() => setFailedFilters({ eventId: 'all', customer: '', paymentMethod: 'all', date: '' })}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, gridColumn: 'span 4' }}
+                        >
+                            Reset Filters
+                        </button>
+                    </div>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
                     <table className="event-table">
