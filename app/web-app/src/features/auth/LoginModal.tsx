@@ -26,12 +26,43 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
     const [city, setCity] = useState('');
     const [payoutDetails, setPayoutDetails] = useState('');
 
+    const normalizeEthiopianPhone = (input: string) => {
+        const trimmed = input.trim();
+        if (!trimmed) return '';
+        const hasPlus = trimmed.startsWith('+');
+        const digits = trimmed.replace(/\D/g, '');
+
+        if (hasPlus && digits.startsWith('251')) {
+            return `+${digits}`;
+        }
+
+        if (digits.startsWith('251')) {
+            return `+${digits}`;
+        }
+
+        if (digits.startsWith('0') && digits.length === 10) {
+            return `+251${digits.slice(1)}`;
+        }
+
+        if (digits.startsWith('9') && digits.length === 9) {
+            return `+251${digits}`;
+        }
+
+        return '';
+    };
+
     const handleRequestOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
         try {
-            await AuthService.requestOtp(phoneNumber);
+            const normalized = normalizeEthiopianPhone(phoneNumber);
+            if (!normalized) {
+                setError('Please enter a valid Ethiopian phone number (e.g. 0912xxxxxx or +251912xxxxxx).');
+                return;
+            }
+            await AuthService.requestOtp(normalized);
+            setPhoneNumber(normalized);
             setStep('otp');
         } catch (err: any) {
             setError(err.error || 'Failed to send OTP. Please check the number.');
@@ -45,7 +76,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
         setIsLoading(true);
         setError('');
         try {
-            const verifyRes: any = await AuthService.verifyOtp(phoneNumber, otp);
+            const normalized = normalizeEthiopianPhone(phoneNumber);
+            if (!normalized) {
+                setError('Please enter a valid Ethiopian phone number (e.g. 0912xxxxxx or +251912xxxxxx).');
+                return;
+            }
+            const verifyRes: any = await AuthService.verifyOtp(normalized, otp);
 
             if (mode === 'register') {
                 // If user is already an organizer, just log them in
@@ -66,7 +102,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                     });
                     
                     const regRes: any = await AuthService.registerOrganizer({
-                        phoneNumber,
+                        phoneNumber: normalized,
                         email,
                         name,
                         city,

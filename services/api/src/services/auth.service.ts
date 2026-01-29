@@ -11,8 +11,40 @@ const getRefreshTokenSecret = () => process.env.JWT_REFRESH_SECRET || "default_r
 // I'll stick to one secret or I should update env. Let's use env if available.
 
 export class AuthService {
+    private static normalizeEthiopianPhone(input: string) {
+        const trimmed = (input || '').trim();
+        if (!trimmed) return '';
+        const hasPlus = trimmed.startsWith('+');
+        const digits = trimmed.replace(/\D/g, '');
+
+        if (hasPlus && digits.startsWith('251')) {
+            return `+${digits}`;
+        }
+
+        if (digits.startsWith('251')) {
+            return `+${digits}`;
+        }
+
+        if (digits.startsWith('0') && digits.length === 10) {
+            return `+251${digits.slice(1)}`;
+        }
+
+        if (digits.startsWith('9') && digits.length === 9) {
+            return `+251${digits}`;
+        }
+
+        return trimmed;
+    }
+
+    private static getPhoneVariants(normalized: string) {
+        if (!normalized.startsWith('+251')) return [normalized];
+        const local = normalized.replace('+251', '');
+        const withZero = `0${local}`;
+        return [normalized, withZero, local];
+    }
+
     static async requestOtp(phoneNumber: string) {
-        const cleanPhone = phoneNumber.trim();
+        const cleanPhone = this.normalizeEthiopianPhone(phoneNumber);
         console.log(`[AuthService] Requesting OTP for: ${cleanPhone}`);
         const otp = await OtpService.generateOtp(cleanPhone);
 
@@ -23,7 +55,7 @@ export class AuthService {
     }
 
     static async verifyOtp(phoneNumber: string, otp: string) {
-        const cleanPhone = phoneNumber.trim();
+        const cleanPhone = this.normalizeEthiopianPhone(phoneNumber);
         const cleanOtp = String(otp).trim();
         console.log(`[AuthService] Verifying OTP for: ${cleanPhone}, Input OTP: ${cleanOtp}`);
 
@@ -37,8 +69,9 @@ export class AuthService {
         try {
             // Check if user exists
             console.log(`[AuthService] Looking up user in DB: ${cleanPhone}`);
-            const existingUser = await prisma.user.findUnique({
-                where: { phoneNumber: cleanPhone },
+            const phoneVariants = this.getPhoneVariants(cleanPhone);
+            const existingUser = await prisma.user.findFirst({
+                where: { phoneNumber: { in: phoneVariants } },
                 include: { organizer: true }
             });
 
@@ -64,6 +97,16 @@ export class AuthService {
                 console.log(`[AuthService] User created with ID: ${user.id}`);
             } else {
                 console.log(`[AuthService] Existing user found with ID: ${user.id}, Role: ${user.role}`);
+                if (user.phoneNumber !== cleanPhone) {
+                    const normalizedExists = await prisma.user.findUnique({ where: { phoneNumber: cleanPhone } });
+                    if (!normalizedExists) {
+                        user = await prisma.user.update({
+                            where: { id: user.id },
+                            data: { phoneNumber: cleanPhone },
+                            include: { organizer: true }
+                        });
+                    }
+                }
             }
 
             if (user.status === AccountStatus.SUSPENDED) {
@@ -109,12 +152,14 @@ export class AuthService {
     }
 
     static async registerOrganizer(data: { phoneNumber: string; email?: string | null; name: string; city: string; payoutDetails: string }) {
-        console.log(`[AuthService] Starting organizer registration for phone: ${data.phoneNumber}`);
+        const normalizedPhone = this.normalizeEthiopianPhone(data.phoneNumber);
+        console.log(`[AuthService] Starting organizer registration for phone: ${normalizedPhone || data.phoneNumber}`);
         
         const email = data.email && data.email.trim() !== '' ? data.email.trim() : null;
 
-        const existingUser = await prisma.user.findUnique({
-            where: { phoneNumber: data.phoneNumber },
+        const phoneVariants = this.getPhoneVariants(normalizedPhone || data.phoneNumber);
+        const existingUser = await prisma.user.findFirst({
+            where: { phoneNumber: { in: phoneVariants } },
             include: { organizer: true }
         });
 
@@ -128,9 +173,17 @@ export class AuthService {
             console.log(`[AuthService] Upgrading existing user ${existingUser.id} to organizer`);
             // Update existing user to Organizer role
             try {
+                let safePhoneNumber = normalizedPhone || data.phoneNumber;
+                if (normalizedPhone && existingUser.phoneNumber !== normalizedPhone) {
+                    const normalizedExists = await prisma.user.findUnique({ where: { phoneNumber: normalizedPhone } });
+                    if (normalizedExists && normalizedExists.id !== existingUser.id) {
+                        safePhoneNumber = existingUser.phoneNumber;
+                    }
+                }
                 user = await prisma.user.update({
                     where: { id: existingUser.id },
                     data: {
+                        phoneNumber: safePhoneNumber,
                         role: Role.ORGANIZER,
                         status: AccountStatus.PENDING,
                         email: email || existingUser.email, // Update email if provided, otherwise keep existing
@@ -142,7 +195,7 @@ export class AuthService {
                         organizer: {
                             create: { // Create organizer profile
                                 organizationName: data.name,
-                                contactPhone: data.phoneNumber,
+                                contactPhone: normalizedPhone || data.phoneNumber,
                                 contactEmail: email,
                                 city: data.city,
                                 payoutDetails: data.payoutDetails,
@@ -163,7 +216,7 @@ export class AuthService {
             try {
                 user = await prisma.user.create({
                     data: {
-                        phoneNumber: data.phoneNumber,
+                        phoneNumber: normalizedPhone || data.phoneNumber,
                         email: email,
                         role: Role.ORGANIZER,
                         status: AccountStatus.PENDING,
@@ -175,7 +228,7 @@ export class AuthService {
                         organizer: {
                             create: {
                                 organizationName: data.name,
-                                contactPhone: data.phoneNumber,
+                                contactPhone: normalizedPhone || data.phoneNumber,
                                 contactEmail: email,
                                 city: data.city,
                                 payoutDetails: data.payoutDetails,

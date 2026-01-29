@@ -115,6 +115,9 @@ export const PromotionsView = ({ searchQuery = '' }: { searchQuery?: string }) =
         .sort((a, b) => (b?.stats?.revenue || 0) - (a?.stats?.revenue || 0))
         .slice(0, 3);
 
+    const hasFeatureRequestBanner =
+        events.some(e => !e.featured && e.status === 'APPROVED') || pendingRequests.length > 0;
+
     const getAutoApplyLink = (promo: any) => {
         if (typeof window === 'undefined') return '';
         return `${window.location.origin}/book/${promo.eventId}?promo=${promo.code}`;
@@ -143,11 +146,13 @@ export const PromotionsView = ({ searchQuery = '' }: { searchQuery?: string }) =
                 }
             />
 
-            <div className="stat-card" style={{ padding: '16px 20px', marginBottom: '24px', border: '1px solid rgba(251, 191, 36, 0.25)', background: 'rgba(251, 191, 36, 0.06)' }}>
-                <p style={{ fontSize: '0.9rem', fontWeight: 700 }}>
-                    Request to Feature: submit a request and the admin will review and respond.
-                </p>
-            </div>
+            {hasFeatureRequestBanner && (
+                <div className="stat-card" style={{ padding: '16px 20px', marginBottom: '24px', border: '1px solid rgba(251, 191, 36, 0.25)', background: 'rgba(251, 191, 36, 0.06)' }}>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 700 }}>
+                        Request to Feature: submit a request and the admin will review and respond.
+                    </p>
+                </div>
+            )}
 
             {showForm && (
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="stat-card" style={{ padding: '32px', marginBottom: '32px', border: '1px solid var(--bg-active)' }}>
