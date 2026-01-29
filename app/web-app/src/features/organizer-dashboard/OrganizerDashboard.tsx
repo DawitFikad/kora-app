@@ -157,20 +157,50 @@ const OrganizerDashboard = () => {
         setActiveTab('EventStats');
     };
 
-    const navItems = [
-        { icon: Layout, label: 'Dashboard', display: t('org.nav.dashboard', 'Dashboard') },
-        { icon: Calendar, label: 'Events', display: t('org.nav.events', 'Events') },
-        { icon: Ticket, label: 'Tickets', display: t('org.nav.tickets', 'Tickets') },
-        { icon: DollarSign, label: 'Sales', display: t('org.nav.sales', 'Sales') },
-        { icon: BarChart3, label: 'Analytics', display: t('org.nav.analytics', 'Analytics') },
-        { icon: FileText, label: 'Reports', display: t('org.nav.reports', 'Reports') },
-        { icon: Users, label: 'Attendees', display: t('org.nav.attendees', 'Attendees') },
-        { icon: Megaphone, label: 'Promotions', display: t('org.nav.promotions', 'Promotions') },
-        { icon: RefreshCw, label: 'Refunds', display: t('org.nav.refunds', 'Refunds') },
-        { icon: Layout, label: 'Content', display: t('org.nav.content', 'Content') },
-        { icon: Maximize, label: 'Scanner', display: t('org.nav.scanner', 'Scanner') },
-        { icon: Bell, label: 'Support', display: t('org.nav.support', 'Support') },
-        { icon: Settings, label: 'Settings', display: t('org.nav.settings', 'Settings') },
+    const navGroups = [
+        {
+            title: t('org.nav.group.core', 'Core'),
+            items: [
+                { icon: Layout, label: 'Dashboard', display: t('org.nav.dashboard', 'Dashboard') },
+                { icon: Calendar, label: 'Events', display: t('org.nav.events', 'Events') },
+                { icon: Ticket, label: 'Tickets', display: t('org.nav.tickets', 'Tickets') },
+                { icon: Users, label: 'Attendees', display: t('org.nav.attendees', 'Attendees') }
+            ]
+        },
+        {
+            title: t('org.nav.group.revenue', 'Revenue'),
+            items: [
+                { icon: DollarSign, label: 'Sales', display: t('org.nav.sales', 'Sales') },
+                { icon: RefreshCw, label: 'Refunds', display: t('org.nav.refunds', 'Refunds') }
+            ]
+        },
+        {
+            title: t('org.nav.group.marketing', 'Marketing'),
+            items: [
+                { icon: Megaphone, label: 'Promotions', display: t('org.nav.promotions', 'Promotions') }
+            ]
+        },
+        {
+            title: t('org.nav.group.insights', 'Insights'),
+            items: [
+                { icon: BarChart3, label: 'Analytics', display: t('org.nav.analytics', 'Analytics') },
+                { icon: FileText, label: 'Reports', display: t('org.nav.reports', 'Reports') }
+            ]
+        },
+        {
+            title: t('org.nav.group.tools', 'Tools'),
+            items: [
+                { icon: Layout, label: 'Content', display: t('org.nav.content', 'Content') },
+                { icon: Maximize, label: 'Scanner', display: t('org.nav.scanner', 'Scanner') }
+            ]
+        },
+        {
+            title: t('org.nav.group.support', 'Support'),
+            items: [
+                { icon: Bell, label: 'Support', display: t('org.nav.support', 'Support') },
+                { icon: Settings, label: 'Settings', display: t('org.nav.settings', 'Settings') }
+            ]
+        }
     ];
 
     const titleMap: Record<string, string> = {
@@ -252,15 +282,22 @@ const OrganizerDashboard = () => {
                     </div>
                 </div>
 
-                <nav className="nav-group" style={{ padding: '0 16px' }}>
-                    {navItems.map((item) => (
-                        <div
-                            key={item.label}
-                            className={`nav-item ${activeTab === item.label ? 'active' : ''}`}
-                            onClick={() => setActiveTab(item.label)}
-                        >
-                            <item.icon size={20} />
-                            {item.display}
+                <nav className="nav-group" style={{ padding: '0 16px', overflowY: 'auto', maxHeight: 'calc(100vh - 280px)' }}>
+                    {navGroups.map((group, groupIndex) => (
+                        <div key={groupIndex} style={{ marginBottom: '20px' }}>
+                            <h3 style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px', letterSpacing: '0.08em', paddingLeft: '6px' }}>
+                                {group.title}
+                            </h3>
+                            {group.items.map((item) => (
+                                <div
+                                    key={item.label}
+                                    className={`nav-item ${activeTab === item.label ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(item.label)}
+                                >
+                                    <item.icon size={20} />
+                                    {item.display}
+                                </div>
+                            ))}
                         </div>
                     ))}
                 </nav>
