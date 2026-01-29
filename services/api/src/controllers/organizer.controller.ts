@@ -1564,7 +1564,7 @@ export class OrganizerController {
                             },
                             tickets: {
                                 include: {
-                                    event: { select: { title: true } }
+                                    event: { select: { title: true, dateTime: true, refundPolicy: true } }
                                 }
                             }
                         }
@@ -1573,18 +1573,28 @@ export class OrganizerController {
                 orderBy: { createdAt: 'desc' }
             });
 
-            const formattedRefunds = refunds.map(r => ({
+            const formattedRefunds = refunds.map(r => {
+                const purchaseTotal = Number(r.purchase.totalAmount);
+                const refundAmount = Number(r.amount);
+                const refundType = refundAmount >= purchaseTotal ? 'FULL' : 'PARTIAL';
+                const eventInfo = r.purchase.tickets[0]?.event;
+
+                return {
                 id: r.id,
                 status: r.status,
-                amount: Number(r.amount),
+                amount: refundAmount,
                 reason: r.reason,
                 description: r.description,
                 customerName: r.purchase.user.profile?.fullName || r.purchase.user.phoneNumber,
-                eventTitle: r.purchase.tickets[0]?.event.title || 'Unknown Event',
+                eventTitle: eventInfo?.title || 'Unknown Event',
+                eventDate: eventInfo?.dateTime || null,
+                refundPolicy: eventInfo?.refundPolicy || 'No refunds within 24 hours of event.',
                 ticketCount: r.purchase.tickets.length,
+                purchaseTotal,
+                refundType,
                 createdAt: r.createdAt,
                 updatedAt: r.updatedAt
-            }));
+            }});
 
             res.json({ success: true, data: formattedRefunds });
         } catch (error: any) {
@@ -1602,7 +1612,7 @@ export class OrganizerController {
             const organizerId = (req as any).user?.organizerId;
             if (!organizerId) return res.status(403).json({ error: "Unauthorized" });
 
-            const { purchaseId, reason, description } = req.body;
+            const { purchaseId, reason, description, amount } = req.body;
 
             if (!purchaseId || !reason) {
                 return res.status(400).json({ error: "Purchase ID and reason are required" });
@@ -1640,11 +1650,28 @@ export class OrganizerController {
                 return res.status(400).json({ error: "Refund request already exists for this purchase" });
             }
 
+            const event = purchase.tickets[0]?.event;
+            if (event?.dateTime) {
+                const cutoff = new Date(event.dateTime);
+                cutoff.setHours(cutoff.getHours() - 24);
+                if (new Date() > cutoff) {
+                    return res.status(400).json({ error: "Refund window closed (24h cutoff before event start)." });
+                }
+            }
+
+            const refundAmount = amount ? Number(amount) : Number(purchase.totalAmount);
+            if (isNaN(refundAmount) || refundAmount <= 0) {
+                return res.status(400).json({ error: "Invalid refund amount" });
+            }
+            if (refundAmount > Number(purchase.totalAmount)) {
+                return res.status(400).json({ error: "Refund amount exceeds purchase total" });
+            }
+
             // Create refund request
             const refund = await prisma.refund.create({
                 data: {
                     purchaseId: purchase.id,
-                    amount: purchase.totalAmount,
+                    amount: refundAmount,
                     reason: reason,
                     description: description || null,
                     status: 'PENDING'
@@ -1652,30 +1679,109 @@ export class OrganizerController {
             });
 
             // Notify admin
-            const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
-            if (admin) {
-                await prisma.notificationLog.create({
-                    data: {
+            const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
+            if (admins.length > 0) {
+                await prisma.notificationLog.createMany({
+                    data: admins.map(admin => ({
                         userId: admin.id,
                         organizerId,
                         channel: 'PUSH',
                         recipient: admin.email || admin.phoneNumber || 'System',
                         title: 'Refund Request',
-                        content: `Organizer ${organizerId} requested a refund of ETB ${purchase.totalAmount} for purchase #${purchase.id}`,
+                        content: `Organizer ${organizerId} requested a ${refundAmount >= Number(purchase.totalAmount) ? 'full' : 'partial'} refund of ETB ${refundAmount} for purchase #${purchase.id}`,
                         status: 'DELIVERED',
                         metadata: {
                             type: 'REFUND_REQUEST',
                             refundId: refund.id,
                             purchaseId: purchase.id,
-                            organizerId
+                            organizerId,
+                            amount: refundAmount
                         }
-                    }
+                    }))
                 });
             }
 
             res.json({ success: true, data: refund, message: "Refund request submitted for admin approval" });
         } catch (error: any) {
             console.error("Request refund error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/refunds/:id/approve
+     * Organizer approval flow (pre-approval)
+     */
+    static async approveRefund(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user?.organizerId;
+            const userId = (req as any).user?.userId;
+            if (!organizerId) return res.status(403).json({ error: "Unauthorized" });
+
+            const refundId = parseInt(req.params.id);
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const refund = await prisma.refund.findUnique({
+                where: { id: refundId },
+                include: { purchase: { include: { tickets: { include: { event: true } } } } }
+            });
+
+            if (!refund) return res.status(404).json({ error: "Refund not found" });
+
+            const event = refund.purchase.tickets[0]?.event;
+            if (!event || event.organizerId !== organizerId) {
+                return res.status(403).json({ error: "Access denied" });
+            }
+
+            if (refund.status !== 'PENDING') {
+                return res.status(400).json({ error: "Refund already processed" });
+            }
+
+            const { RefundService } = await import("../services/refund.service");
+            const updated = await RefundService.approveRefund(refundId, userId);
+
+            res.json({ success: true, data: updated });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/refunds/:id/reject
+     */
+    static async rejectRefund(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user?.organizerId;
+            const userId = (req as any).user?.userId;
+            if (!organizerId) return res.status(403).json({ error: "Unauthorized" });
+
+            const refundId = parseInt(req.params.id);
+            const { reason } = req.body;
+            if (!reason) return res.status(400).json({ error: "Rejection reason required" });
+
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const refund = await prisma.refund.findUnique({
+                where: { id: refundId },
+                include: { purchase: { include: { tickets: { include: { event: true } } } } }
+            });
+
+            if (!refund) return res.status(404).json({ error: "Refund not found" });
+
+            const event = refund.purchase.tickets[0]?.event;
+            if (!event || event.organizerId !== organizerId) {
+                return res.status(403).json({ error: "Access denied" });
+            }
+
+            if (refund.status !== 'PENDING') {
+                return res.status(400).json({ error: "Refund already processed" });
+            }
+
+            const { RefundService } = await import("../services/refund.service");
+            const updated = await RefundService.rejectRefund(refundId, userId, reason);
+
+            res.json({ success: true, data: updated });
+        } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
     }
@@ -1774,11 +1880,11 @@ export class OrganizerController {
                 return res.status(400).json({ error: "Cannot cancel a completed event" });
             }
 
-            // Notify admin for approval
-            const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
-            if (admin) {
-                await prisma.notificationLog.create({
-                    data: {
+            // Notify all admins for approval
+            const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
+            if (admins.length > 0) {
+                await prisma.notificationLog.createMany({
+                    data: admins.map(admin => ({
                         userId: admin.id,
                         organizerId,
                         channel: 'PUSH',
@@ -1792,9 +1898,26 @@ export class OrganizerController {
                             organizerId,
                             reason
                         }
-                    }
+                    }))
                 });
             }
+
+            // Audit log entry for admin dashboard
+            await prisma.notificationLog.create({
+                data: {
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'Event Cancellation Request',
+                    content: `Organizer ${organizerId} requested to cancel event "${event.title}". Reason: ${reason}`,
+                    status: 'DELIVERED',
+                    metadata: {
+                        type: 'CANCELLATION_REQUEST',
+                        eventId: event.id,
+                        organizerId,
+                        reason
+                    }
+                }
+            });
 
             res.json({
                 success: true,

@@ -21,8 +21,10 @@ export const RefundsView = () => {
 
     // Form States
     const [showRefundForm, setShowRefundForm] = useState(false);
-    const [refundForm, setRefundForm] = useState({ purchaseId: '', reason: '', description: '' });
+    const [refundForm, setRefundForm] = useState({ purchaseId: '', reason: '', description: '', refundType: 'FULL', amount: '' });
     const [cancelReason, setCancelReason] = useState('');
+    const [rejectingId, setRejectingId] = useState<number | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
 
     useEffect(() => {
         fetchData();
@@ -35,8 +37,8 @@ export const RefundsView = () => {
                 OrganizerService.getRefunds().catch(() => ({ data: [] })),
                 OrganizerService.getMyEvents()
             ]);
-            setRefunds(refundsRes.data || []);
-            setEvents(eventsRes.data || []);
+            setRefunds((refundsRes as any)?.data?.data || (refundsRes as any)?.data || []);
+            setEvents((eventsRes as any)?.data?.data || (eventsRes as any)?.data || []);
         } catch (error) {
             console.error("Failed to fetch data:", error);
             toast.error("Failed to load refund data");
@@ -55,7 +57,7 @@ export const RefundsView = () => {
         setImpactLoading(true);
         try {
             const res = await OrganizerService.getRefundImpact(Number(eventId));
-            setRefundImpact(res.data);
+            setRefundImpact((res as any)?.data?.data || (res as any)?.data);
         } catch (error: any) {
             toast.error("Failed to calculate impact: " + error.message);
         } finally {
@@ -70,11 +72,12 @@ export const RefundsView = () => {
             await OrganizerService.requestRefund({
                 purchaseId: Number(refundForm.purchaseId),
                 reason: refundForm.reason,
-                description: refundForm.description
+                description: refundForm.description,
+                amount: refundForm.refundType === 'PARTIAL' ? Number(refundForm.amount) : undefined
             });
             toast.success("Refund request submitted for admin approval");
             setShowRefundForm(false);
-            setRefundForm({ purchaseId: '', reason: '', description: '' });
+            setRefundForm({ purchaseId: '', reason: '', description: '', refundType: 'FULL', amount: '' });
             fetchData(); // Refresh list
         } catch (error: any) {
             toast.error(error?.response?.data?.error || "Failed to submit refund request");
@@ -211,6 +214,30 @@ export const RefundsView = () => {
                                         </select>
                                     </div>
                                 </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-muted)' }}>Refund Type</label>
+                                        <select
+                                            value={refundForm.refundType}
+                                            onChange={e => setRefundForm({ ...refundForm, refundType: e.target.value, amount: '' })}
+                                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)' }}
+                                        >
+                                            <option value="FULL">Full Refund</option>
+                                            <option value="PARTIAL">Partial Refund</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-muted)' }}>Amount (ETB)</label>
+                                        <input
+                                            type="number"
+                                            placeholder={refundForm.refundType === 'PARTIAL' ? 'Enter amount' : 'Auto (full amount)'}
+                                            value={refundForm.amount}
+                                            onChange={e => setRefundForm({ ...refundForm, amount: e.target.value })}
+                                            disabled={refundForm.refundType !== 'PARTIAL'}
+                                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)' }}
+                                        />
+                                    </div>
+                                </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-muted)' }}>Description (Optional)</label>
                                     <textarea
@@ -230,6 +257,9 @@ export const RefundsView = () => {
                                     </button>
                                     <button type="submit" className="btn-blue">Submit Request</button>
                                 </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    Refunds close 24 hours before event start. Event policy is applied automatically.
+                                </div>
                             </form>
                         </div>
                     )}
@@ -243,7 +273,10 @@ export const RefundsView = () => {
                                     <th>Event</th>
                                     <th>Amount</th>
                                     <th>Reason</th>
+                                    <th>Type</th>
+                                    <th>Policy</th>
                                     <th>Date</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -262,12 +295,88 @@ export const RefundsView = () => {
                                         <td style={{ color: 'var(--text-muted)' }}>{refund.eventTitle}</td>
                                         <td style={{ fontWeight: 800 }}>ETB {refund.amount.toLocaleString()}</td>
                                         <td>{refund.reason.replace('_', ' ')}</td>
+                                        <td>{refund.refundType}</td>
+                                        <td style={{ color: 'var(--text-muted)' }}>{refund.refundPolicy}</td>
                                         <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(refund.createdAt).toLocaleDateString()}</td>
+                                        <td>
+                                            {refund.status === 'PENDING' ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <button
+                                                        className="btn-blue"
+                                                        style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                                                        onClick={() => setConfirmState({
+                                                            open: true,
+                                                            title: 'Approve refund?',
+                                                            description: `Approve ${refund.refundType.toLowerCase()} refund of ETB ${refund.amount}?`,
+                                                            onConfirm: async () => {
+                                                                try {
+                                                                    await OrganizerService.approveRefund(refund.id);
+                                                                    toast.success('Refund approved');
+                                                                    fetchData();
+                                                                } catch (error: any) {
+                                                                    toast.error(error?.response?.data?.error || 'Failed to approve');
+                                                                } finally {
+                                                                    setConfirmState({ open: false, title: '' });
+                                                                }
+                                                            }
+                                                        })}
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    {rejectingId === refund.id ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Reject reason"
+                                                                value={rejectReason}
+                                                                onChange={(e) => setRejectReason(e.target.value)}
+                                                                style={{ padding: '6px 8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)', fontSize: '0.75rem' }}
+                                                            />
+                                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                                <button
+                                                                    className="btn-blue"
+                                                                    style={{ padding: '6px 10px', fontSize: '0.75rem', background: '#EF4444' }}
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await OrganizerService.rejectRefund(refund.id, rejectReason);
+                                                                            toast.success('Refund rejected');
+                                                                            setRejectingId(null);
+                                                                            setRejectReason('');
+                                                                            fetchData();
+                                                                        } catch (error: any) {
+                                                                            toast.error(error?.response?.data?.error || 'Failed to reject');
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Confirm Reject
+                                                                </button>
+                                                                <button
+                                                                    style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)' }}
+                                                                    onClick={() => { setRejectingId(null); setRejectReason(''); }}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            className="btn-blue"
+                                                            style={{ padding: '6px 10px', fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                                                            onClick={() => setRejectingId(refund.id)}
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>No actions</span>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                                 {refunds.length === 0 && (
                                     <tr>
-                                        <td colSpan={6} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
+                                        <td colSpan={9} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
                                             No refund requests found.
                                         </td>
                                     </tr>
