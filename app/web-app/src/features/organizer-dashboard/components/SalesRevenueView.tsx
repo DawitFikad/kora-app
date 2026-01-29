@@ -87,6 +87,10 @@ export const SalesRevenueView = () => {
         paymentMethod: 'all',
         date: ''
     });
+    const [salesPage, setSalesPage] = useState(1);
+    const [failedPage, setFailedPage] = useState(1);
+    const salesPageSize = 10;
+    const failedPageSize = 10;
 
     const COLORS = ['#1D90F5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
@@ -248,6 +252,19 @@ export const SalesRevenueView = () => {
 
     const paymentMethods = Array.from(new Set(normalizedSalesTable.map(row => row.paymentMethod))).filter(Boolean);
     const failedPaymentMethods = Array.from(new Set(normalizedFailedPayments.map(row => row.paymentMethod))).filter(Boolean);
+
+    useEffect(() => {
+        setSalesPage(1);
+    }, [selectedEvent, selectedPaymentMethod, dateRange, salesFilters]);
+
+    useEffect(() => {
+        setFailedPage(1);
+    }, [selectedEvent, selectedPaymentMethod, dateRange, failedFilters]);
+
+    const salesTotalPages = Math.max(1, Math.ceil(filteredSalesTable.length / salesPageSize));
+    const failedTotalPages = Math.max(1, Math.ceil(filteredFailedPayments.length / failedPageSize));
+    const pagedSalesTable = filteredSalesTable.slice((salesPage - 1) * salesPageSize, salesPage * salesPageSize);
+    const pagedFailedPayments = filteredFailedPayments.slice((failedPage - 1) * failedPageSize, failedPage * failedPageSize);
 
     const exportToCSV = () => {
         if (!salesData) return;
@@ -680,14 +697,14 @@ export const SalesRevenueView = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredSalesTable.length === 0 ? (
+                            {pagedSalesTable.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                                         No sales found for the selected filters.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredSalesTable.map((row, index) => (
+                                pagedSalesTable.map((row, index) => (
                                     <tr key={`${row.id}-${index}`}>
                                         <td style={{ fontWeight: 800, color: '#1D90F5' }}>{row.id}</td>
                                         <td style={{ fontWeight: 700 }}>{row.eventTitle}</td>
@@ -717,6 +734,27 @@ export const SalesRevenueView = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Page {salesPage} of {salesTotalPages}
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            onClick={() => setSalesPage(p => Math.max(1, p - 1))}
+                            disabled={salesPage === 1}
+                            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: salesPage === 1 ? 'not-allowed' : 'pointer', opacity: salesPage === 1 ? 0.5 : 1 }}
+                        >
+                            Prev
+                        </button>
+                        <button
+                            onClick={() => setSalesPage(p => Math.min(salesTotalPages, p + 1))}
+                            disabled={salesPage === salesTotalPages}
+                            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: salesPage === salesTotalPages ? 'not-allowed' : 'pointer', opacity: salesPage === salesTotalPages ? 0.5 : 1 }}
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </motion.div>
 
@@ -787,14 +825,14 @@ export const SalesRevenueView = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredFailedPayments.length === 0 ? (
+                            {pagedFailedPayments.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                                         No failed payments for the selected filters.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredFailedPayments.map((row, index) => (
+                                pagedFailedPayments.map((row, index) => (
                                     <tr key={`${row.id}-${index}`}>
                                         <td style={{ fontWeight: 800, color: '#EF4444' }}>{row.id}</td>
                                         <td style={{ fontWeight: 700 }}>{row.eventTitle}</td>
@@ -808,6 +846,27 @@ export const SalesRevenueView = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Page {failedPage} of {failedTotalPages}
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            onClick={() => setFailedPage(p => Math.max(1, p - 1))}
+                            disabled={failedPage === 1}
+                            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: failedPage === 1 ? 'not-allowed' : 'pointer', opacity: failedPage === 1 ? 0.5 : 1 }}
+                        >
+                            Prev
+                        </button>
+                        <button
+                            onClick={() => setFailedPage(p => Math.min(failedTotalPages, p + 1))}
+                            disabled={failedPage === failedTotalPages}
+                            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: failedPage === failedTotalPages ? 'not-allowed' : 'pointer', opacity: failedPage === failedTotalPages ? 0.5 : 1 }}
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </motion.div>
 
