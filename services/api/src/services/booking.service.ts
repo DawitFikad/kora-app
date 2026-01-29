@@ -121,6 +121,10 @@ export class BookingService {
             throw new Error("Event not found");
         }
 
+        if ((event as any).isPublic === false) {
+            throw new Error("Event is not available for booking");
+        }
+
         if (event.status !== "APPROVED") {
             throw new Error("Event is not available for booking");
         }

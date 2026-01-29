@@ -5,7 +5,7 @@ import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
 
-export const PromotionsView = () => {
+export const PromotionsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
     const toast = useToast();
     const [promos, setPromos] = useState<any[]>([]);
     const [events, setEvents] = useState<any[]>([]);
@@ -75,6 +75,14 @@ export const PromotionsView = () => {
         );
     }
 
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const filteredPromos = promos.filter((p) => {
+        if (!normalizedQuery) return true;
+        const code = (p.code || '').toLowerCase();
+        const eventTitle = (events.find(e => e.id === parseInt(p.eventId))?.title || '').toLowerCase();
+        return code.includes(normalizedQuery) || eventTitle.includes(normalizedQuery);
+    });
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader
@@ -142,7 +150,7 @@ export const PromotionsView = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {promos.map((p, i) => (
+                        {filteredPromos.map((p, i) => (
                             <tr key={i}>
                                 <td style={{ fontWeight: 800, color: 'var(--bg-active)' }}><Tag size={14} style={{ marginRight: '8px' }} /> {p.code}</td>
                                 <td style={{ fontWeight: 700 }}>{p.type === 'PERCENTAGE' ? `${p.discount}%` : `ETB ${p.discount}`}</td>
@@ -154,7 +162,7 @@ export const PromotionsView = () => {
                                 </td>
                             </tr>
                         ))}
-                        {promos.length === 0 && (
+                        {filteredPromos.length === 0 && (
                             <tr>
                                 <td colSpan={6} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
                                     <div style={{ marginBottom: '16px' }}><Megaphone size={48} opacity={0.2} style={{ margin: '0 auto' }} /></div>

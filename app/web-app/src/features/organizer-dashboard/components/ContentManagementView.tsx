@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Plus, Trash2, MapPin, Tag, Loader2, Grid } from 'lucide-react';
 import { ContentService } from '../../../core/api/content.service';
 import { useToast } from '../../../core/components/Toast';
+import { ConfirmDialog } from '../../../core/components/ConfirmDialog';
 
 export const ContentManagementView = () => {
     const toast = useToast();
@@ -12,6 +13,8 @@ export const ContentManagementView = () => {
 
     const [newCat, setNewCat] = useState({ name: '', slug: '' });
     const [newCity, setNewCity] = useState({ name: '', slug: '' });
+
+    const [confirmState, setConfirmState] = useState<{ open: boolean; title: string; description?: string; variant?: 'default' | 'danger'; onConfirm?: () => void }>({ open: false, title: '' });
 
     // Seat Map Management
     const [seatMaps, setSeatMaps] = useState<any[]>([]);
@@ -70,26 +73,44 @@ export const ContentManagementView = () => {
 
     const handleDeleteCat = async (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (!confirm('Are you sure? This might affect existing events.')) return;
-        try {
-            await ContentService.removeCategory(id);
-            toast.success('Category deleted');
-            fetchData();
-        } catch (err: any) {
-            toast.error(err.response?.data?.error || 'Failed to delete category');
-        }
+        setConfirmState({
+            open: true,
+            title: 'Delete category?',
+            description: 'This might affect existing events using this category.',
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await ContentService.removeCategory(id);
+                    toast.success('Category deleted');
+                    fetchData();
+                } catch (err: any) {
+                    toast.error(err.response?.data?.error || 'Failed to delete category');
+                } finally {
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
     };
 
     const handleDeleteCity = async (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (!confirm('Are you sure?')) return;
-        try {
-            await ContentService.removeCity(id);
-            toast.success('City deleted');
-            fetchData();
-        } catch (err: any) {
-            toast.error(err.response?.data?.error || 'Failed to delete city');
-        }
+        setConfirmState({
+            open: true,
+            title: 'Delete city?',
+            description: 'This action cannot be undone.',
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await ContentService.removeCity(id);
+                    toast.success('City deleted');
+                    fetchData();
+                } catch (err: any) {
+                    toast.error(err.response?.data?.error || 'Failed to delete city');
+                } finally {
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
     };
 
     const handleAddSeatMap = () => {
@@ -122,6 +143,16 @@ export const ContentManagementView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <ConfirmDialog
+                open={confirmState.open}
+                title={confirmState.title}
+                description={confirmState.description}
+                variant={confirmState.variant}
+                confirmText="Delete"
+                cancelText="Cancel"
+                onCancel={() => setConfirmState({ open: false, title: '' })}
+                onConfirm={() => confirmState.onConfirm?.()}
+            />
             <div style={{ marginBottom: '32px' }}>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>Content Management</h2>
                 <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>

@@ -4,7 +4,7 @@ import { Plus, Ticket, Settings, Loader2 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 
-export const TicketsView = () => {
+export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -35,6 +35,14 @@ export const TicketsView = () => {
         ? (stats.totalSold / stats.totalCapacity) * 100
         : 0;
 
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const filteredTiers = (stats?.tiers || []).filter((tier: any) => {
+        if (!normalizedQuery) return true;
+        const name = (tier.name || '').toLowerCase();
+        const eventName = (tier.eventName || '').toLowerCase();
+        return name.includes(normalizedQuery) || eventName.includes(normalizedQuery);
+    });
+
     return (
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
             <PageHeader title="Ticket Management" subtitle="Create and manage ticket tiers, pricing and availability." />
@@ -47,7 +55,7 @@ export const TicketsView = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {stats?.tiers.map((tier: any, i: number) => {
+                        {filteredTiers.map((tier: any, i: number) => {
                             const colors: Record<string, string> = {
                                 'Sold Out': '#EF4444',
                                 'Active': '#10B981',
@@ -77,7 +85,7 @@ export const TicketsView = () => {
                                 </div>
                             );
                         })}
-                        {stats?.tiers.length === 0 && (
+                        {filteredTiers.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                                 No ticket tiers found.
                             </div>

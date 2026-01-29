@@ -53,24 +53,51 @@ export class OrganizerController {
             const organizerId = (req as any).user.organizerId;
             const prisma = (await import("../lib/prisma")).prisma;
 
-            const events = await prisma.event.findMany({
-                where: { organizerId },
-                select: {
-                    id: true,
-                    title: true,
-                    status: true,
-                    dateTime: true,
-                    venue: true,
-                    coverImage: true,
-                    featured: true,
-                    _count: {
-                        select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
-                    },
-                    tiers: {
-                        select: { capacity: true }
+            let events: any[] = [];
+            try {
+                events = await prisma.event.findMany({
+                    where: { organizerId },
+                    select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        dateTime: true,
+                        additionalDates: true,
+                        venue: true,
+                        coverImage: true,
+                        isPublic: true,
+                        featured: true,
+                        feeType: true,
+                        _count: {
+                            select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
+                        },
+                        tiers: {
+                            select: { capacity: true }
+                        }
                     }
-                }
-            });
+                } as any);
+            } catch (error) {
+                // Fallback for older schema without new fields
+                events = await prisma.event.findMany({
+                    where: { organizerId },
+                    select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        dateTime: true,
+                        venue: true,
+                        coverImage: true,
+                        featured: true,
+                        feeType: true,
+                        _count: {
+                            select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
+                        },
+                        tiers: {
+                            select: { capacity: true }
+                        }
+                    }
+                } as any);
+            }
 
             // Check Logs for persistent status (Pending or Rejected)
             const logs = await prisma.notificationLog.findMany({
@@ -93,9 +120,9 @@ export class OrganizerController {
             });
 
             // Calculate formatted events
-            const formattedEvents = events.map(event => ({
+            const formattedEvents = (events as any[]).map(event => ({
                 ...event,
-                totalCapacity: event.tiers.reduce((sum, tier) => sum + tier.capacity, 0),
+                totalCapacity: (event.tiers || []).reduce((sum: number, tier: any) => sum + tier.capacity, 0),
                 featureStatus: event.featured ? 'APPROVED' : (eventStatusMap.get(event.id) || 'NONE')
             }));
 
@@ -287,42 +314,56 @@ export class OrganizerController {
             const organizerId = (req as any).user.organizerId;
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-            const { title, titleAm, description, descriptionAm, venue, dateTime, categoryId, cityId, tiers, coverImage, refundPolicy, minAge, additionalPolicy, hasSeatMap, status } = req.body;
+            const { title, titleAm, description, descriptionAm, venue, dateTime, additionalDates, isPublic, categoryId, cityId, tiers, coverImage, refundPolicy, minAge, additionalPolicy, hasSeatMap, status } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
 
             // Optional: Validate status if provided
             const initialStatus = status === 'DRAFT' ? 'DRAFT' : 'PENDING';
 
-            const event = await prisma.event.create({
-                data: {
-                    title,
-                    titleAm,
-                    description,
-                    descriptionAm,
-                    venue,
-                    dateTime: new Date(dateTime),
-                    organizerId,
-                    categoryId: parseInt(categoryId),
-                    cityId: parseInt(cityId),
-                    coverImage,
-                    refundPolicy,
-                    minAge: parseInt(minAge) || 0,
-                    additionalPolicy,
-                    hasSeatMap: !!hasSeatMap,
-                    status: initialStatus,
-                    tiers: {
-                        create: tiers.map((tier: any) => ({
-                            name: tier.name,
-                            price: parseFloat(tier.price),
-                            capacity: parseInt(tier.capacity),
-                            salesStart: tier.salesStart ? new Date(tier.salesStart) : null,
-                            salesEnd: tier.salesEnd ? new Date(tier.salesEnd) : null,
-                            maxPerUser: parseInt(tier.maxPerUser) || 5
-                        }))
-                    }
-                },
-                include: { tiers: true }
-            });
+            const baseData: any = {
+                title,
+                titleAm,
+                description,
+                descriptionAm,
+                venue,
+                dateTime: new Date(dateTime),
+                additionalDates: Array.isArray(additionalDates) ? additionalDates.map((d: string) => new Date(d)) : [],
+                isPublic: isPublic !== false,
+                organizerId,
+                categoryId: parseInt(categoryId),
+                cityId: parseInt(cityId),
+                coverImage,
+                refundPolicy,
+                minAge: parseInt(minAge) || 0,
+                additionalPolicy,
+                hasSeatMap: !!hasSeatMap,
+                status: initialStatus,
+                tiers: {
+                    create: tiers.map((tier: any) => ({
+                        name: tier.name,
+                        price: parseFloat(tier.price),
+                        capacity: parseInt(tier.capacity),
+                        salesStart: tier.salesStart ? new Date(tier.salesStart) : null,
+                        salesEnd: tier.salesEnd ? new Date(tier.salesEnd) : null,
+                        maxPerUser: parseInt(tier.maxPerUser) || 5
+                    }))
+                }
+            };
+
+            let event: any;
+            try {
+                event = await prisma.event.create({ data: baseData, include: { tiers: true } } as any);
+            } catch (error: any) {
+                const msg = (error?.message || '').toLowerCase();
+                if (msg.includes('additionaldates') || msg.includes('ispublic') || msg.includes('unknown arg') || (msg.includes('column') && msg.includes('does not exist'))) {
+                    const fallbackData = { ...baseData };
+                    delete fallbackData.additionalDates;
+                    delete fallbackData.isPublic;
+                    event = await prisma.event.create({ data: fallbackData, include: { tiers: true } } as any);
+                } else {
+                    throw error;
+                }
+            }
 
             res.json({ success: true, data: event });
         } catch (error: any) {
@@ -435,7 +476,7 @@ export class OrganizerController {
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
             const eventId = parseInt(req.params.id);
-            const { title, titleAm, description, descriptionAm, venue, dateTime, categoryId, cityId, coverImage, refundPolicy, minAge, additionalPolicy, hasSeatMap, tiers, status } = req.body;
+            const { title, titleAm, description, descriptionAm, venue, dateTime, additionalDates, isPublic, categoryId, cityId, coverImage, refundPolicy, minAge, additionalPolicy, hasSeatMap, tiers, status } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
 
             // Security check: organizer must own the event
@@ -460,6 +501,8 @@ export class OrganizerController {
             if (descriptionAm !== undefined) updateData.descriptionAm = descriptionAm;
             if (venue) updateData.venue = venue;
             if (dateTime) updateData.dateTime = new Date(dateTime);
+            if (Array.isArray(additionalDates)) updateData.additionalDates = additionalDates.map((d: string) => new Date(d));
+            if (isPublic !== undefined) updateData.isPublic = !!isPublic;
             if (categoryId) updateData.categoryId = parseInt(categoryId);
             if (cityId) updateData.cityId = parseInt(cityId);
             if (coverImage !== undefined) updateData.coverImage = coverImage;
@@ -469,27 +512,78 @@ export class OrganizerController {
             if (hasSeatMap !== undefined) updateData.hasSeatMap = hasSeatMap;
             if (status) updateData.status = status;
 
-            const updatedEvent = await prisma.event.update({
-                where: { id: eventId },
-                data: updateData,
-                include: { tiers: true }
-            });
+            let updatedEvent: any;
+            try {
+                updatedEvent = await prisma.event.update({
+                    where: { id: eventId },
+                    data: updateData,
+                    include: { tiers: true }
+                } as any);
+            } catch (error: any) {
+                const msg = (error?.message || '').toLowerCase();
+                if (msg.includes('additionaldates') || msg.includes('ispublic') || msg.includes('unknown arg') || (msg.includes('column') && msg.includes('does not exist'))) {
+                    const fallbackData = { ...updateData };
+                    delete fallbackData.additionalDates;
+                    delete fallbackData.isPublic;
+                    updatedEvent = await prisma.event.update({
+                        where: { id: eventId },
+                        data: fallbackData,
+                        include: { tiers: true }
+                    } as any);
+                } else {
+                    throw error;
+                }
+            }
 
             // Handle tiers update if provided
             if (tiers && Array.isArray(tiers)) {
-                // Delete existing tiers and recreate
-                await prisma.ticketTier.deleteMany({
-                    where: { eventId }
-                });
+                const incoming = tiers as any[];
+                const existing = await prisma.ticketTier.findMany({ where: { eventId }, select: { id: true } });
+                const incomingIds = new Set(incoming.filter(t => t.id).map(t => Number(t.id)));
 
-                await prisma.ticketTier.createMany({
-                    data: tiers.map((tier: any) => ({
-                        eventId,
-                        name: tier.name,
-                        price: parseFloat(tier.price),
-                        capacity: parseInt(tier.capacity)
-                    }))
-                });
+                // Update existing tiers
+                const updates = incoming.filter(t => t.id).map(t => (
+                    prisma.ticketTier.update({
+                        where: { id: Number(t.id) },
+                        data: {
+                            name: t.name,
+                            price: parseFloat(t.price),
+                            capacity: parseInt(t.capacity),
+                            salesStart: t.salesStart ? new Date(t.salesStart) : undefined,
+                            salesEnd: t.salesEnd ? new Date(t.salesEnd) : undefined,
+                            maxPerUser: t.maxPerUser ? parseInt(t.maxPerUser) : undefined
+                        }
+                    })
+                ));
+
+                // Create new tiers
+                const creates = incoming.filter(t => !t.id).map(t => (
+                    prisma.ticketTier.create({
+                        data: {
+                            eventId,
+                            name: t.name,
+                            price: parseFloat(t.price),
+                            capacity: parseInt(t.capacity),
+                            salesStart: t.salesStart ? new Date(t.salesStart) : null,
+                            salesEnd: t.salesEnd ? new Date(t.salesEnd) : null,
+                            maxPerUser: t.maxPerUser ? parseInt(t.maxPerUser) : 5
+                        }
+                    })
+                ));
+
+                await Promise.all([...updates, ...creates]);
+
+                // Delete tiers removed from payload only if they have no tickets
+                const removableIds = existing.map(t => t.id).filter(id => !incomingIds.has(id));
+                if (removableIds.length > 0) {
+                    const removable = await prisma.ticketTier.findMany({
+                        where: { id: { in: removableIds }, tickets: { none: {} } },
+                        select: { id: true }
+                    });
+                    if (removable.length > 0) {
+                        await prisma.ticketTier.deleteMany({ where: { id: { in: removable.map(r => r.id) } } });
+                    }
+                }
             }
 
             // Fetch the final result with new tiers
@@ -523,35 +617,50 @@ export class OrganizerController {
             }
 
             // Create copy
-            const copy = await prisma.event.create({
-                data: {
-                    title: `${original.title} (Copy)`,
-                    titleAm: original.titleAm,
-                    description: original.description,
-                    descriptionAm: original.descriptionAm,
-                    venue: original.venue,
-                    dateTime: original.dateTime, // Keep same date or reset? Keeping same for duplication logic
-                    organizerId,
-                    categoryId: original.categoryId,
-                    cityId: original.cityId,
-                    coverImage: original.coverImage,
-                    refundPolicy: original.refundPolicy,
-                    minAge: original.minAge,
-                    additionalPolicy: original.additionalPolicy,
-                    hasSeatMap: original.hasSeatMap,
-                    status: 'DRAFT', // Always start as draft
-                    tiers: {
-                        create: original.tiers.map(t => ({
-                            name: t.name,
-                            price: Number(t.price),
-                            capacity: t.capacity,
-                            salesStart: t.salesStart,
-                            salesEnd: t.salesEnd,
-                            maxPerUser: t.maxPerUser
-                        }))
-                    }
+            const duplicateData: any = {
+                title: `${original.title} (Copy)`,
+                titleAm: original.titleAm,
+                description: original.description,
+                descriptionAm: original.descriptionAm,
+                venue: original.venue,
+                dateTime: original.dateTime,
+                organizerId,
+                categoryId: original.categoryId,
+                cityId: original.cityId,
+                coverImage: original.coverImage,
+                refundPolicy: original.refundPolicy,
+                minAge: original.minAge,
+                additionalPolicy: original.additionalPolicy,
+                hasSeatMap: original.hasSeatMap,
+                additionalDates: (original as any).additionalDates || [],
+                isPublic: (original as any).isPublic !== false,
+                status: 'DRAFT',
+                tiers: {
+                    create: original.tiers.map(t => ({
+                        name: t.name,
+                        price: Number(t.price),
+                        capacity: t.capacity,
+                        salesStart: t.salesStart,
+                        salesEnd: t.salesEnd,
+                        maxPerUser: t.maxPerUser
+                    }))
                 }
-            });
+            };
+
+            let copy: any;
+            try {
+                copy = await prisma.event.create({ data: duplicateData } as any);
+            } catch (error: any) {
+                const msg = (error?.message || '').toLowerCase();
+                if (msg.includes('additionaldates') || msg.includes('ispublic') || msg.includes('unknown arg') || (msg.includes('column') && msg.includes('does not exist'))) {
+                    const fallback = { ...duplicateData };
+                    delete fallback.additionalDates;
+                    delete fallback.isPublic;
+                    copy = await prisma.event.create({ data: fallback } as any);
+                } else {
+                    throw error;
+                }
+            }
 
             res.json({ success: true, data: copy });
         } catch (error: any) {

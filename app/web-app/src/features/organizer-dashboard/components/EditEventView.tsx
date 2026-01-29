@@ -32,11 +32,13 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
         description: '',
         venue: '',
         dateTime: '',
+        additionalDates: [] as string[],
+        isPublic: true,
         categoryId: '',
         cityId: '',
         coverImage: '',
         refundPolicy: '',
-        tiers: [{ name: '', price: '', capacity: '' }]
+        tiers: [{ id: undefined as number | undefined, name: '', price: '', capacity: '' }]
     });
 
     useEffect(() => {
@@ -61,10 +63,12 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                         categoryId: String(event.categoryId) || '',
                         cityId: String(event.cityId) || '',
                         coverImage: event.coverImage || '',
+                        additionalDates: (event.additionalDates || []).map((d: string) => new Date(d).toISOString().slice(0, 16)),
+                        isPublic: event.isPublic !== false,
                         refundPolicy: event.refundPolicy || '',
                         tiers: event.tiers?.length > 0
-                            ? event.tiers.map((t: any) => ({ name: t.name, price: String(t.price), capacity: String(t.capacity) }))
-                            : [{ name: '', price: '', capacity: '' }]
+                            ? event.tiers.map((t: any) => ({ id: t.id, name: t.name, price: String(t.price), capacity: String(t.capacity) }))
+                            : [{ id: undefined, name: '', price: '', capacity: '' }]
                     });
                 }
             } catch (error) {
@@ -80,7 +84,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
     const handleAddTier = () => {
         setForm({
             ...form,
-            tiers: [...form.tiers, { name: '', price: '', capacity: '' }]
+            tiers: [...form.tiers, { id: undefined, name: '', price: '', capacity: '' }]
         });
     };
 
@@ -94,6 +98,22 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
         const newTiers = [...form.tiers];
         newTiers[index] = { ...newTiers[index], [field]: value };
         setForm({ ...form, tiers: newTiers });
+    };
+
+    const handleAddDate = () => {
+        setForm({ ...form, additionalDates: [...(form.additionalDates || []), ''] });
+    };
+
+    const handleRemoveDate = (index: number) => {
+        const next = [...(form.additionalDates || [])];
+        next.splice(index, 1);
+        setForm({ ...form, additionalDates: next });
+    };
+
+    const handleDateChange = (index: number, value: string) => {
+        const next = [...(form.additionalDates || [])];
+        next[index] = value;
+        setForm({ ...form, additionalDates: next });
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,8 +139,10 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
         try {
             const cleanForm = {
                 ...form,
+                additionalDates: (form.additionalDates || []).filter(Boolean),
                 tiers: form.tiers.map(t => ({
-                    ...t,
+                    id: (t as any).id,
+                    name: t.name,
                     price: parseFloat(t.price as string) || 0,
                     capacity: parseInt(t.capacity as string) || 0
                 }))
@@ -246,6 +268,69 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                     onChange={e => setForm({ ...form, dateTime: e.target.value })}
                                     style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
                                 />
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '20px' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Additional Dates (Optional)</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {(form.additionalDates || []).map((d, index) => (
+                                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 40px', gap: '12px', alignItems: 'center' }}>
+                                        <input
+                                            type="datetime-local"
+                                            value={d}
+                                            onChange={e => handleDateChange(index, e.target.value)}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveDate(index)}
+                                            style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', padding: '10px', borderRadius: '10px', cursor: 'pointer' }}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={handleAddDate}
+                                    className="btn-blue"
+                                    style={{ width: 'fit-content', padding: '8px 14px', fontSize: '0.85rem' }}
+                                >
+                                    <Plus size={16} /> Add Date
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Visibility */}
+                    <div className="stat-card" style={{ padding: '32px' }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '16px' }}>Event Visibility</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                                <p style={{ fontWeight: 700 }}>{form.isPublic ? 'Public' : 'Private'}</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{form.isPublic ? 'Visible to all users' : 'Hidden from public listing'}</p>
+                            </div>
+                            <div
+                                onClick={() => setForm({ ...form, isPublic: !form.isPublic } as any)}
+                                style={{
+                                    width: '48px', height: '26px',
+                                    background: form.isPublic ? '#10B981' : 'var(--bg-subtle)',
+                                    borderRadius: '100px',
+                                    position: 'relative',
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--border)',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <div style={{
+                                    width: '20px', height: '20px',
+                                    background: 'white', borderRadius: '50%',
+                                    position: 'absolute', top: '2px',
+                                    left: form.isPublic ? '24px' : '2px',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                }} />
                             </div>
                         </div>
                     </div>

@@ -38,6 +38,11 @@ export class EventController {
             }
             const isAdmin = req.user?.role === Role.ADMIN;
 
+            const isPublic = (event as any).isPublic !== false;
+            if (!isPublic && !isOwner && !isAdmin) {
+                return res.status(403).json({ error: "Unauthorized access to private event" });
+            }
+
             if (event.status !== EventStatus.APPROVED && !isOwner && !isAdmin) {
                 return res.status(403).json({ error: "Unauthorized access to hidden event" });
             }

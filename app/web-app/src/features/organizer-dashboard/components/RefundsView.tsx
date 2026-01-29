@@ -4,6 +4,7 @@ import { Loader2, AlertTriangle, RefreshCw, XCircle, Ban, DollarSign, Calendar, 
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
+import { ConfirmDialog } from '../../../core/components/ConfirmDialog';
 
 export const RefundsView = () => {
     const toast = useToast();
@@ -16,6 +17,7 @@ export const RefundsView = () => {
     const [selectedEventId, setSelectedEventId] = useState<string>('');
     const [refundImpact, setRefundImpact] = useState<any>(null);
     const [impactLoading, setImpactLoading] = useState(false);
+    const [confirmState, setConfirmState] = useState<{ open: boolean; title: string; description?: string; variant?: 'default' | 'danger'; onConfirm?: () => void }>({ open: false, title: '' });
 
     // Form States
     const [showRefundForm, setShowRefundForm] = useState(false);
@@ -84,20 +86,27 @@ export const RefundsView = () => {
     const handleCancellationRequest = async () => {
         if (!selectedEventId || !cancelReason) return;
 
-        if (!window.confirm("Are you sure you want to request cancellation for this event? This action requires admin approval.")) return;
-
-        setLoading(true);
-        try {
-            await OrganizerService.requestCancellation(Number(selectedEventId), cancelReason);
-            toast.success("Cancellation request submitted successfully");
-            setCancelReason('');
-            setRefundImpact(null);
-            setSelectedEventId('');
-        } catch (error: any) {
-            toast.error(error?.response?.data?.error || "Failed to request cancellation");
-        } finally {
-            setLoading(false);
-        }
+        setConfirmState({
+            open: true,
+            title: 'Request event cancellation?',
+            description: 'This action requires admin approval.',
+            variant: 'danger',
+            onConfirm: async () => {
+                setLoading(true);
+                try {
+                    await OrganizerService.requestCancellation(Number(selectedEventId), cancelReason);
+                    toast.success("Cancellation request submitted successfully");
+                    setCancelReason('');
+                    setRefundImpact(null);
+                    setSelectedEventId('');
+                } catch (error: any) {
+                    toast.error(error?.response?.data?.error || "Failed to request cancellation");
+                } finally {
+                    setLoading(false);
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
     };
 
     if (loading && !refunds.length && !events.length) {
@@ -110,6 +119,16 @@ export const RefundsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <ConfirmDialog
+                open={confirmState.open}
+                title={confirmState.title}
+                description={confirmState.description}
+                variant={confirmState.variant}
+                confirmText="Confirm"
+                cancelText="Cancel"
+                onCancel={() => setConfirmState({ open: false, title: '' })}
+                onConfirm={() => confirmState.onConfirm?.()}
+            />
             <PageHeader
                 title="Refunds & Cancellations"
                 subtitle="Manage refund requests and event cancellations."

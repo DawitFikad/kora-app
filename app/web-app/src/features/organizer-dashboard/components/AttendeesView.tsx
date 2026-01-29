@@ -4,7 +4,7 @@ import { Download, Loader2 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 
-export const AttendeesView = () => {
+export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) => {
     const [attendees, setAttendees] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
@@ -24,10 +24,17 @@ export const AttendeesView = () => {
         fetchAttendees();
     }, []);
 
-    const filteredAttendees = attendees.filter(a =>
-        a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.event.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    useEffect(() => {
+        setSearchTerm(searchQuery);
+    }, [searchQuery]);
+
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const filteredAttendees = attendees.filter(a => {
+        if (!normalizedSearch) return true;
+        const name = (a.name || '').toLowerCase();
+        const eventName = (a.event || '').toLowerCase();
+        return name.includes(normalizedSearch) || eventName.includes(normalizedSearch);
+    });
 
     if (loading) {
         return (

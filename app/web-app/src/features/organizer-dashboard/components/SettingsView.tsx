@@ -4,6 +4,7 @@ import { Loader2, Plus, Trash2, CreditCard, Bell, Shield, DollarSign, Users, Che
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
+import { ConfirmDialog } from '../../../core/components/ConfirmDialog';
 
 type TabType = 'General' | 'Payout Methods' | 'Team Access' | 'Notifications' | 'Security' | 'Billing';
 
@@ -42,6 +43,7 @@ export const SettingsView = () => {
     const [changePhoneStep, setChangePhoneStep] = useState(1); // 1 = Request, 2 = Verify
     const [newPhoneNumber, setNewPhoneNumber] = useState('');
     const [phoneOtp, setPhoneOtp] = useState('');
+    const [confirmState, setConfirmState] = useState<{ open: boolean; title: string; description?: string; variant?: 'default' | 'danger'; onConfirm?: () => void }>({ open: false, title: '' });
 
     useEffect(() => {
         fetchAllData();
@@ -151,18 +153,26 @@ export const SettingsView = () => {
     };
 
     const handleDeletePaymentMethod = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this payment method?")) return;
-        setSaving(true);
-        try {
-            await OrganizerService.deletePaymentMethod(id);
-            toast.success("Payment method deleted!");
-            fetchAllData();
-        } catch (error: any) {
-            console.error("Failed to delete payment method", error);
-            toast.error(error?.error || "Failed to delete payment method");
-        } finally {
-            setSaving(false);
-        }
+        setConfirmState({
+            open: true,
+            title: 'Delete payment method?',
+            description: 'This payment method will be removed from your account.',
+            variant: 'danger',
+            onConfirm: async () => {
+                setSaving(true);
+                try {
+                    await OrganizerService.deletePaymentMethod(id);
+                    toast.success("Payment method deleted!");
+                    fetchAllData();
+                } catch (error: any) {
+                    console.error("Failed to delete payment method", error);
+                    toast.error(error?.error || "Failed to delete payment method");
+                } finally {
+                    setSaving(false);
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
     };
 
     const handleSetDefaultPayment = async (id: number) => {
@@ -214,19 +224,26 @@ export const SettingsView = () => {
     };
 
     const handleRemoveLogo = async () => {
-        if (!confirm("Are you sure you want to remove your profile picture?")) return;
-
-        setSaving(true);
-        try {
-            await OrganizerService.removeLogo();
-            setProfile({ ...profile, logoUrl: null });
-            toast.success("Profile picture removed!");
-        } catch (error: any) {
-            console.error("Remove logo error:", error);
-            toast.error(error?.error || "Failed to remove logo");
-        } finally {
-            setSaving(false);
-        }
+        setConfirmState({
+            open: true,
+            title: 'Remove profile picture?',
+            description: 'Your organization logo will be removed.',
+            variant: 'danger',
+            onConfirm: async () => {
+                setSaving(true);
+                try {
+                    await OrganizerService.removeLogo();
+                    setProfile({ ...profile, logoUrl: null });
+                    toast.success("Profile picture removed!");
+                } catch (error: any) {
+                    console.error("Remove logo error:", error);
+                    toast.error(error?.error || "Failed to remove logo");
+                } finally {
+                    setSaving(false);
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
     };
 
     const handleChangePassword = async () => {
@@ -340,6 +357,16 @@ export const SettingsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <ConfirmDialog
+                open={confirmState.open}
+                title={confirmState.title}
+                description={confirmState.description}
+                variant={confirmState.variant}
+                confirmText="Confirm"
+                cancelText="Cancel"
+                onCancel={() => setConfirmState({ open: false, title: '' })}
+                onConfirm={() => confirmState.onConfirm?.()}
+            />
             <PageHeader title="Settings" subtitle="Manage your organization settings and preferences." />
 
             <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '32px' }}>

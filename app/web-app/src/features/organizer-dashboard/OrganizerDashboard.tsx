@@ -55,6 +55,7 @@ const OrganizerDashboard = () => {
     const [editingEventId, setEditingEventId] = useState<number | null>(null);
     const [viewingStatsId, setViewingStatsId] = useState<number | null>(null);
     const [organizerProfile, setOrganizerProfile] = useState<any>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Notifications State
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -221,13 +222,13 @@ const OrganizerDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'Dashboard': return <DashboardView key="dashboard" onNavigate={setActiveTab} />;
-            case 'Events': return <MyEventsView key="events" onNavigate={setActiveTab} onEditEvent={handleEditEvent} onViewStats={handleViewStats} />;
-            case 'Tickets': return <TicketsView key="tickets" />;
+            case 'Events': return <MyEventsView key="events" searchQuery={searchQuery} onNavigate={setActiveTab} onEditEvent={handleEditEvent} onViewStats={handleViewStats} />;
+            case 'Tickets': return <TicketsView key="tickets" searchQuery={searchQuery} />;
             case 'Sales': return <SalesRevenueView key="sales" />;
             case 'Analytics': return <AdvancedAnalyticsView key="analytics" />;
             case 'Reports': return <ReportGeneratorView key="reports" />;
-            case 'Attendees': return <AttendeesView key="attendees" />;
-            case 'Promotions': return <PromotionsView key="promotions" />;
+            case 'Attendees': return <AttendeesView key="attendees" searchQuery={searchQuery} />;
+            case 'Promotions': return <PromotionsView key="promotions" searchQuery={searchQuery} />;
             case 'Refunds': return <RefundsView key="refunds" />;
             case 'Content': return <ContentManagementView key="content" />;
             case 'Scanner': return <ScannerView key="scanner" />;
@@ -310,7 +311,13 @@ const OrganizerDashboard = () => {
                     <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                         <div className="search-pill" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-main)', padding: '10px 20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                             <Search size={18} color="var(--text-muted)" />
-                            <input type="text" placeholder={t('org.search', 'Search...')} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', fontSize: '0.9rem' }} />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder={t('org.search', 'Search...')}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', fontSize: '0.9rem' }}
+                            />
                         </div>
 
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -415,8 +422,16 @@ const OrganizerDashboard = () => {
                                     </>
                                 )}
                             </div>
+
+                            <div
+                                className="action-icon"
+                                onClick={() => setActiveTab('Support')}
+                                title={t('org.nav.support', 'Support')}
+                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                <HelpCircle size={22} color="var(--text-muted)" style={{ cursor: 'pointer' }} />
+                            </div>
                         </div>
-                        <HelpCircle size={22} color="var(--text-muted)" style={{ cursor: 'pointer' }} />
                     </div>
 
                     <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />

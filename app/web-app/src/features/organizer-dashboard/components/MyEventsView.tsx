@@ -1,40 +1,76 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Filter, Calendar, Globe, Pencil, BarChart3, Loader2, Copy, Send } from 'lucide-react';
+import { Plus, Filter, Calendar, Globe, Pencil, BarChart3, Loader2, Copy, Send, CheckCircle2, XCircle, Eye, EyeOff, Layers } from 'lucide-react';
 import { useToast } from '../../../core/components/Toast';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
+import { ConfirmDialog } from '../../../core/components/ConfirmDialog';
 
-export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavigate?: (tab: string) => void; onEditEvent?: (eventId: number) => void; onViewStats?: (eventId: number) => void }) => {
+export const MyEventsView = ({ searchQuery = '', onNavigate, onEditEvent, onViewStats }: { searchQuery?: string; onNavigate?: (tab: string) => void; onEditEvent?: (eventId: number) => void; onViewStats?: (eventId: number) => void }) => {
     const toast = useToast();
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('All Events');
+    const [confirmState, setConfirmState] = useState<{ open: boolean; title: string; description?: string; variant?: 'default' | 'danger'; onConfirm?: () => void }>({ open: false, title: '' });
 
     const handleDuplicate = async (eventId: number) => {
-        if (!confirm("Are you sure you want to duplicate this event?")) return;
-        try {
-            await OrganizerService.duplicateEvent(eventId);
-            toast.success("Event duplicated (Draft created)");
-            // Refresh
-            const response = await OrganizerService.getMyEvents();
-            setEvents(response.data);
-        } catch (error) {
-            toast.error("Failed to duplicate event");
-        }
+        setConfirmState({
+            open: true,
+            title: 'Duplicate this event?',
+            description: 'A new draft will be created with the same details.',
+            onConfirm: async () => {
+                try {
+                    await OrganizerService.duplicateEvent(eventId);
+                    toast.success('Event duplicated (Draft created)');
+                    const response = await OrganizerService.getMyEvents();
+                    setEvents(response.data);
+                } catch (error: any) {
+                    toast.error(error?.message || 'Failed to duplicate event');
+                } finally {
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
     };
 
     const handleSubmit = async (eventId: number) => {
-        if (!confirm("Submit this event for approval?")) return;
-        try {
-            await OrganizerService.updateEvent(eventId, { status: 'PENDING' });
-            toast.success("Event submitted for approval");
-            // Refresh
-            const response = await OrganizerService.getMyEvents();
-            setEvents(response.data);
-        } catch (error) {
-            toast.error("Failed to submit event");
-        }
+        setConfirmState({
+            open: true,
+            title: 'Submit for approval?',
+            description: 'This will send the event for admin review.',
+            onConfirm: async () => {
+                try {
+                    await OrganizerService.updateEvent(eventId, { status: 'PENDING' });
+                    toast.success('Event submitted for approval');
+                    const response = await OrganizerService.getMyEvents();
+                    setEvents(response.data);
+                } catch (error: any) {
+                    toast.error(error?.message || 'Failed to submit event');
+                } finally {
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
+    };
+
+    const handleToggleVisibility = async (eventId: number, isPublic: boolean) => {
+        setConfirmState({
+            open: true,
+            title: isPublic ? 'Set event to private?' : 'Set event to public?',
+            description: isPublic ? 'Private events are hidden from public listings.' : 'Public events are visible to all users.',
+            onConfirm: async () => {
+                try {
+                    await OrganizerService.updateEvent(eventId, { isPublic: !isPublic });
+                    const response = await OrganizerService.getMyEvents();
+                    setEvents(response.data);
+                    toast.success(!isPublic ? 'Event is now public' : 'Event is now private');
+                } catch (error: any) {
+                    toast.error(error?.message || 'Failed to update visibility');
+                } finally {
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
     };
 
     useEffect(() => {
@@ -52,12 +88,19 @@ export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavig
         fetchEvents();
     }, []);
 
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
     const filteredEvents = events.filter(event => {
         if (activeFilter === 'All Events') return true;
         if (activeFilter === 'Published') return event.status === 'PUBLISHED' || event.status === 'APPROVED';
         if (activeFilter === 'Drafts') return event.status === 'DRAFT' || event.status === 'PENDING';
         if (activeFilter === 'Past Events') return new Date(event.dateTime) < new Date();
         return true;
+    }).filter(event => {
+        if (!normalizedQuery) return true;
+        const title = (event.title || '').toLowerCase();
+        const venue = (event.venue || '').toLowerCase();
+        return title.includes(normalizedQuery) || venue.includes(normalizedQuery);
     });
 
     if (loading) {
@@ -70,6 +113,16 @@ export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavig
 
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <ConfirmDialog
+                open={confirmState.open}
+                title={confirmState.title}
+                description={confirmState.description}
+                variant={confirmState.variant}
+                confirmText="Confirm"
+                cancelText="Cancel"
+                onCancel={() => setConfirmState({ open: false, title: '' })}
+                onConfirm={() => confirmState.onConfirm?.()}
+            />
             <PageHeader
                 title="My Events"
                 subtitle="Manage and track all your scheduled events."
@@ -109,6 +162,22 @@ export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavig
                     const salesPercent = event.totalCapacity > 0
                         ? (event._count.tickets / event.totalCapacity) * 100
                         : 0;
+                    const totalCapacity = event.tiers?.reduce((sum: number, t: any) => sum + (t.capacity || 0), 0) || 0;
+                    const soldCount = event._count?.tickets || 0;
+                    const eventDates = [new Date(event.dateTime), ...(event.additionalDates || []).map((d: string) => new Date(d))];
+                    const latestDate = eventDates.reduce((max: Date, d: Date) => d > max ? d : max, eventDates[0]);
+                    const isEnded = latestDate && latestDate.getTime() < Date.now();
+                    const isSoldOut = totalCapacity > 0 && soldCount >= totalCapacity && !isEnded;
+                    const baseStatus = event.status === 'APPROVED' ? 'Published'
+                        : (event.status === 'DRAFT' || event.status === 'PENDING' || event.status === 'REJECTED') ? 'Draft'
+                            : (event.status === 'CANCELLED' || event.status === 'COMPLETED') ? 'Ended'
+                                : 'Draft';
+                    const statusLabel = isEnded ? 'Ended' : isSoldOut ? 'Sold Out' : baseStatus;
+                    const readiness = [
+                        { label: 'Banner uploaded', ok: !!event.coverImage },
+                        { label: 'Tickets created', ok: totalCapacity > 0 },
+                        { label: 'Payment enabled', ok: !!event.feeType && event.status === 'APPROVED' }
+                    ];
 
                     return (
                         <div key={event.id} className="stat-card" style={{ padding: '0', overflow: 'hidden' }}>
@@ -119,8 +188,8 @@ export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavig
                                     alt={event.title}
                                 />
                                 <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
-                                    <span className={`pill ${event.status === 'APPROVED' ? 'pill-green' : 'pill-blue'}`} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
-                                        {event.status}
+                                    <span className={`pill ${statusLabel === 'Published' ? 'pill-green' : statusLabel === 'Sold Out' || statusLabel === 'Ended' ? 'pill-red' : 'pill-blue'}`} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                                        {statusLabel}
                                     </span>
                                 </div>
                             </div>
@@ -132,6 +201,29 @@ export const MyEventsView = ({ onNavigate, onEditEvent, onViewStats }: { onNavig
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                         <Globe size={14} /> {event.venue}
+                                    </div>
+                                    {(event.additionalDates?.length || 0) > 0 && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                            <Layers size={14} /> {event.additionalDates.length + 1} dates
+                                        </div>
+                                    )}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                        <button
+                                            onClick={() => handleToggleVisibility(event.id, event.isPublic)}
+                                            style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                                            title={event.isPublic ? 'Set Private' : 'Set Public'}
+                                        >
+                                            {event.isPublic ? <Eye size={14} /> : <EyeOff size={14} />}
+                                            {event.isPublic ? 'Public' : 'Private'}
+                                        </button>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                        {readiness.map((item) => (
+                                            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: item.ok ? '#10B981' : 'var(--text-muted)' }}>
+                                                {item.ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                                                {item.label}
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>

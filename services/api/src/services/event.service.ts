@@ -174,7 +174,7 @@ export class EventService {
                     { description: { contains: search, mode: "insensitive" } },
                     { venue: { contains: search, mode: "insensitive" } }
                 ] : undefined
-            },
+            } as any,
             include: {
                 category: true,
                 city: true,

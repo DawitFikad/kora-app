@@ -155,6 +155,8 @@ model Event {
   coverImage    String?
   gallery       String[]               @default([])
   featured      Boolean                @default(false)
+  isPublic      Boolean                @default(true)
+  additionalDates DateTime[]           @default([])
   feeType       String?
   feeFixed      Decimal?               @db.Decimal(10, 2)
   feePercentage Decimal?               @db.Decimal(10, 2)
