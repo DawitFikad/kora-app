@@ -195,6 +195,9 @@ model PromoCode {
   code      String    @unique
   discount  Decimal   @db.Decimal(10, 2)
   type      String    @default("PERCENTAGE")
+  codeType  String    @default("STANDARD")
+  campaignName  String?
+  influencerName String?
   expiresAt DateTime?
   maxUses   Int?
   usedCount Int       @default(0)

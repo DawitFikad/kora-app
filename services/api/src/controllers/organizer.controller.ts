@@ -1,6 +1,7 @@
 /// <reference path="../types/express.d.ts" />
 import { Request, Response } from "express";
 import { EventOperationsService } from "../services/event-operations.service";
+import { PromoCodeService } from "../services/promo-code.service";
 
 export class OrganizerController {
     /**
@@ -570,7 +571,7 @@ export class OrganizerController {
             const organizerId = (req as any).user.organizerId;
             if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-            const { code, discount, type, expiresAt, maxUses, eventId } = req.body;
+            const { code, discount, type, expiresAt, maxUses, eventId, codeType, campaignName, influencerName } = req.body;
             const prisma = (await import("../lib/prisma")).prisma;
 
             // Security check: organizer must own the event
@@ -582,16 +583,17 @@ export class OrganizerController {
                 return res.status(403).json({ success: false, message: "You don't own this event." });
             }
 
-            const promo = await prisma.promoCode.create({
-                data: {
-                    code,
-                    discount: parseFloat(discount),
-                    type,
-                    expiresAt: expiresAt ? new Date(expiresAt) : null,
-                    maxUses: maxUses ? parseInt(maxUses) : null,
-                    eventId: parseInt(eventId)
-                }
-            });
+            const promo = await PromoCodeService.create({
+                code,
+                eventId: parseInt(eventId),
+                discount: parseFloat(discount),
+                type,
+                expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+                maxUses: maxUses ? parseInt(maxUses) : undefined,
+                codeType,
+                campaignName,
+                influencerName
+            } as any);
 
             res.json({ success: true, data: promo });
         } catch (error: any) {
@@ -609,16 +611,117 @@ export class OrganizerController {
 
             const prisma = (await import("../lib/prisma")).prisma;
 
-            const promos = await prisma.promoCode.findMany({
-                where: {
-                    event: { organizerId }
-                },
-                orderBy: { createdAt: 'desc' }
-            });
+            let promos: any[] = [];
+            try {
+                    promos = await prisma.promoCode.findMany({
+                        where: {
+                            event: { organizerId }
+                        },
+                        orderBy: { createdAt: 'desc' },
+                        select: {
+                            id: true,
+                            code: true,
+                            discount: true,
+                            type: true,
+                            expiresAt: true,
+                            maxUses: true,
+                            usedCount: true,
+                            isActive: true,
+                            eventId: true,
+                            createdAt: true
+                        }
+                    });
+            } catch (error: any) {
+                const msg = (error?.message || '').toLowerCase();
+                if (msg.includes('column') && msg.includes('does not exist')) {
+                    promos = await prisma.promoCode.findMany({
+                        where: {
+                            event: { organizerId }
+                        },
+                        orderBy: { createdAt: 'desc' },
+                        select: {
+                            id: true,
+                            code: true,
+                            discount: true,
+                            type: true,
+                            expiresAt: true,
+                            maxUses: true,
+                            usedCount: true,
+                            isActive: true,
+                            eventId: true,
+                            createdAt: true
+                        }
+                    });
+                } else {
+                    throw error;
+                }
+            }
 
-            res.json({ success: true, data: promos });
+            const promoStats = new Map<number, { orders: number; revenue: number }>();
+            promos.forEach(p => promoStats.set(p.id, { orders: 0, revenue: 0 }));
+
+            if (promos.length > 0) {
+                const purchases = await prisma.purchase.findMany({
+                    where: { status: "SUCCESS" },
+                    select: { totalAmount: true, metadata: true }
+                });
+
+                purchases.forEach(purchase => {
+                    const metadata = purchase.metadata as any;
+                    const promoId = metadata?.promoCodeId;
+                    if (!promoId || !promoStats.has(promoId)) return;
+
+                    const current = promoStats.get(promoId)!;
+                    current.orders += 1;
+                    current.revenue += Number(purchase.totalAmount || 0);
+                    promoStats.set(promoId, current);
+                });
+            }
+
+            const enriched = promos.map(p => ({
+                ...p,
+                stats: promoStats.get(p.id) || { orders: 0, revenue: 0 }
+            }));
+
+            res.json({ success: true, data: enriched });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * DELETE /api/organizer/promos/:id
+     */
+    static async deletePromoCode(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const promoId = parseInt(req.params.id);
+            const prisma = (await import("../lib/prisma")).prisma;
+
+            const promo = await prisma.promoCode.findUnique({
+                where: { id: promoId },
+                select: { id: true, eventId: true, usedCount: true }
+            });
+
+            if (!promo) {
+                return res.status(404).json({ success: false, message: "Promo code not found" });
+            }
+
+            const event = await prisma.event.findUnique({
+                where: { id: promo.eventId },
+                select: { organizerId: true }
+            });
+
+            if (!event || event.organizerId !== organizerId) {
+                return res.status(403).json({ success: false, message: "You don't own this event." });
+            }
+
+            await PromoCodeService.delete(promoId);
+            res.json({ success: true, message: "Promo code deleted" });
+        } catch (error: any) {
+            res.status(400).json({ success: false, message: error.message });
         }
     }
 

@@ -32,6 +32,7 @@ export const OrganizerService = {
     // Promotions
     createPromoCode: (data: any) => api.post('/organizer/promos', data),
     getPromoCodes: () => api.get('/organizer/promos'),
+    deletePromoCode: (id: number) => api.delete(`/organizer/promos/${id}`),
 
     // Settings
     getSettings: () => api.get('/organizer/settings'),

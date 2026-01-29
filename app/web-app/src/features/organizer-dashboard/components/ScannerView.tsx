@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Maximize,
@@ -33,6 +33,14 @@ export const ScannerView = () => {
     const [scanResult, setScanResult] = useState<any>(null);
     const [offlineQueue, setOfflineQueue] = useState<any[]>([]);
     const [history, setHistory] = useState<any[]>([]);
+    const [events, setEvents] = useState<any[]>([]);
+    const [selectedEventId, setSelectedEventId] = useState<string>('');
+    const [gateId, setGateId] = useState('Gate A');
+    const [deviceId, setDeviceId] = useState('');
+    const [cameraOn, setCameraOn] = useState(false);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const readerRef = useRef<any>(null);
 
     // Live attendance metrics
     const [attendanceStats, setAttendanceStats] = useState({
@@ -59,11 +67,43 @@ export const ScannerView = () => {
         if (saved) setOfflineQueue(JSON.parse(saved));
         if (scanned) setScannedTickets(new Set(JSON.parse(scanned)));
 
+        const savedDeviceId = localStorage.getItem('scanner_device_id');
+        if (savedDeviceId) {
+            setDeviceId(savedDeviceId);
+        } else {
+            const newId = `SCAN-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+            localStorage.setItem('scanner_device_id', newId);
+            setDeviceId(newId);
+        }
+
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
     }, []);
+
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const res = await OrganizerService.getMyEvents();
+                const data = (res as any)?.data?.data || (res as any)?.data || [];
+                setEvents(Array.isArray(data) ? data : []);
+            } catch {
+                setEvents([]);
+            }
+        };
+        fetchEvents();
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (readerRef.current) {
+                try { readerRef.current.reset(); } catch { /* noop */ }
+            }
+        };
+    }, []);
+
+    const gateOptions = useMemo(() => ['Gate A', 'Gate B', 'Gate C', 'VIP Gate'], []);
 
     const handleValidate = async (id: string = ticketId, isOverride: boolean = false) => {
         if (!id) return;
@@ -88,9 +128,18 @@ export const ScannerView = () => {
         setStatus('validating');
 
         if (!isOnline) {
+            if (!selectedEventId) {
+                toast.error('Select an event before offline scanning.');
+                setStatus('idle');
+                return;
+            }
             const scan = {
-                qrPayload: id,
-                timestamp: new Date().toISOString(),
+                id: Date.now(),
+                ticketId: id,
+                eventId: Number(selectedEventId),
+                scannedAt: new Date().toISOString(),
+                gateId,
+                deviceId,
                 status: 'PENDING_SYNC',
                 isOverride
             };
@@ -100,7 +149,7 @@ export const ScannerView = () => {
 
             setStatus('success');
             setScanResult({ name: 'Saved Offline', type: 'Caching Mode', message: 'Scan cached for sync' });
-            addToHistory({ id, timestamp: new Date().toISOString(), status: 'PENDING_SYNC' });
+            addToHistory({ id, timestamp: new Date().toISOString(), status: 'PENDING_SYNC', gateId });
             addScannedTicket(id);
             setTicketId('');
             setAttendanceStats(prev => ({
@@ -112,16 +161,17 @@ export const ScannerView = () => {
         }
 
         try {
-            const result = await OrganizerService.validateTicket(id) as any;
+            const result = await OrganizerService.validateTicket(id, gateId) as any;
             if (result && result.success) {
                 setStatus('success');
                 setScanResult({
                     name: result.ticket.userName || 'Attendee',
                     type: result.ticket.tierName,
                     event: result.ticket.eventTitle || 'Event',
-                    isOverride
+                    isOverride,
+                    gateId
                 });
-                addToHistory({ id, timestamp: new Date().toISOString(), status: 'SUCCESS', isOverride });
+                addToHistory({ id, timestamp: new Date().toISOString(), status: 'SUCCESS', isOverride, gateId });
                 addScannedTicket(id);
                 setTicketId('');
                 setPendingOverride(null);
@@ -144,6 +194,7 @@ export const ScannerView = () => {
             setStatus('error');
             const msg = error.message || error.error || (typeof error === 'string' ? error : JSON.stringify(error)) || 'Validation error. Please try again.';
             setScanResult({ message: msg });
+            addToHistory({ id, timestamp: new Date().toISOString(), status: 'ERROR', gateId });
             setAttendanceStats(prev => ({
                 ...prev,
                 totalScans: prev.totalScans + 1,
@@ -176,7 +227,15 @@ export const ScannerView = () => {
         if (offlineQueue.length === 0) return;
         setStatus('validating');
         try {
-            await OrganizerService.syncLogs(offlineQueue);
+            const normalizedLogs = offlineQueue.map((log: any) => ({
+                id: log.id || Date.now(),
+                ticketId: log.ticketId || log.qrPayload,
+                eventId: log.eventId || Number(selectedEventId),
+                scannedAt: log.scannedAt || log.timestamp,
+                gateId: log.gateId || gateId,
+                deviceId: log.deviceId || deviceId
+            }));
+            await OrganizerService.syncLogs(normalizedLogs);
             setOfflineQueue([]);
             localStorage.removeItem('offline_scans');
             toast.success(`${offlineQueue.length} scans synchronized successfully!`);
@@ -188,6 +247,34 @@ export const ScannerView = () => {
         }
     };
 
+    const startCamera = async () => {
+        try {
+            setCameraError(null);
+            const { BrowserMultiFormatReader } = await import('@zxing/browser');
+            const reader = new BrowserMultiFormatReader();
+            readerRef.current = reader;
+            setCameraOn(true);
+            await reader.decodeFromVideoDevice(null, videoRef.current as HTMLVideoElement, (result, err) => {
+                if (result) {
+                    handleValidate(result.getText());
+                }
+                if (err && err.name === 'NotFoundException') {
+                    // ignore no QR found
+                }
+            });
+        } catch (error: any) {
+            setCameraError(error?.message || 'Camera access failed');
+            setCameraOn(false);
+        }
+    };
+
+    const stopCamera = () => {
+        if (readerRef.current) {
+            try { readerRef.current.reset(); } catch { /* noop */ }
+        }
+        setCameraOn(false);
+    };
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader
@@ -195,6 +282,9 @@ export const ScannerView = () => {
                 subtitle="Validate entry with real-time attendance tracking and duplicate detection"
                 actions={
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(29,144,245,0.08)', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                            <Shield size={14} /> {user?.role === 'SCANNER' ? 'Scanner Mode' : 'Organizer Mode'}
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: isOnline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: isOnline ? '#10B981' : '#EF4444', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 700 }}>
                             {isOnline ? <Wifi size={16} /> : <WifiOff size={16} />}
                             {isOnline ? 'Online' : 'Offline Mode'}
@@ -268,6 +358,40 @@ export const ScannerView = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {/* Event & Gate Selection */}
+                    <div className="stat-card" style={{ padding: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Event</label>
+                            <select
+                                value={selectedEventId}
+                                onChange={(e) => setSelectedEventId(e.target.value)}
+                                style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)' }}
+                            >
+                                <option value="">Select event</option>
+                                {events.map((e: any) => (
+                                    <option key={e.id} value={e.id}>{e.title}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Gate</label>
+                            <select
+                                value={gateId}
+                                onChange={(e) => setGateId(e.target.value)}
+                                style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)' }}
+                            >
+                                {gateOptions.map(g => <option key={g} value={g}>{g}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Device ID</label>
+                            <input
+                                value={deviceId}
+                                onChange={(e) => setDeviceId(e.target.value)}
+                                style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)' }}
+                            />
+                        </div>
+                    </div>
                     {/* Scanner Input Area */}
                     <div className="stat-card" style={{ padding: '48px', textAlign: 'center', minHeight: '450px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
                         <AnimatePresence mode="wait">
@@ -281,7 +405,35 @@ export const ScannerView = () => {
                                         Scan QR codes or enter ticket ID manually. Duplicate detection is active.
                                     </p>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px', margin: '0 auto' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '420px', margin: '0 auto' }}>
+                                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                            {!cameraOn ? (
+                                                <button
+                                                    onClick={startCamera}
+                                                    className="btn-blue"
+                                                    style={{ background: 'rgba(29,144,245,0.15)', color: '#1D90F5', border: '1px solid rgba(29,144,245,0.3)' }}
+                                                >
+                                                    Start Camera Scan
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={stopCamera}
+                                                    className="btn-blue"
+                                                    style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                                                >
+                                                    Stop Camera
+                                                </button>
+                                            )}
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mobile camera QR supported</span>
+                                        </div>
+                                        {cameraOn && (
+                                            <div style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                                                <video ref={videoRef} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
+                                            </div>
+                                        )}
+                                        {cameraError && (
+                                            <div style={{ fontSize: '0.8rem', color: '#EF4444' }}>{cameraError}</div>
+                                        )}
                                         <div style={{ position: 'relative', width: '100%' }}>
                                             <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
                                             <input

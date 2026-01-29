@@ -517,7 +517,8 @@ export class BookingService {
                     quantity,
                     seatNumbers: seatNumbers || [],
                     priceBreakdown,
-                    promoCodeId: promoId
+                    promoCodeId: promoId,
+                    promoCode: promoCode ? promoCode.toUpperCase() : null
                 }))
             }
         });

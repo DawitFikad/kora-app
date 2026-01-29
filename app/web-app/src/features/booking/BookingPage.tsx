@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { bookingService } from '../../core/api/booking.service';
 import type {
     EventForBooking,
@@ -18,6 +18,7 @@ import './BookingPage.css';
 const BookingPage: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { showToast } = useToast();
 
     // State
@@ -30,6 +31,7 @@ const BookingPage: React.FC = () => {
     const [priceBreakdown, setPriceBreakdown] = useState<PriceBreakdown | null>(null);
     const [promoCode, setPromoCode] = useState('');
     const [promoApplied, setPromoApplied] = useState(false);
+    const [autoPromoTried, setAutoPromoTried] = useState(false);
     const [lockExpiry, setLockExpiry] = useState<Date | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -123,6 +125,28 @@ const BookingPage: React.FC = () => {
             showToast(error.error || 'Failed to validate promo code', 'error');
         }
     };
+
+    useEffect(() => {
+        const promoParam = searchParams.get('promo');
+        if (!promoParam || !event || promoApplied || autoPromoTried) return;
+
+        const normalized = promoParam.trim().toUpperCase();
+        setPromoCode(normalized);
+        setAutoPromoTried(true);
+
+        bookingService.validatePromoCode(normalized, event.id)
+            .then((result) => {
+                if (result.valid) {
+                    setPromoApplied(true);
+                    showToast('Promo code auto-applied!', 'success');
+                } else {
+                    showToast(result.message || 'Invalid promo code', 'error');
+                }
+            })
+            .catch((error: any) => {
+                showToast(error.error || 'Failed to validate promo code', 'error');
+            });
+    }, [searchParams, event, promoApplied, autoPromoTried, showToast]);
 
     // Handle seat selection
     const handleSeatSelect = async (seatNumber: string) => {

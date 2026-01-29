@@ -19,7 +19,18 @@ export class PromoCodeService {
         subtotal: number
     ): Promise<PromoValidationResult> {
         const promo = await prisma.promoCode.findUnique({
-            where: { code: code.toUpperCase() }
+            where: { code: code.toUpperCase() },
+            select: {
+                id: true,
+                code: true,
+                discount: true,
+                type: true,
+                expiresAt: true,
+                maxUses: true,
+                usedCount: true,
+                isActive: true,
+                eventId: true
+            }
         });
 
         // Check if promo exists
@@ -107,6 +118,9 @@ export class PromoCodeService {
         type: 'PERCENTAGE' | 'FIXED';
         expiresAt?: Date;
         maxUses?: number;
+        codeType?: 'STANDARD' | 'INFLUENCER';
+        campaignName?: string;
+        influencerName?: string;
     }) {
         // Normalize code to uppercase
         const normalizedCode = data.code.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -117,7 +131,8 @@ export class PromoCodeService {
 
         // Check if code already exists
         const existing = await prisma.promoCode.findUnique({
-            where: { code: normalizedCode }
+            where: { code: normalizedCode },
+            select: { id: true }
         });
 
         if (existing) {
@@ -133,18 +148,36 @@ export class PromoCodeService {
             throw new Error("Fixed discount must be at least 1 ETB");
         }
 
-        return prisma.promoCode.create({
-            data: {
-                code: normalizedCode,
-                eventId: data.eventId,
-                discount: data.discount,
-                type: data.type,
-                expiresAt: data.expiresAt,
-                maxUses: data.maxUses,
-                isActive: true,
-                usedCount: 0
+        if (data.codeType === 'INFLUENCER' && !data.influencerName) {
+            throw new Error("Influencer name is required for influencer codes");
+        }
+
+        const createData: any = {
+            code: normalizedCode,
+            eventId: data.eventId,
+            discount: data.discount,
+            type: data.type,
+            codeType: data.codeType || 'STANDARD',
+            campaignName: data.campaignName || null,
+            influencerName: data.influencerName || null,
+            expiresAt: data.expiresAt,
+            maxUses: data.maxUses,
+            isActive: true,
+            usedCount: 0
+        };
+
+        try {
+            return await prisma.promoCode.create({ data: createData });
+        } catch (error: any) {
+            const msg = (error?.message || '').toLowerCase();
+            if ((msg.includes('column') && msg.includes('does not exist')) || msg.includes('unknown arg')) {
+                delete createData.codeType;
+                delete createData.campaignName;
+                delete createData.influencerName;
+                return prisma.promoCode.create({ data: createData });
             }
-        });
+            throw error;
+        }
     }
 
     /**
@@ -153,7 +186,19 @@ export class PromoCodeService {
     static async getByEvent(eventId: number) {
         return prisma.promoCode.findMany({
             where: { eventId },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                code: true,
+                discount: true,
+                type: true,
+                expiresAt: true,
+                maxUses: true,
+                usedCount: true,
+                isActive: true,
+                eventId: true,
+                createdAt: true
+            }
         });
     }
 
@@ -172,7 +217,8 @@ export class PromoCodeService {
      */
     static async delete(promoId: number) {
         const promo = await prisma.promoCode.findUnique({
-            where: { id: promoId }
+            where: { id: promoId },
+            select: { id: true, usedCount: true }
         });
 
         if (!promo) {
