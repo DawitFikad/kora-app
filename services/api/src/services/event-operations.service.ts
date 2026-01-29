@@ -130,7 +130,7 @@ export class EventOperationsService {
      * Gets aggregated stats for an organizer across all their events.
      */
     static async getOrganizerSummary(organizerId: number) {
-        const [events, wallet, recentSales] = await Promise.all([
+        const [events, wallet, recentSales, ticketsForAnalytics] = await Promise.all([
             prisma.event.findMany({
                 where: { organizerId },
                 include: {
@@ -143,7 +143,8 @@ export class EventOperationsService {
                                 select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
                             }
                         }
-                    }
+                    },
+                    city: { select: { name: true } }
                 }
             }),
             prisma.organizerWallet.findUnique({
@@ -156,6 +157,17 @@ export class EventOperationsService {
                     event: { organizerId },
                     status: { in: ["SOLD", "USED", "VALID"] },
                     createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Extended to 30 days for better insights
+                }
+            }),
+            prisma.ticket.findMany({
+                where: {
+                    event: { organizerId },
+                    status: { in: ["SOLD", "USED", "VALID"] }
+                },
+                select: {
+                    createdAt: true,
+                    userId: true,
+                    eventId: true
                 }
             })
         ]);
@@ -234,6 +246,52 @@ export class EventOperationsService {
             checkedIn: totalCheckIns
         };
 
+        const conversionRate = totalCapacity > 0 ? (totalTicketsSold / totalCapacity) * 100 : 0;
+
+        const ticketsSoldVsCapacity = {
+            sold: totalTicketsSold,
+            capacity: totalCapacity,
+            percent: conversionRate
+        };
+
+        const hourBuckets = new Array(24).fill(0);
+        ticketsForAnalytics.forEach((t: { createdAt: Date }) => {
+            const hour = new Date(t.createdAt).getHours();
+            hourBuckets[hour] += 1;
+        });
+        const peakHourIndex = hourBuckets.reduce((maxIdx, count, idx, arr) =>
+            count > arr[maxIdx] ? idx : maxIdx
+        , 0);
+        const peakBuyingTime = {
+            hour: peakHourIndex,
+            label: new Date(2020, 0, 1, peakHourIndex).toLocaleTimeString('en-US', { hour: 'numeric' }),
+            count: hourBuckets[peakHourIndex] || 0
+        };
+
+        const userCounts = new Map<number, number>();
+        ticketsForAnalytics.forEach((t: { userId: number }) => {
+            userCounts.set(t.userId, (userCounts.get(t.userId) || 0) + 1);
+        });
+        const totalBuyers = userCounts.size;
+        const returningBuyers = Array.from(userCounts.values()).filter(c => c > 1).length;
+        const returningBuyersPercent = totalBuyers > 0 ? (returningBuyers / totalBuyers) * 100 : 0;
+
+        const cityMap = new Map<string, number>();
+        events.forEach((e: any) => {
+            const cityName = e.city?.name || 'Unknown';
+            const sold = e._count?.tickets || 0;
+            cityMap.set(cityName, (cityMap.get(cityName) || 0) + sold);
+        });
+        const locationHeatmap = Array.from(cityMap.entries())
+            .map(([city, tickets]) => ({ city, tickets }))
+            .sort((a, b) => b.tickets - a.tickets);
+
+        const deviceBreakdown = {
+            Mobile: 0,
+            Web: 0,
+            Unknown: totalTicketsSold
+        };
+
         // 4. Alerts
         const alerts: any[] = [];
 
@@ -286,6 +344,8 @@ export class EventOperationsService {
             grossVolume: grossVolume,
             ticketsSold: totalTicketsSold,
             totalCapacity,
+            conversionRate,
+            ticketsSoldVsCapacity,
             nextPayout: Number(wallet?.availableBalance || 0),
             salesVelocity,
             totalCheckIns,
@@ -295,6 +355,14 @@ export class EventOperationsService {
             advanced: {
                 bestEvent: { title: bestEvent.title, revenue: bestEvent.revenue },
                 peakDay: { day: peakDayEntry[0], count: peakDayEntry[1] },
+                peakBuyingTime,
+                deviceBreakdown,
+                locationHeatmap,
+                returningBuyers: {
+                    percent: returningBuyersPercent,
+                    total: totalBuyers,
+                    returning: returningBuyers
+                },
                 revenueBreakdown,
                 funnel
             }
@@ -441,12 +509,6 @@ export class EventOperationsService {
                 tickets: event.tickets
             }));
 
-        // Calculate conversion rate (tickets sold / total capacity)
-        const totalCapacity = events.reduce((sum, event) => {
-            return sum + event.tiers.reduce((tSum, tier) => tSum + tier.capacity, 0);
-        }, 0);
-        const conversionRate = totalCapacity > 0 ? (totalTicketsSold / totalCapacity) * 100 : 0;
-
         // Calculate average ticket price
         const averageTicketPrice = totalTicketsSold > 0 ? totalRevenue / totalTicketsSold : 0;
 
@@ -499,6 +561,11 @@ export class EventOperationsService {
             revenue: data.revenue,
             count: data.count
         }));
+
+        const totalCapacity = events.reduce((sum, event) => {
+            return sum + event.tiers.reduce((tSum, tier) => tSum + tier.capacity, 0);
+        }, 0);
+        const conversionRate = totalCapacity > 0 ? (totalTicketsSold / totalCapacity) * 100 : 0;
 
         const failedPurchases = await prisma.purchase.findMany({
             where: { status: { in: ["FAILED", "CANCELLED"] } },
@@ -568,7 +635,7 @@ export class EventOperationsService {
             }
         });
 
-        const allTiers = events.flatMap(e => e.tiers.map(t => ({
+        const allTiers = (events as any[]).flatMap(e => e.tiers.map((t: any) => ({
             eventId: e.id,
             name: t.name,
             eventName: e.title,

@@ -29,7 +29,7 @@ export const AdvancedAnalyticsView = () => {
         try {
             setLoading(true);
             const response = await OrganizerService.getOverview();
-            setAnalytics(response.data);
+            setAnalytics((response as any)?.data?.data || (response as any)?.data);
         } catch (error: any) {
             showToast(error.message || 'Failed to load analytics', 'error');
         } finally {
@@ -74,33 +74,33 @@ export const AdvancedAnalyticsView = () => {
 
     const metrics = [
         {
-            label: 'Total Revenue',
-            value: `ETB ${analytics?.totalRevenue?.toLocaleString() || 0}`,
-            change: '+12.5%',
+            label: 'Conversion Rate',
+            value: `${(analytics?.conversionRate || 0).toFixed(1)}%`,
+            change: 'Live',
             trend: 'up',
-            icon: DollarSign,
+            icon: TrendingUp,
             color: '#10B981'
         },
         {
-            label: 'Total Tickets Sold',
-            value: analytics?.ticketsSold?.toLocaleString() || 0,
-            change: '+8.3%',
+            label: 'Tickets Sold vs Capacity',
+            value: `${analytics?.ticketsSoldVsCapacity?.sold || 0} / ${analytics?.ticketsSoldVsCapacity?.capacity || 0}`,
+            change: `${(analytics?.ticketsSoldVsCapacity?.percent || 0).toFixed(1)}%`,
             trend: 'up',
             icon: Ticket,
             color: '#1D90F5'
         },
         {
-            label: 'Active Events',
-            value: analytics?.activeEvents || 0,
-            change: '+2',
+            label: 'Peak Buying Time',
+            value: analytics?.advanced?.peakBuyingTime?.label || 'N/A',
+            change: `${analytics?.advanced?.peakBuyingTime?.count || 0} sales`,
             trend: 'up',
-            icon: Calendar,
+            icon: Activity,
             color: '#FBBF24'
         },
         {
-            label: 'Total Attendees',
-            value: analytics?.ticketsSold?.toLocaleString() || 0,
-            change: '+15.7%',
+            label: 'Returning Buyers',
+            value: `${(analytics?.advanced?.returningBuyers?.percent || 0).toFixed(1)}%`,
+            change: `${analytics?.advanced?.returningBuyers?.returning || 0}/${analytics?.advanced?.returningBuyers?.total || 0}`,
             trend: 'up',
             icon: Users,
             color: '#A78BFA'
@@ -128,8 +128,8 @@ export const AdvancedAnalyticsView = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader
-                title="Advanced Analytics"
-                subtitle="Comprehensive insights into your event performance"
+                title="Decision-Making Analytics"
+                subtitle="Enterprise-grade insights for smarter decisions"
                 actions={
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <select
@@ -266,6 +266,70 @@ export const AdvancedAnalyticsView = () => {
                     <div style={{ marginTop: '32px', padding: '20px', background: 'rgba(29, 144, 245, 0.05)', borderRadius: '16px', border: '1px solid rgba(29, 144, 245, 0.1)' }}>
                         <p style={{ fontSize: '0.75rem', color: 'var(--primary-blue)', fontWeight: 800, marginBottom: '4px' }}>TOTAL REVENUE</p>
                         <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>ETB {analytics?.totalRevenue?.toLocaleString() || 0}</h3>
+                    </div>
+                </div>
+            </div>
+
+            {/* Device Breakdown + Location Heatmap */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                <div className="stat-card" style={{ padding: '32px' }}>
+                    <div style={{ marginBottom: '24px' }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '4px' }}>Device Breakdown</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mobile vs Web traffic</p>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                        {Object.entries(analytics?.advanced?.deviceBreakdown || { Mobile: 0, Web: 0, Unknown: 0 }).map(([key, value], idx) => (
+                            <div
+                                key={key}
+                                style={{
+                                    padding: '16px',
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '14px'
+                                }}
+                            >
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{key.toUpperCase()}</p>
+                                <p style={{ fontSize: '1.4rem', fontWeight: 900 }}>{Number(value).toLocaleString()}</p>
+                                <div style={{ marginTop: '8px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+                                    <div
+                                        style={{
+                                            height: '100%',
+                                            width: `${analytics?.ticketsSold ? (Number(value) / analytics.ticketsSold) * 100 : 0}%`,
+                                            background: ['#1D90F5', '#10B981', '#F59E0B'][idx % 3]
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="stat-card" style={{ padding: '32px' }}>
+                    <div style={{ marginBottom: '24px' }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '4px' }}>Location Heatmap</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>City-level ticket demand</p>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {(analytics?.advanced?.locationHeatmap || []).map((row: any, idx: number) => (
+                            <div key={`${row.city}-${idx}`}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <span style={{ fontWeight: 800 }}>{row.city}</span>
+                                    <span style={{ fontWeight: 800 }}>{row.tickets} tickets</span>
+                                </div>
+                                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
+                                    <div
+                                        style={{
+                                            height: '100%',
+                                            width: `${analytics?.ticketsSold ? (row.tickets / analytics.ticketsSold) * 100 : 0}%`,
+                                            background: '#1D90F5'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                        {(!analytics?.advanced?.locationHeatmap || analytics.advanced.locationHeatmap.length === 0) && (
+                            <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>No city data available</p>
+                        )}
                     </div>
                 </div>
             </div>
