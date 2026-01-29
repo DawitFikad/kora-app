@@ -7,9 +7,7 @@ import {
     Ticket,
     BarChart3,
     Settings,
-    Search,
     Bell,
-    HelpCircle,
     PlusCircle,
     Users,
     Layout,
@@ -55,7 +53,6 @@ const OrganizerDashboard = () => {
     const [editingEventId, setEditingEventId] = useState<number | null>(null);
     const [viewingStatsId, setViewingStatsId] = useState<number | null>(null);
     const [organizerProfile, setOrganizerProfile] = useState<any>(null);
-    const [searchQuery, setSearchQuery] = useState('');
 
     // Notifications State
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -172,7 +169,7 @@ const OrganizerDashboard = () => {
         { icon: RefreshCw, label: 'Refunds', display: t('org.nav.refunds', 'Refunds') },
         { icon: Layout, label: 'Content', display: t('org.nav.content', 'Content') },
         { icon: Maximize, label: 'Scanner', display: t('org.nav.scanner', 'Scanner') },
-        { icon: HelpCircle, label: 'Support', display: t('org.nav.support', 'Support') },
+        { icon: Bell, label: 'Support', display: t('org.nav.support', 'Support') },
         { icon: Settings, label: 'Settings', display: t('org.nav.settings', 'Settings') },
     ];
 
@@ -222,13 +219,13 @@ const OrganizerDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'Dashboard': return <DashboardView key="dashboard" onNavigate={setActiveTab} />;
-            case 'Events': return <MyEventsView key="events" searchQuery={searchQuery} onNavigate={setActiveTab} onEditEvent={handleEditEvent} onViewStats={handleViewStats} />;
-            case 'Tickets': return <TicketsView key="tickets" searchQuery={searchQuery} />;
+            case 'Events': return <MyEventsView key="events" searchQuery="" onNavigate={setActiveTab} onEditEvent={handleEditEvent} onViewStats={handleViewStats} />;
+            case 'Tickets': return <TicketsView key="tickets" searchQuery="" />;
             case 'Sales': return <SalesRevenueView key="sales" />;
             case 'Analytics': return <AdvancedAnalyticsView key="analytics" />;
             case 'Reports': return <ReportGeneratorView key="reports" />;
-            case 'Attendees': return <AttendeesView key="attendees" searchQuery={searchQuery} />;
-            case 'Promotions': return <PromotionsView key="promotions" searchQuery={searchQuery} />;
+            case 'Attendees': return <AttendeesView key="attendees" searchQuery="" />;
+            case 'Promotions': return <PromotionsView key="promotions" searchQuery="" />;
             case 'Refunds': return <RefundsView key="refunds" />;
             case 'Content': return <ContentManagementView key="content" />;
             case 'Scanner': return <ScannerView key="scanner" />;
@@ -308,148 +305,131 @@ const OrganizerDashboard = () => {
                         </h2>
                     </div>
 
-                    <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                        <div className="search-pill" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-main)', padding: '10px 20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                            <Search size={18} color="var(--text-muted)" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder={t('org.search', 'Search...')}
-                                style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', fontSize: '0.9rem' }}
-                            />
-                        </div>
-
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div
-                                className="action-icon"
-                                onClick={toggleTheme}
-                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                                {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
-                            </div>
-
-                            <div
-                                className="action-icon"
-                                onClick={() => setLanguage(language === 'en' ? 'am' : 'en')}
-                                style={{
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: 'var(--bg-hover)',
-                                    color: 'var(--text-main)',
-                                    border: '1px solid var(--border)'
-                                }}
-                            >
-                                {language.toUpperCase()}
-                            </div>
-
-                            <div style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginLeft: 'auto' }}>
+                        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '16px' }}>
                                 <div
                                     className="action-icon"
-                                    style={{ position: 'relative', cursor: 'pointer' }}
-                                    onClick={() => setShowNotifications(!showNotifications)}
+                                    onClick={toggleTheme}
+                                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
-                                    <Bell size={22} color="var(--text-muted)" />
-                                    {unreadCount > 0 && (
-                                        <div style={{ position: 'absolute', top: -6, right: -6, background: '#FF4D4D', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px', border: '2px solid #0B0E14', minWidth: '18px', textAlign: 'center' }}>
-                                            {unreadCount > 99 ? '99+' : unreadCount}
-                                        </div>
+                                    {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
+                                </div>
+
+                                <div
+                                    className="action-icon"
+                                    onClick={() => setLanguage(language === 'en' ? 'am' : 'en')}
+                                    style={{
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 800,
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        background: 'var(--bg-hover)',
+                                        color: 'var(--text-main)',
+                                        border: '1px solid var(--border)'
+                                    }}
+                                >
+                                    {language.toUpperCase()}
+                                </div>
+
+                                <div style={{ position: 'relative' }}>
+                                    <div
+                                        className="action-icon"
+                                        style={{ position: 'relative', cursor: 'pointer' }}
+                                        onClick={() => setShowNotifications(!showNotifications)}
+                                    >
+                                        <Bell size={22} color="var(--text-muted)" />
+                                        {unreadCount > 0 && (
+                                            <div style={{ position: 'absolute', top: -6, right: -6, background: '#FF4D4D', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px', border: '2px solid #0B0E14', minWidth: '18px', textAlign: 'center' }}>
+                                                {unreadCount > 99 ? '99+' : unreadCount}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {showNotifications && (
+                                        <>
+                                            <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowNotifications(false)} />
+                                            <div style={{ position: 'absolute', top: '50px', right: '-10px', width: '380px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 40px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                                                <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card-hover)' }}>
+                                                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>Notifications</h4>
+                                                    {unreadCount > 0 && (
+                                                        <span onClick={(e) => { e.stopPropagation(); handleMarkAsRead(); }} style={{ fontSize: '0.8rem', color: '#1D90F5', cursor: 'pointer', fontWeight: 600 }}>Mark all read</span>
+                                                    )}
+                                                </div>
+                                                <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                                                    {(['new', 'today', 'yesterday', 'older'] as const).map(group => {
+                                                        const items = getGroupedNotifications()[group];
+                                                        if (!items || items.length === 0) return null;
+                                                        return (
+                                                            <div key={group}>
+                                                                <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'capitalize', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                                    {group}
+                                                                </div>
+                                                                {items.map((n: any) => (
+                                                                    <div
+                                                                        key={n.id}
+                                                                        onClick={() => handleMarkAsRead(n.id)}
+                                                                        style={{
+                                                                            padding: '16px',
+                                                                            borderBottom: '1px solid var(--border)',
+                                                                            cursor: 'pointer',
+                                                                            background: n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)',
+                                                                            transition: 'background 0.2s',
+                                                                            display: 'flex',
+                                                                            gap: '12px'
+                                                                        }}
+                                                                        onMouseEnter={(e) => e.currentTarget.style.background = n.isRead ? 'rgba(255,255,255,0.02)' : 'rgba(29, 144, 245, 0.08)'}
+                                                                        onMouseLeave={(e) => e.currentTarget.style.background = n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)'}
+                                                                    >
+                                                                        <div style={{ marginTop: '2px' }}>
+                                                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.isRead ? 'transparent' : '#1D90F5', border: n.isRead ? '1px solid var(--text-muted)' : 'none' }} />
+                                                                        </div>
+                                                                        <div style={{ flex: 1 }}>
+                                                                            <p style={{ fontSize: '0.9rem', marginBottom: '4px', lineHeight: '1.4', color: n.isRead ? 'var(--text-muted)' : 'var(--text-main)' }}>{n.content}</p>
+                                                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {notifications.length === 0 && (
+                                                        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                                            <Bell size={32} color="#2D333B" style={{ marginBottom: '16px' }} />
+                                                            <p>No notifications yet</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
 
-                                {showNotifications && (
-                                    <>
-                                        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowNotifications(false)} />
-                                        <div style={{ position: 'absolute', top: '50px', right: '-10px', width: '380px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 40px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-                                            <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card-hover)' }}>
-                                                <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>Notifications</h4>
-                                                {unreadCount > 0 && (
-                                                    <span onClick={(e) => { e.stopPropagation(); handleMarkAsRead(); }} style={{ fontSize: '0.8rem', color: '#1D90F5', cursor: 'pointer', fontWeight: 600 }}>Mark all read</span>
-                                                )}
-                                            </div>
-                                            <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
-                                                {(['new', 'today', 'yesterday', 'older'] as const).map(group => {
-                                                    const items = getGroupedNotifications()[group];
-                                                    if (!items || items.length === 0) return null;
-                                                    return (
-                                                        <div key={group}>
-                                                            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.02)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'capitalize', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                                {group}
-                                                            </div>
-                                                            {items.map((n: any) => (
-                                                                <div
-                                                                    key={n.id}
-                                                                    onClick={() => handleMarkAsRead(n.id)}
-                                                                    style={{
-                                                                        padding: '16px',
-                                                                        borderBottom: '1px solid var(--border)',
-                                                                        cursor: 'pointer',
-                                                                        background: n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)',
-                                                                        transition: 'background 0.2s',
-                                                                        display: 'flex',
-                                                                        gap: '12px'
-                                                                    }}
-                                                                    onMouseEnter={(e) => e.currentTarget.style.background = n.isRead ? 'rgba(255,255,255,0.02)' : 'rgba(29, 144, 245, 0.08)'}
-                                                                    onMouseLeave={(e) => e.currentTarget.style.background = n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)'}
-                                                                >
-                                                                    <div style={{ marginTop: '2px' }}>
-                                                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.isRead ? 'transparent' : '#1D90F5', border: n.isRead ? '1px solid var(--text-muted)' : 'none' }} />
-                                                                    </div>
-                                                                    <div style={{ flex: 1 }}>
-                                                                        <p style={{ fontSize: '0.9rem', marginBottom: '4px', lineHeight: '1.4', color: n.isRead ? 'var(--text-muted)' : 'var(--text-main)' }}>{n.content}</p>
-                                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    );
-                                                })}
-                                                {notifications.length === 0 && (
-                                                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                                        <Bell size={32} color="#2D333B" style={{ marginBottom: '16px' }} />
-                                                        <p>No notifications yet</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            <div
-                                className="action-icon"
-                                onClick={() => setActiveTab('Support')}
-                                title={t('org.nav.support', 'Support')}
-                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                                <HelpCircle size={22} color="var(--text-muted)" style={{ cursor: 'pointer' }} />
                             </div>
                         </div>
-                    </div>
 
-                    <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />
+                        <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />
 
-                    <div
-                        onClick={() => setActiveTab('Settings')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
-                    >
-                        <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '2px' }}>
-                            <img
-                                src={organizerProfile?.logoUrl ? `http://localhost:4000${organizerProfile.logoUrl}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(organizerProfile?.organizationName || user?.phoneNumber || 'Org')}&background=11141B&color=fff`}
-                                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                                alt="Avatar"
-                            />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <p style={{ fontSize: '0.9rem', fontWeight: 800 }}>{organizerProfile?.organizationName || user?.profile?.fullName || user?.phoneNumber}</p>
-                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>Organizer</p>
+                        <div
+                            onClick={() => setActiveTab('Settings')}
+                            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                        >
+                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '2px' }}>
+                                <img
+                                    src={organizerProfile?.logoUrl ? `http://localhost:4000${organizerProfile.logoUrl}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(organizerProfile?.organizationName || user?.phoneNumber || 'Org')}&background=11141B&color=fff`}
+                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                                    alt="Avatar"
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <p style={{ fontSize: '0.9rem', fontWeight: 800 }}>{organizerProfile?.organizationName || user?.profile?.fullName || user?.phoneNumber}</p>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>Organizer</p>
+                            </div>
                         </div>
                     </div>
 

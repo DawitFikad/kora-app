@@ -118,6 +118,36 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
         }
     };
 
+    const handleExport = () => {
+        try {
+            const rows = [
+                ['Attendee Name', 'Phone', 'Event', 'Ticket Type', 'Purchase Date', 'Status', 'VIP'],
+                ...filteredAttendees.map(person => [
+                    person.name || 'Guest',
+                    person.phone || '',
+                    person.event || '',
+                    person.type || '',
+                    person.dateObj ? person.dateObj.toLocaleDateString() : '',
+                    person.status || '',
+                    person.isVip ? 'Yes' : 'No'
+                ])
+            ];
+
+            const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendees-${Date.now()}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            toast.success('Attendees exported');
+        } catch (error) {
+            console.error('Failed to export attendees', error);
+            toast.error('Failed to export attendees');
+        }
+    };
+
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -177,7 +207,13 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
                         />
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
-                        <button className="btn-blue" style={{ background: 'var(--bg-active)', color: 'white', padding: '10px 20px' }}><Download size={16} /> Export List</button>
+                        <button
+                            onClick={handleExport}
+                            className="btn-blue"
+                            style={{ background: 'var(--bg-active)', color: 'white', padding: '10px 20px' }}
+                        >
+                            <Download size={16} /> Export List
+                        </button>
                     </div>
                 </div>
                 <div style={{ padding: '16px 32px', borderBottom: '1px solid var(--border)' }}>
