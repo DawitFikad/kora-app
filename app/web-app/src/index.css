@@ -108,6 +108,17 @@ body {
     background-color: var(--bg-card);
 }
 
+/* Settings dropdown theming */
+.settings-select {
+    color: var(--text-main);
+    background-color: var(--bg-subtle);
+}
+
+.settings-select option {
+    color: var(--text-main);
+    background-color: var(--bg-card);
+}
+
 .container {
     max-width: 1280px;
     margin: 0 auto;

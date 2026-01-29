@@ -38,6 +38,7 @@ export const OrganizerService = {
     // Settings
     getSettings: () => api.get('/organizer/settings'),
     updateSettings: (data: any) => api.patch('/organizer/settings', data),
+    getCities: () => api.get('/content/cities'),
     requestTwoFactorOtp: (data: { action: 'enable' | 'disable' }) => api.post('/organizer/security/2fa/request', data),
     verifyTwoFactorOtp: (data: { action: 'enable' | 'disable'; otp: string }) => api.post('/organizer/security/2fa/verify', data),
 

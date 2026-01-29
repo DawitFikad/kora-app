@@ -25,6 +25,9 @@ export const SettingsView = () => {
     // Notifications
     const [notifications, setNotifications] = useState<any[]>([]);
 
+    // Cities
+    const [cities, setCities] = useState<any[]>([]);
+
     // Security
     const [securitySettings, setSecuritySettings] = useState({ twoFactorEnabled: false });
     const [twoFactorAction, setTwoFactorAction] = useState<'enable' | 'disable' | null>(null);
@@ -88,6 +91,15 @@ export const SettingsView = () => {
                     console.error('Failed to fetch payout history:', error);
                     setPayoutHistory([]);
                 }
+            } else if (activeTab === 'General') {
+                try {
+                    const cityRes = await OrganizerService.getCities();
+                    const list = (cityRes as any)?.data || cityRes || [];
+                    setCities(Array.isArray(list) ? list : []);
+                } catch (error) {
+                    console.error('Failed to fetch cities:', error);
+                    setCities([]);
+                }
             }
         } catch (error: any) {
             console.error("Failed to fetch settings", error);
@@ -96,6 +108,11 @@ export const SettingsView = () => {
             setLoading(false);
         }
     };
+
+    const defaultCityOptions = ['Addis Ababa', 'Adama', 'Hawassa', 'Bahir Dar', 'Mekelle', 'Dire Dawa'];
+    const cityOptions = cities.length > 0
+        ? cities.map((c: any) => c.name || c)
+        : defaultCityOptions;
 
     const handleSaveGeneral = async () => {
         setSaving(true);
@@ -480,7 +497,7 @@ export const SettingsView = () => {
                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>Profile Completion</p>
                                     </div>
                                 </div>
-                                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: '100%', height: '8px', background: 'var(--bg-hover)', borderRadius: '4px', overflow: 'hidden' }}>
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${profile?.completeness || 0}%` }}
@@ -542,7 +559,7 @@ export const SettingsView = () => {
                                         value={profile?.organizationName || ''}
                                         onChange={e => setProfile({ ...profile, organizationName: e.target.value })}
                                         disabled={profile?.status === 'APPROVED'}
-                                        style={{ width: '100%', background: profile?.status === 'APPROVED' ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: profile?.status === 'APPROVED' ? 'var(--text-muted)' : 'var(--text-main)', outline: 'none', cursor: profile?.status === 'APPROVED' ? 'not-allowed' : 'text' }}
+                                        style={{ width: '100%', background: profile?.status === 'APPROVED' ? 'var(--bg-hover)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: profile?.status === 'APPROVED' ? 'var(--text-muted)' : 'var(--text-main)', outline: 'none', cursor: profile?.status === 'APPROVED' ? 'not-allowed' : 'text' }}
                                     />
                                     {profile?.status === 'APPROVED' && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -592,7 +609,7 @@ export const SettingsView = () => {
                                     value={profile?.payoutDetails || ''}
                                     onChange={e => setProfile({ ...profile, payoutDetails: e.target.value })}
                                     disabled={profile?.status === 'APPROVED'}
-                                    style={{ width: '100%', background: profile?.status === 'APPROVED' ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: profile?.status === 'APPROVED' ? 'var(--text-muted)' : 'var(--text-main)', outline: 'none', cursor: profile?.status === 'APPROVED' ? 'not-allowed' : 'text' }}
+                                    style={{ width: '100%', background: profile?.status === 'APPROVED' ? 'var(--bg-hover)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: profile?.status === 'APPROVED' ? 'var(--text-muted)' : 'var(--text-main)', outline: 'none', cursor: profile?.status === 'APPROVED' ? 'not-allowed' : 'text' }}
                                 />
                                 {profile?.status === 'APPROVED' && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -616,7 +633,7 @@ export const SettingsView = () => {
                             <div style={{ marginBottom: '32px', padding: '24px', background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '14px' }}>
                                 <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '24px' }}>Security</h4>
 
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid var(--border)' }}>
                                     <div>
                                         <p style={{ fontWeight: 600, marginBottom: '4px' }}>Password</p>
                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Change your account password</p>
@@ -705,17 +722,15 @@ export const SettingsView = () => {
                                 <div style={{ marginBottom: '24px' }}>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Operating Cities (Select main)</label>
                                     <select
+                                        className="settings-select"
                                         value={profile?.operatingCities?.[0] || ''}
                                         onChange={e => setProfile({ ...profile, operatingCities: [e.target.value] })}
                                         style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'var(--text-main)', outline: 'none' }}
                                     >
                                         <option value="">Select City</option>
-                                        <option value="Addis Ababa">Addis Ababa</option>
-                                        <option value="Adama">Adama</option>
-                                        <option value="Hawassa">Hawassa</option>
-                                        <option value="Bahir Dar">Bahir Dar</option>
-                                        <option value="Mekelle">Mekelle</option>
-                                        <option value="Dire Dawa">Dire Dawa</option>
+                                        {cityOptions.map((city) => (
+                                            <option key={city} value={city}>{city}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
