@@ -50,7 +50,7 @@ import { RefundsView } from './components/RefundsView';
 const OrganizerDashboard = () => {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
-    const { language, setLanguage } = useLanguage();
+    const { language, setLanguage, t } = useLanguage();
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [editingEventId, setEditingEventId] = useState<number | null>(null);
     const [viewingStatsId, setViewingStatsId] = useState<number | null>(null);
@@ -160,20 +160,27 @@ const OrganizerDashboard = () => {
     };
 
     const navItems = [
-        { icon: Layout, label: 'Dashboard' },
-        { icon: Calendar, label: 'Events' },
-        { icon: Ticket, label: 'Tickets' },
-        { icon: DollarSign, label: 'Sales' },
-        { icon: BarChart3, label: 'Analytics' },
-        { icon: FileText, label: 'Reports' },
-        { icon: Users, label: 'Attendees' },
-        { icon: Megaphone, label: 'Promotions' },
-        { icon: RefreshCw, label: 'Refunds' },
-        { icon: Layout, label: 'Content' },
-        { icon: Maximize, label: 'Scanner' },
-        { icon: HelpCircle, label: 'Support' },
-        { icon: Settings, label: 'Settings' },
+        { icon: Layout, label: 'Dashboard', display: t('org.nav.dashboard', 'Dashboard') },
+        { icon: Calendar, label: 'Events', display: t('org.nav.events', 'Events') },
+        { icon: Ticket, label: 'Tickets', display: t('org.nav.tickets', 'Tickets') },
+        { icon: DollarSign, label: 'Sales', display: t('org.nav.sales', 'Sales') },
+        { icon: BarChart3, label: 'Analytics', display: t('org.nav.analytics', 'Analytics') },
+        { icon: FileText, label: 'Reports', display: t('org.nav.reports', 'Reports') },
+        { icon: Users, label: 'Attendees', display: t('org.nav.attendees', 'Attendees') },
+        { icon: Megaphone, label: 'Promotions', display: t('org.nav.promotions', 'Promotions') },
+        { icon: RefreshCw, label: 'Refunds', display: t('org.nav.refunds', 'Refunds') },
+        { icon: Layout, label: 'Content', display: t('org.nav.content', 'Content') },
+        { icon: Maximize, label: 'Scanner', display: t('org.nav.scanner', 'Scanner') },
+        { icon: HelpCircle, label: 'Support', display: t('org.nav.support', 'Support') },
+        { icon: Settings, label: 'Settings', display: t('org.nav.settings', 'Settings') },
     ];
+
+    const titleMap: Record<string, string> = {
+        Dashboard: t('org.title.dashboard', 'Dashboard Overview'),
+        CreateEvent: t('org.title.createEvent', 'Create New Event')
+    };
+
+    const activeTitle = titleMap[activeTab] || t(`org.title.${activeTab.toLowerCase()}`, activeTab);
 
     // If pending, show the invitation/waiting page instead of the full dashboard
     if (user?.status === 'PENDING') {
@@ -200,7 +207,7 @@ const OrganizerDashboard = () => {
                             transition: 'all 0.2s'
                         }}
                     >
-                        Sign Out
+                        {t('org.actions.signOut', 'Sign Out')}
                     </button>
                 </header>
 
@@ -242,8 +249,8 @@ const OrganizerDashboard = () => {
                         <BarChart3 color="#1D90F5" size={24} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 1.1 }}>Event Manager</h2>
-                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Organizer Console</p>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 1.1 }}>{t('org.brand.title', 'Event Manager')}</h2>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('org.brand.subtitle', 'Organizer Console')}</p>
                     </div>
                 </div>
 
@@ -255,7 +262,7 @@ const OrganizerDashboard = () => {
                             onClick={() => setActiveTab(item.label)}
                         >
                             <item.icon size={20} />
-                            {item.label}
+                            {item.display}
                         </div>
                     ))}
                 </nav>
@@ -266,7 +273,7 @@ const OrganizerDashboard = () => {
                         className="btn-blue"
                         style={{ width: '100%', padding: '14px', borderRadius: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                     >
-                        <PlusCircle size={20} /> Create Event
+                        <PlusCircle size={20} /> {t('org.actions.createEvent', 'Create Event')}
                     </button>
                     <button
                         onClick={logout}
@@ -286,7 +293,7 @@ const OrganizerDashboard = () => {
                             transition: 'all 0.2s'
                         }}
                     >
-                        <LogOut size={18} /> Sign Out
+                        <LogOut size={18} /> {t('org.actions.signOut', 'Sign Out')}
                     </button>
                 </div>
             </aside>
@@ -296,16 +303,14 @@ const OrganizerDashboard = () => {
                 <header className="top-header" style={{ padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
-                            {activeTab === 'Dashboard' ? 'Dashboard Overview' :
-                                activeTab === 'CreateEvent' ? 'Create New Event' :
-                                    activeTab}
+                            {activeTitle}
                         </h2>
                     </div>
 
                     <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                         <div className="search-pill" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-main)', padding: '10px 20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                             <Search size={18} color="var(--text-muted)" />
-                            <input type="text" placeholder={`Search...`} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', fontSize: '0.9rem' }} />
+                            <input type="text" placeholder={t('org.search', 'Search...')} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', fontSize: '0.9rem' }} />
                         </div>
 
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '16px' }}>

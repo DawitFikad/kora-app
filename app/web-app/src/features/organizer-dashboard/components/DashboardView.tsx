@@ -4,9 +4,11 @@ import { MoreHorizontal, Ticket, Building2, TrendingUp, Megaphone, Users, Downlo
 import { CreditCardIcon } from './CustomIcons';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
+import { useLanguage } from '../../../core/context/LanguageContext';
 
 export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
-    const [stats, setStats] = useState<any[]>([]);
+    const { t } = useLanguage();
+    const [overview, setOverview] = useState<any>(null);
     const [velocity, setVelocity] = useState<any[]>([]);
     const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
     const [alerts, setAlerts] = useState<any[]>([]);
@@ -17,16 +19,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
             try {
                 const response = await OrganizerService.getOverview();
                 const data = response.data;
-
-                const formattedStats = [
-                    { label: 'Gross Sales', value: `ETB ${data.grossVolume.toLocaleString()}`, change: 'Total ticket value', icon: DollarSign, bgColor: 'rgba(16, 185, 129, 0.1)', iconColor: '#10B981' },
-                    { label: 'Net Earnings', value: `ETB ${data.totalRevenue.toLocaleString()}`, change: 'After platform fees', icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
-                    { label: 'Tickets Sold', value: `${data.ticketsSold} / ${data.totalCapacity}`, change: `${data.totalCapacity > 0 ? ((data.ticketsSold / data.totalCapacity) * 100).toFixed(1) : 0}% sold`, icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
-                    { label: 'Checked In', value: data.totalCheckIns?.toLocaleString() || '0', change: `${data.totalCheckIns > 0 && data.ticketsSold > 0 ? ((data.totalCheckIns / data.ticketsSold) * 100).toFixed(1) : 0}% of sold`, icon: Users, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' },
-                    { label: 'Available Payout', value: `ETB ${data.nextPayout.toLocaleString()}`, change: 'Ready for withdrawal', icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },
-                ];
-
-                setStats(formattedStats);
+                setOverview(data);
                 setVelocity(data.salesVelocity);
                 setUpcomingEvents(data.upcomingEvents || []);
                 setAlerts(data.alerts || []);
@@ -59,7 +52,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <PageHeader title="Welcome back" subtitle="Here is what’s happening with your events today." />
+            <PageHeader title={t('org.dashboard.welcome', 'Welcome back')} subtitle={t('org.dashboard.subtitle', 'Here is what’s happening with your events today.')} />
 
 
 
@@ -100,7 +93,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                                     cursor: 'pointer'
                                 }}
                             >
-                                View
+                                {t('org.actions.view', 'View')}
                             </button>
                         </motion.div>
                     ))}
@@ -108,7 +101,15 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
             )}
 
             <div className="stats-grid">
-                {stats.map((stat, i) => (
+                {(
+                    overview ? [
+                        { label: t('org.dashboard.grossSales', 'Gross Sales'), value: `ETB ${overview.grossVolume.toLocaleString()}`, change: t('org.dashboard.totalTicketValue', 'Total ticket value'), icon: DollarSign, bgColor: 'rgba(16, 185, 129, 0.1)', iconColor: '#10B981' },
+                        { label: t('org.dashboard.netEarnings', 'Net Earnings'), value: `ETB ${overview.totalRevenue.toLocaleString()}`, change: t('org.dashboard.afterFees', 'After platform fees'), icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
+                        { label: t('org.dashboard.ticketsSold', 'Tickets Sold'), value: `${overview.ticketsSold} / ${overview.totalCapacity}`, change: `${overview.totalCapacity > 0 ? ((overview.ticketsSold / overview.totalCapacity) * 100).toFixed(1) : 0}${t('org.dashboard.percentSold', '% sold')}`, icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
+                        { label: t('org.dashboard.checkedIn', 'Checked In'), value: overview.totalCheckIns?.toLocaleString() || '0', change: `${overview.totalCheckIns > 0 && overview.ticketsSold > 0 ? ((overview.totalCheckIns / overview.ticketsSold) * 100).toFixed(1) : 0}${t('org.dashboard.percentOfSold', '% of sold')}`, icon: Users, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' },
+                        { label: t('org.dashboard.availablePayout', 'Available Payout'), value: `ETB ${overview.nextPayout.toLocaleString()}`, change: t('org.dashboard.readyForWithdrawal', 'Ready for withdrawal'), icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },
+                    ] : []
+                ).map((stat, i) => (
                     <motion.div key={i} className="stat-card" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
                         <MoreHorizontal size={20} color="#57606A" style={{ position: 'absolute', top: 24, right: 24, cursor: 'pointer' }} />
                         <div className="stat-icon-box" style={{ background: stat.bgColor, color: stat.iconColor }}>
@@ -129,11 +130,11 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Ticket Sales Velocity</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Last 7 days performance</p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('org.dashboard.velocitySubtitle', 'Last 7 days performance')}</p>
                         </div>
                         <div style={{ position: 'relative' }}>
-                            <select style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, appearance: 'none', cursor: 'pointer', paddingRight: '40px' }}>
-                                <option>Last 7 Days</option>
+                                <select style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, appearance: 'none', cursor: 'pointer', paddingRight: '40px' }}>
+                                    <option>{t('org.dashboard.last7Days', 'Last 7 Days')}</option>
                             </select>
                             <MoreHorizontal size={14} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%) rotate(90deg)' }} color="var(--text-muted)" />
                         </div>
@@ -157,7 +158,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
 
 
                 <div className="stat-card" style={{ padding: '32px' }}>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>Upcoming Events (7 Days)</h3>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>{t('org.dashboard.upcomingEvents', 'Upcoming Events (7 Days)')}</h3>
                     {upcomingEvents.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {upcomingEvents.map((e: any) => (
@@ -173,7 +174,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                                         </div>
                                         <div>
                                             <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>{e.title}</h4>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{e.sold} / {e.capacity} tickets sold</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{e.sold} / {e.capacity} {t('org.dashboard.ticketsSoldLabel', 'tickets sold')}</p>
                                         </div>
                                     </div>
                                     <ArrowRight size={16} color="var(--text-muted)" style={{ cursor: 'pointer' }} onClick={() => onNavigate?.('Events')} />
@@ -183,19 +184,19 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                     ) : (
                         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
                             <CalendarDays size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                            <p style={{ fontSize: '0.9rem' }}>No upcoming events.</p>
+                            <p style={{ fontSize: '0.9rem' }}>{t('org.dashboard.noUpcoming', 'No upcoming events.')}</p>
                         </div>
                     )}
                 </div>
 
                 <div className="stat-card" style={{ padding: '32px' }}>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>Quick Actions</h3>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>{t('org.dashboard.quickActions', 'Quick Actions')}</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                         {[
-                            { label: 'Promotions', icon: Megaphone },
-                            { label: 'Ticket Types', icon: Ticket },
-                            { label: 'Set Capacity', icon: Users },
-                            { label: 'Gen. Report', icon: Download },
+                            { label: 'Promotions', icon: Megaphone, display: t('org.dashboard.actions.promotions', 'Promotions') },
+                            { label: 'Ticket Types', icon: Ticket, display: t('org.dashboard.actions.ticketTypes', 'Ticket Types') },
+                            { label: 'Set Capacity', icon: Users, display: t('org.dashboard.actions.setCapacity', 'Set Capacity') },
+                            { label: 'Gen. Report', icon: Download, display: t('org.dashboard.actions.genReport', 'Gen. Report') },
                         ].map((action) => (
                             <div
                                 key={action.label}
@@ -208,7 +209,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                                 <div style={{ width: '42px', height: '42px', background: 'var(--bg-subtle)', borderRadius: '12px', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <action.icon size={20} color="#8E9BAE" />
                                 </div>
-                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>{action.label}</p>
+                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>{action.display}</p>
                             </div>
                         ))}
                     </div>

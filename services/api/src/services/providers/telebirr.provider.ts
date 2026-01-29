@@ -32,8 +32,16 @@ export class TelebirrProvider {
     private static formatPrivateKey(key: string): string {
         try {
             if (!key) return '';
-            let cleanKey = key.replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, '').replace(/-----END (RSA )?PRIVATE KEY-----/g, '').replace(/\s+/g, '');
+            const hasRsaHeader = key.includes('BEGIN RSA PRIVATE KEY');
+            const normalized = key.replace(/\\n/g, '\n');
+            let cleanKey = normalized
+                .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, '')
+                .replace(/-----END (RSA )?PRIVATE KEY-----/g, '')
+                .replace(/\s+/g, '');
             const chunked = cleanKey.match(/.{1,64}/g)?.join('\n');
+            if (hasRsaHeader) {
+                return `-----BEGIN RSA PRIVATE KEY-----\n${chunked}\n-----END RSA PRIVATE KEY-----`;
+            }
             return `-----BEGIN PRIVATE KEY-----\n${chunked}\n-----END PRIVATE KEY-----`;
         } catch (error) {
             return key;
@@ -52,42 +60,25 @@ export class TelebirrProvider {
 
     private static generateSignature(data: any): string {
         // Exclude fields not participating in signature
-        const excludeFields = [
-            "sign",
-            "sign_type",
-            "header",
-            "refund_info",
-            "openType",
-            "raw_request",
-            "biz_content",
-        ];
+        const excludeFields = ["sign", "sign_type", "header", "refund_info", "openType", "raw_request"];
 
-        let fields: string[] = [];
-        let fieldMap: any = {};
+        const fieldMap: Record<string, string> = {};
 
-        // Process top-level fields
-        for (let key in data) {
+        for (const key of Object.keys(data)) {
             if (excludeFields.includes(key)) continue;
-            fields.push(key);
-            fieldMap[key] = data[key];
-        }
 
-        // Process biz_content fields
-        // The sample code iterates separately over biz_content and adds them to the same map
-        if (data.biz_content) {
-            const biz = typeof data.biz_content === 'string' ? JSON.parse(data.biz_content) : data.biz_content;
-            for (let key in biz) {
-                if (excludeFields.includes(key)) continue;
-                fields.push(key);
-                fieldMap[key] = biz[key];
+            if (key === 'biz_content') {
+                const biz = typeof data.biz_content === 'string'
+                    ? data.biz_content
+                    : this.stableStringify(data.biz_content);
+                fieldMap[key] = biz;
+            } else {
+                fieldMap[key] = `${data[key]}`;
             }
         }
 
-        // Sort by ASCII
-        fields.sort();
-
-        const signStrList = fields.map(key => `${key}=${fieldMap[key]}`);
-        const signString = signStrList.join('&');
+        const fields = Object.keys(fieldMap).sort();
+        const signString = fields.map((key) => `${key}=${fieldMap[key]}`).join('&');
 
         logger.info({ signString }, 'Constructed Telebirr Signature String');
 
@@ -97,9 +88,19 @@ export class TelebirrProvider {
 
         return signer.sign({
             key: this.formatPrivateKey(env.teleBirrPrivateKey),
-            padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-            saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST
+            padding: crypto.constants.RSA_PKCS1_PADDING
         }, 'base64');
+    }
+
+    private static stableStringify(obj: any): string {
+        if (obj === null || obj === undefined) return '';
+        if (typeof obj !== 'object') return JSON.stringify(obj);
+        if (Array.isArray(obj)) {
+            return `[${obj.map((v) => this.stableStringify(v)).join(',')}]`;
+        }
+        const keys = Object.keys(obj).sort();
+        const entries = keys.map((k) => `"${k}":${this.stableStringify(obj[k])}`);
+        return `{${entries.join(',')}}`;
     }
 
     private static async applyFabricToken(): Promise<string> {
@@ -138,29 +139,26 @@ export class TelebirrProvider {
 
             // Updated bizContent to match sample structure + necessary fields
             const bizContent = {
-                appid: env.teleBirrMerchantAppId,
-                merch_code: env.teleBirrShortCode,
-                merch_order_id: params.outTradeNo.replace(/[^A-Za-z0-9]/g, ''),
-                trade_type: 'InApp',
-                title: params.subject.replace(/[~`!#$%^*()\-_+=\|/<>?;:\"\[\]{}\\\&]/g, ''),
-                total_amount: params.amount.toString(),
-                trans_currency: 'ETB',
-                timeout_express: '120m',
-                payee_identifier: env.teleBirrShortCode,
-                payee_identifier_type: '04',
-                payee_type: '5000',
-                // notify_url: notifyUrl, // Sample has this commented out, but we likely need it? Keeping it out to match sample for now if sample works without it? 
-                // Wait, notify_url is crucial for callbacks. I will include it if the sample implies it elsewhere, but sample DOES NOT include it in biz_content. 
-                // Let's comment it out to strict match sample first.
-                // notify_url: notifyUrl, 
+                out_trade_no: params.outTradeNo.replace(/[^A-Za-z0-9]/g, ''),
+                subject: params.subject.replace(/[~`!#$%^*()\-_+=\|/<>?;:\"\[\]{}\\\&]/g, ''),
+                total_amount: params.amount.toFixed(2),
+                short_code: env.teleBirrShortCode,
+                notify_url: {
+                    notify_url: notifyUrl,
+                    notify_type: 'URL'
+                },
+                return_url: params.returnUrl,
+                timeout_express: '120m'
             };
+
+            const bizContentStr = this.stableStringify(bizContent);
 
             // Note: Sample does NOT include 'notify_url' in biz_content in createOrderService.js
             // But usually APIs need it. I'll omit it to match sample exactly.
 
             const requestData: any = {
-                // appid: env.teleBirrMerchantAppId, // REMOVED from top level to match sample
-                biz_content: bizContent,
+                appid: env.teleBirrMerchantAppId,
+                biz_content: bizContentStr,
                 nonce_str: this.createNonceStr(),
                 timestamp: Math.floor(Date.now() / 1000).toString(),
                 method: 'payment.preorder',
@@ -190,7 +188,14 @@ export class TelebirrProvider {
 
             logger.info({ telebirrResponse: response.data }, 'Telebirr PreOrder Response');
 
-            const bizResponse = response.data.biz_content;
+            const bizResponse = response.data.biz_content || response.data.data;
+            if (bizResponse?.toPayUrl || bizResponse?.to_pay_url) {
+                const checkoutUrl = bizResponse.toPayUrl || bizResponse.to_pay_url;
+                const prepayId = bizResponse.prepayId || bizResponse.prepay_id || '';
+                logger.info({ checkoutUrl, prepayId }, 'Telebirr Checkout URL Generated');
+                return { checkoutUrl, prepayId };
+            }
+
             if (bizResponse?.prepay_id || bizResponse?.prepayId) {
                 const prepayId = bizResponse.prepay_id || bizResponse.prepayId;
 
@@ -245,13 +250,15 @@ export class TelebirrProvider {
             const sanitizedOrderId = outTradeNo.replace(/[^A-Za-z0-9]/g, '');
 
             const bizContent = {
-                appid: env.teleBirrMerchantAppId,
-                merch_code: env.teleBirrShortCode,
-                merch_order_id: sanitizedOrderId
+                out_trade_no: sanitizedOrderId,
+                short_code: env.teleBirrShortCode
             };
 
+            const bizContentStr = this.stableStringify(bizContent);
+
             const requestData: any = {
-                biz_content: bizContent, // appid removed from top level
+                appid: env.teleBirrMerchantAppId,
+                biz_content: bizContentStr,
                 nonce_str: this.createNonceStr(),
                 timestamp: Math.floor(Date.now() / 1000).toString(),
                 method: 'payment.queryorder',
