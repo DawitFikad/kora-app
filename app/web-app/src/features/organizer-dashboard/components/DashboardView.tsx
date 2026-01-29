@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MoreHorizontal, Ticket, Building2, TrendingUp, Megaphone, Users, Download, Loader2, DollarSign, AlertTriangle, CalendarDays, ArrowRight } from 'lucide-react';
-import { CreditCardIcon } from './CustomIcons';
+import { MoreHorizontal, Ticket, Building2, Megaphone, Loader2, DollarSign, AlertTriangle, CalendarDays, ArrowRight, Clock } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useLanguage } from '../../../core/context/LanguageContext';
@@ -9,6 +8,7 @@ import { useLanguage } from '../../../core/context/LanguageContext';
 export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
     const { t } = useLanguage();
     const [overview, setOverview] = useState<any>(null);
+    const [salesTrend, setSalesTrend] = useState<any[]>([]);
     const [velocity, setVelocity] = useState<any[]>([]);
     const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
     const [alerts, setAlerts] = useState<any[]>([]);
@@ -17,11 +17,15 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await OrganizerService.getOverview();
-                const data = response.data;
+                const [overviewResponse, financialsResponse] = await Promise.all([
+                    OrganizerService.getOverview(),
+                    OrganizerService.getFinancials().catch(() => ({ data: { salesTrend: [] } }))
+                ]);
+                const data = overviewResponse.data;
                 setOverview(data);
-                setVelocity(data.salesVelocity);
+                setVelocity(data.salesVelocity || []);
                 setUpcomingEvents(data.upcomingEvents || []);
+                setSalesTrend(financialsResponse.data?.salesTrend || []);
                 setAlerts(data.alerts || []);
             } catch (error) {
                 console.error("Failed to fetch dashboard stats", error);
@@ -35,12 +39,71 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
 
     const handleQuickAction = (action: string) => {
         switch (action) {
-            case 'Promotions': onNavigate?.('Promotions'); break;
-            case 'Ticket Types': onNavigate?.('Tickets'); break;
-            case 'Set Capacity': onNavigate?.('Tickets'); break;
-            case 'Gen. Report': onNavigate?.('Payments'); break;
+            case 'Create Event': onNavigate?.('CreateEvent'); break;
+            case 'Scan Tickets': onNavigate?.('Scanner'); break;
+            case 'Promote Event': onNavigate?.('Promotions'); break;
         }
     };
+
+    const todayKey = useMemo(() => new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), []);
+
+    const todaySales = useMemo(() => {
+        if (!salesTrend || salesTrend.length === 0) return 0;
+        const today = salesTrend.find((d: any) => d.date === todayKey);
+        return today?.revenue || 0;
+    }, [salesTrend, todayKey]);
+
+    const upcomingCountdown = useMemo(() => {
+        if (!upcomingEvents || upcomingEvents.length === 0) return null;
+        const next = upcomingEvents[0];
+        const now = new Date();
+        const eventDate = new Date(next.date);
+        const diffMs = eventDate.getTime() - now.getTime();
+        if (diffMs <= 0) return { label: t('org.dashboard.eventLive', 'Live today'), event: next };
+        const totalMinutes = Math.floor(diffMs / (1000 * 60));
+        const days = Math.floor(totalMinutes / (60 * 24));
+        const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+        const minutes = totalMinutes % 60;
+        return { days, hours, minutes, event: next };
+    }, [upcomingEvents, t]);
+
+    const localizedAlerts = useMemo(() => {
+        const baseAlerts = alerts.map((alert: any) => {
+            const message = alert?.message || '';
+            if (message.match(/pending approval/i)) {
+                const countMatch = message.match(/(\d+)/);
+                const count = countMatch ? countMatch[1] : '0';
+                return { ...alert, message: t('org.dashboard.alertPendingApproval', '{count} events pending approval').replace('{count}', count) };
+            }
+            const lowCapMatch = message.match(/Low capacity:\s*(.+)\s+is\s+(\d+)%/i);
+            if (lowCapMatch) {
+                const [, title, percent] = lowCapMatch;
+                return {
+                    ...alert,
+                    message: t('org.dashboard.alertLowInventory', 'Low ticket inventory: {title} is {percent}% sold')
+                        .replace('{title}', title)
+                        .replace('{percent}', percent)
+                };
+            }
+            return alert;
+        });
+
+        if (upcomingCountdown && (upcomingCountdown as any).days !== undefined) {
+            const soonDays = (upcomingCountdown as any).days;
+            if (soonDays <= 3) {
+                const nextEvent = (upcomingCountdown as any).event;
+                baseAlerts.unshift({
+                    type: 'warning',
+                    action: 'Events',
+                    message: t('org.dashboard.alertEventSoon', 'Event starting in {days} days: {title}')
+                        .replace('{days}', String(soonDays))
+                        .replace('{title}', nextEvent?.title || t('org.dashboard.unknownEvent', 'Event'))
+                });
+            }
+        }
+
+        return baseAlerts;
+    }, [alerts, upcomingCountdown, t]);
 
     if (loading) {
         return (
@@ -57,9 +120,9 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
 
 
             {/* Alerts Section */}
-            {alerts.length > 0 && (
+            {localizedAlerts.length > 0 && (
                 <div style={{ marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {alerts.map((alert: any, i: number) => (
+                    {localizedAlerts.map((alert: any, i: number) => (
                         <motion.div
                             key={i}
                             initial={{ opacity: 0, x: -20 }}
@@ -103,11 +166,11 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
             <div className="stats-grid">
                 {(
                     overview ? [
-                        { label: t('org.dashboard.grossSales', 'Gross Sales'), value: `ETB ${overview.grossVolume.toLocaleString()}`, change: t('org.dashboard.totalTicketValue', 'Total ticket value'), icon: DollarSign, bgColor: 'rgba(16, 185, 129, 0.1)', iconColor: '#10B981' },
-                        { label: t('org.dashboard.netEarnings', 'Net Earnings'), value: `ETB ${overview.totalRevenue.toLocaleString()}`, change: t('org.dashboard.afterFees', 'After platform fees'), icon: CreditCardIcon, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
-                        { label: t('org.dashboard.ticketsSold', 'Tickets Sold'), value: `${overview.ticketsSold} / ${overview.totalCapacity}`, change: `${overview.totalCapacity > 0 ? ((overview.ticketsSold / overview.totalCapacity) * 100).toFixed(1) : 0}${t('org.dashboard.percentSold', '% sold')}`, icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
-                        { label: t('org.dashboard.checkedIn', 'Checked In'), value: overview.totalCheckIns?.toLocaleString() || '0', change: `${overview.totalCheckIns > 0 && overview.ticketsSold > 0 ? ((overview.totalCheckIns / overview.ticketsSold) * 100).toFixed(1) : 0}${t('org.dashboard.percentOfSold', '% of sold')}`, icon: Users, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' },
-                        { label: t('org.dashboard.availablePayout', 'Available Payout'), value: `ETB ${overview.nextPayout.toLocaleString()}`, change: t('org.dashboard.readyForWithdrawal', 'Ready for withdrawal'), icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },
+                        { label: t('org.dashboard.todaySales', "Today's Sales"), value: `ETB ${Number(todaySales || 0).toLocaleString()}`, change: t('org.dashboard.todaySalesHint', 'Today'), icon: DollarSign, bgColor: 'rgba(16, 185, 129, 0.1)', iconColor: '#10B981' },
+                        { label: t('org.dashboard.totalTicketsSold', 'Total Tickets Sold'), value: `${Number(overview.ticketsSold || 0).toLocaleString()} / ${Number(overview.totalCapacity || 0).toLocaleString()}`, change: t('org.dashboard.totalTicketsHint', 'All events'), icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
+                        { label: t('org.dashboard.activeEvents', 'Active Events'), value: Number(overview.activeEvents || 0).toLocaleString(), change: t('org.dashboard.activeEventsHint', 'Upcoming & live'), icon: CalendarDays, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
+                        { label: t('org.dashboard.upcomingCountdown', 'Upcoming Event Countdown'), value: upcomingCountdown ? (upcomingCountdown as any).label || `${(upcomingCountdown as any).days}d ${(upcomingCountdown as any).hours}h` : t('org.dashboard.noUpcomingShort', 'No upcoming events'), change: upcomingCountdown?.event?.title || t('org.dashboard.nextEvent', 'Next event'), icon: Clock, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' },
+                        { label: t('org.dashboard.pendingPayout', 'Pending Payout'), value: `ETB ${Number(overview.nextPayout || 0).toLocaleString()}`, change: t('org.dashboard.pendingPayoutHint', 'Pending payout amount'), icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },
                     ] : []
                 ).map((stat, i) => (
                     <motion.div key={i} className="stat-card" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
@@ -118,7 +181,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>{stat.label}</p>
                         <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '10px' }}>{stat.value}</h3>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: i === 3 ? 'var(--text-muted)' : '#10B981' }}>
-                            {i !== 3 && <TrendingUp size={14} />}
                             {stat.change}
                         </div>
                     </motion.div>
@@ -129,7 +191,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                 <div className="stat-card" style={{ padding: '32px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <div>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Ticket Sales Velocity</h3>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>{t('org.dashboard.salesTrend', '7-Day Sales Trend')}</h3>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('org.dashboard.velocitySubtitle', 'Last 7 days performance')}</p>
                         </div>
                         <div style={{ position: 'relative' }}>
@@ -193,10 +255,9 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>{t('org.dashboard.quickActions', 'Quick Actions')}</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                         {[
-                            { label: 'Promotions', icon: Megaphone, display: t('org.dashboard.actions.promotions', 'Promotions') },
-                            { label: 'Ticket Types', icon: Ticket, display: t('org.dashboard.actions.ticketTypes', 'Ticket Types') },
-                            { label: 'Set Capacity', icon: Users, display: t('org.dashboard.actions.setCapacity', 'Set Capacity') },
-                            { label: 'Gen. Report', icon: Download, display: t('org.dashboard.actions.genReport', 'Gen. Report') },
+                            { label: 'Create Event', icon: CalendarDays, display: t('org.dashboard.actions.createEvent', 'Create Event') },
+                            { label: 'Scan Tickets', icon: Ticket, display: t('org.dashboard.actions.scanTickets', 'Scan Tickets') },
+                            { label: 'Promote Event', icon: Megaphone, display: t('org.dashboard.actions.promoteEvent', 'Promote Event') }
                         ].map((action) => (
                             <div
                                 key={action.label}
