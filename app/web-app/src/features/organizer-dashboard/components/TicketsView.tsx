@@ -11,6 +11,8 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
     const [savingTierId, setSavingTierId] = useState<number | null>(null);
     const [capacityErrors, setCapacityErrors] = useState<Record<number, string>>({});
     const [editingTierId, setEditingTierId] = useState<number | null>(null);
+    const [page, setPage] = useState(1);
+    const pageSize = 6;
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -26,14 +28,6 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
 
         fetchStats();
     }, []);
-
-    if (loading) {
-        return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                <Loader2 className="animate-spin" size={48} color="var(--bg-active)" />
-            </div>
-        );
-    }
 
     const inventoryPercent = stats?.totalCapacity > 0
         ? (stats.totalSold / stats.totalCapacity) * 100
@@ -53,6 +47,37 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
             .sort((a, b) => b.capacity - a.capacity);
     }, [stats]);
 
+    const ticketSalesBuckets = useMemo(() => {
+        const tiers = stats?.tiers || [];
+        let mostSold = 0;
+        let medium = 0;
+        let notStarted = 0;
+
+        tiers.forEach((tier: any) => {
+            const capacity = Number(tier.capacity || 0);
+            const sold = Number(tier.sold || 0);
+            const ratio = capacity > 0 ? sold / capacity : 0;
+
+            if (sold <= 0) {
+                notStarted += 1;
+            } else if (ratio >= 0.8) {
+                mostSold += 1;
+            } else {
+                medium += 1;
+            }
+        });
+
+        return { mostSold, medium, notStarted };
+    }, [stats]);
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Loader2 className="animate-spin" size={48} color="var(--bg-active)" />
+            </div>
+        );
+    }
+
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const filteredTiers = (stats?.tiers || []).filter((tier: any) => {
         if (!normalizedQuery) return true;
@@ -60,6 +85,10 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
         const eventName = (tier.eventName || '').toLowerCase();
         return name.includes(normalizedQuery) || eventName.includes(normalizedQuery);
     });
+
+    const totalPages = Math.max(1, Math.ceil(filteredTiers.length / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const pagedTiers = filteredTiers.slice((safePage - 1) * pageSize, safePage * pageSize);
 
     const getTierStatus = (sold: number, capacity: number) => {
         if (sold >= capacity) return 'Sold Out';
@@ -120,7 +149,7 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {filteredTiers.map((tier: any, i: number) => {
+                        {pagedTiers.map((tier: any, i: number) => {
                             const colors: Record<string, string> = {
                                 'Sold Out': '#EF4444',
                                 'Active': '#10B981',
@@ -199,6 +228,28 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
                             </div>
                         )}
                     </div>
+
+                    {filteredTiers.length > pageSize && (
+                        <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={safePage === 1}
+                                style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', opacity: safePage === 1 ? 0.5 : 1 }}
+                            >
+                                Previous
+                            </button>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                                Page {safePage} of {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={safePage === totalPages}
+                                style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', opacity: safePage === totalPages ? 0.5 : 1 }}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="stat-card" style={{ padding: '32px' }}>
@@ -229,16 +280,34 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
                         {ticketTypeTotals.length > 0 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, letterSpacing: '0.08em' }}>TICKET TYPES</p>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                     {ticketTypeTotals.map((type) => (
-                                        <div key={type.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{type.name}</span>
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{type.capacity} total</span>
+                                        <div key={type.name} style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                                            <p style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '6px' }}>{type.name}</p>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{type.capacity} total</p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, letterSpacing: '0.08em' }}>SALES STATUS</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'rgba(16, 185, 129, 0.08)' }}>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>MOST SOLD</p>
+                                    <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10B981' }}>{ticketSalesBuckets.mostSold}</p>
+                                </div>
+                                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'rgba(251, 191, 36, 0.08)' }}>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>MEDIUM</p>
+                                    <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#FBBF24' }}>{ticketSalesBuckets.medium}</p>
+                                </div>
+                                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'rgba(239, 68, 68, 0.08)' }}>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>NOT STARTED</p>
+                                    <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#EF4444' }}>{ticketSalesBuckets.notStarted}</p>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                 </div>
