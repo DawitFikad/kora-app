@@ -348,6 +348,9 @@ export class EventOperationsService {
             })
         ]);
 
+        const eventTitleMap = new Map<number, string>(events.map((e: any) => [e.id, e.title]));
+        const organizerEventIds = new Set(events.map((e: any) => e.id));
+
         // Calculate gross sales and fees
         const grossSales = await prisma.financialTransaction.aggregate({
             where: { event: { organizerId }, type: "TICKET_PURCHASE" },
@@ -447,6 +450,82 @@ export class EventOperationsService {
         // Calculate average ticket price
         const averageTicketPrice = totalTicketsSold > 0 ? totalRevenue / totalTicketsSold : 0;
 
+        const salesTable = transactions
+            .filter(t => t.type === "TICKET_PURCHASE")
+            .map(t => {
+                const metadata = (t.purchase?.metadata || {}) as any;
+                const eventId = t.eventId || metadata.eventId || null;
+                const eventTitle = t.event?.title || (eventId ? eventTitleMap.get(eventId) : undefined) || "Unknown Event";
+                const customer = t.purchase?.user?.profile?.fullName || t.purchase?.user?.phoneNumber || "System";
+                const paymentMethod = t.purchase?.paymentMethod || metadata.paymentMethod || "CHAPA";
+                const channel = metadata?.promoCodeId
+                    ? "Promo"
+                    : (metadata?.referralCode || metadata?.referralId)
+                        ? "Referral"
+                        : "Direct";
+                const status = t.purchase?.status === "SUCCESS"
+                    ? "Completed"
+                    : t.purchase?.status === "FAILED"
+                        ? "Failed"
+                        : t.status === "RELEASED"
+                            ? "Completed"
+                            : "Processing";
+
+                return {
+                    id: `#ORD-${t.id}`,
+                    eventId,
+                    eventTitle,
+                    customer,
+                    date: t.createdAt,
+                    amount: Number(t.amount),
+                    paymentMethod,
+                    channel,
+                    status
+                };
+            });
+
+        const channelMap = new Map<string, { revenue: number; count: number }>();
+        salesTable.forEach(row => {
+            if (!channelMap.has(row.channel)) {
+                channelMap.set(row.channel, { revenue: 0, count: 0 });
+            }
+            const entry = channelMap.get(row.channel)!;
+            entry.revenue += row.amount;
+            entry.count += 1;
+        });
+
+        const salesByChannel = Array.from(channelMap.entries()).map(([name, data]) => ({
+            name,
+            revenue: data.revenue,
+            count: data.count
+        }));
+
+        const failedPurchases = await prisma.purchase.findMany({
+            where: { status: { in: ["FAILED", "CANCELLED"] } },
+            include: { user: { include: { profile: true } } },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+        });
+
+        const failedPayments = failedPurchases
+            .map(p => {
+                const metadata = (p.metadata || {}) as any;
+                const eventId = metadata.eventId;
+                const eventTitle = eventId ? eventTitleMap.get(eventId) : undefined;
+                return {
+                    id: `#PAY-${p.id}`,
+                    eventId: eventId || null,
+                    eventTitle: eventTitle || "Unknown Event",
+                    customer: p.user?.profile?.fullName || p.user?.phoneNumber || "System",
+                    date: p.createdAt,
+                    amount: Number(p.totalAmount),
+                    paymentMethod: p.paymentMethod || "CHAPA",
+                    reason: p.failureReason || p.status,
+                    status: p.status
+                };
+            })
+            .filter(p => (p.eventId ? organizerEventIds.has(p.eventId) : false));
+
         return {
             totalRevenue,
             grossSales: Number(grossSales._sum.amount || 0),
@@ -461,11 +540,14 @@ export class EventOperationsService {
             topEvents,
             transactions: transactions.map(t => ({
                 id: `#ORD-${t.id}`,
-                name: t.purchase?.user.profile?.fullName || t.purchase?.user.phoneNumber || "System",
+                name: t.purchase?.user?.profile?.fullName || t.purchase?.user?.phoneNumber || "System",
                 date: t.createdAt,
                 amount: Number(t.amount),
                 status: t.status === "RELEASED" ? "Completed" : "Processing"
-            }))
+            })),
+            salesTable,
+            salesByChannel,
+            failedPayments
         };
     }
 
