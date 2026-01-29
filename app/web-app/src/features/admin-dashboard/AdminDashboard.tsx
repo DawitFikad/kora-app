@@ -18,7 +18,8 @@ import {
     Globe,
     Sun,
     Moon,
-    ClipboardList
+    ClipboardList,
+    Crown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,9 +37,10 @@ import { PlatformControlView } from './components/PlatformControlView';
 
 import { TeamManagementView } from './components/TeamManagementView';
 import { ActivityLogView } from './components/ActivityLogView';
+import { FeatureRequestsView } from './components/FeatureRequestsView';
 
 // --- Types ---
-export type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Commissions' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud Monitoring' | 'Content' | 'Invite Admin' | 'Settings' | 'Platform Health' | 'Audit Logs';
+export type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Feature Requests' | 'Commissions' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud Monitoring' | 'Content' | 'Invite Admin' | 'Settings' | 'Platform Health' | 'Audit Logs';
 
 // --- Main Admin Dashboard Component ---
 
@@ -100,10 +102,13 @@ const AdminDashboard = () => {
         }
     };
 
+    const featureRequestCount = notifications.filter(n => n.metadata?.type === 'FEATURE_REQUEST').length;
+
     const navItems = [
         { icon: Layout, label: 'Dashboard' as AdminTab, display: t('admin.dashboard'), key: 'dashboard' },
         { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers'), key: 'organizers' },
         { icon: Calendar, label: 'Event Approvals' as AdminTab, count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events'), key: 'events' },
+        { icon: Crown, label: 'Feature Requests' as AdminTab, count: featureRequestCount > 0 ? featureRequestCount : undefined, display: t('admin.featureRequests', 'Feature Requests'), key: 'feature_requests' },
         { icon: BarChart3, label: 'Commissions' as AdminTab, display: t('admin.commissions'), key: 'commissions' },
         { icon: DollarSign, label: 'GMV' as AdminTab, display: t('admin.gmv', 'GMV Tracking'), key: 'gmv' },
         { icon: DollarSign, label: 'Platform Revenue' as AdminTab, display: t('admin.revenue', 'Platform Revenue'), key: 'revenue' },
@@ -124,6 +129,7 @@ const AdminDashboard = () => {
             case 'Dashboard': return <AdminOverview setActiveTab={setActiveTab} />;
             case 'Organizer Approvals': return <OrganizerApprovalsView />;
             case 'Event Approvals': return <EventApprovalsView />;
+            case 'Feature Requests': return <FeatureRequestsView />;
             case 'Fraud Monitoring': return <FraudMonitoringView />;
             case 'Commissions': return <CommissionsView />;
             case 'GMV Tracking': return <AnalyticsView view="GMV" />;
@@ -170,6 +176,7 @@ const AdminDashboard = () => {
                             items: [
                                 { icon: Users, label: 'Organizer Approvals', count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers') },
                                 { icon: Calendar, label: 'Event Approvals', count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events') },
+                                { icon: Crown, label: 'Feature Requests', count: featureRequestCount > 0 ? featureRequestCount : undefined, display: t('admin.featureRequests', 'Feature Requests') },
                                 { icon: BarChart3, label: 'Commissions', display: t('admin.commissions') }
                             ]
                         },

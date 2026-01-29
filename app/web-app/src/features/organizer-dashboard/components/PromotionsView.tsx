@@ -143,6 +143,12 @@ export const PromotionsView = ({ searchQuery = '' }: { searchQuery?: string }) =
                 }
             />
 
+            <div className="stat-card" style={{ padding: '16px 20px', marginBottom: '24px', border: '1px solid rgba(251, 191, 36, 0.25)', background: 'rgba(251, 191, 36, 0.06)' }}>
+                <p style={{ fontSize: '0.9rem', fontWeight: 700 }}>
+                    Request to Feature: submit a request and the admin will review and respond.
+                </p>
+            </div>
+
             {showForm && (
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="stat-card" style={{ padding: '32px', marginBottom: '32px', border: '1px solid var(--bg-active)' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>New Promo Code</h3>
