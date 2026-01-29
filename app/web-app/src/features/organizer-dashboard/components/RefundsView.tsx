@@ -201,6 +201,7 @@ export const RefundsView = () => {
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-muted)' }}>Reason</label>
                                         <select
+                                            className="refunds-select"
                                             required
                                             value={refundForm.reason}
                                             onChange={e => setRefundForm({ ...refundForm, reason: e.target.value })}
@@ -218,6 +219,7 @@ export const RefundsView = () => {
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-muted)' }}>Refund Type</label>
                                         <select
+                                            className="refunds-select"
                                             value={refundForm.refundType}
                                             onChange={e => setRefundForm({ ...refundForm, refundType: e.target.value, amount: '' })}
                                             style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)' }}
@@ -398,6 +400,7 @@ export const RefundsView = () => {
                             <div style={{ marginBottom: '24px' }}>
                                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-muted)' }}>Select Event to Cancel</label>
                                 <select
+                                    className="refunds-select"
                                     value={selectedEventId}
                                     onChange={(e) => handleImpactAnalysis(e.target.value)}
                                     style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)', fontSize: '1rem' }}

@@ -75,6 +75,39 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Refunds dropdown theming */
+.refunds-select {
+    color: var(--text-main);
+    background-color: var(--bg-subtle);
+}
+
+.refunds-select option {
+    color: var(--text-main);
+    background-color: var(--bg-card);
+}
+
+/* Scanner dropdown theming */
+.scanner-select {
+    color: var(--text-main);
+    background-color: var(--bg-subtle);
+}
+
+.scanner-select option {
+    color: var(--text-main);
+    background-color: var(--bg-card);
+}
+
+/* Support dropdown theming */
+.support-select {
+    color: var(--text-main);
+    background-color: var(--bg-subtle);
+}
+
+.support-select option {
+    color: var(--text-main);
+    background-color: var(--bg-card);
+}
+
 .container {
     max-width: 1280px;
     margin: 0 auto;

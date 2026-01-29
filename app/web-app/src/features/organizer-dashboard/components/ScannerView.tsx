@@ -363,6 +363,7 @@ export const ScannerView = () => {
                         <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Event</label>
                             <select
+                                className="scanner-select"
                                 value={selectedEventId}
                                 onChange={(e) => setSelectedEventId(e.target.value)}
                                 style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)' }}
@@ -376,6 +377,7 @@ export const ScannerView = () => {
                         <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Gate</label>
                             <select
+                                className="scanner-select"
                                 value={gateId}
                                 onChange={(e) => setGateId(e.target.value)}
                                 style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)' }}

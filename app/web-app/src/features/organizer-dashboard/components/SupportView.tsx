@@ -97,6 +97,7 @@ export const SupportView = () => {
                         <div style={{ flex: 1 }}>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Event (optional)</label>
                             <select
+                                className="support-select"
                                 value={selectedEventId}
                                 onChange={(e) => setSelectedEventId(e.target.value)}
                                 style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}

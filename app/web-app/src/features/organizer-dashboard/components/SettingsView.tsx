@@ -27,6 +27,10 @@ export const SettingsView = () => {
 
     // Security
     const [securitySettings, setSecuritySettings] = useState({ twoFactorEnabled: false });
+    const [twoFactorAction, setTwoFactorAction] = useState<'enable' | 'disable' | null>(null);
+    const [twoFactorOtp, setTwoFactorOtp] = useState('');
+    const [twoFactorStep, setTwoFactorStep] = useState<'idle' | 'verify'>('idle');
+    const [twoFactorPending, setTwoFactorPending] = useState(false);
 
     // Billing
     const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
@@ -55,11 +59,9 @@ export const SettingsView = () => {
             // Always fetch general settings
             const settingsRes = await OrganizerService.getSettings();
             // API interceptor unwraps response.data, check for success wrapper
-            if (settingsRes && (settingsRes as any).success) {
-                setProfile((settingsRes as any).data);
-            } else {
-                setProfile(settingsRes);
-            }
+            const profileData = (settingsRes && (settingsRes as any).success) ? (settingsRes as any).data : settingsRes;
+            setProfile(profileData);
+            setSecuritySettings({ twoFactorEnabled: !!profileData?.defaultConfig?.twoFactorEnabled });
 
             // Fetch tab-specific data
             if (activeTab === 'Payout Methods') {
@@ -129,6 +131,43 @@ export const SettingsView = () => {
             toast.error(error?.error || "Error saving settings.");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleRequestTwoFactor = async () => {
+        try {
+            const action: 'enable' | 'disable' = securitySettings.twoFactorEnabled ? 'disable' : 'enable';
+            setTwoFactorPending(true);
+            await OrganizerService.requestTwoFactorOtp({ action });
+            setTwoFactorAction(action);
+            setTwoFactorStep('verify');
+            toast.success('Verification code sent to your phone.');
+        } catch (error: any) {
+            toast.error(error?.message || 'Failed to send verification code.');
+        } finally {
+            setTwoFactorPending(false);
+        }
+    };
+
+    const handleVerifyTwoFactor = async () => {
+        if (!twoFactorAction || !twoFactorOtp) return;
+        try {
+            setTwoFactorPending(true);
+            const res: any = await OrganizerService.verifyTwoFactorOtp({ action: twoFactorAction, otp: twoFactorOtp });
+            const enabled = !!res?.data?.twoFactorEnabled;
+            setSecuritySettings({ twoFactorEnabled: enabled });
+            setProfile((prev: any) => ({
+                ...prev,
+                defaultConfig: { ...(prev?.defaultConfig || {}), twoFactorEnabled: enabled }
+            }));
+            setTwoFactorStep('idle');
+            setTwoFactorOtp('');
+            setTwoFactorAction(null);
+            toast.success(enabled ? 'Two-factor authentication enabled.' : 'Two-factor authentication disabled.');
+        } catch (error: any) {
+            toast.error(error?.message || 'Invalid code. Please try again.');
+        } finally {
+            setTwoFactorPending(false);
         }
     };
 
@@ -1055,7 +1094,8 @@ export const SettingsView = () => {
                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Add an extra layer of security to your account</p>
                                     </div>
                                     <button
-                                        onClick={() => setSecuritySettings({ ...securitySettings, twoFactorEnabled: !securitySettings.twoFactorEnabled })}
+                                        onClick={handleRequestTwoFactor}
+                                        disabled={twoFactorPending}
                                         style={{
                                             padding: '8px 16px',
                                             background: securitySettings.twoFactorEnabled ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-hover)',
@@ -1064,12 +1104,32 @@ export const SettingsView = () => {
                                             color: securitySettings.twoFactorEnabled ? '#10B981' : 'var(--text-muted)',
                                             cursor: 'pointer',
                                             fontSize: '0.85rem',
-                                            fontWeight: 700
+                                            fontWeight: 700,
+                                            opacity: twoFactorPending ? 0.6 : 1
                                         }}
                                     >
-                                        {securitySettings.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                                        {securitySettings.twoFactorEnabled ? 'Disable' : 'Enable'}
                                     </button>
                                 </div>
+                                {twoFactorStep === 'verify' && (
+                                    <div style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter 6-digit code"
+                                            value={twoFactorOtp}
+                                            onChange={e => setTwoFactorOtp(e.target.value)}
+                                            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
+                                        />
+                                        <button
+                                            onClick={handleVerifyTwoFactor}
+                                            disabled={twoFactorPending}
+                                            className="btn-blue"
+                                            style={{ padding: '10px 16px', opacity: twoFactorPending ? 0.6 : 1 }}
+                                        >
+                                            Verify
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ background: 'rgba(29, 144, 245, 0.1)', border: '1px solid rgba(29, 144, 245, 0.3)', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>

@@ -19,6 +19,8 @@ router.get("/ticket-stats", OrganizerController.getTicketStats);
 router.patch("/tiers/:id", OrganizerController.updateTicketTier);
 router.get("/settings", OrganizerController.getSettings);
 router.patch("/settings", OrganizerController.updateSettings);
+router.post("/security/2fa/request", OrganizerController.requestTwoFactorOtp);
+router.post("/security/2fa/verify", OrganizerController.verifyTwoFactorOtp);
 router.post("/promos", OrganizerController.createPromoCode);
 router.get("/promos", OrganizerController.getPromoCodes);
 router.delete("/promos/:id", OrganizerController.deletePromoCode);

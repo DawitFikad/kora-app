@@ -2,6 +2,9 @@
 import { Request, Response } from "express";
 import { EventOperationsService } from "../services/event-operations.service";
 import { PromoCodeService } from "../services/promo-code.service";
+import { OtpService } from "../services/otp.service";
+import { SmsService } from "../services/sms.service";
+import redis from "../utils/redis";
 
 export class OrganizerController {
     /**
@@ -523,6 +526,91 @@ export class OrganizerController {
             });
 
             res.json({ success: true, data: profile });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/security/2fa/request
+     * Send OTP to enable/disable 2FA
+     */
+    static async requestTwoFactorOtp(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const action = String(req.body?.action || '').toLowerCase();
+            if (action !== 'enable' && action !== 'disable') {
+                return res.status(400).json({ success: false, message: "Invalid action" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const profile = await prisma.organizerProfile.findUnique({
+                where: { id: organizerId },
+                include: { user: { select: { phoneNumber: true } } }
+            });
+
+            const phoneNumber = profile?.user?.phoneNumber || profile?.contactPhone;
+            if (!phoneNumber) {
+                return res.status(400).json({ success: false, message: "No phone number on file" });
+            }
+
+            const otp = await OtpService.generateOtp(phoneNumber);
+            await SmsService.sendOtp(phoneNumber, otp);
+            await redis.setex(`2fa_action:${organizerId}`, 300, action);
+
+            res.json({ success: true, message: "OTP sent" });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    /**
+     * POST /api/organizer/security/2fa/verify
+     * Verify OTP and update 2FA setting
+     */
+    static async verifyTwoFactorOtp(req: Request, res: Response) {
+        try {
+            const organizerId = (req as any).user.organizerId;
+            if (!organizerId) return res.status(403).json({ success: false, message: "Unauthorized" });
+
+            const action = String(req.body?.action || '').toLowerCase();
+            const otp = String(req.body?.otp || '').trim();
+            if ((action !== 'enable' && action !== 'disable') || !otp) {
+                return res.status(400).json({ success: false, message: "Invalid request" });
+            }
+
+            const expected = await redis.get(`2fa_action:${organizerId}`);
+            if (!expected || expected !== action) {
+                return res.status(400).json({ success: false, message: "OTP request expired. Please request again." });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const profile = await prisma.organizerProfile.findUnique({
+                where: { id: organizerId },
+                include: { user: { select: { phoneNumber: true } } }
+            });
+
+            const phoneNumber = profile?.user?.phoneNumber || profile?.contactPhone;
+            if (!phoneNumber) {
+                return res.status(400).json({ success: false, message: "No phone number on file" });
+            }
+
+            const isValid = await OtpService.verifyOtp(phoneNumber, otp);
+            if (!isValid) {
+                return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+            }
+
+            const updatedConfig = { ...(profile?.defaultConfig as any || {}), twoFactorEnabled: action === 'enable' };
+            await prisma.organizerProfile.update({
+                where: { id: organizerId },
+                data: { defaultConfig: updatedConfig }
+            });
+
+            await redis.del(`2fa_action:${organizerId}`);
+
+            res.json({ success: true, data: { twoFactorEnabled: action === 'enable' } });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
         }

@@ -388,6 +388,25 @@ export const SalesRevenueView = () => {
         );
     }
 
+    const renderRevenueByTypeLabel = (props: any) => {
+        const { cx, cy, midAngle, innerRadius, outerRadius, name, value } = props;
+        const radius = innerRadius + (outerRadius - innerRadius) * 1.2;
+        const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+        const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+        return (
+            <text
+                x={x}
+                y={y}
+                fill="var(--text-main)"
+                textAnchor={x > cx ? 'start' : 'end'}
+                dominantBaseline="central"
+                style={{ fontSize: '0.75rem', fontWeight: 700 }}
+            >
+                {name}: {formatETB(Number(value))}
+            </text>
+        );
+    };
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader
@@ -907,7 +926,10 @@ export const SalesRevenueView = () => {
                                     return value;
                                 }}
                             />
-                            <Legend />
+                            <Legend
+                                wrapperStyle={{ color: 'var(--text-main)' }}
+                                formatter={(value: any) => <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{value}</span>}
+                            />
                             <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#1D90F5" strokeWidth={3} dot={{ r: 4 }} name="Revenue (ETB)" />
                             <Line yAxisId="right" type="monotone" dataKey="tickets" stroke="#10B981" strokeWidth={3} dot={{ r: 4 }} name="Tickets" />
                         </LineChart>
@@ -932,8 +954,8 @@ export const SalesRevenueView = () => {
                                 data={salesData?.revenueByTicketType}
                                 cx="50%"
                                 cy="50%"
-                                labelLine={false}
-                                label={(entry) => `${entry.name}: ETB ${entry.value.toLocaleString()}`}
+                                labelLine={{ stroke: 'var(--text-muted)' }}
+                                label={renderRevenueByTypeLabel}
                                 outerRadius={80}
                                 fill="#8884d8"
                                 dataKey="value"
@@ -946,7 +968,8 @@ export const SalesRevenueView = () => {
                                 contentStyle={{
                                     background: 'var(--bg-card)',
                                     border: '1px solid var(--border)',
-                                    borderRadius: '8px'
+                                    borderRadius: '8px',
+                                    color: 'var(--text-main)'
                                 }}
                                 formatter={(value: any) => formatETB(Number(value))}
                             />
