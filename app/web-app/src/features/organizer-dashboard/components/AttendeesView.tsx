@@ -11,6 +11,14 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState<string | null>(null);
+    const [filters, setFilters] = useState({
+        event: 'all',
+        customer: '',
+        date: '',
+        status: 'all'
+    });
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
 
     useEffect(() => {
         const fetchAttendees = async () => {
@@ -32,13 +40,45 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
     }, [searchQuery]);
 
     const normalizedSearch = searchTerm.trim().toLowerCase();
-    const filteredAttendees = attendees.filter(a => {
-        if (!normalizedSearch) return true;
-        const name = (a.name || '').toLowerCase();
-        const eventName = (a.event || '').toLowerCase();
-        const phone = (a.phone || '').toLowerCase();
-        return name.includes(normalizedSearch) || eventName.includes(normalizedSearch) || phone.includes(normalizedSearch);
+    const normalizedAttendees = attendees.map(a => ({
+        ...a,
+        dateObj: a.date ? new Date(a.date) : null
+    }));
+
+    const filteredAttendees = normalizedAttendees.filter(a => {
+        if (normalizedSearch) {
+            const name = (a.name || '').toLowerCase();
+            const eventName = (a.event || '').toLowerCase();
+            const phone = (a.phone || '').toLowerCase();
+            if (!name.includes(normalizedSearch) && !eventName.includes(normalizedSearch) && !phone.includes(normalizedSearch)) return false;
+        }
+
+        if (filters.event !== 'all' && a.event !== filters.event) return false;
+        if (filters.status !== 'all' && a.status !== filters.status) return false;
+        if (filters.customer) {
+            const customer = filters.customer.toLowerCase();
+            const name = (a.name || '').toLowerCase();
+            const phone = (a.phone || '').toLowerCase();
+            if (!name.includes(customer) && !phone.includes(customer)) return false;
+        }
+        if (filters.date) {
+            if (!a.dateObj) return false;
+            const start = new Date(filters.date);
+            const end = new Date(filters.date);
+            end.setHours(23, 59, 59, 999);
+            if (a.dateObj < start || a.dateObj > end) return false;
+        }
+        return true;
     });
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm, filters]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredAttendees.length / pageSize));
+    const pagedAttendees = filteredAttendees.slice((page - 1) * pageSize, page * pageSize);
+    const eventOptions = Array.from(new Set(attendees.map(a => a.event).filter(Boolean)));
+    const statusOptions = Array.from(new Set(attendees.map(a => a.status).filter(Boolean)));
 
     const handleResend = async (ticketId: string, channel: 'SMS' | 'EMAIL') => {
         try {
@@ -140,6 +180,49 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
                         <button className="btn-blue" style={{ background: 'var(--bg-active)', color: 'white', padding: '10px 20px' }}><Download size={16} /> Export List</button>
                     </div>
                 </div>
+                <div style={{ padding: '16px 32px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px' }}>
+                        <select
+                            value={filters.event}
+                            onChange={(e) => setFilters(prev => ({ ...prev, event: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        >
+                            <option value="all">All Events</option>
+                            {eventOptions.map((event) => (
+                                <option key={event} value={event}>{event}</option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            placeholder="Customer name or phone"
+                            value={filters.customer}
+                            onChange={(e) => setFilters(prev => ({ ...prev, customer: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        />
+                        <input
+                            type="date"
+                            value={filters.date}
+                            onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        />
+                        <select
+                            value={filters.status}
+                            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600 }}
+                        >
+                            <option value="all">All Statuses</option>
+                            {statusOptions.map((status) => (
+                                <option key={status} value={status}>{status}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={() => setFilters({ event: 'all', customer: '', date: '', status: 'all' })}
+                            style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, gridColumn: 'span 4' }}
+                        >
+                            Reset Filters
+                        </button>
+                    </div>
+                </div>
                 <div style={{ overflowX: 'auto' }}>
                     <table className="event-table">
                         <thead>
@@ -154,8 +237,13 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredAttendees.map((person) => (
-                                <tr key={person.id}>
+                            {filteredAttendees.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No attendees found matching your search.</td>
+                                </tr>
+                            ) : (
+                                pagedAttendees.map((person) => (
+                                    <tr key={person.id}>
                                     <td style={{ fontWeight: 800 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span>{person.name}</span>
@@ -167,7 +255,7 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
                                     <td style={{ color: 'var(--text-muted)' }}>{person.phone || '—'}</td>
                                     <td style={{ fontWeight: 600 }}>{person.event}</td>
                                     <td style={{ color: 'var(--text-muted)' }}>{person.type}</td>
-                                    <td style={{ color: 'var(--text-muted)' }}>{new Date(person.date).toLocaleDateString()}</td>
+                                        <td style={{ color: 'var(--text-muted)' }}>{person.dateObj ? person.dateObj.toLocaleDateString() : '—'}</td>
                                     <td>
                                         <span className={`pill ${person.status === 'Used' ? 'pill-green' : person.status === 'Refunded' ? 'pill-red' : 'pill-blue'}`}>{person.status}</span>
                                     </td>
@@ -203,15 +291,32 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
                                             </button>
                                         </div>
                                     </td>
-                                </tr>
-                            ))}
-                            {filteredAttendees.length === 0 && (
-                                <tr>
-                                    <td colSpan={7} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No attendees found matching your search.</td>
-                                </tr>
+                                    </tr>
+                                ))
                             )}
                         </tbody>
                     </table>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Page {page} of {totalPages}
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}
+                        >
+                            Prev
+                        </button>
+                        <button
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            disabled={page === totalPages}
+                            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.5 : 1 }}
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
         </motion.div>
