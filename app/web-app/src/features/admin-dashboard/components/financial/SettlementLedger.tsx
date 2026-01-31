@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AdminService } from '../../../../core/api/admin.service';
 import { downloadBlobAsCSV } from './csvExport';
+import ReadOnlyBanner from './ReadOnlyBanner';
+import { PAYMENTS_LIVE } from './financialConfig';
 
 export const SettlementLedger: React.FC = () => {
     const [rows, setRows] = useState<any[]>([]);
@@ -54,9 +56,10 @@ export const SettlementLedger: React.FC = () => {
 
     return (
         <div>
+            <ReadOnlyBanner message={PAYMENTS_LIVE ? 'Settlement ledger is live from API.' : 'Settlement ledger is audit-safe until payments are live.'} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h2>Settlement Ledger <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>(live API)</span></h2>
+                    <h2>Settlement Ledger <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>{PAYMENTS_LIVE ? '(live API)' : '(audit-safe)'}</span></h2>
                     <p className="text-muted" style={{ margin: 0 }}>Immutable rows; corrections appear as compensating transactions.</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
