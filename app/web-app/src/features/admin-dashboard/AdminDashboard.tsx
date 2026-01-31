@@ -22,6 +22,8 @@ import {
     Crown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
+import AdminEventDetails from './components/AdminEventDetails';
 
 // --- Sub-Pages ---
 import { AdminOverview } from './components/AdminOverview';
@@ -53,6 +55,7 @@ const AdminDashboard = () => {
     const [notifications, setNotifications] = useState<any[]>([]);
 
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+    const loc = useLocation();
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -125,6 +128,13 @@ const AdminDashboard = () => {
     const currentNavItem = navItems.find(n => n.label === activeTab) || (activeTab === 'Settings' ? { display: 'Account Settings' } : null);
 
     const renderContent = () => {
+        const loc = useLocation();
+        const m = loc.pathname.match(/\/admin\/events\/(\d+)/);
+        if (m) {
+            const id = Number(m[1]);
+            return <AdminEventDetails eventId={id} />;
+        }
+
         switch (activeTab) {
             case 'Dashboard': return <AdminOverview setActiveTab={setActiveTab} />;
             case 'Organizer Approvals': return <OrganizerApprovalsView />;
@@ -254,30 +264,7 @@ const AdminDashboard = () => {
                 <header className="top-header" style={{ marginBottom: '32px', background: 'transparent' }}>
                     <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{(currentNavItem as any)?.display || activeTab}</h2>
 
-                    <div className="search-pill" style={{ width: '400px', background: 'var(--bg-card)' }}>
-                        <Search size={18} color="var(--text-muted)" />
-                        <input
-                            type="text"
-                            placeholder="Try searching 'events', 'payouts', or 'logs'..."
-                            style={{ fontSize: '0.85rem' }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    const val = e.currentTarget.value.toLowerCase();
-                                    if (val.includes('event')) setActiveTab('Event Approvals');
-                                    else if (val.includes('org')) setActiveTab('Organizer Approvals');
-                                    else if (val.includes('comm')) setActiveTab('Commissions');
-                                    else if (val.includes('log') || val.includes('audit')) setActiveTab('Audit Logs');
-                                    else if (val.includes('fraud')) setActiveTab('Fraud Monitoring');
-                                    else if (val.includes('payout')) setActiveTab('Organizer Payouts');
-                                    else if (val.includes('gmv')) setActiveTab('GMV Tracking');
-                                    else if (val.includes('revenue')) setActiveTab('Platform Revenue');
-                                    else if (val.includes('settle')) setActiveTab('Settlement Ledger');
-                                    else if (val.includes('team') || val.includes('invite')) setActiveTab('Invite Admin');
-                                    else if (val.includes('control') || val.includes('health')) setActiveTab('Platform Health');
-                                }
-                            }}
-                        />
-                    </div>
+                    {/* Search removed per request to keep header minimal */}
 
                     <div className="header-actions" style={{ position: 'relative' }}>
                         <div

@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+// Removed framer-motion to reduce animations per executive request
 import {
     Activity,
     ArrowUpRight,
@@ -23,6 +23,9 @@ import { AdminService } from '../../../core/api/admin.service';
 import type { AdminTab } from '../AdminDashboard';
 import { exportToCSV } from '../../../core/utils/export';
 import { exportToPDF } from '../../../core/utils/pdf';
+import SystemStatusCard from './SystemStatusCard';
+import FinancialSnapshot from './FinancialSnapshot';
+import PendingActionsCard from './PendingActionsCard';
 
 export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) => void }) => {
     const { t } = useTranslation();
@@ -32,7 +35,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
     const [recentEvents, setRecentEvents] = useState<any[]>([]);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
-    const [currentTime, setCurrentTime] = useState(new Date());
+    // no live time state; overview should not auto-refresh
     const [stats, setStats] = useState({
         pendingOrganizers: 0,
         pendingEvents: 0,
@@ -48,14 +51,16 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
     const [categoryData, setCategoryData] = useState<any[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
-    // Update current time every second
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000);
-        
-        return () => clearInterval(timer);
-    }, []);
+    // Current time captured once on load (no continuous refresh)
+    const currentTime = new Date();
+
+    const computeMetrics = (evt: any) => {
+        if (!evt) return evt;
+        const tiers = Array.isArray(evt.tiers) ? evt.tiers : [];
+        const ticketsSold = tiers.reduce((s: number, t: any) => s + (Number(t.soldCount || 0)), 0);
+        const totalRevenue = tiers.reduce((s: number, t: any) => s + (Number(t.soldCount || 0) * Number(t.price || 0)), 0);
+        return { ...evt, metrics: { ...(evt.metrics || {}), ticketsSold, totalRevenue } };
+    };
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -99,7 +104,8 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                 const metrics = metricsResponse?.data || {};
                 const activeOrgCount = activeOrgsList.length;
                 const eventsList = safeArray(allEvents);
-                const activeEventCount = eventsList.filter((e: any) => e.status === 'PUBLISHED').length;
+                const activeStatuses = ['PUBLISHED', 'APPROVED', 'LIVE', 'ACTIVE'];
+                const activeEventCount = eventsList.filter((e: any) => activeStatuses.includes((e.status || '').toUpperCase())).length;
 
                 setStats({
                     pendingOrganizers: kpis.pendingOrganizers || pendingOrgsList.length || 0,
@@ -117,7 +123,9 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                 setMonthlySales(analyticsResponse?.monthlySales || []);
                 setCategoryData(analyticsResponse?.categories || []);
 
-                const approvedEventsList = eventsList.filter((e: any) => e.status === 'PUBLISHED' || e.status === 'APPROVED');
+                const approvedEventsList = eventsList
+                    .filter((e: any) => activeStatuses.includes((e.status || '').toUpperCase()))
+                    .map((e: any) => computeMetrics(e));
                 setRecentEvents(approvedEventsList.slice(0, 5));
 
             } catch (err) {
@@ -127,14 +135,10 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
             }
         };
 
-        // Initial fetch
+        // Initial fetch only (no periodic auto-refresh)
         fetchDashboardData();
-        
-        // Set up real-time updates every 30 seconds
-        const interval = setInterval(fetchDashboardData, 30000);
-        
-        // Cleanup interval on component unmount
-        return () => clearInterval(interval);
+        // No interval - admin asked to avoid automatic refreshing
+        return;
     }, []);
 
     const handleExportOrganizers = (type: 'csv' | 'pdf') => {
@@ -161,6 +165,12 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
 
     const colors = ['#8B5CF6', '#10B981', '#EC4899', '#3B82F6', '#F59E0B', '#64748B'];
 
+    // Lightweight derived health/warnings for a quick command-center view
+    const warningsList: string[] = [];
+    if (stats.pendingEvents > 50) warningsList.push('High number of events awaiting review');
+    if (stats.pendingOrganizers > 50) warningsList.push('Large organizer approval queue');
+    const healthState: 'Healthy' | 'Attention' | 'Critical' = warningsList.length === 0 ? 'Healthy' : (warningsList.length === 1 ? 'Attention' : 'Critical');
+
     if (isLoading) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
@@ -170,33 +180,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
     }
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {/* Add global styles for animations */}
-            <style>{`
-                @keyframes pulse {
-                    0%, 100% { opacity: 1; transform: scale(1); }
-                    50% { opacity: 0.7; transform: scale(1.1); }
-                }
-                
-                @keyframes slideInUp {
-                    from { transform: translateY(20px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                
-                .admin-card {
-                    animation: slideInUp 0.6s ease-out;
-                }
-                
-                .admin-action-btn:hover {
-                    transform: translateY(-2px) scale(1.02);
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-                }
-                
-                .stat-card-value {
-                    animation: slideInUp 0.8s ease-out;
-                }
-            `}</style>
-            
+        <div>
             <div style={{ paddingBottom: '40px' }}>
                 {/* 1. Header KPIs (4 Cards) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '16px' }}>
@@ -205,8 +189,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                         value={`ETB ${stats.totalGMV.toLocaleString()}`}
                         trend="Gross Sales Volume"
                         trendColor="var(--text-muted)"
-                        icon={DollarSign}
-                        isLive={true}
+                        icon={null}
                     />
                     <StatCard
                         label="Platform Profit"
@@ -214,7 +197,6 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                         trend="Commission + Fees"
                         trendColor="#10B981"
                         icon={Activity}
-                        isLive={true}
                     />
                     <StatCard
                         label="Org. Earnings"
@@ -222,7 +204,6 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                         trend="Net paid to partners"
                         trendColor="#8B5CF6"
                         icon={TrendingUp}
-                        isLive={true}
                     />
                     <StatCard
                         label="Active Organizers"
@@ -237,7 +218,6 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                         trend="Total Tickets Issued"
                         trendColor="var(--text-muted)"
                         icon={CheckCircle2}
-                        isLive={true}
                     />
                 </div>
 
@@ -245,69 +225,40 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
 
                 {/* Top row: Admin Command Center (left) and Calendar (right) */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '16px', marginBottom: '16px' }}>
-                    {/* Admin Command Center (Left) */}
-                    <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                            <div style={{ background: 'var(--bg-active)', padding: '5px', borderRadius: '7px' }}>
+                    {/* Admin Command Center (Left) - Reworked for clarity and authority */}
+                    <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                            <div style={{ background: 'var(--bg-active)', padding: '6px', borderRadius: '6px' }}>
                                 <LayoutDashboard size={13} color="white" />
                             </div>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Command Center</span>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Command Center</span>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            {[
-                                { label: 'Organizers', sub: `${stats.pendingOrganizers} Pending`, icon: ShieldCheck, col: '#3B82F6', tab: 'Organizer Approvals' },
-                                { label: 'Events', sub: `${stats.pendingEvents} Review`, icon: CalendarCheck, col: '#10B981', tab: 'Event Approvals' },
-                                { label: 'Analytics', sub: 'Growth', icon: BarChart3, col: '#8B5CF6', tab: 'Analytics' },
-                                { label: 'Reports', sub: 'Finance', icon: ClipboardList, col: '#EC4899', tab: 'Reports' }
-                            ].map((btn, i) => (
-                                <button 
-                                    key={i} 
-                                    className="admin-action-btn" 
-                                    onClick={() => setActiveTab(btn.tab as AdminTab)}
-                                    style={{ 
-                                        background: 'var(--bg-main)', 
-                                        border: '1px solid var(--border)', 
-                                        padding: '10px', 
-                                        borderRadius: '14px', 
-                                        cursor: 'pointer', 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        gap: '8px', 
-                                        transition: 'all 0.2s',
-                                        position: 'relative'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'var(--bg-hover)';
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'var(--bg-main)';
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = 'none';
-                                    }}
-                                >
-                                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${btn.col}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <btn.icon size={14} color={btn.col} />
-                                    </div>
-                                    <div style={{ textAlign: 'left' }}>
-                                        <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{btn.label}</p>
-                                        <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', margin: 0 }}>{btn.sub}</p>
-                                    </div>
-                                    {(btn.label === 'Organizers' && stats.pendingOrganizers > 0) || (btn.label === 'Events' && stats.pendingEvents > 0) ? (
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: '8px',
-                                            right: '8px',
-                                            width: '8px',
-                                            height: '8px',
-                                            background: '#EF4444',
-                                            borderRadius: '50%',
-                                            animation: 'pulse 2s infinite'
-                                        }} />
-                                    ) : null}
-                                </button>
-                            ))}
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+                            <SystemStatusCard
+                                health={healthState}
+                                fraudCount={0}
+                                refundFlags={0}
+                                warnings={warningsList}
+                            />
+
+                            <FinancialSnapshot
+                                gmvToday={stats.totalGMV || 0}
+                                ticketsToday={stats.totalTicketsSold || 0}
+                                revenueToday={stats.platformCommission || 0}
+                                change={{ gmv: 0, revenue: 0 }}
+                                onAdjustCommission={() => setActiveTab('Commissions')}
+                                onFeatureEvent={() => setActiveTab('Event Approvals')}
+                            />
+
+                            <PendingActionsCard
+                                pendingOrganizers={stats.pendingOrganizers}
+                                pendingEvents={stats.pendingEvents}
+                                pendingRefunds={0}
+                                onOpenOrganizers={() => setActiveTab('Organizer Approvals')}
+                                onOpenEvents={() => setActiveTab('Event Approvals')}
+                                onOpenRefunds={() => setActiveTab('Audit Logs')}
+                            />
                         </div>
                     </div>
 
@@ -759,7 +710,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                             <td style={{ padding: '16px 10px', fontWeight: 900, color: 'var(--text-main)' }}>ETB {Number(event.metrics?.totalRevenue || 0).toLocaleString()}</td>
                                             <td style={{ padding: '16px 10px', textAlign: 'right' }}>
                                                 <button
-                                                    onClick={() => setSelectedEvent(event)}
+                                                    onClick={() => setSelectedEvent(computeMetrics(event))}
                                                     style={{ padding: '8px 16px', background: 'var(--bg-active)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
                                                 >
                                                     INSPECT
@@ -775,13 +726,10 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
             </div>
 
             {/* Premium Details Modal */}
-            <AnimatePresence>
+            <div>
                 {selectedEvent && (
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, padding: '20px' }} onClick={() => setSelectedEvent(null)}>
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        <div
                             className="admin-card"
                             style={{ maxWidth: '800px', width: '100%', padding: '0', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px' }}
                             onClick={(e) => e.stopPropagation()}
@@ -851,121 +799,52 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                             <div style={{ padding: '24px 32px', borderTop: '1px solid var(--border)', background: 'var(--bg-main)', display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
                                 <button onClick={() => setSelectedEvent(null)} style={{ padding: '10px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}>Close</button>
                                 <button
-                                    onClick={() => window.open(`/book/${selectedEvent.id}`, '_blank')}
+                                    onClick={() => window.open(`/admin/events/${selectedEvent.id}`, '_blank')}
                                     style={{ padding: '10px 20px', background: 'var(--bg-active)', border: 'none', color: 'white', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
                                 >
-                                    Browse <ArrowUpRight size={16} />
+                                    Details <ArrowUpRight size={16} />
                                 </button>
                             </div>
-                        </motion.div>
+                        </div>
                     </div>
                 )}
-            </AnimatePresence>
-        </motion.div>
+            </div>
+        </div>
     );
 };
 
 const StatCard = ({ label, value, trend, trendColor, icon: Icon, isLive = false }: any) => (
-    <motion.div
-        whileHover={{ 
-            y: -4, 
-            boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
-            transition: { duration: 0.2 }
-        }}
+    <div
         style={{
-            background: 'var(--bg-card)', 
-            borderRadius: '24px', 
+            background: 'var(--bg-card)',
+            borderRadius: '24px',
             padding: '20px',
-            display: 'flex', 
-            flexDirection: 'column', 
+            display: 'flex',
+            flexDirection: 'column',
             justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)', 
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
             border: '1px solid var(--border)',
             minHeight: '100px',
             position: 'relative',
             overflow: 'hidden'
         }}
     >
-        {/* Live indicator */}
-        {isLive && (
-            <div style={{
-                position: 'absolute',
-                top: '12px',
-                right: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(16, 185, 129, 0.1)',
-                padding: '4px 8px',
-                borderRadius: '12px',
-                border: '1px solid rgba(16, 185, 129, 0.2)'
-            }}>
-                <div style={{
-                    width: '6px',
-                    height: '6px',
-                    background: '#10B981',
-                    borderRadius: '50%',
-                    animation: 'pulse 2s infinite'
-                }} />
-                <span style={{ fontSize: '0.6rem', color: '#10B981', fontWeight: 700 }}>LIVE</span>
-            </div>
-        )}
-        
+        {/* no live indicator - admin requested less motion/status noise */}
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <p style={{ 
-                color: 'var(--text-muted)', 
-                fontSize: '0.75rem', 
-                fontWeight: 800, 
-                textTransform: 'uppercase', 
-                letterSpacing: '0.05em' 
-            }}>
-                {label}
-            </p>
-            <motion.div
-                whileHover={{ rotate: 15, scale: 1.1 }}
-                transition={{ duration: 0.2 }}
-                style={{ 
-                    width: '28px', 
-                    height: '28px', 
-                    borderRadius: '8px', 
-                    background: 'var(--bg-subtle)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                }}
-            >
-                <Icon size={14} color="var(--text-muted)" />
-            </motion.div>
-        </div>
-        <div>
-            <motion.h3 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                style={{ 
-                    fontSize: '1.3rem', 
-                    fontWeight: 1000, 
-                    color: 'var(--text-main)', 
-                    marginBottom: '2px' 
-                }}
-                className="stat-card-value"
-            >
-                {value}
-            </motion.h3>
-            {trend && (
-                <motion.span 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.8 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                    style={{ 
-                        fontSize: '0.7rem', 
-                        color: trendColor, 
-                        fontWeight: 800 
-                    }}
-                >
-                    {trend}
-                </motion.span>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+            {Icon && (
+                <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={14} color="var(--text-muted)" />
+                </div>
             )}
         </div>
-    </motion.div>
+
+        <div>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: 1000, color: 'var(--text-main)', marginBottom: '2px' }} className="stat-card-value">{value}</h3>
+            {trend && (
+                <span style={{ fontSize: '0.7rem', color: trendColor, fontWeight: 800 }}>{trend}</span>
+            )}
+        </div>
+    </div>
 );
