@@ -69,7 +69,7 @@ export class FinancialController {
 
             const purchases = await prisma.purchase.findMany({
                 where: { status: 'SUCCESS', createdAt: { gte: since } },
-                include: { tickets: { include: { event: { select: { city: true, organizerId: true, category: true }, include: { organizer: { select: { organizationName: true } } } } } } }
+                include: { tickets: { include: { event: { select: { city: true, organizerId: true, category: true, organizer: { select: { organizationName: true } } } } } } }
             });
 
             const map: Record<string, any> = {};
@@ -83,9 +83,12 @@ export class FinancialController {
                     map[key].gmv += Number(p.totalAmount || 0);
                 } else {
                     tickets.forEach((t: any) => {
-                        const city = t.event?.city || 'Unknown';
-                        const organizer = t.event?.organizer?.organizationName || 'Unknown';
-                        const category = t.event?.category || 'Uncategorized';
+                        const rawCity = t.event?.city;
+                        const city = typeof rawCity === 'string' ? rawCity : (rawCity?.name || rawCity?.city || 'Unknown');
+                        const rawOrg = t.event?.organizer;
+                        const organizer = rawOrg?.organizationName || rawOrg?.name || (typeof rawOrg === 'string' ? rawOrg : 'Unknown');
+                        const rawCategory = t.event?.category;
+                        const category = typeof rawCategory === 'string' ? rawCategory : (rawCategory?.name || rawCategory || 'Uncategorized');
                         const key = `${d}||${city}||${organizer}||${category}`;
                         if (!map[key]) map[key] = { date: d, city, organizer, category, gmv: 0 };
                         map[key].gmv += perTicket;
@@ -103,7 +106,23 @@ export class FinancialController {
     static async getGMVByCity(req: Request, res: Response) {
         try {
             const since = new Date(); since.setMonth(since.getMonth() - 1);
-            const purchases = await prisma.purchase.findMany({ where: { status: 'SUCCESS', createdAt: { gte: since } }, include: { tickets: { include: { event: true } } } });
+            const purchases = await prisma.purchase.findMany({
+                where: { status: 'SUCCESS', createdAt: { gte: since } },
+                include: {
+                    tickets: {
+                        include: {
+                            event: {
+                                select: {
+                                    city: true,
+                                    organizerId: true,
+                                    category: true,
+                                    organizer: { select: { organizationName: true } }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
             const agg: Record<string, { city: string; gmv: number }> = {};
             purchases.forEach(p => {
                 const tickets = (p as any).tickets || [];
@@ -114,7 +133,8 @@ export class FinancialController {
                 } else {
                     const perTicket = Number(p.totalAmount || 0) / tickets.length;
                     tickets.forEach((t: any) => {
-                        const city = t.event?.city || 'Unknown';
+                        const rawCity = t.event?.city;
+                        const city = typeof rawCity === 'string' ? rawCity : (rawCity?.name || rawCity?.city || 'Unknown');
                         agg[city] = agg[city] || { city, gmv: 0 };
                         agg[city].gmv += perTicket;
                     });
@@ -127,7 +147,22 @@ export class FinancialController {
     static async getGMVByOrganizer(req: Request, res: Response) {
         try {
             const since = new Date(); since.setMonth(since.getMonth() - 1);
-            const purchases = await prisma.purchase.findMany({ where: { status: 'SUCCESS', createdAt: { gte: since } }, include: { tickets: { include: { event: { include: { organizer: true } } } } } });
+            const purchases = await prisma.purchase.findMany({
+                where: { status: 'SUCCESS', createdAt: { gte: since } },
+                include: {
+                    tickets: {
+                        include: {
+                            event: {
+                                select: {
+                                    organizer: { select: { id: true, organizationName: true } },
+                                    category: true,
+                                    city: true
+                                }
+                            }
+                        }
+                    }
+                }
+            });
             const agg: Record<number, { organizer: string; gmv: number }> = {};
             purchases.forEach(p => {
                 const tickets = (p as any).tickets || [];
@@ -137,9 +172,9 @@ export class FinancialController {
                 } else {
                     const perTicket = Number(p.totalAmount || 0) / tickets.length;
                     tickets.forEach((t: any) => {
-                        const org = t.event?.organizer;
-                        const id = org?.id || 0;
-                        const name = org?.organizationName || 'Unknown';
+                        const rawOrg = t.event?.organizer;
+                        const id = rawOrg?.id || rawOrg?.organizerId || 0;
+                        const name = rawOrg?.organizationName || rawOrg?.name || (typeof rawOrg === 'string' ? rawOrg : 'Unknown');
                         agg[id] = agg[id] || { organizer: name, gmv: 0 };
                         agg[id].gmv += perTicket;
                     });

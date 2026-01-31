@@ -16,7 +16,7 @@ export const FinancialControlIndex: React.FC = () => {
 
     return (
         <div>
-            <h1>Financial Control (Preview)</h1>
+            <h1 style={{ marginBottom: 6 }}>Financial Control <span style={{ fontWeight: 700, color: 'var(--accent)' }}>(Preview — live API)</span></h1>
             <p className="text-muted">Read-only mode until payments live — audit-safe views</p>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                 {tabs.map(t => (

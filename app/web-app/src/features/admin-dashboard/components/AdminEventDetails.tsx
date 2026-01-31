@@ -31,7 +31,7 @@ const AdminEventDetails: React.FC<{ eventId: number }> = ({ eventId }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <div>
                     <h2 style={{ margin: 0, fontSize: '1.4rem' }}>{event.title}</h2>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{event.category} • {event.city}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{event.category?.name || 'Uncategorized'} • {event.city?.name || 'Unknown'}</div>
                 </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={() => { if (window.history.length > 1) { navigate(-1); } else { navigate('/admin'); } }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent' }}>Back</button>
@@ -68,7 +68,7 @@ const AdminEventDetails: React.FC<{ eventId: number }> = ({ eventId }) => {
                     </div>
                     <div style={{ background: 'var(--bg-card)', padding: 14, borderRadius: 12, border: '1px solid var(--border)' }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>City</div>
-                        <div style={{ fontWeight: 900 }}>{event.city}</div>
+                        <div style={{ fontWeight: 900 }}>{event.city?.name || 'Unknown'}</div>
                     </div>
                 </div>
             </div>

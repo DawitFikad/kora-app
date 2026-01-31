@@ -4,21 +4,24 @@ import { AdminService } from '../../../../core/api/admin.service';
 export const OrganizerPayouts: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [payouts, setPayouts] = useState<any>({ available: [], pending: [], paid: [] });
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         let mounted = true;
+        setError(null);
         AdminService.getOrganizerPayouts()
             .then((res: any) => { if (mounted) setPayouts(res?.data || res || {}); })
-            .catch(() => setPayouts({ available: [], pending: [], paid: [] }))
+            .catch((err: any) => { console.error('Payouts fetch failed', err); if (mounted) setError('Failed to load payouts'); })
             .finally(() => mounted && setLoading(false));
         return () => { mounted = false };
     }, []);
 
-    if (loading) return <div>Loading payouts...</div>;
+    if (error) return <div style={{ color: 'var(--danger)' }}>{error}</div>;
+    if (loading) return <div>Loading payouts from API...</div>;
 
     return (
         <div>
-            <h2>Organizer Payouts</h2>
+            <h2>Organizer Payouts <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>(live API)</span></h2>
             <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                     <h4>Available Balance</h4>

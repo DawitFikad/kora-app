@@ -83,10 +83,10 @@ const EventDetailsPage: React.FC = () => {
                     <div className="container">
                         <div className="hero-content">
                             <h1 className="event-title">{event.title}</h1>
-                            <div className="event-meta">
+                                    <div className="event-meta">
                                 <span className="meta-item">
                                     <span className="meta-icon">📍</span>
-                                    {event.venue}, {event.city}
+                                    {event.venue}, {event.city?.name || event.city}
                                 </span>
                                 <span className="meta-item">
                                     <span className="meta-icon">📅</span>
@@ -156,7 +156,7 @@ const EventDetailsPage: React.FC = () => {
                                 <div className="info-grid">
                                     <div className="info-item">
                                         <span className="info-label">Category</span>
-                                        <span className="info-value">{event.category}</span>
+                                        <span className="info-value">{event.category?.name || event.category}</span>
                                     </div>
                                     <div className="info-item">
                                         <span className="info-label">Event Type</span>
@@ -170,7 +170,7 @@ const EventDetailsPage: React.FC = () => {
                                     </div>
                                     <div className="info-item">
                                         <span className="info-label">Location</span>
-                                        <span className="info-value">{event.city}</span>
+                                        <span className="info-value">{event.city?.name || event.city}</span>
                                     </div>
                                 </div>
                             </section>
@@ -206,7 +206,7 @@ const EventDetailsPage: React.FC = () => {
                                         <span className="info-icon">📍</span>
                                         <div className="info-text">
                                             <span className="info-label">Location</span>
-                                            <span className="info-value">{event.venue}, {event.city}</span>
+                                            <span className="info-value">{event.venue}, {event.city?.name || event.city}</span>
                                         </div>
                                     </div>
 

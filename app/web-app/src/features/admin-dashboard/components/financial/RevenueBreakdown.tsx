@@ -3,20 +3,23 @@ import { AdminService } from '../../../../core/api/admin.service';
 
 export const RevenueBreakdown: React.FC = () => {
     const [data, setData] = useState<any>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         let mounted = true;
+        setError(null);
         AdminService.getPlatformRevenue({ range: '30d' })
             .then((res: any) => { if (mounted) setData(res?.data || res); })
-            .catch(() => setData(null));
+            .catch((err: any) => { console.error('Revenue fetch failed', err); if (mounted) setError('Failed to load revenue'); })
         return () => { mounted = false };
     }, []);
 
-    if (!data) return <div>Loading revenue breakdown...</div>;
+    if (error) return <div style={{ color: 'var(--danger)' }}>{error}</div>;
+    if (!data) return <div>Loading revenue breakdown from API...</div>;
 
     return (
         <div>
-            <h2>Platform Revenue</h2>
+            <h2>Platform Revenue <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>(live API)</span></h2>
             <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ padding: 12, background: 'var(--bg-card)', borderRadius: 8 }}>
                     <strong>Commission</strong>

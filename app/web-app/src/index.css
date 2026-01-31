@@ -32,6 +32,11 @@
     --primary: #8B5CF6;
     --primary-light: #A78BFA;
     --secondary: #D946EF;
+    /* Semantic colors */
+    --success: #10B981;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+    --accent: #3B82F6;
 }
 
 [data-theme='light'] {

@@ -5,12 +5,14 @@ import { downloadBlobAsCSV } from './csvExport';
 export const SettlementLedger: React.FC = () => {
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         let mounted = true;
+        setError(null);
         AdminService.getSettlementLedger({ limit: 100 })
             .then((res: any) => { if (mounted) setRows(res?.data || res || []); })
-            .catch(() => setRows([]))
+            .catch((err: any) => { console.error('Ledger fetch failed', err); if (mounted) setError('Failed to load ledger'); setRows([]); })
             .finally(() => mounted && setLoading(false));
         return () => { mounted = false };
     }, []);
@@ -26,12 +28,12 @@ export const SettlementLedger: React.FC = () => {
 
     return (
         <div>
-            <h2>Settlement Ledger (append-only)</h2>
+            <h2>Settlement Ledger (append-only) <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>(live API)</span></h2>
             <p className="text-muted">Immutable rows; corrections appear as compensating transactions.</p>
             <div style={{ margin: '8px 0' }}>
                 <button className="btn-blue" onClick={handleExport}>Export CSV</button>
             </div>
-            {loading ? <div>Loading ledger...</div> : (
+            {loading ? <div>Loading ledger from API...</div> : error ? <div style={{ color: 'var(--danger)' }}>{error}</div> : (
                 <table style={{ width: '100%' }}>
                     <thead>
                         <tr>
