@@ -280,7 +280,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.65rem', fontWeight: 700 }}>
-                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <span key={d} style={{ color: 'var(--text-muted)', opacity: 0.6 }}>{d}</span>)}
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <span key={`weekday-${i}`} style={{ color: 'var(--text-muted)', opacity: 0.6 }}>{d}</span>)}
                                 {(() => {
                                     const currentYear = currentTime.getFullYear();
                                     const currentMonth = currentTime.getMonth();

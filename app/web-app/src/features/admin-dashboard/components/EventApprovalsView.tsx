@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import DecisionModal from './DecisionModal';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Loader2, Calendar, MapPin, Tag, ShieldCheck } from 'lucide-react';
@@ -13,6 +14,8 @@ export const EventApprovalsView = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
     const [inspectingEvent, setInspectingEvent] = useState<any>(null);
+    const [decisionOpen, setDecisionOpen] = useState(false);
+    const [decisionContext, setDecisionContext] = useState<any>(null);
 
     const fetchEvents = async () => {
         try {
@@ -32,13 +35,19 @@ export const EventApprovalsView = () => {
     }, []);
 
     const handleReview = async (id: number, status: 'APPROVED' | 'REJECTED', commission?: any) => {
+        // open decision modal with context
+        setDecisionContext({ id, status, commission });
+        setDecisionOpen(true);
+    };
+
+    const confirmDecision = async (payload: { reason: string; commission?: any }) => {
+        if (!decisionContext) return;
+        const { id, status } = decisionContext;
         try {
             setProcessingId(id);
-            // Default commission 10% if not provided
-            await AdminService.reviewEvent(id, status, commission || {
-                feeType: 'PERCENTAGE',
-                feePercentage: 10
-            });
+            await AdminService.reviewEvent(id, status, payload.commission || { feeType: 'PERCENTAGE', feePercentage: 10 }, payload.reason);
+            setDecisionOpen(false);
+            setDecisionContext(null);
             await fetchEvents();
         } catch (err) {
             alert('Action failed');
@@ -210,6 +219,10 @@ export const EventApprovalsView = () => {
                                     <button
                                         onClick={() => setInspectingEvent(event)}
                                         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '0.65rem', fontWeight: 800, padding: '4px 8px', borderRadius: '8px', cursor: 'pointer' }}>OVERRIDE</button>
+                                    <button
+                                        onClick={() => setInspectingEvent({ ...event, previewOnly: true })}
+                                        style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: 700, padding: '4px 8px', borderRadius: '8px', cursor: 'pointer' }}
+                                    >PREVIEW</button>
                                 </div>
                             </div>
                         )) : <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No approved events yet.</p>}
@@ -241,6 +254,26 @@ export const EventApprovalsView = () => {
                     <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '24px', maxWidth: '500px', width: '100%', border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '8px' }}>Admin Override: {inspectingEvent.title}</h3>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>Forcefully adjust event parameters or status. This bypasses organizer control.</p>
+
+                        {inspectingEvent.previewOnly && (
+                            <div style={{ marginBottom: 16, padding: 12, borderRadius: 12, background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                                <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>Ticket Pricing</h4>
+                                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {inspectingEvent.tiers?.map((tier: any, idx: number) => (
+                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <div style={{ fontWeight: 800 }}>{tier.name}</div>
+                                            <div style={{ fontFamily: 'ui-monospace, monospace', fontWeight: 900 }}>ETB {Number(tier.price || 0).toLocaleString()}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                {inspectingEvent.refundPolicy && (
+                                    <div style={{ marginTop: 12 }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800 }}>Refund Policy</div>
+                                        <div style={{ marginTop: 6, color: 'var(--text-main)' }}>{inspectingEvent.refundPolicy}</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div style={{ display: 'grid', gap: '20px', marginBottom: '32px' }}>
                             <div>
@@ -275,6 +308,17 @@ export const EventApprovalsView = () => {
                     </div>
                 </div>
             )}
+            {decisionOpen && (
+                <DecisionModal
+                    open={decisionOpen}
+                    title={`${decisionContext?.status} Event`}
+                    showCommission={true}
+                    initialCommission={decisionContext?.commission}
+                    onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
+                    onConfirm={(p: any) => confirmDecision(p)}
+                />
+            )}
         </motion.div >
     );
 };
+

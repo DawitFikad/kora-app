@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import DecisionModal from './DecisionModal';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AdminPageHeader } from './AdminPageHeader';
@@ -15,6 +16,8 @@ export const OrganizerApprovalsView = () => {
     const [error, setError] = useState('');
     const [processingId, setProcessingId] = useState<number | null>(null);
     const [editingOrgId, setEditingOrgId] = useState<number | null>(null);
+    const [decisionOpen, setDecisionOpen] = useState(false);
+    const [decisionContext, setDecisionContext] = useState<any>(null);
 
     const fetchData = async () => {
         try {
@@ -39,10 +42,20 @@ export const OrganizerApprovalsView = () => {
     }, []);
 
     const handleReview = async (id: number, status: 'APPROVED' | 'REJECTED', commission?: any) => {
+        // open modal to collect reason and optional commission
+        setDecisionContext({ type: 'organizer', id, status, commission });
+        setDecisionOpen(true);
+    };
+
+    const confirmDecision = async (payload: { reason: string; commission?: any }) => {
+        if (!decisionContext) return;
+        const { id, status } = decisionContext;
         try {
             setProcessingId(id);
-            await AdminService.reviewOrganizer(id, status, `Reviewed by admin at ${new Date().toLocaleString()}`, commission);
-            fetchData(); // Refresh both lists
+            await AdminService.reviewOrganizer(id, status, payload.reason, payload.commission);
+            setDecisionOpen(false);
+            setDecisionContext(null);
+            fetchData();
         } catch (err: any) {
             alert(err.error || 'Failed to review organizer');
         } finally {
@@ -130,12 +143,27 @@ export const OrganizerApprovalsView = () => {
                                         <td>
                                             <p style={{ fontWeight: 800, color: 'var(--text-main)' }}>{org.organizationName}</p>
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Reg: {new Date(org.createdAt).toLocaleDateString()}</p>
+                                            {org.documents && org.documents.length > 0 && (
+                                                <div style={{ marginTop: 8 }}>
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 800 }}>Documents</div>
+                                                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                                        {org.documents.map((d: any, idx: number) => (
+                                                            <a key={idx} href={d.url || '#'} target="_blank" rel="noreferrer" style={{ padding: '6px 8px', background: 'var(--bg-subtle)', borderRadius: 8, fontSize: '0.75rem', color: 'var(--text-main)', textDecoration: 'none' }}>{d.name || `Doc ${idx + 1}`}</a>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </td>
                                         <td>
                                             <p style={{ fontSize: '0.9rem' }}>{org.contactPhone}</p>
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{org.contactEmail}</p>
                                         </td>
-                                        <td>{org.city}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                <div>{org.city}</div>
+                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Risk: <strong style={{ color: org.documents && org.documents.length > 0 ? (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? '#10B981' : '#F59E0B') : '#EF4444' }}>{org.documents && org.documents.length > 0 ? (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? 'Low' : 'Medium') : 'High'}</strong></div>
+                                            </div>
+                                        </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                                                 <input
@@ -167,7 +195,7 @@ export const OrganizerApprovalsView = () => {
                                                     Approve
                                                 </button>
                                                 <button
-                                                    onClick={() => handleReview(org.id, 'REJECTED')}
+                                                        onClick={() => handleReview(org.id, 'REJECTED')}
                                                     disabled={processingId === org.id}
                                                     style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                                 >
@@ -182,6 +210,18 @@ export const OrganizerApprovalsView = () => {
                     </table>
                 </div>
             </div>
+
+                {/* Decision Modal */}
+                {decisionOpen && (
+                    <DecisionModal
+                        open={decisionOpen}
+                        title={`${decisionContext?.status} Organizer`}
+                        showCommission={true}
+                        initialCommission={decisionContext?.commission}
+                        onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
+                        onConfirm={(p: any) => confirmDecision(p)}
+                    />
+                )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 {/* 🟢 Approved Section */}

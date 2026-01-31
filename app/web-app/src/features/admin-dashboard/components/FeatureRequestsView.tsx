@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import DecisionModal from './DecisionModal';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Crown, Loader2 } from 'lucide-react';
 import { AdminService } from '../../../core/api/admin.service';
@@ -6,6 +7,8 @@ import { AdminService } from '../../../core/api/admin.service';
 export const FeatureRequestsView = () => {
     const [loading, setLoading] = useState(true);
     const [requests, setRequests] = useState<any[]>([]);
+    const [decisionOpen, setDecisionOpen] = useState(false);
+    const [decisionContext, setDecisionContext] = useState<any>(null);
 
     const fetchRequests = async () => {
         try {
@@ -25,8 +28,17 @@ export const FeatureRequestsView = () => {
     }, []);
 
     const handleRespond = async (notificationId: number, approved: boolean) => {
+        setDecisionContext({ notificationId, approved });
+        setDecisionOpen(true);
+    };
+
+    const confirmDecision = async (payload: { reason: string; priority?: string; revenueEstimate?: number }) => {
+        if (!decisionContext) return;
+        const { notificationId, approved } = decisionContext;
         try {
-            await AdminService.respondToFeatureRequest(notificationId, approved);
+            await AdminService.respondToFeatureRequest(notificationId, approved, { priority: payload.priority, revenueEstimate: payload.revenueEstimate, adminNote: payload.reason });
+            setDecisionOpen(false);
+            setDecisionContext(null);
             await fetchRequests();
         } catch (error) {
             console.error('Failed to respond to feature request', error);
@@ -91,6 +103,16 @@ export const FeatureRequestsView = () => {
                     )}
                 </div>
             </div>
+            {decisionOpen && (
+                <DecisionModal
+                    open={decisionOpen}
+                    title={`${decisionContext?.approved ? 'Approve' : 'Reject'} Feature Request`}
+                    showPriority={true}
+                    showRevenueEstimate={true}
+                    onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
+                    onConfirm={(p: any) => confirmDecision(p)}
+                />
+            )}
         </motion.div>
     );
 };

@@ -11,8 +11,8 @@ export const AdminService = {
 
     // Event Management
     getEvents: () => api.get('/events/admin/list'),
-    reviewEvent: (id: number, status: 'APPROVED' | 'REJECTED', commission: any) =>
-        api.post(`/events/${id}/review`, { status, ...commission }),
+    reviewEvent: (id: number, status: 'APPROVED' | 'REJECTED', commission: any, adminNote?: string) =>
+        api.post(`/events/${id}/review`, { status, adminNote, ...commission }),
 
     // Financials
     getFinancialTransactions: (params?: any) => api.get('/financials/transactions', { params }),
@@ -38,7 +38,8 @@ export const AdminService = {
     getAnalytics: (params?: any) => api.get('/admin/analytics', { params }),
     getNotifications: () => api.get('/admin/notifications'),
     getAuditLogs: () => api.get('/admin/notifications?recipient=Audit Log'),
-    respondToFeatureRequest: (notificationId: number, approved: boolean) => api.post(`/admin/feature-requests/${notificationId}/respond`, { approved }),
+    respondToFeatureRequest: (notificationId: number, approved: boolean, options?: { priority?: string; revenueEstimate?: number; adminNote?: string }) =>
+        api.post(`/admin/feature-requests/${notificationId}/respond`, { approved, ...(options || {}) }),
     // Platform Fees
     getPlatformFees: () => api.get('/admin/fees'),
     updatePlatformFee: (data: any) => api.patch('/admin/fees', data),
