@@ -1,6 +1,7 @@
 .event-details-page {
     min-height: 100vh;
     background: var(--bg-main);
+    color: var(--text-main);
 }
 
 /* Loading & Error States */
@@ -123,13 +124,13 @@
     font-size: 2rem;
     font-weight: 800;
     margin-bottom: 1.5rem;
-    color: white;
+    color: var(--text-main);
 }
 
 .event-description {
     font-size: 1.1rem;
     line-height: 1.8;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-muted);
 }
 
 /* Tier List */
@@ -140,7 +141,7 @@
 }
 
 .tier-card {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-subtle);
     border: 1px solid var(--border);
     border-radius: 1.5rem;
     padding: 2rem;
@@ -152,7 +153,7 @@
 }
 
 .tier-card:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-hover);
     border-color: var(--primary);
     transform: translateY(-2px);
 }
@@ -164,12 +165,12 @@
 .tier-name {
     font-size: 1.5rem;
     font-weight: 800;
-    color: white;
+    color: var(--text-main);
     margin-bottom: 0.5rem;
 }
 
 .tier-description {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-muted);
     margin-bottom: 1rem;
     line-height: 1.6;
 }
@@ -196,7 +197,7 @@
 
 .price-label {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -223,7 +224,7 @@
 
 .info-label {
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -231,7 +232,7 @@
 
 .info-value {
     font-size: 1.1rem;
-    color: white;
+    color: var(--text-main);
     font-weight: 700;
 }
 
@@ -243,7 +244,7 @@
 }
 
 .booking-card {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-subtle);
     border: 1px solid var(--border);
     border-radius: 2rem;
     padding: 2rem;
@@ -260,7 +261,7 @@
 .booking-header h3 {
     font-size: 1.5rem;
     font-weight: 800;
-    color: white;
+    color: var(--text-main);
     margin-bottom: 0.5rem;
 }
 
@@ -297,7 +298,7 @@
 
 .info-row .info-label {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -305,7 +306,7 @@
 
 .info-row .info-value {
     font-size: 1rem;
-    color: white;
+    color: var(--text-main);
     font-weight: 600;
     line-height: 1.4;
 }
@@ -335,7 +336,7 @@
 }
 
 .btn-get-tickets:disabled {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     cursor: not-allowed;
     box-shadow: none;
 }
@@ -345,13 +346,85 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
     font-size: 0.9rem;
     font-weight: 600;
 }
 
 .secure-icon {
     font-size: 1rem;
+}
+
+/* Download Modal */
+.download-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 50;
+}
+
+.download-modal-card {
+    width: min(520px, 100%);
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+.download-modal-card h3 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    color: var(--text-main);
+}
+
+.download-modal-card p {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.download-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+.download-btn {
+    padding: 0.8rem 1.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-subtle);
+    color: var(--text-main);
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.download-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.download-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.download-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 700;
+    cursor: pointer;
 }
 
 /* Responsive */

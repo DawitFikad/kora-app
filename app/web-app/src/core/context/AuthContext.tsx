@@ -32,6 +32,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initAuth();
     }, [token]);
 
+    useEffect(() => {
+        if (!token) return;
+
+        const needsApprovalCheck = user?.status === 'PENDING'
+            || user?.role === 'PENDING'
+            || user?.role === 'ORGANIZER_PENDING'
+            || user?.role === 'USER';
+
+        if (!needsApprovalCheck) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const data = await AuthService.getMe();
+                if (data?.user) {
+                    setUser(data.user);
+                }
+            } catch (error) {
+                console.error('Failed to refresh session', error);
+            }
+        }, 15000);
+
+        return () => clearInterval(interval);
+    }, [token, user?.status, user?.role]);
+
     const login = async (data: { accessToken: string, user: any }) => {
         localStorage.setItem('token', data.accessToken);
         setToken(data.accessToken);

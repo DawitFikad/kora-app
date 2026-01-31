@@ -3,9 +3,17 @@ import OrganizerLanding from './features/organizer-landing/OrganizerLanding';
 import OrganizerDashboard from './features/organizer-dashboard/OrganizerDashboard';
 import AdminDashboard from './features/admin-dashboard/AdminDashboard';
 import BookingPage from './features/booking/BookingPage';
+import EventDetailsPage from './features/booking/EventDetailsPage';
 import PaymentPage from './features/booking/PaymentPage';
 import PaymentCallbackPage from './features/booking/PaymentCallbackPage';
 import MyTicketsPage from './features/tickets/MyTicketsPage';
+import SupportPage from './features/public-pages/SupportPage';
+import ContactPage from './features/public-pages/ContactPage';
+import HelpCenterPage from './features/public-pages/HelpCenterPage';
+import TermsPage from './features/public-pages/TermsPage';
+import RefundPolicyPage from './features/public-pages/RefundPolicyPage';
+import OrganizerAgreementPage from './features/public-pages/OrganizerAgreementPage';
+import AdminContentPolicyPage from './features/public-pages/AdminContentPolicyPage';
 
 import { AuthProvider } from './core/context/AuthContext';
 import { ToastProvider } from './core/components/Toast';
@@ -27,6 +35,14 @@ function App() {
 
                 {/* Public Booking Route */}
                 <Route path="/book/:eventId" element={<BookingPage />} />
+                <Route path="/event/:eventId" element={<EventDetailsPage />} />
+                <Route path="/support" element={<SupportPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/help-center" element={<HelpCenterPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/refund-policy" element={<RefundPolicyPage />} />
+                <Route path="/organizer-agreement" element={<OrganizerAgreementPage />} />
+                <Route path="/admin-content" element={<AdminContentPolicyPage />} />
 
                 {/* Payment Routes */}
                 {/* Payment Page requires auth for fetching purchase details securely */}

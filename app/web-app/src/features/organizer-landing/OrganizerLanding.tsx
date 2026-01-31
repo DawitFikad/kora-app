@@ -1,26 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
     Ticket,
     ArrowRight,
     CheckCircle2,
-    BarChart3,
     ShieldCheck,
     ScanLine,
-    Globe,
-    Zap,
-    Layers,
-    ChevronDown,
+    BadgeCheck,
+    Smartphone,
+    MapPin,
+    Tag,
+    Calendar,
+    Clock,
+    Menu,
+    ChevronRight,
     Sun,
     Moon,
-    Mail,
-    Phone,
-    MapPin,
-    MessageSquare,
-    HelpCircle,
-    Rocket,
-    Users,
-    Calendar
+    Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,6 +24,9 @@ import { LoginModal } from '../auth/LoginModal';
 import { useAuth } from '../../core/context/AuthContext';
 import { useTheme } from '../../core/context/ThemeContext';
 import { useLanguage } from '../../core/context/LanguageContext';
+import { EventService } from '../../core/api/event.service';
+import type { PublicEvent } from '../../core/api/event.service';
+import { ContentService } from '../../core/api/content.service';
 
 const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => void }) => {
     const { theme, toggleTheme } = useTheme();
@@ -44,33 +43,33 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
     return (
         <nav className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`} style={{ transition: 'all 0.3s' }}>
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div className="logo-box">
                         <Ticket color="var(--primary-blue)" size={20} />
                     </div>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>ET-TICKETS</span>
+                    <span className="logo-text" style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>ET-TICKETS</span>
                 </div>
 
                 {/* Desktop Nav */}
                 <div className="desktop-nav" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                    <a href="#home" className="nav-link">Home</a>
-                    <a href="#how-it-works" className="nav-link">{t('nav.howItWorks')}</a>
-                    <a href="#features" className="nav-link">{t('nav.features')}</a>
+                    <a href="#home" className="nav-link">{t('nav.home', 'Home')}</a>
+                    <a href="#featured-events" className="nav-link">{t('nav.events')}</a>
+                    <a href="#organizers" className="nav-link">{t('nav.organizers')}</a>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <button
                             onClick={() => onAuthClick('login')}
                             style={{
-                                padding: '0.5rem 1.5rem',
+                                padding: '0.4rem 0.9rem',
                                 borderRadius: '8px',
-                                border: '1px solid var(--border)',
+                                border: '1px solid transparent',
                                 background: 'transparent',
-                                color: 'var(--text-main)',
+                                color: 'var(--text-muted)',
                                 fontWeight: 600,
                                 cursor: 'pointer',
                                 whiteSpace: 'nowrap'
                             }}
                         >
-                            {t('nav.login')}
+                            {t('nav.organizerLogin')}
                         </button>
                         <button
                             onClick={() => onAuthClick('register')}
@@ -85,13 +84,13 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                 whiteSpace: 'nowrap'
                             }}
                         >
-                            {t('nav.register')}
+                            {t('nav.createEvent')}
                         </button>
                     </div>
                 </div>
 
                 {/* Navbar Actions (Theme & Mobile Menu) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div
                         onClick={toggleTheme}
                         style={{ borderRadius: '10px', background: 'var(--bg-hover)', padding: '8px', cursor: 'pointer', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -122,8 +121,10 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                         className="mobile-toggle"
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                         style={{ borderRadius: '10px', background: 'var(--bg-hover)', padding: '8px' }}
+                        aria-label="Toggle navigation"
+                        role="button"
                     >
-                        <Zap size={20} color={mobileMenuOpen ? 'var(--primary)' : 'var(--text-main)'} />
+                        <Menu size={20} color={mobileMenuOpen ? 'var(--primary)' : 'var(--text-main)'} />
                     </div>
                 </div>
             </div>
@@ -137,10 +138,10 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                         exit={{ opacity: 0, height: 0 }}
                         style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border)', overflow: 'hidden' }}
                     >
-                        <div style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem 2rem', gap: '1.5rem' }}>
-                            <a href="#home" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>Home</a>
-                            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.howItWorks')}</a>
-                            <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.features')}</a>
+                        <div className="mobile-menu" style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem 2rem', gap: '1.5rem' }}>
+                            <a href="#home" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.home', 'Home')}</a>
+                            <a href="#featured-events" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.events')}</a>
+                            <a href="#organizers" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: 700 }}>{t('nav.organizers')}</a>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                 <button
                                     onClick={() => { onAuthClick('login'); setMobileMenuOpen(false); }}
@@ -159,7 +160,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                     }}
                                     className="nav-btn-outline"
                                 >
-                                    {t('nav.login')}
+                                    {t('nav.organizerLogin')}
                                 </button>
                                 <button
                                     onClick={() => { onAuthClick('register'); setMobileMenuOpen(false); }}
@@ -178,7 +179,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                     }}
                                     className="nav-btn-primary"
                                 >
-                                    {t('nav.register')}
+                                    {t('nav.createEvent')}
                                 </button>
                             </div>
                         </div>
@@ -208,6 +209,13 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                     .desktop-nav { display: none !important; }
                     .mobile-toggle { display: block !important; cursor: pointer; }
                 }
+                @media (max-width: 640px) {
+                    .navbar .container { padding: 0 1rem; }
+                    .navbar-brand { gap: 0.5rem; }
+                    .logo-text { font-size: 1.05rem !important; }
+                    .navbar-actions { gap: 6px; }
+                    .mobile-menu { padding: 1.25rem 1.25rem; }
+                }
                 @media (min-width: 769px) {
                     .mobile-toggle { display: none !important; }
                 }
@@ -216,145 +224,50 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
     );
 };
 
-const FAQItem = ({ question, answer }: { question: string, answer: string }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    return (
-        <div
-            className="glass"
-            style={{
-                padding: '1.5rem',
-                borderRadius: '1.5rem',
-                cursor: 'pointer',
-                marginBottom: '1rem'
-            }}
-            onClick={() => setIsOpen(!isOpen)}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>{question}</h4>
-                <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-                    <ChevronDown size={20} color="var(--text-muted)" />
-                </motion.div>
-            </div>
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        style={{ overflow: 'hidden' }}
-                    >
-                        <p style={{ paddingTop: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{answer}</p>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-};
+const TrustSignals = () => {
+    const { t } = useLanguage();
+    const badges = [
+        { name: t('landing.trust.badgeTelebirr'), color: '#0F4C81' },
+        { name: t('landing.trust.badgeCbeBirr'), color: '#8B5CF6' },
+        { name: t('landing.trust.badgeAmole'), color: '#F59E0B', comingSoon: true }
+    ];
 
-const PaymentServices = () => {
-    const { t, language } = useLanguage();
-    const providers = [
-        { name: language === 'am' ? 'ቴሌብር' : 'Telebirr', color: '#0066B3' },
-        { name: language === 'am' ? 'ሲቢኢ ብር' : 'CBE Birr', color: '#8B5CF6' },
-        { name: language === 'am' ? 'አሞሌ' : 'Amole', color: '#F59E0B' },
-        { name: language === 'am' ? 'ሲቢኢ' : 'CBE', color: '#3B82F6' }
+    const signals = [
+        { icon: Users, title: t('landing.trust.usedBy') },
+        { icon: ShieldCheck, title: t('landing.trust.securePayments') },
+        { icon: ScanLine, title: t('landing.trust.qr') },
+        { icon: BadgeCheck, title: t('landing.trust.adminVerified') },
+        { icon: ShieldCheck, title: t('landing.trust.adminApproved') }
     ];
 
     return (
-        <section style={{ padding: '10rem 0', background: 'var(--bg-subtle)', position: 'relative', overflow: 'hidden' }}>
+        <section id="trust" style={{ padding: '8rem 0', background: 'var(--bg-subtle)' }}>
             <div className="container">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4rem', marginBottom: '8rem', flexWrap: 'wrap' }}>
-                    <div style={{ flex: '2 1 500px' }}>
-                        <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.4rem 1rem',
-                            background: 'rgba(139, 92, 246, 0.1)',
-                            borderRadius: '100px',
-                            color: '#A78BFA',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            marginBottom: '1.5rem',
-                            border: '1px solid rgba(139, 92, 246, 0.2)'
-                        }}>
-                            <Zap size={14} /> {t('payment.badge')}
-                        </div>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 900, marginBottom: '2rem', lineHeight: 1.1, color: 'var(--text-main)' }}>
-                            {t('payment.title')}
-                        </h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.25rem', lineHeight: 1.6, maxWidth: '600px' }}>
-                            {t('payment.subtitle')}
-                        </p>
-                    </div>
-                    <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center' }}>
-                        <motion.div
-                            animate={{
-                                y: [0, -25, 0],
-                                rotateY: [0, 15, 0]
-                            }}
-                            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                            style={{
-                                width: '320px',
-                                height: '320px',
-                                borderRadius: '60px',
-                                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(217, 70, 239, 0.1))',
-                                border: '1px solid rgba(255,255,255,0.05)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                position: 'relative',
-                                boxShadow: '0 40px 100px rgba(0,0,0,0.5)',
-                                backdropFilter: 'blur(10px)'
-                            }}
-                        >
-                            <div style={{
-                                width: '240px',
-                                height: '160px',
-                                background: 'linear-gradient(135deg, #6366F1, #D946EF)',
-                                borderRadius: '24px',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                boxShadow: '0 25px 50px -12px rgba(139, 92, 246, 0.5)',
-                                transform: 'perspective(1000px) rotateX(15deg) rotateY(-10deg)'
-                            }}>
-                                <div style={{ position: 'absolute', top: '24px', left: '24px', width: '48px', height: '36px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }} />
-                                <div style={{ position: 'absolute', bottom: '24px', left: '24px', fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>•••• 8421</div>
-                                <div style={{ position: 'absolute', top: '24px', right: '24px' }}><ShieldCheck color="white" size={24} /></div>
-                            </div>
-                        </motion.div>
-                    </div>
+                <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+                    <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('landing.trust.title')}</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>{t('landing.trust.subtitle')}</p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2.5rem' }}>
-                    {providers.map((p, i) => (
-                        <motion.div
-                            key={i}
-                            whileHover={{ y: -15, background: 'rgba(255,255,255,0.08)', borderColor: p.color }}
-                            className="glass"
-                            style={{
-                                padding: '4rem 2rem',
-                                borderRadius: '3.5rem',
-                                textAlign: 'center',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '2rem',
-                                border: '1px solid var(--border)',
-                                transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                            }}
-                        >
-                            <div style={{
-                                width: '110px', height: '110px', borderRadius: '35px',
-                                background: p.color,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: `0 25px 50px ${p.color}44`,
-                                marginBottom: '0.5rem'
-                            }}>
-                                <span style={{ color: 'white', fontWeight: 950, fontSize: '3rem' }}>{p.name[0]}</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
+                    {signals.map((item, i) => (
+                        <div key={i} className="glass" style={{ padding: '1.8rem', borderRadius: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--border)' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <item.icon size={22} color="var(--primary)" />
                             </div>
-                            <h4 style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--text-main)' }}>{p.name}</h4>
-                        </motion.div>
+                            <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{item.title}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
+                    {badges.map((badge, i) => (
+                        <div key={i} className="glass" style={{ padding: '0.75rem 1.25rem', borderRadius: '999px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: badge.color, display: 'inline-block' }} />
+                            <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{badge.name}</span>
+                            {badge.comingSoon && (
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('landing.trust.comingSoon')}</span>
+                            )}
+                        </div>
                     ))}
                 </div>
             </div>
@@ -410,9 +323,6 @@ const Testimonials = () => {
         </section>
     );
 };
-
-import { ContentService } from '../../core/api/content.service';
-import { ChevronRight } from 'lucide-react';
 
 const InlineBannerCarousel = ({ banners }: { banners: any[] }) => {
     const [index, setIndex] = useState(0);
@@ -518,39 +428,30 @@ const InlineBannerCarousel = ({ banners }: { banners: any[] }) => {
                                     left: '0',
                                     right: '0',
                                     margin: '0 auto',
-                                    width: '70%',
+                                    width: '90%',
                                     maxWidth: '900px',
                                     height: '100%',
                                     borderRadius: '24px',
                                     overflow: 'hidden',
                                     boxShadow: '0 20px 40px -5px rgba(0,0,0,0.4)',
-                                    cursor: 'pointer',
                                     background: '#000'
-                                }}
-                                onClick={() => {
-                                    if (itemPos === 'center' && b.linkUrl) {
-                                        if (b.linkUrl.startsWith('http')) window.location.href = b.linkUrl;
-                                        else navigate(b.linkUrl);
-                                    } else {
-                                        setIndex(idx);
-                                    }
                                 }}
                             >
                                 <img src={b.imageUrl} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%)' }} />
-
+                                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)' }} />
                                 {itemPos === 'center' && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.2 }}
-                                        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem' }}
+                                        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem', textAlign: 'left' }}
                                     >
                                         <div style={{ display: 'inline-block', padding: '6px 12px', background: 'var(--primary)', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 700, color: 'white', marginBottom: '12px' }}>
                                             FEATURED
                                         </div>
-                                        <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', fontWeight: 800, color: 'white', marginBottom: '0.5rem', lineHeight: 1.1 }}>{b.title}</h2>
-                                        {b.subtitle && <p style={{ fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)', color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>{b.subtitle}</p>}
+                                        <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'white', marginBottom: '0.5rem' }}>{b.title}</h3>
+                                        <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '1rem' }}>{b.subtitle}</p>
+                                        {b.linkUrl && null}
                                     </motion.div>
                                 )}
                             </motion.div>
@@ -559,19 +460,18 @@ const InlineBannerCarousel = ({ banners }: { banners: any[] }) => {
                 </AnimatePresence>
             </div>
 
-            <div style={{ position: 'absolute', bottom: '20px', display: 'flex', gap: '8px', zIndex: 50 }}>
+            <div style={{ position: 'absolute', bottom: '-18px', display: 'flex', gap: '8px' }}>
                 {banners.map((_, i) => (
                     <div
                         key={i}
                         onClick={() => setIndex(i)}
                         style={{
-                            width: i === index ? '24px' : '8px',
+                            width: i === index ? '22px' : '8px',
                             height: '8px',
-                            borderRadius: '4px',
-                            background: i === index ? 'white' : 'rgba(255,255,255,0.3)',
+                            borderRadius: '999px',
+                            background: i === index ? 'white' : 'rgba(255,255,255,0.4)',
                             cursor: 'pointer',
-                            transition: 'all 0.3s',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                            transition: 'all 0.3s ease'
                         }}
                     />
                 ))}
@@ -585,13 +485,12 @@ const OrganizerLanding = () => {
     const { user } = useAuth();
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-    const [revenue, setRevenue] = useState(24.5);
-    const [tickets, setTickets] = useState(842);
     const { language, setLanguage, t } = useLanguage();
     const [banners, setBanners] = useState<any[]>([]);
-
-    const [contactName, setContactName] = useState('');
-    const [contactEmail, setContactEmail] = useState('');
+    const [events, setEvents] = useState<PublicEvent[]>([]);
+    const [eventsLoading, setEventsLoading] = useState(true);
+    const [eventFilter, setEventFilter] = useState<'today' | 'week' | 'all'>('week');
+    const [featuredPage, setFeaturedPage] = useState(0);
 
     useEffect(() => {
         const fetchBanners = async () => {
@@ -608,27 +507,108 @@ const OrganizerLanding = () => {
     }, []);
 
     useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                setEventsLoading(true);
+                const data = await EventService.getEvents({ featured: true });
+                const normalized = Array.isArray(data) ? data : [];
+                setEvents(normalized);
+            } catch (err) {
+                console.error('Failed to load events', err);
+                setEvents([]);
+            } finally {
+                setEventsLoading(false);
+            }
+        };
+        fetchEvents();
+    }, []);
+
+    useEffect(() => {
         if (user) {
             console.log('Landing: User logged in, redirecting based on role:', user.role);
             if (user.role === 'ADMIN') {
                 navigate('/admin');
             } else if (user.role === 'ORGANIZER') {
                 navigate('/dashboard');
-            } else {
-                // Pre-fill contact form for other roles (e.g. USER)
-                setContactName(user.name || '');
-                setContactEmail(user.email || '');
             }
         }
     }, [user, navigate]);
 
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfWeek = new Date(startOfToday);
+    endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+    const isSameDay = (value: string) => {
+        const d = new Date(value);
+        return d.getFullYear() === startOfToday.getFullYear()
+            && d.getMonth() === startOfToday.getMonth()
+            && d.getDate() === startOfToday.getDate();
+    };
+
+    const isWithinWeek = (value: string) => {
+        const d = new Date(value);
+        return d >= startOfToday && d <= endOfWeek;
+    };
+
+    const prioritizedEvents = [...events].sort((a, b) => {
+        const featuredDelta = (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+        if (featuredDelta !== 0) return featuredDelta;
+        return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+    });
+
+    const filteredEvents = prioritizedEvents.filter((event) => {
+        if (eventFilter === 'today') return isSameDay(event.dateTime);
+        if (eventFilter === 'week') return isWithinWeek(event.dateTime);
+        return true;
+    });
+
+    const fallbackFeatured = prioritizedEvents.filter(event => event.featured).slice(0, 5);
+    const fallbackAny = prioritizedEvents.slice(0, 6);
+    const featuredDisplay = filteredEvents.length >= 5
+        ? filteredEvents.slice(0, 6)
+        : filteredEvents.length > 0
+            ? [...filteredEvents, ...fallbackFeatured.filter(e => !filteredEvents.some(f => f.id === e.id))].slice(0, 6)
+            : (fallbackFeatured.length > 0 ? fallbackFeatured : fallbackAny);
+
+    const featuredPageSize = 3;
+    const featuredPageCount = Math.max(1, Math.ceil(featuredDisplay.length / featuredPageSize));
+    const featuredStart = featuredPage * featuredPageSize;
+    const featuredItems = featuredDisplay.slice(featuredStart, featuredStart + featuredPageSize);
+
     useEffect(() => {
-        const interval = setInterval(() => {
-            setRevenue(prev => +(prev + Math.random() * 0.1).toFixed(2));
-            setTickets(prev => prev + (Math.random() > 0.7 ? 1 : 0));
-        }, 3000);
-        return () => clearInterval(interval);
-    }, []);
+        setFeaturedPage(0);
+    }, [eventFilter]);
+
+    useEffect(() => {
+        if (featuredPageCount <= 1) return;
+        const timer = setInterval(() => {
+            setFeaturedPage(prev => (prev + 1) % featuredPageCount);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, [featuredPageCount]);
+
+    const formatEventDate = (value: string) => new Intl.DateTimeFormat(
+        language === 'am' ? 'am-ET' : 'en-US',
+        { month: 'short', day: 'numeric', weekday: 'short' }
+    ).format(new Date(value));
+
+    const formatEventTime = (value: string) => new Intl.DateTimeFormat(
+        language === 'am' ? 'am-ET' : 'en-US',
+        { hour: 'numeric', minute: '2-digit' }
+    ).format(new Date(value));
+
+    const attendeeSteps = [
+        { title: t('landing.how.attendee.1.title'), desc: t('landing.how.attendee.1.desc') },
+        { title: t('landing.how.attendee.2.title'), desc: t('landing.how.attendee.2.desc') },
+        { title: t('landing.how.attendee.3.title'), desc: t('landing.how.attendee.3.desc') }
+    ];
+
+    const organizerSteps = [
+        { title: t('landing.how.organizer.1.title'), desc: t('landing.how.organizer.1.desc') },
+        { title: t('landing.how.organizer.2.title'), desc: t('landing.how.organizer.2.desc') },
+        { title: t('landing.how.organizer.3.title'), desc: t('landing.how.organizer.3.desc') }
+    ];
 
     return (
         <div>
@@ -638,408 +618,330 @@ const OrganizerLanding = () => {
             <LoginModal isOpen={isLoginOpen} mode={authMode} onClose={() => setIsLoginOpen(false)} />
 
             {/* 1. Hero Section */}
-            <section id="home" style={{ paddingTop: '8rem', paddingBottom: '6rem' }}>
+            <section id="home" style={{ paddingTop: '9rem', paddingBottom: '7rem' }}>
                 <div className="container" style={{ textAlign: 'center' }}>
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
+                        style={{ maxWidth: '1600px', width: '100%', margin: '0 auto' }}
                     >
-                        <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.4rem 1rem',
-                            background: 'rgba(139, 92, 246, 0.1)',
-                            borderRadius: '100px',
-                            color: '#A78BFA',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            marginBottom: '2rem',
-                            border: '1px solid rgba(139, 92, 246, 0.2)'
-                        }}>
-                            <Zap size={14} /> {t('hero.badge')}
-                        </div>
-                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 900, lineHeight: 1, marginBottom: '1.5rem', letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
-                            {language === 'en' ? (
-                                <>Sell Tickets. Manage Events. <br /><span className="gradient-text">Get Paid — All in One Platform.</span></>
-                            ) : (
-                                <>{t('hero.title')}</>
-                            )}
-                        </h1>
-                        <p style={{ fontSize: 'clamp(1.1rem, 2vw, 1.25rem)', color: 'var(--text-muted)', maxWidth: '800px', margin: '0 auto 3rem', lineHeight: 1.6 }}>
-                            {t('hero.subtitle')}
-                        </p>
+                        <div className="glass hero-glass" style={{ padding: '3rem 3.5rem', borderRadius: '3rem', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', marginBottom: '2rem' }}>
+                                {[
+                                    t('landing.hero.badge1'),
+                                    t('landing.hero.badge2'),
+                                    t('landing.hero.badge3')
+                                ].map((item, i) => (
+                                    <div key={i} style={{ padding: '0.45rem 1rem', borderRadius: '999px', border: '1px solid var(--border)', background: 'rgba(139, 92, 246, 0.08)', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                        {item}
+                                    </div>
+                                ))}
+                            </div>
 
-                        {/* BANNERS INJECTED HERE */}
-                        {banners.length > 0 && <InlineBannerCarousel banners={banners} />}
+                            <h1 style={{ fontSize: 'clamp(2.6rem, 8vw, 5rem)', fontWeight: 900, lineHeight: 1.05, marginBottom: '1.5rem', letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
+                                {language === 'en' ? (
+                                    <>Buy tickets safely.<br /><span className="gradient-text">Pay by phone. Enter with QR.</span></>
+                                ) : (
+                                    <>{t('landing.hero.title')}</>
+                                )}
+                            </h1>
+                            <p style={{ fontSize: 'clamp(1.05rem, 2vw, 1.25rem)', color: 'var(--text-muted)', maxWidth: '820px', margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
+                                {t('landing.hero.subtitle')}
+                            </p>
 
-                        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <motion.button
-                                onClick={() => { setAuthMode('register'); setIsLoginOpen(true); }}
-                                whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(139, 92, 246, 0.4)' }}
-                                whileTap={{ scale: 0.98 }}
-                                style={{
-                                    padding: '1.1rem 2.5rem',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)',
-                                    color: 'white',
-                                    fontWeight: 600,
-                                    fontSize: '1.1rem',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
-                                    transition: 'all 0.3s ease',
-                                    position: 'relative',
-                                    overflow: 'hidden'
-                                }}
-                            >
-                                <span>{t('nav.register')}</span>
-                                <ArrowRight size={20} />
-                            </motion.button>
-                            <motion.button
-                                onClick={() => { setAuthMode('login'); setIsLoginOpen(true); }}
-                                whileHover={{ background: 'rgba(255, 255, 255, 0.1)' }}
-                                whileTap={{ scale: 0.98 }}
-                                style={{
-                                    padding: '1.1rem 2.5rem',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--border)',
-                                    background: 'var(--bg-hover)',
-                                    color: 'var(--text-main)',
-                                    fontWeight: 600,
-                                    fontSize: '1.1rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s ease'
-                                }}
-                            >
-                                {t('nav.login')}
-                            </motion.button>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', marginBottom: '2.5rem' }}>
+                                {[
+                                    t('landing.hero.point1'),
+                                    t('landing.hero.point2'),
+                                    t('landing.hero.point3'),
+                                    t('landing.hero.point4')
+                                ].map((item, i) => (
+                                    <div key={i} style={{ padding: '0.55rem 1rem', borderRadius: '999px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.02)' }}>
+                                        <CheckCircle2 size={16} color="var(--primary)" />
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>{item}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* BANNERS INJECTED HERE */}
+                            {banners.length > 0 && <InlineBannerCarousel banners={banners} />}
+
+                            <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <motion.button
+                                    onClick={() => document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' })}
+                                    whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(139, 92, 246, 0.4)' }}
+                                    whileTap={{ scale: 0.98 }}
+                                    style={{
+                                        padding: '1.05rem 2.4rem',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        fontSize: '1.05rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
+                                        transition: 'all 0.3s ease',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}
+                                >
+                                    <span>{t('landing.hero.primaryCta')}</span>
+                                    <ArrowRight size={20} />
+                                </motion.button>
+                                <motion.button
+                                    onClick={() => { setAuthMode('register'); setIsLoginOpen(true); }}
+                                    whileHover={{ background: 'rgba(255, 255, 255, 0.1)' }}
+                                    whileTap={{ scale: 0.98 }}
+                                    style={{
+                                        padding: '1.05rem 2.4rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border)',
+                                        background: 'var(--bg-hover)',
+                                        color: 'var(--text-main)',
+                                        fontWeight: 700,
+                                        fontSize: '1.05rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >
+                                    {t('landing.hero.secondaryCta')}
+                                </motion.button>
+                            </div>
                         </div>
                     </motion.div>
                 </div>
             </section>
 
-            <PaymentServices />
+            <TrustSignals />
 
-            {/* 2. How It Works (4 Steps) */}
-            <section id="how-it-works" style={{ background: 'var(--bg-subtle)', padding: '8rem 0' }}>
+            {/* 2. How It Works (3 Steps Each) */}
+            <section id="how-it-works" style={{ padding: '8rem 0' }}>
                 <div className="container">
-                    <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>{t('steps.title')}</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{t('steps.subtitle')}</p>
+                    <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('landing.how.title')}</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.15rem' }}>{t('landing.how.subtitle')}</p>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2.5rem' }}>
-                        {[
-                            { icon: Layers, title: t('steps.1.title'), desc: t('steps.1.desc') },
-                            { icon: ShieldCheck, title: t('steps.2.title'), desc: t('steps.2.desc') },
-                            { icon: Globe, title: t('steps.3.title'), desc: t('steps.3.desc') },
-                            { icon: ScanLine, title: t('steps.4.title'), desc: t('steps.4.desc') }
-                        ].map((step, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                whileHover={{ scale: 1.05, translateY: -10 }}
-                                className="glass"
-                                style={{ padding: '3rem 2rem', textAlign: 'center', borderRadius: '2.5rem' }}
-                            >
-                                <div style={{
-                                    width: '72px',
-                                    height: '72px',
-                                    background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                                    borderRadius: '22px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    margin: '0 auto 2rem',
-                                    boxShadow: '0 12px 24px rgba(139, 92, 246, 0.2)'
-                                }}>
-                                    <step.icon color="white" size={32} />
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
+                        <div className="glass" style={{ padding: '2.5rem', borderRadius: '2rem', border: '1px solid var(--border)' }}>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('landing.how.attendees')}</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                {attendeeSteps.map((step, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '1rem' }}>
+                                        <div style={{ width: '34px', height: '34px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--primary)' }}>
+                                            {i + 1}
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.3rem', color: 'var(--text-main)' }}>{step.title}</h4>
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>{step.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="glass" style={{ padding: '2.5rem', borderRadius: '2rem', border: '1px solid var(--border)' }}>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('landing.how.organizers')}</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                {organizerSteps.map((step, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '1rem' }}>
+                                        <div style={{ width: '34px', height: '34px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#3B82F6' }}>
+                                            {i + 1}
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.3rem', color: 'var(--text-main)' }}>{step.title}</h4>
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>{step.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* 3. Featured Events */}
+            <section id="featured-events" style={{ padding: '8rem 0', background: 'var(--bg-subtle)' }}>
+                <div className="container">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '2rem', marginBottom: '2.5rem' }}>
+                        <div>
+                            <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '0.8rem', color: 'var(--text-main)' }}>{t('landing.featured.title')}</h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>{t('landing.featured.subtitle')}</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            {[
+                                { key: 'today', label: t('landing.featured.filter.today') },
+                                { key: 'week', label: t('landing.featured.filter.week') },
+                                { key: 'all', label: t('landing.featured.filter.all') }
+                            ].map((option) => (
+                                <button
+                                    key={option.key}
+                                    onClick={() => setEventFilter(option.key as 'today' | 'week' | 'all')}
+                                    style={{
+                                        padding: '0.6rem 1.2rem',
+                                        borderRadius: '999px',
+                                        border: '1px solid var(--border)',
+                                        background: eventFilter === option.key ? 'var(--primary)' : 'transparent',
+                                        color: eventFilter === option.key ? 'white' : 'var(--text-main)',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {eventsLoading ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="glass" style={{ padding: '2rem', borderRadius: '2rem', border: '1px solid var(--border)', minHeight: '320px' }} />
+                            ))}
+                        </div>
+                    ) : featuredDisplay.length === 0 ? (
+                        <div className="glass" style={{ padding: '2.5rem', borderRadius: '2rem', border: '1px solid var(--border)', textAlign: 'center' }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>{t('landing.featured.empty')}</p>
+                        </div>
+                    ) : (
+                        <div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+                                {featuredItems.map((event) => (
+                                <div
+                                    key={event.id}
+                                    className="glass"
+                                    style={{ borderRadius: '2rem', border: '1px solid var(--border)', overflow: 'hidden', cursor: 'pointer' }}
+                                    onClick={() => navigate(`/event/${event.id}`)}
+                                >
+                                    <div style={{ position: 'relative', height: '180px', overflow: 'hidden' }}>
+                                        {event.coverImage ? (
+                                            <img src={event.coverImage} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🎟️</div>
+                                        )}
+                                        {event.featured && (
+                                            <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(17, 24, 39, 0.75)', color: 'white', padding: '4px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 800 }}>
+                                                {t('landing.featured.adminPriority')}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ padding: '1.5rem' }}>
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-main)' }}>{event.title}</h3>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Calendar size={14} /> {formatEventDate(event.dateTime)}</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={14} /> {formatEventTime(event.dateTime)}</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><MapPin size={14} /> {event.city?.name || t('landing.featured.cityFallback')}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            {event.category?.name && (
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(139, 92, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                    <Tag size={12} /> {event.category?.name}
+                                                </span>
+                                            )}
+                                            {event.organizer?.organizationName && (
+                                                <span style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(59, 130, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                    {event.organizer.organizationName}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <button
+                                            style={{ marginTop: '1rem', padding: '0.6rem 1rem', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: 'pointer' }}
+                                        >
+                                            {t('landing.featured.cta')}
+                                        </button>
+                                    </div>
                                 </div>
-                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>{step.title}</h3>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.5 }}>{step.desc}</p>
-                            </motion.div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* 4. Why Choose This Platform */}
+            <section id="why-choose" style={{ padding: '8rem 0' }}>
+                <div className="container">
+                    <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('landing.why.title')}</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>{t('landing.why.subtitle')}</p>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+                        {[
+                            t('landing.why.1'),
+                            t('landing.why.2'),
+                            t('landing.why.3'),
+                            t('landing.why.4'),
+                            t('landing.why.5')
+                        ].map((item, i) => (
+                            <div key={i} className="glass" style={{ padding: '1.6rem', borderRadius: '1.5rem', border: '1px solid var(--border)', display: 'flex', gap: '0.8rem' }}>
+                                <CheckCircle2 size={20} color="var(--primary)" />
+                                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{item}</span>
+                            </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* 3. Features Highlights */}
-            <section id="features" style={{ padding: '10rem 0' }}>
+            {/* 5. Organizer Call-to-Action */}
+            <section id="organizers" style={{ padding: '8rem 0', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15))' }}>
                 <div className="container">
-                    <div style={{ display: 'flex', gap: '6rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <div style={{ flex: '1 1 500px' }}>
-                            <h2 style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1.1, marginBottom: '3rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-                                {t('features.title')}
-                            </h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                                {[
-                                    { title: t('features.1.title'), desc: t('features.1.desc') },
-                                    { title: t('features.2.title'), desc: t('features.2.desc') },
-                                    { title: t('features.3.title'), desc: t('features.3.desc') },
-                                    { title: t('features.4.title'), desc: t('features.4.desc') },
-                                    { title: t('features.5.title'), desc: t('features.5.desc') },
-                                    { title: t('features.6.title'), desc: t('features.6.desc') }
-                                ].map((feat, i) => (
-                                    <motion.div
-                                        key={i}
-                                        style={{ display: 'flex', gap: '1.5rem' }}
-                                        whileHover={{ x: 10 }}
-                                    >
-                                        <div style={{ color: 'var(--primary)', paddingTop: '0.25rem' }}><CheckCircle2 size={26} /></div>
-                                        <div>
-                                            <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--text-main)' }}>{feat.title}</h4>
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: 1.5 }}>{feat.desc}</p>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-                        <div style={{ flex: '1 1 400px' }}>
-                            <motion.div
-                                className="glass"
-                                style={{ padding: '3.5rem', borderRadius: '4rem', position: 'relative' }}
-                                whileHover={{ scale: 1.02 }}
+                    <div className="glass" style={{ padding: '3.5rem', borderRadius: '2.5rem', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem', alignItems: 'center' }}>
+                        <div>
+                            <h2 style={{ fontSize: '2.6rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('landing.organizer.title')}</h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '2rem' }}>{t('landing.organizer.subtitle')}</p>
+                            <button
+                                onClick={() => { setAuthMode('register'); setIsLoginOpen(true); }}
+                                style={{ padding: '0.9rem 2rem', borderRadius: '12px', border: 'none', background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)', color: 'white', fontWeight: 700, cursor: 'pointer' }}
                             >
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '-30px',
-                                    right: '-30px',
-                                    width: '100px',
-                                    height: '100px',
-                                    background: 'linear-gradient(135deg, #8B5CF6, #D946EF)',
-                                    borderRadius: '28px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transform: 'rotate(12deg)',
-                                    boxShadow: '0 20px 40px rgba(139, 92, 246, 0.4)'
-                                }}>
-                                    <BarChart3 color="white" size={48} />
-                                </div>
-                                <div style={{ marginBottom: '2.5rem' }}>
-                                    <div style={{ height: '10px', width: '60%', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', marginBottom: '1.25rem' }} />
-                                    <div style={{ height: '10px', width: '40%', background: 'rgba(255,255,255,0.05)', borderRadius: '5px' }} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
-                                    <div className="glass" style={{ padding: '1.5rem', borderRadius: '1.5rem' }}>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('stats.revenue')}</p>
-                                        <p style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>ETB {revenue}k</p>
-                                    </div>
-                                    <div className="glass" style={{ padding: '1.5rem', borderRadius: '1.5rem' }}>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('stats.sales')}</p>
-                                        <p style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>{tickets}</p>
-                                    </div>
-                                </div>
-                                <div style={{ height: '160px', width: '100%', background: 'rgba(139, 92, 246, 0.05)', borderRadius: '2rem', position: 'relative', overflow: 'hidden' }}>
-                                    <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                        <motion.path
-                                            d="M0,80 Q25,20 50,60 T100,20 L100,100 L0,100 Z"
-                                            fill="rgba(139, 92, 246, 0.2)"
-                                            animate={{
-                                                d: [
-                                                    "M0,80 Q25,20 50,60 T100,20 L100,100 L0,100 Z",
-                                                    "M0,80 Q25,40 50,20 T100,60 L100,100 L0,100 Z",
-                                                    "M0,80 Q25,20 50,60 T100,20 L100,100 L0,100 Z"
-                                                ]
-                                            }}
-                                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                                        />
-                                    </svg>
-                                </div>
-                            </motion.div>
+                                {t('landing.organizer.cta')}
+                            </button>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            <Testimonials />
-
-            {/* 4. Trust & Compliance */}
-            <section style={{ padding: '6rem 0' }}>
-                <div className="container">
-                    <div className="glass" style={{ padding: '2rem 1rem', borderRadius: '5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '5rem', alignItems: 'center' }}>
-                        <div style={{ padding: '3rem' }}>
-                            <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1.5rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>{t('trust.title')}</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '2.5rem', lineHeight: 1.6 }}>{t('trust.subtitle')}</p>
-                            <button onClick={() => setIsLoginOpen(true)} className="btn btn-primary" style={{ padding: '1rem 2rem' }}>{t('trust.btn')}</button>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', padding: '3rem' }}>
+                        <div style={{ display: 'grid', gap: '1rem' }}>
                             {[
-                                { title: t('trust.1.title'), desc: t('trust.1.desc') },
-                                { title: t('trust.2.title'), desc: t('trust.2.desc') },
-                                { title: t('trust.3.title'), desc: t('trust.3.desc') },
-                                { title: t('trust.4.title'), desc: t('trust.4.desc') }
+                                t('landing.organizer.point1'),
+                                t('landing.organizer.point2'),
+                                t('landing.organizer.point3')
                             ].map((item, i) => (
-                                <motion.div
-                                    key={i}
-                                    style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}
-                                    whileHover={{ x: 5 }}
-                                >
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(167, 139, 250, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <ShieldCheck color="#A78BFA" size={24} />
-                                    </div>
-                                    <div>
-                                        <span style={{ display: 'block', fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.2rem', color: 'var(--text-main)' }}>{item.title}</span>
-                                        <span style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>{item.desc}</span>
-                                    </div>
-                                </motion.div>
+                                <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                    <BadgeCheck size={20} color="var(--primary)" />
+                                    <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{item}</span>
+                                </div>
                             ))}
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Help Center Section */}
-            <section style={{ padding: '8rem 0', background: 'var(--bg-subtle)' }}>
+            {/* 6. Mobile-First Emphasis */}
+            <section id="mobile-first" style={{ padding: '6rem 0' }}>
                 <div className="container">
-                    <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '20px', marginBottom: '1.5rem' }}>
-                            <HelpCircle size={16} color="var(--primary)" />
-                            <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>{t('help.badge', 'Help Center')}</span>
+                    <div className="glass" style={{ padding: '2.5rem', borderRadius: '2rem', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Smartphone size={26} color="#3B82F6" />
                         </div>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('help.title', 'How can we help you?')}</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{t('help.subtitle', 'Find answers to your questions and support for your events.')}</p>
-                    </div>
-
-                    {/* Help Categories */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', marginBottom: '6rem' }}>
-                        {[
-                            { icon: Rocket, title: 'Getting Started', desc: 'Guide to creating your first event' },
-                            { icon: Users, title: 'Account & Billing', desc: 'Manage your profile and payouts' },
-                            { icon: Calendar, title: 'Event Management', desc: 'Updates, seats, and ticketing' },
-                            { icon: ShieldCheck, title: 'Trust & Safety', desc: 'Policies and verification guide' }
-                        ].map((item, i) => (
-                            <motion.div
-                                key={i}
-                                className="glass"
-                                whileHover={{ y: -5 }}
-                                style={{ padding: '2rem', borderRadius: '1.5rem', cursor: 'pointer', border: '1px solid var(--border)' }}
-                            >
-                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
-                                    {/* Using generic icons if specific ones aren't available, but I added most. I'll use Layers for Rocket if Rocket isn't imported, but I didn't import Rocket. I should use imported icons. */}
-                                    {i === 0 ? <Zap size={24} color="var(--primary)" /> :
-                                        i === 1 ? <Users size={24} color="#EC4899" /> :
-                                            i === 2 ? <Calendar size={24} color="#F59E0B" /> : // Calendar might not be imported? I'll check.
-                                                <ShieldCheck size={24} color="#10B981" />}
-                                </div>
-                                <h4 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)' }}>{item.title}</h4>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{item.desc}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* FAQs */}
-                    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-                        <h3 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '3rem', textAlign: 'center', color: 'var(--text-main)' }}>Frequently Asked Questions</h3>
-                        <FAQItem
-                            question={t('faq.1.q')}
-                            answer={t('faq.1.a')}
-                        />
-                        <FAQItem
-                            question={t('faq.2.q')}
-                            answer={t('faq.2.a')}
-                        />
-                        <FAQItem
-                            question={t('faq.3.q')}
-                            answer={t('faq.3.a')}
-                        />
-                        <FAQItem
-                            question={t('faq.4.q')}
-                            answer={t('faq.4.a')}
-                        />
+                        <div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--text-main)' }}>{t('landing.mobile.title')}</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>{t('landing.mobile.subtitle')}</p>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Contact Us Section */}
-            <section style={{ padding: '8rem 0', background: 'var(--bg-main)' }}>
-                <div className="container">
-                    <div className="glass" style={{ borderRadius: '3rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
-                            {/* Contact Info */}
-                            <div style={{ padding: '4rem', background: 'var(--primary)', color: 'white' }}>
-                                <h2 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '1.5rem' }}>{t('contact.title', 'Get in Touch')}</h2>
-                                <p style={{ fontSize: '1.1rem', opacity: 0.9, marginBottom: '4rem', lineHeight: 1.6 }}>
-                                    {t('contact.subtitle', 'Have questions about enterprise solutions or need custom support? We\'re here to help.')}
-                                </p>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Mail size={20} color="white" />
-                                        </div>
-                                        <div>
-                                            <p style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 700, marginBottom: '4px' }}>EMAIL US</p>
-                                            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>support@et-tickets.com</p>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Phone size={20} color="white" />
-                                        </div>
-                                        <div>
-                                            <p style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 700, marginBottom: '4px' }}>CALL US</p>
-                                            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>+251 911 234 567</p>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <MapPin size={20} color="white" />
-                                        </div>
-                                        <div>
-                                            <p style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 700, marginBottom: '4px' }}>VISIT US</p>
-                                            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Bole Atlas, Addis Ababa</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Contact Form */}
-                            <div style={{ padding: '4rem', background: 'var(--bg-card)' }}>
-                                <form onSubmit={(e) => { e.preventDefault(); alert('Message sent!'); }}>
-                                    <div style={{ marginBottom: '2rem' }}>
-                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Full Name</label>
-                                        <input
-                                            type="text"
-                                            placeholder="User Name"
-                                            value={contactName}
-                                            onChange={(e) => setContactName(e.target.value)}
-                                            style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '1rem' }}
-                                        />
-                                    </div>
-                                    <div style={{ marginBottom: '2rem' }}>
-                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Email Address</label>
-                                        <input
-                                            type="email"
-                                            placeholder="user@example.com"
-                                            value={contactEmail}
-                                            onChange={(e) => setContactEmail(e.target.value)}
-                                            style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '1rem' }}
-                                        />
-                                    </div>
-                                    <div style={{ marginBottom: '2rem' }}>
-                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Message</label>
-                                        <textarea rows={4} placeholder="How can we help you?" style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '1rem', resize: 'vertical' }}></textarea>
-                                    </div>
-                                    <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                        Send Message <MessageSquare size={18} />
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+            {/* 7. Compliance + Scale Statement */}
+            <section style={{ padding: '2rem 0 6rem' }}>
+                <div className="container" style={{ textAlign: 'center' }}>
+                    <p style={{ fontWeight: 700, color: 'var(--text-main)', marginBottom: '1rem' }}>{t('landing.compliance')}</p>
+                    <p style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{t('landing.scaleLine')}</p>
                 </div>
             </section>
 
             {/* 5. Footer */}
-            <footer style={{ padding: '8rem 0 4rem', borderTop: '1px solid var(--border)' }}>
+            <footer style={{ padding: '8rem 0 4rem', borderTop: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
                 <div className="container">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '5rem' }}>
                         <div style={{ flex: '1 1 350px' }}>
@@ -1054,19 +956,20 @@ const OrganizerLanding = () => {
 
                         <div style={{ display: 'flex', gap: '5rem', flexWrap: 'wrap' }}>
                             <div>
-                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{t('footer.platform')}</h5>
+                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{t('landing.footer.supportTitle')}</h5>
                                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('nav.features')}</a></li>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.pricing')}</a></li>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.caseStudies')}</a></li>
+                                    <li><Link to="/contact" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('landing.footer.contact')}</Link></li>
+                                    <li><Link to="/help-center" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.helpCenter', 'Help Center')}</Link></li>
+                                    <li><Link to="/support" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('landing.footer.support')}</Link></li>
                                 </ul>
                             </div>
                             <div>
-                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{t('footer.support')}</h5>
+                                <h5 style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', color: 'var(--text-main)' }}>{t('landing.footer.policiesTitle')}</h5>
                                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.helpCenter')}</a></li>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.contactUs')}</a></li>
-                                    <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('footer.systemStatus')}</a></li>
+                                    <li><Link to="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('landing.footer.terms')}</Link></li>
+                                    <li><Link to="/refund-policy" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('landing.footer.refund')}</Link></li>
+                                    <li><Link to="/organizer-agreement" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('landing.footer.organizerAgreement')}</Link></li>
+                                    <li><Link to="/admin-content" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '1rem' }}>{t('landing.footer.adminContent')}</Link></li>
                                 </ul>
                             </div>
                         </div>
@@ -1107,7 +1010,7 @@ const OrganizerLanding = () => {
 
                     <div style={{ borderTop: '1px solid var(--border)', marginTop: '6rem', paddingTop: '3rem', textAlign: 'center' }}>
                         <p style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 600 }}>
-                            © 2025 ET-TICKETS PLATFORM. {t('footer.rights')}
+                            © {new Date().getFullYear()} ET-TICKETS PLATFORM. {t('footer.rights')}
                         </p>
                     </div>
                 </div>

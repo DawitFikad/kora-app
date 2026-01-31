@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/profile_service.dart';
-import '../../../core/providers.dart';
 import 'edit_profile_screen.dart';
 import '../../scanner/services/scanner_service.dart';
 import '../../auth/services/auth_service.dart';

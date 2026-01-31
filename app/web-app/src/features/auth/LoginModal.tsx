@@ -25,6 +25,13 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
     const [email, setEmail] = useState('');
     const [city, setCity] = useState('');
     const [payoutDetails, setPayoutDetails] = useState('');
+    const [organizerType, setOrganizerType] = useState<'company' | 'individual' | ''>('');
+    const [shortDescription, setShortDescription] = useState('');
+    const [categories, setCategories] = useState('');
+    const [operatingCities, setOperatingCities] = useState('');
+    const [businessLicense, setBusinessLicense] = useState<File | null>(null);
+    const [idDocument, setIdDocument] = useState<File | null>(null);
+    const [eventPoster, setEventPoster] = useState<File | null>(null);
 
     const normalizeEthiopianPhone = (input: string) => {
         const trimmed = input.trim();
@@ -105,8 +112,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         phoneNumber: normalized,
                         email,
                         name,
-                        city,
-                        payoutDetails
+                        city: operatingCities || city,
+                        payoutDetails,
+                        organizerType,
+                        shortDescription,
+                        categories,
+                        operatingCities
                     });
                     
                     console.log('Registration successful:', regRes);
@@ -128,7 +139,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
             }
         } catch (err: any) {
             console.error('[LoginModal] Verification Error:', err);
-            const errorMessage = err.response?.data?.error || err.error || err.message || 'Verification failed. Please try again.';
+            const errorMessage = err.response?.data?.error || err.error || err.message || 'We couldn\'t verify that code. Please try again.';
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -140,39 +151,46 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
     return (
         <div className="modal-overlay" style={{
             position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-            background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
+            background: 'radial-gradient(1200px 800px at 50% 10%, rgba(99,102,241,0.18) 0%, rgba(15,23,42,0.9) 55%, rgba(2,6,23,0.95) 100%)',
+            backdropFilter: 'blur(10px) saturate(120%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
+            padding: '24px'
         }}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 className="glass"
                 style={{
-                    width: '100%', maxWidth: '450px', padding: '40px', borderRadius: '32px',
-                    position: 'relative', border: '1px solid var(--border)', background: 'var(--bg-card)'
+                    width: '100%', maxWidth: '560px', padding: '36px', borderRadius: '28px',
+                    position: 'relative', border: '1px solid rgba(148,163,184,0.25)',
+                    background: 'linear-gradient(180deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95))',
+                    boxShadow: '0 24px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
                 }}
             >
                 <button onClick={onClose} style={{
-                    position: 'absolute', top: 24, right: 24, background: 'none', border: 'none',
-                    color: 'var(--text-muted)', cursor: 'pointer'
+                    position: 'absolute', top: 20, right: 20, background: 'rgba(148,163,184,0.12)',
+                    border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px',
+                    color: 'var(--text-muted)', cursor: 'pointer', padding: '6px'
                 }}>
                     <X size={24} />
                 </button>
 
-                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '28px' }}>
                     <div style={{
-                        width: '64px', height: '64px', background: 'rgba(139, 92, 246, 0.1)',
-                        borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 20px'
+                        width: '64px', height: '64px',
+                        background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.18))',
+                        border: '1px solid rgba(99,102,241,0.35)',
+                        borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 18px'
                     }}>
                         {step === 'phone' && (mode === 'register' ? <Building2 size={32} color="var(--primary)" /> : <Phone size={32} color="var(--primary)" />)}
                         {step === 'otp' && <ShieldCheck size={32} color="var(--primary)" />}
                     </div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
                         {step === 'phone' && (mode === 'register' ? t('auth.applyTitle') : t('auth.welcomeTitle'))}
                         {step === 'otp' && t('auth.verifyTitle')}
                     </h2>
-                    <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '0.98rem' }}>
                         {step === 'phone' && (mode === 'register' ? t('auth.applyDesc') : t('auth.welcomeDesc'))}
                         {step === 'otp' && `${t('auth.verifyDesc')} ${phoneNumber}`}
                     </p>
@@ -180,9 +198,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
 
                 {error && (
                     <div style={{
-                        padding: '12px 16px', background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px',
-                        color: '#EF4444', fontSize: '0.9rem', marginBottom: '24px', fontWeight: 600
+                        padding: '12px 16px', background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '12px',
+                        color: '#F87171', fontSize: '0.9rem', marginBottom: '20px', fontWeight: 600
                     }}>
                         {error}
                     </div>
@@ -193,38 +211,78 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         <motion.form key="phone" onSubmit={handleRequestOtp}
                             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                             {mode === 'register' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.orgName')}</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <Building2 size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                                            <input
-                                                type="text"
-                                                placeholder={t('auth.orgNamePlaceholder')}
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+                                    <div style={{
+                                        display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px',
+                                        padding: '16px', borderRadius: '20px',
+                                        background: 'rgba(15,23,42,0.6)',
+                                        border: '1px solid rgba(148,163,184,0.2)',
+                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                    }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.orgName')}</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <Building2 size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                                                <input
+                                                    type="text"
+                                                    placeholder={t('auth.orgNamePlaceholder')}
+                                                    value={name}
+                                                    onChange={(e) => setName(e.target.value)}
+                                                    required
+                                                    style={{
+                                                        width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                        padding: '12px 12px 12px 48px', borderRadius: '14px', color: 'var(--text-main)',
+                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.organizerType')}</label>
+                                            <select
+                                                value={organizerType}
+                                                onChange={(e) => setOrganizerType(e.target.value as 'company' | 'individual' | '')}
                                                 required
                                                 style={{
-                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                                    padding: '12px 12px 12px 48px', borderRadius: '12px', color: 'var(--text-main)'
+                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                    padding: '12px', borderRadius: '14px', color: 'var(--text-main)',
+                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                }}
+                                            >
+                                                <option value="">{t('auth.organizerTypePlaceholder', 'Select type')}</option>
+                                                <option value="company">{t('auth.organizerTypeCompany')}</option>
+                                                <option value="individual">{t('auth.organizerTypeIndividual')}</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.shortDesc')}</label>
+                                            <textarea
+                                                rows={2}
+                                                placeholder={t('auth.shortDescPlaceholder', 'Tell us what kind of events you run')}
+                                                value={shortDescription}
+                                                onChange={(e) => setShortDescription(e.target.value)}
+                                                required
+                                                style={{
+                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                    padding: '12px', borderRadius: '14px', color: 'var(--text-main)', resize: 'none',
+                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
                                                 }}
                                             />
                                         </div>
-                                    </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.city')}</label>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.operatingCities')}</label>
                                             <div style={{ position: 'relative' }}>
                                                 <MapPin size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                                                 <input
                                                     type="text"
-                                                    placeholder={t('auth.cityPlaceholder')}
-                                                    value={city}
-                                                    onChange={(e) => setCity(e.target.value)}
+                                                    placeholder={t('auth.operatingCitiesPlaceholder', 'Addis Ababa, Adama')}
+                                                    value={operatingCities}
+                                                    onChange={(e) => setOperatingCities(e.target.value)}
                                                     required
                                                     style={{
-                                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                                        padding: '12px 12px 12px 36px', borderRadius: '12px', color: 'var(--text-main)'
+                                                        width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                        padding: '12px 12px 12px 36px', borderRadius: '14px', color: 'var(--text-main)',
+                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
                                                     }}
                                                 />
                                             </div>
@@ -240,28 +298,62 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     required
                                                     style={{
-                                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                                        padding: '12px 12px 12px 36px', borderRadius: '12px', color: 'var(--text-main)'
+                                                        width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                        padding: '12px 12px 12px 36px', borderRadius: '14px', color: 'var(--text-main)',
+                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
                                                     }}
                                                 />
                                             </div>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.payout')}</label>
-                                        <input
-                                            type="text"
-                                            placeholder={t('auth.payoutPlaceholder')}
-                                            value={payoutDetails}
-                                            onChange={(e) => setPayoutDetails(e.target.value)}
-                                            required
-                                            style={{
-                                                width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                                padding: '12px', borderRadius: '12px', color: 'var(--text-main)'
-                                            }}
-                                        />
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.payout')}</label>
+                                            <input
+                                                type="text"
+                                                placeholder={t('auth.payoutPlaceholder')}
+                                                value={payoutDetails}
+                                                onChange={(e) => setPayoutDetails(e.target.value)}
+                                                required
+                                                style={{
+                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                    padding: '12px', borderRadius: '14px', color: 'var(--text-main)',
+                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('auth.businessLicense')}</label>
+                                            <input
+                                                type="file"
+                                                accept=".pdf,image/*"
+                                                onChange={(e) => setBusinessLicense(e.target.files?.[0] || null)}
+                                                style={{
+                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px dashed rgba(148,163,184,0.35)',
+                                                    padding: '10px', borderRadius: '12px', color: 'var(--text-muted)'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('auth.poster')}</label>
+                                            <input
+                                                type="file"
+                                                accept="image/*,.pdf"
+                                                onChange={(e) => setEventPoster(e.target.files?.[0] || null)}
+                                                style={{
+                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px dashed rgba(148,163,184,0.35)',
+                                                    padding: '10px', borderRadius: '12px', color: 'var(--text-muted)'
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {mode === 'register' && (
+                                <div style={{
+                                    height: '1px', width: '100%',
+                                    background: 'linear-gradient(90deg, transparent, rgba(148,163,184,0.35), transparent)',
+                                    margin: '6px 0 20px'
+                                }} />
                             )}
 
                             <div style={{ marginBottom: '24px' }}>
@@ -275,8 +367,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                         onChange={(e) => setPhoneNumber(e.target.value)}
                                         required
                                         style={{
-                                            width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                            padding: '16px 16px 16px 48px', borderRadius: '14px', color: 'var(--text-main)', fontSize: '1rem'
+                                            width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                            padding: '16px 16px 16px 48px', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem',
+                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
                                         }}
                                     />
                                 </div>
@@ -300,8 +393,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                     onChange={(e) => setOtp(e.target.value)}
                                     required
                                     style={{
-                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                        padding: '16px', borderRadius: '14px', color: 'var(--text-main)', fontSize: '1.5rem',
+                                        width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                        padding: '16px', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1.5rem',
+                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
                                         textAlign: 'center', letterSpacing: '8px', fontWeight: 900
                                     }}
                                 />

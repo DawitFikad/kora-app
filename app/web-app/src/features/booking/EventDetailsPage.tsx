@@ -12,6 +12,10 @@ const EventDetailsPage: React.FC = () => {
 
     const [event, setEvent] = useState<EventForBooking | null>(null);
     const [loading, setLoading] = useState(true);
+    const [showDownloadPrompt, setShowDownloadPrompt] = useState(false);
+
+    const androidAppUrl = import.meta.env.VITE_ANDROID_APP_URL || '';
+    const iosAppUrl = import.meta.env.VITE_IOS_APP_URL || '';
 
     useEffect(() => {
         const loadEvent = async () => {
@@ -34,7 +38,7 @@ const EventDetailsPage: React.FC = () => {
 
     const handleGetTickets = () => {
         if (event) {
-            navigate(`/book/${event.id}`);
+            setShowDownloadPrompt(true);
         }
     };
 
@@ -234,6 +238,42 @@ const EventDetailsPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {showDownloadPrompt && (
+                <div className="download-modal" role="dialog" aria-modal="true">
+                    <div className="download-modal-card">
+                        <h3>Get tickets in the mobile app</h3>
+                        <p>For ticket purchases and QR entry, please download the ET-TICKETS app.</p>
+                        <div className="download-actions">
+                            <a
+                                className={`download-btn ${!androidAppUrl ? 'disabled' : ''}`}
+                                href={androidAppUrl || undefined}
+                                target={androidAppUrl ? '_blank' : undefined}
+                                rel={androidAppUrl ? 'noreferrer' : undefined}
+                                onClick={(e) => {
+                                    if (!androidAppUrl) e.preventDefault();
+                                }}
+                            >
+                                Android
+                            </a>
+                            <a
+                                className={`download-btn ${!iosAppUrl ? 'disabled' : ''}`}
+                                href={iosAppUrl || undefined}
+                                target={iosAppUrl ? '_blank' : undefined}
+                                rel={iosAppUrl ? 'noreferrer' : undefined}
+                                onClick={(e) => {
+                                    if (!iosAppUrl) e.preventDefault();
+                                }}
+                            >
+                                iOS
+                            </a>
+                        </div>
+                        <button className="download-close" onClick={() => setShowDownloadPrompt(false)}>
+                            Not now
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
