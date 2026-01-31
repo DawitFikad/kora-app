@@ -24,6 +24,8 @@
     --border: rgba(255, 255, 255, 0.06);
     --glass-bg: rgba(18, 23, 31, 0.8);
     --glass-border: rgba(255, 255, 255, 0.06);
+    /* Modal overlay for light/dark themed modal backdrop */
+    --modal-overlay: rgba(2, 6, 23, 0.6);
 
     font-family: 'Outfit', sans-serif;
     color-scheme: dark;
@@ -56,6 +58,9 @@
     --border: #E2E8F0;
     --glass-bg: rgba(255, 255, 255, 0.9);
     --glass-border: rgba(15, 23, 42, 0.08);
+
+    /* Modal overlay for light theme */
+    --modal-overlay: rgba(15, 23, 42, 0.06);
 
     color-scheme: light;
 }

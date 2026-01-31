@@ -151,7 +151,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
     return (
         <div className="modal-overlay" style={{
             position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-            background: 'radial-gradient(1200px 800px at 50% 10%, rgba(99,102,241,0.18) 0%, rgba(15,23,42,0.9) 55%, rgba(2,6,23,0.95) 100%)',
+            background: 'var(--modal-overlay, rgba(2,6,23,0.6))',
             backdropFilter: 'blur(10px) saturate(120%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
             padding: '24px'
@@ -162,14 +162,14 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                 className="glass"
                 style={{
                     width: '100%', maxWidth: '560px', padding: '36px', borderRadius: '28px',
-                    position: 'relative', border: '1px solid rgba(148,163,184,0.25)',
-                    background: 'linear-gradient(180deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95))',
-                    boxShadow: '0 24px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
+                    position: 'relative', border: '1px solid var(--glass-border)',
+                    background: 'var(--glass-bg)',
+                    boxShadow: '0 24px 80px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)'
                 }}
             >
                 <button onClick={onClose} style={{
-                    position: 'absolute', top: 20, right: 20, background: 'rgba(148,163,184,0.12)',
-                    border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px',
+                    position: 'absolute', top: 20, right: 20, background: 'var(--bg-hover)',
+                    border: '1px solid var(--border)', borderRadius: '12px',
                     color: 'var(--text-muted)', cursor: 'pointer', padding: '6px'
                 }}>
                     <X size={24} />
@@ -178,8 +178,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                 <div style={{ textAlign: 'center', marginBottom: '28px' }}>
                     <div style={{
                         width: '64px', height: '64px',
-                        background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.18))',
-                        border: '1px solid rgba(99,102,241,0.35)',
+                        background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(14,165,233,0.12))',
+                        border: '1px solid rgba(99,102,241,0.22)',
                         borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         margin: '0 auto 18px'
                     }}>
@@ -215,9 +215,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                     <div style={{
                                         display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px',
                                         padding: '16px', borderRadius: '20px',
-                                        background: 'rgba(15,23,42,0.6)',
-                                        border: '1px solid rgba(148,163,184,0.2)',
-                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                        background: 'var(--bg-subtle)',
+                                        border: '1px solid var(--border)',
+                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                     }}>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.orgName')}</label>
@@ -230,9 +230,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                     onChange={(e) => setName(e.target.value)}
                                                     required
                                                     style={{
-                                                        width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                                                         padding: '12px 12px 12px 48px', borderRadius: '14px', color: 'var(--text-main)',
-                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                                     }}
                                                 />
                                             </div>
@@ -244,9 +244,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                 onChange={(e) => setOrganizerType(e.target.value as 'company' | 'individual' | '')}
                                                 required
                                                 style={{
-                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                                                     padding: '12px', borderRadius: '14px', color: 'var(--text-main)',
-                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                                 }}
                                             >
                                                 <option value="">{t('auth.organizerTypePlaceholder', 'Select type')}</option>
@@ -263,9 +263,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                 onChange={(e) => setShortDescription(e.target.value)}
                                                 required
                                                 style={{
-                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                                                     padding: '12px', borderRadius: '14px', color: 'var(--text-main)', resize: 'none',
-                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                                 }}
                                             />
                                         </div>
@@ -280,16 +280,16 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                     onChange={(e) => setOperatingCities(e.target.value)}
                                                     required
                                                     style={{
-                                                        width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                                                         padding: '12px 12px 12px 36px', borderRadius: '14px', color: 'var(--text-main)',
-                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                                     }}
                                                 />
                                             </div>
                                         </div>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.email')}</label>
-                                            <div style={{ position: 'relative' }}>
+                                                <div style={{ position: 'relative' }}>
                                                 <Mail size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                                                 <input
                                                     type="email"
@@ -298,9 +298,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     required
                                                     style={{
-                                                        width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                                                         padding: '12px 12px 12px 36px', borderRadius: '14px', color: 'var(--text-main)',
-                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                                     }}
                                                 />
                                             </div>
@@ -314,9 +314,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                 onChange={(e) => setPayoutDetails(e.target.value)}
                                                 required
                                                 style={{
-                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                                                     padding: '12px', borderRadius: '14px', color: 'var(--text-main)',
-                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                                 }}
                                             />
                                         </div>
@@ -327,7 +327,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                 accept=".pdf,image/*"
                                                 onChange={(e) => setBusinessLicense(e.target.files?.[0] || null)}
                                                 style={{
-                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px dashed rgba(148,163,184,0.35)',
+                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px dashed var(--border)',
                                                     padding: '10px', borderRadius: '12px', color: 'var(--text-muted)'
                                                 }}
                                             />
@@ -339,7 +339,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                                 accept="image/*,.pdf"
                                                 onChange={(e) => setEventPoster(e.target.files?.[0] || null)}
                                                 style={{
-                                                    width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px dashed rgba(148,163,184,0.35)',
+                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px dashed var(--border)',
                                                     padding: '10px', borderRadius: '12px', color: 'var(--text-muted)'
                                                 }}
                                             />
@@ -351,12 +351,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                             {mode === 'register' && (
                                 <div style={{
                                     height: '1px', width: '100%',
-                                    background: 'linear-gradient(90deg, transparent, rgba(148,163,184,0.35), transparent)',
+                                    background: 'linear-gradient(90deg, transparent, rgba(148,163,184,0.18), transparent)',
                                     margin: '6px 0 20px'
                                 }} />
                             )}
 
-                            <div style={{ marginBottom: '24px' }}>
+                                <div style={{ marginBottom: '24px' }}>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>{t('auth.phone')}</label>
                                 <div style={{ position: 'relative' }}>
                                     <Phone size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
@@ -367,9 +367,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                         onChange={(e) => setPhoneNumber(e.target.value)}
                                         required
                                         style={{
-                                            width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                            width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                                             padding: '16px 16px 16px 48px', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem',
-                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                         }}
                                     />
                                 </div>
@@ -393,9 +393,9 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                     onChange={(e) => setOtp(e.target.value)}
                                     required
                                     style={{
-                                        width: '100%', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.25)',
+                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
                                         padding: '16px', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1.5rem',
-                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)',
                                         textAlign: 'center', letterSpacing: '8px', fontWeight: 900
                                     }}
                                 />
