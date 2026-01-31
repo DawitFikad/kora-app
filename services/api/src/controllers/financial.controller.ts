@@ -217,7 +217,12 @@ export class FinancialController {
     static async getSettlementLedger(req: Request, res: Response) {
         try {
             const rows = await prisma.financialTransaction.findMany({ orderBy: { createdAt: 'desc' }, take: 200 });
-            const mapped = rows.map(r => ({ refId: r.id, timestamp: r.createdAt, type: r.type, amount: r.amount, notes: ((r.metadata as any)?.notes) || JSON.stringify(r.metadata || {}) }));
+            const mapped = rows.map(r => {
+                const meta = (r.metadata as any) || null;
+                const notesRaw = meta?.notes ?? (meta && Object.keys(meta).length ? JSON.stringify(meta) : null);
+                const notes = notesRaw ? notesRaw : '-';
+                return { refId: r.id, timestamp: r.createdAt, type: r.type, amount: r.amount, notes };
+            });
             res.json({ success: true, data: mapped });
         } catch (error: any) { res.status(500).json({ success: false, message: error.message }); }
     }
@@ -226,7 +231,15 @@ export class FinancialController {
         try {
             const rows = await prisma.financialTransaction.findMany({ orderBy: { createdAt: 'desc' }, take: 1000 });
             const header = ['refId', 'timestamp', 'type', 'amount', 'notes'];
-            const csv = [header.join(',')].concat(rows.map(r => [r.id, r.createdAt.toISOString(), r.type, r.amount, (`"${(r as any).notes || ''}"`)].join(','))).join('\n');
+            const csvRows = rows.map(r => {
+                const meta = (r.metadata as any) || null;
+                const notesRaw = meta?.notes ?? (meta && Object.keys(meta).length ? JSON.stringify(meta) : null);
+                const notes = notesRaw ? String(notesRaw) : '-';
+                // Escape double quotes in notes
+                const safeNotes = `"${String(notes).replace(/"/g, '""')}"`;
+                return [r.id, r.createdAt.toISOString(), r.type, r.amount, safeNotes].join(',');
+            });
+            const csv = [header.join(',')].concat(csvRows).join('\n');
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="settlement_ledger.csv"');
             res.send(csv);
