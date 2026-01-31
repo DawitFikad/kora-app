@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ShieldAlert, ShieldCheck, Activity, Loader2 } from 'lucide-react';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
+import DecisionModal from './DecisionModal';
 
 export const FraudMonitoringView = () => {
     const { t } = useTranslation();
@@ -12,6 +13,8 @@ export const FraudMonitoringView = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedAlert, setSelectedAlert] = useState<any>(null);
     const [isResolving, setIsResolving] = useState(false);
+    const [decisionOpen, setDecisionOpen] = useState(false);
+    const [decisionContext, setDecisionContext] = useState<any>(null);
 
     const fetchData = async () => {
         try {
@@ -34,17 +37,35 @@ export const FraudMonitoringView = () => {
     }, []);
 
     const handleResolve = async (id: number) => {
-        const note = prompt('Enter resolution note:');
-        if (note === null) return;
+        setDecisionContext({ action: 'resolveAlert', id, title: 'Resolve Fraud Alert' });
+        setDecisionOpen(true);
+    };
+
+    const handleDecisionCancel = () => {
+        setDecisionOpen(false);
+        setDecisionContext(null);
+    };
+
+    const handleDecisionConfirm = async (payload: any) => {
+        if (!decisionContext) return;
+        const { action, id } = decisionContext;
         try {
-            setIsResolving(true);
-            await AdminService.resolveFraudAlert(id, note || 'Resolved by admin');
-            setSelectedAlert(null);
-            fetchData();
+            if (action === 'resolveAlert') {
+                setIsResolving(true);
+                await AdminService.resolveFraudAlert(id, payload.reason);
+                setSelectedAlert(null);
+                await fetchData();
+            } else if (action === 'invalidateTicket') {
+                setIsResolving(true);
+                await AdminService.invalidateTicket(payload.ticketId, payload.reason);
+                await fetchData();
+            }
         } catch (err) {
-            alert('Failed to resolve alert');
+            alert('Failed to perform action');
         } finally {
             setIsResolving(false);
+            setDecisionOpen(false);
+            setDecisionContext(null);
         }
     };
 
@@ -96,16 +117,11 @@ export const FraudMonitoringView = () => {
                         style={{ flex: 1, background: '#0B0E14', border: '1px solid var(--border)', padding: '12px 16px', borderRadius: '8px', color: 'white' }}
                     />
                     <button
-                        onClick={async () => {
+                        onClick={() => {
                             const id = (document.getElementById('manual-ticket-id') as HTMLInputElement).value;
                             if (!id) return;
-                            if (confirm(`Are you sure you want to PERMANENTLY INVALIDATE ticket ${id}?`)) {
-                                try {
-                                    await AdminService.invalidateTicket(id, 'Manual Admin Force Invalidation');
-                                    alert('Ticket invalidated successfully');
-                                    (document.getElementById('manual-ticket-id') as HTMLInputElement).value = '';
-                                } catch (e) { alert('Failed to invalidate'); }
-                            }
+                            setDecisionContext({ action: 'invalidateTicket', ticketId: id, title: `Invalidate Ticket ${id}` });
+                            setDecisionOpen(true);
                         }}
                         style={{ background: '#EF4444', color: 'white', border: 'none', padding: '0 24px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}
                     >
@@ -190,6 +206,15 @@ export const FraudMonitoringView = () => {
                     </motion.div>
                 </div>
             )}
+            <DecisionModal
+                open={decisionOpen}
+                title={decisionContext?.title}
+                showCommission={false}
+                showPriority={false}
+                showRevenueEstimate={false}
+                onCancel={handleDecisionCancel}
+                onConfirm={handleDecisionConfirm}
+            />
         </motion.div>
     );
 };

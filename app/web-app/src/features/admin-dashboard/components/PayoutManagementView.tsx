@@ -13,6 +13,7 @@ import { AdminService } from '../../../core/api/admin.service';
 import { AdminPageHeader } from './AdminPageHeader';
 import { exportToCSV } from '../../../core/utils/export';
 import { Download } from 'lucide-react';
+import DecisionModal from './DecisionModal';
 
 export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SETTLEMENTS' }) => {
     const { t } = useTranslation();
@@ -67,30 +68,47 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
         setOrganizerSummaries(Object.values(summaries));
     }, [pendingPayouts, processedPayouts]);
 
+    const [decisionOpen, setDecisionOpen] = useState(false);
+    const [decisionContext, setDecisionContext] = useState<any>(null);
+
     const handleReject = async (batchId: number) => {
-        const reason = prompt('Please enter the reason for rejection:');
-        if (!reason) return;
-        try {
-            setProcessingId(batchId);
-            await AdminService.rejectPayout(batchId, reason);
-            fetchData();
-        } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to reject payout');
-        } finally {
-            setProcessingId(null);
-        }
+        setDecisionContext({ action: 'rejectPayout', batchId, title: 'Reject Payout' });
+        setDecisionOpen(true);
     };
 
     const handleApprove = async (batchId: number) => {
-        if (!confirm('Are you sure you want to approve this payout? This will deduct funds from the organizer\'s wallet.')) return;
+        setDecisionContext({ action: 'approvePayout', batchId, title: 'Approve Payout' });
+        setDecisionOpen(true);
+    };
+
+    const handleDecisionCancel = () => {
+        setDecisionOpen(false);
+        setDecisionContext(null);
+    };
+
+    const handleDecisionConfirm = async (payload: any) => {
+        if (!decisionContext) return;
+        const { action, batchId } = decisionContext;
         try {
-            setProcessingId(batchId);
-            await AdminService.approvePayout(batchId);
-            fetchData();
+            if (action === 'rejectPayout') {
+                setProcessingId(batchId);
+                await AdminService.rejectPayout(batchId, payload.reason);
+                await fetchData();
+            } else if (action === 'approvePayout') {
+                setProcessingId(batchId);
+                await AdminService.approvePayout(batchId, payload.reason);
+                await fetchData();
+            } else if (action === 'bulkSettlement') {
+                // Placeholder: no backend endpoint implemented for bulk settlement in MVP
+                // Record admin note in system config/audit and notify
+                alert(`Bulk settlement simulated. Note: ${payload.reason}`);
+            }
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to approve payout');
+            alert(err.response?.data?.message || 'Action failed');
         } finally {
             setProcessingId(null);
+            setDecisionOpen(false);
+            setDecisionContext(null);
         }
     };
 
@@ -113,11 +131,7 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                     <div style={{ display: 'flex', gap: '12px' }}>
                         {view === 'QUEUE' && (
                             <button
-                                onClick={() => {
-                                    if (confirm('Initiate bulk settlement for all ready batches?')) {
-                                        alert('Global settlement initiated (Sovereign Action)');
-                                    }
-                                }}
+                                onClick={() => { setDecisionContext({ action: 'bulkSettlement', title: 'Initiate Bulk Settlement' }); setDecisionOpen(true); }}
                                 style={{ background: 'var(--bg-active)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 800, fontSize: '0.85rem' }}
                             >
                                 Initiate Bulk Settlement
@@ -278,6 +292,16 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                     </table>
                 </div>
             )}
+            {/* Decision modal for approvals/rejections */}
+            <DecisionModal
+                open={decisionOpen}
+                title={decisionContext?.title}
+                showCommission={false}
+                showPriority={false}
+                showRevenueEstimate={false}
+                onCancel={handleDecisionCancel}
+                onConfirm={handleDecisionConfirm}
+            />
         </motion.div>
     );
 };

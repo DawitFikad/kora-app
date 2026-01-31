@@ -36,6 +36,7 @@ import { AdminSettingsView } from './components/AdminSettingsView';
 import { ContentManagementView } from './components/ContentManagementView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { PlatformControlView } from './components/PlatformControlView';
+import FinancialControlIndex from './components/financial/FinancialControlIndex';
 
 import { TeamManagementView } from './components/TeamManagementView';
 import { ActivityLogView } from './components/ActivityLogView';
@@ -114,9 +115,6 @@ const AdminDashboard = () => {
         { icon: Crown, label: 'Feature Requests' as AdminTab, count: featureRequestCount > 0 ? featureRequestCount : undefined, display: t('admin.featureRequests', 'Feature Requests'), key: 'feature_requests' },
         { icon: BarChart3, label: 'Commissions' as AdminTab, display: t('admin.commissions'), key: 'commissions' },
         { icon: DollarSign, label: 'GMV' as AdminTab, display: t('admin.gmv', 'GMV Tracking'), key: 'gmv' },
-        { icon: DollarSign, label: 'Platform Revenue' as AdminTab, display: t('admin.revenue', 'Platform Revenue'), key: 'revenue' },
-        { icon: DollarSign, label: 'Organizer Payouts' as AdminTab, display: t('admin.payouts', 'Organizer Payouts'), key: 'payouts' },
-        { icon: DollarSign, label: 'Settlement Status' as AdminTab, display: t('admin.settlements', 'Settlement Status'), key: 'settlements' },
         { icon: ShieldAlert, label: 'Fraud' as AdminTab, display: t('admin.fraud'), key: 'fraud' },
         { icon: FileText, label: 'Content' as AdminTab, display: t('admin.content'), key: 'content' },
         { icon: Activity, label: 'Analytics' as AdminTab, display: t('admin.analytics'), key: 'analytics' },
@@ -142,10 +140,7 @@ const AdminDashboard = () => {
             case 'Feature Requests': return <FeatureRequestsView />;
             case 'Fraud Monitoring': return <FraudMonitoringView />;
             case 'Commissions': return <CommissionsView />;
-            case 'GMV Tracking': return <AnalyticsView view="GMV" />;
-            case 'Platform Revenue': return <AnalyticsView view="REVENUE" />;
-            case 'Organizer Payouts': return <PayoutsManagementView view="QUEUE" />;
-            case 'Settlement Ledger': return <PayoutsManagementView view="SETTLEMENTS" />;
+            case 'GMV Tracking': return <FinancialControlIndex />;
             case 'Content': return <ContentManagementView />;
             case 'Invite Admin': return <TeamManagementView />;
             case 'Platform Health': return <PlatformControlView />;
@@ -193,10 +188,7 @@ const AdminDashboard = () => {
                         {
                             title: 'Financial Control',
                             items: [
-                                { icon: DollarSign, label: 'GMV Tracking', display: 'GMV Tracking' },
-                                { icon: DollarSign, label: 'Platform Revenue', display: 'Platform Revenue' },
-                                { icon: DollarSign, label: 'Organizer Payouts', display: 'Organizer Payouts' },
-                                { icon: DollarSign, label: 'Settlement Ledger', display: 'Settlement Ledger' }
+                                { icon: DollarSign, label: 'GMV Tracking', display: 'GMV Tracking' }
                             ]
                         },
                         {

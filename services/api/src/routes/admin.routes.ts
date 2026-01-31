@@ -46,4 +46,7 @@ router.patch("/config", authenticate, authorize([Role.ADMIN]), AdminController.u
 router.get("/fees", authenticate, authorize([Role.ADMIN]), AdminController.getPlatformFees);
 router.patch("/fees", authenticate, authorize([Role.ADMIN]), AdminController.updatePlatformFee);
 
+// Read-only payments toggle (preview/admin mode)
+router.post('/payments/read-only', authenticate, authorize([Role.ADMIN]), AdminController.togglePaymentsReadOnly);
+
 export default router;

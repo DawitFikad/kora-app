@@ -17,13 +17,23 @@ export const AdminService = {
     // Financials
     getFinancialTransactions: (params?: any) => api.get('/financials/transactions', { params }),
     getFinancialMetrics: (params?: any) => api.get('/financials/dashboard', { params }),
+    // Financial Control - GMV, Revenue, Payouts, Ledger
+    getGMV: (params?: any) => api.get('/financials/gmv', { params }),
+    getGMVByCity: (params?: any) => api.get('/financials/gmv/cities', { params }),
+    getGMVByOrganizer: (params?: any) => api.get('/financials/gmv/organizers', { params }),
+    getPlatformRevenue: (params?: any) => api.get('/financials/revenue', { params }),
+    getOrganizerPayouts: (params?: any) => api.get('/financials/payouts', { params }),
+    getSettlementLedger: (params?: any) => api.get('/financials/ledger', { params }),
+    exportSettlementLedgerCSV: (params?: any) => api.get('/financials/ledger/export', { params, responseType: 'blob' }),
+    getFinancialDefinitions: () => api.get('/admin/financial-definitions'),
+    togglePaymentsReadOnly: (enabled: boolean) => api.post('/admin/payments/read-only', { enabled }),
     // Content & Discovery
     getCategories: () => api.get('/content/categories'),
     getCities: () => api.get('/content/cities'),
     toggleFeaturedEvent: (eventId: number, featured: boolean) => api.patch(`/admin/events/${eventId}/featured`, { featured }),
     getPendingPayouts: () => api.get('/payouts/pending'),
     getProcessedPayouts: () => api.get('/payouts/processed'),
-    approvePayout: (batchId: number) => api.post(`/payouts/${batchId}/approve`),
+    approvePayout: (batchId: number, adminNote?: string) => api.post(`/payouts/${batchId}/approve`, { adminNote }),
     rejectPayout: (batchId: number, reason: string) => api.post(`/payouts/${batchId}/reject`, { reason }),
 
     // Security & Tickets

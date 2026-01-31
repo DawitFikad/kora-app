@@ -497,4 +497,34 @@ export class AdminController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // Toggle payments read-only flag (preview mode for admins)
+    static async togglePaymentsReadOnly(req: Request, res: Response) {
+        try {
+            const { enabled } = req.body;
+            if (typeof enabled !== 'boolean') return res.status(400).json({ error: 'enabled boolean required' });
+
+            const config = await prisma.systemConfig.upsert({
+                where: { key: 'payments_read_only' },
+                update: { value: JSON.stringify(enabled) },
+                create: { key: 'payments_read_only', value: JSON.stringify(enabled), description: 'When true, payment actions are read-only for preview/testing' }
+            });
+
+            await prisma.notificationLog.create({
+                data: {
+                    userId: (req as any).user?.id,
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'Payments ReadOnly Toggled',
+                    content: `Admin ${(req as any).user?.id} set payments_read_only to ${enabled}`,
+                    status: 'DELIVERED',
+                    metadata: { enabled }
+                }
+            });
+
+            res.json({ success: true, data: config });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
