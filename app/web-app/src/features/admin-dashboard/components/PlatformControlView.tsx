@@ -23,29 +23,42 @@ export const PlatformControlView = () => {
         apiLatency: 45,
         activeConnections: 1240
     });
+    const [securityEvents, setSecurityEvents] = useState<any[]>([]);
 
-    // Fetch live config
+    // Fetch live config & stats
     useEffect(() => {
-        const fetchConfig = async () => {
+        const fetchData = async () => {
             try {
-                const res: any = await AdminService.getSystemConfigs();
-                const mMode = res.data.find((c: any) => c.key === 'maintenance_mode');
+                // 1. System Config
+                const configRes: any = await AdminService.getSystemConfigs();
+                const mMode = configRes.data.find((c: any) => c.key === 'maintenance_mode');
                 if (mMode) setIsMaintenanceMode(mMode.value === 'true');
+
+                // 2. Real Stats
+                const statsRes: any = await AdminService.getStats();
+                const { metrics } = statsRes.systemHealth || {};
+
+                if (metrics) {
+                    setSystemMetrics({
+                        cpu: metrics.cpu || 0,
+                        memory: metrics.memory || 0,
+                        dbLatency: statsRes.systemHealth.database === 'healthy' ? 12 : 500, // DB check
+                        apiLatency: 35, // Static based on response time roughly
+                        activeConnections: metrics.activeConnections || 0
+                    });
+                }
+
+                // 3. Security Events (Audit Logs)
+                const auditRes: any = await AdminService.getAuditLogs({ limit: 5 });
+                setSecurityEvents(auditRes.data || []);
+
             } catch (err) {
-                console.error('Failed to fetch system config', err);
+                console.error('Failed to fetch platform health data', err);
             }
         };
-        fetchConfig();
 
-        const interval = setInterval(() => {
-            setSystemMetrics(prev => ({
-                cpu: Math.max(10, Math.min(95, prev.cpu + (Math.random() * 10 - 5))),
-                memory: Math.max(20, Math.min(90, prev.memory + (Math.random() * 4 - 2))),
-                dbLatency: Math.max(5, Math.min(150, prev.dbLatency + (Math.random() * 6 - 3))),
-                apiLatency: Math.max(20, Math.min(200, prev.apiLatency + (Math.random() * 10 - 5))),
-                activeConnections: Math.max(1000, prev.activeConnections + Math.floor(Math.random() * 100 - 50))
-            }));
-        }, 3000);
+        fetchData();
+        const interval = setInterval(fetchData, 10000); // Poll every 10s
         return () => clearInterval(interval);
     }, []);
 
@@ -218,21 +231,22 @@ export const PlatformControlView = () => {
                     <div className="admin-card" style={{ padding: '24px' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px' }}>Security Events</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <div className="audit-item" style={{ borderLeft: '3px solid #EF4444' }}>
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    <AlertTriangle size={14} color="#EF4444" />
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>Brute-force attempt blocked</span>
-                                </div>
-                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>12:45 PM</span>
-                            </div>
-                            <AuditItem time="12:30 PM" action="Admin login: 'Alex' (Addis Ababa)" />
-                            <AuditItem time="11:15 AM" action="Backup sync completed (S3 Bucket)" />
-                            <AuditItem time="10:00 AM" action="New organizer verified: 'National Theater'" />
+                            {securityEvents.length === 0 ? (
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px' }}>No recent security events.</p>
+                            ) : (
+                                securityEvents.map((event) => (
+                                    <AuditItem
+                                        key={event.id}
+                                        time={new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        action={event.content}
+                                        isCritical={event.title?.toUpperCase().includes('CLEARED') || event.title?.toUpperCase().includes('DELETE')}
+                                    />
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
-
         </motion.div>
     );
 };

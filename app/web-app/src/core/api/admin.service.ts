@@ -46,8 +46,10 @@ export const AdminService = {
     // Platform KPIs
     getStats: () => api.get('/admin/stats'),
     getAnalytics: (params?: any) => api.get('/admin/analytics', { params }),
-    getNotifications: () => api.get('/admin/notifications'),
-    getAuditLogs: () => api.get('/admin/notifications?recipient=Audit Log'),
+    getNotifications: (params?: any) => api.get('/admin/notifications', { params }),
+    getAuditLogs: (params?: any) => api.get('/admin/notifications', { params: { recipient: 'Audit Log', ...params } }),
+    deleteAuditLog: (id: number) => api.delete(`/admin/notifications/${id}`),
+    clearAuditLogs: () => api.delete('/admin/notifications/clear'),
     respondToFeatureRequest: (notificationId: number, approved: boolean, options?: { priority?: string; revenueEstimate?: number; adminNote?: string }) =>
         api.post(`/admin/feature-requests/${notificationId}/respond`, { approved, ...(options || {}) }),
     // Platform Fees
@@ -57,4 +59,6 @@ export const AdminService = {
     getSystemConfigs: () => api.get('/admin/config'),
     updateSystemConfig: (data: { key: string, value: string, description?: string }) => api.patch('/admin/config', data),
     inviteAdmin: (data: { email: string, phoneNumber: string, fullName: string, role: string }) => api.post('/admin/invite', data),
+    getTeamMembers: () => api.get('/admin/users', { params: { role: 'ADMIN' } }),
+    getInvitationHistory: () => api.get('/admin/notifications', { params: { title: 'Admin Invited' } }),
 };

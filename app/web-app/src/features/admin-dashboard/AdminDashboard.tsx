@@ -9,7 +9,6 @@ import {
     DollarSign,
     ShieldAlert,
     Settings,
-    Search,
     Bell,
     FileText,
     Activity,
@@ -31,10 +30,9 @@ import { EventApprovalsView } from './components/EventApprovalsView';
 import { FraudMonitoringView } from './components/FraudMonitoringView';
 import { OrganizerApprovalsView } from './components/OrganizerApprovalsView';
 import { CommissionsView } from './components/CommissionsView';
-import { PayoutsManagementView } from './components/PayoutManagementView';
+// Removed: import { PayoutsManagementView } from './components/PayoutManagementView';
 import { AdminSettingsView } from './components/AdminSettingsView';
 import { ContentManagementView } from './components/ContentManagementView';
-import { AnalyticsView } from './components/AnalyticsView';
 import { PlatformControlView } from './components/PlatformControlView';
 import FinancialControlIndex from './components/financial/FinancialControlIndex';
 
@@ -56,7 +54,6 @@ const AdminDashboard = () => {
     const [notifications, setNotifications] = useState<any[]>([]);
 
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
-    const loc = useLocation();
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -252,8 +249,8 @@ const AdminDashboard = () => {
             </aside>
 
             {/* 🔵 Admin Main Content */}
-            <main className="main-content" style={{ padding: '32px 40px' }}>
-                <header className="top-header" style={{ marginBottom: '32px', background: 'transparent' }}>
+            <main className="main-content">
+                <header className="top-header">
                     <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{(currentNavItem as any)?.display || activeTab}</h2>
 
                     {/* Search removed per request to keep header minimal */}
@@ -377,10 +374,11 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 </header>
-
-                <AnimatePresence mode="wait">
-                    {renderContent()}
-                </AnimatePresence>
+                <div style={{ padding: '32px 40px' }}>
+                    <AnimatePresence mode="wait">
+                        {renderContent()}
+                    </AnimatePresence>
+                </div>
             </main>
         </div>
     );

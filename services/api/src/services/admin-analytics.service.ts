@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { EventStatus, OrganizerStatus, PaymentStatus } from "@prisma/client";
+import * as os from "os";
 
 export class AdminAnalyticsService {
     static async getPlatformStats() {
@@ -77,11 +78,31 @@ export class AdminAnalyticsService {
         const monthlyProjection = dailyVelocity * 30;
 
         // 7. System Health (Real checks)
-        const systemHealth = {
+        const systemHealth: any = {
             api: 'healthy',
             database: 'healthy',
-            redis: 'healthy'
+            redis: 'healthy',
+            metrics: {
+                cpu: os.loadavg()[0] * 10, // Scale to 100 roughly
+                memory: (1 - os.freemem() / os.totalmem()) * 100,
+                uptime: os.uptime(),
+                activeConnections: await prisma.user.count({ where: { status: 'ACTIVE' } }) // Proxy for active sessions
+            }
         };
+
+        try {
+            await prisma.$queryRaw`SELECT 1`;
+        } catch (e) {
+            systemHealth.database = 'unhealthy';
+        }
+
+        try {
+            const redis = (await import("../utils/redis")).default;
+            const pong = await redis.ping();
+            if (pong !== 'PONG') systemHealth.redis = 'unhealthy';
+        } catch (e) {
+            systemHealth.redis = 'unhealthy';
+        }
 
         return {
             kpis: {

@@ -203,34 +203,50 @@ export class AdminController {
                 return res.status(400).json({ error: "Email, Phone and Full Name are required" });
             }
 
+            // Check if user already exists
             const existingUser = await prisma.user.findFirst({
                 where: {
                     OR: [
                         { phoneNumber },
                         { email }
                     ]
-                }
+                },
+                include: { profile: true }
             });
+
+            let admin: any = existingUser;
 
             if (existingUser) {
-                return res.status(400).json({ error: "User with this phone number or email already exists" });
+                // If user exists, update their role if provided, and prepare for resend
+                admin = await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        role: role === 'moderator' ? Role.ADMIN : Role.ADMIN,
+                        status: AccountStatus.ACTIVE
+                    },
+                    include: { profile: true }
+                });
+                console.log(`[inviteAdmin] User ${email} already exists. Proceeding to resend invitation.`);
+            } else {
+                // Create new account
+                admin = await prisma.user.create({
+                    data: {
+                        phoneNumber,
+                        email,
+                        role: role === 'moderator' ? Role.ADMIN : Role.ADMIN,
+                        status: AccountStatus.ACTIVE,
+                        profile: {
+                            create: {
+                                fullName,
+                                language: "en"
+                            }
+                        }
+                    },
+                    include: { profile: true }
+                });
             }
 
-            // Create account as PENDING until they login
-            const admin = await prisma.user.create({
-                data: {
-                    phoneNumber,
-                    email,
-                    role: role === 'moderator' ? Role.ADMIN : Role.ADMIN, // Both use ADMIN role in schema for now, logic can be differentiated via profiles or metadata if needed
-                    status: AccountStatus.ACTIVE,
-                    profile: {
-                        create: {
-                            fullName,
-                            language: "en"
-                        }
-                    }
-                }
-            });
+            if (!admin) throw new Error("Failed to create or find admin user");
 
             // Send Real Email
             const portalUrl = process.env.ADMIN_PORTAL_URL || "https://admin.ettickets.com";
@@ -309,7 +325,10 @@ export class AdminController {
     static async getNotifications(req: Request, res: Response) {
         try {
             const currentUserId = (req as any).user.userId;
-            const { recipient } = req.query;
+            const { recipient, page = 1, limit = 20 } = req.query as any;
+
+            const skip = (Number(page) - 1) * Number(limit);
+            const take = Number(limit);
 
             const where: any = {};
 
@@ -320,12 +339,62 @@ export class AdminController {
                 if (recipient) where.recipient = recipient as string;
             }
 
-            const notifications = await prisma.notificationLog.findMany({
-                where,
-                orderBy: { createdAt: 'desc' },
-                take: 50
+            const [notifications, total] = await Promise.all([
+                prisma.notificationLog.findMany({
+                    where,
+                    orderBy: { createdAt: 'desc' },
+                    skip,
+                    take
+                }),
+                prisma.notificationLog.count({ where })
+            ]);
+
+            res.json({
+                success: true,
+                data: notifications,
+                pagination: {
+                    total,
+                    page: Number(page),
+                    limit: Number(limit),
+                    totalPages: Math.ceil(total / Number(limit))
+                }
             });
-            res.json({ success: true, data: notifications });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // Delete a single notification/log
+    static async deleteNotification(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            await prisma.notificationLog.delete({ where: { id: Number(id) } });
+            res.json({ success: true, message: "Log entry deleted" });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // Clear all audit logs
+    static async clearAuditLogs(req: Request, res: Response) {
+        try {
+            await prisma.notificationLog.deleteMany({
+                where: { recipient: 'Audit Log' }
+            });
+
+            // Log this action itself!
+            await prisma.notificationLog.create({
+                data: {
+                    userId: (req as any).user?.userId,
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'Audit Logs Cleared',
+                    content: `Admin ${(req as any).user?.userId} cleared the entire audit history.`,
+                    status: 'DELIVERED'
+                }
+            });
+
+            res.json({ success: true, message: "Audit history cleared" });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }

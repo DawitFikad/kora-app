@@ -36,6 +36,8 @@ router.patch("/events/:eventId/featured", authenticate, authorize([Role.ADMIN]),
 
 // Notifications
 router.get("/notifications", authenticate, authorize([Role.ADMIN]), AdminController.getNotifications);
+router.delete("/notifications/clear", authenticate, authorize([Role.ADMIN]), AdminController.clearAuditLogs);
+router.delete("/notifications/:id", authenticate, authorize([Role.ADMIN]), AdminController.deleteNotification);
 router.post("/feature-requests/:notificationId/respond", authenticate, authorize([Role.ADMIN]), AdminController.respondToFeatureRequest);
 
 // System Config

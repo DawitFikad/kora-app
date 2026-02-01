@@ -1,85 +1,145 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
-import { UserPlus, Shield, Mail, CheckCircle2, User, Phone, Loader2, AlertCircle } from 'lucide-react';
+import {
+    UserPlus,
+    Shield,
+    Mail,
+    CheckCircle2,
+    User,
+    Phone,
+    Loader2,
+    AlertCircle,
+    RefreshCcw,
+    Trash2,
+    Calendar
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const TeamManagementView = () => {
+    // --- Form State ---
     const [inviteEmail, setInviteEmail] = useState('');
     const [fullName, setFullName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [role, setRole] = useState('admin');
-    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    const handleInvite = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!inviteEmail || !fullName || !phoneNumber) return;
+    // --- Team Data State ---
+    const [team, setTeam] = useState<any[]>([]);
+    const [history, setHistory] = useState<any[]>([]);
+    const [isLoadingTeam, setIsLoadingTeam] = useState(true);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+    const fetchData = async () => {
+        setIsLoadingTeam(true);
+        setIsLoadingHistory(true);
+        try {
+            const [teamRes, historyRes]: any = await Promise.all([
+                AdminService.getTeamMembers(),
+                AdminService.getInvitationHistory()
+            ]);
+            setTeam(teamRes.users || []);
+            setHistory(historyRes.notifications || []);
+        } catch (err) {
+            console.error('Failed to fetch team data', err);
+        } finally {
+            setIsLoadingTeam(false);
+            setIsLoadingHistory(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const handleInvite = async (e?: React.FormEvent, data?: any) => {
+        if (e) e.preventDefault();
+
+        const payload = data || {
+            email: inviteEmail,
+            phoneNumber,
+            fullName,
+            role
+        };
+
+        if (!payload.email || !payload.phoneNumber) return;
 
         try {
-            setStatus('loading');
-            const res: any = await AdminService.inviteAdmin({
-                email: inviteEmail,
-                phoneNumber,
-                fullName,
-                role
-            });
+            setFormStatus('loading');
+            const res: any = await AdminService.inviteAdmin(payload);
 
-            setStatus('success');
+            setFormStatus('success');
             setSuccessMessage(res.message || 'Invitation sent successfully!');
-            setInviteEmail('');
-            setFullName('');
-            setPhoneNumber('');
 
-            setTimeout(() => setStatus('idle'), 5000);
+            if (!data) {
+                setInviteEmail('');
+                setFullName('');
+                setPhoneNumber('');
+            }
+
+            fetchData(); // Refresh everything
+            setTimeout(() => setFormStatus('idle'), 5000);
         } catch (err: any) {
             console.error('[Invitation Error]', err);
-            setStatus('error');
-            // Interceptor returns error.response.data directly
-            const msg = err.error || err.message || (typeof err === 'string' ? err : 'Failed to send invitation');
+            setFormStatus('error');
+            const msg = err.error || err.message || 'Failed to send invitation';
             setErrorMessage(msg);
-            setTimeout(() => setStatus('idle'), 5000);
+            setTimeout(() => setFormStatus('idle'), 5000);
+        }
+    };
+
+    const getRoleBadgeColor = (r: string) => {
+        switch (r.toLowerCase()) {
+            case 'admin': return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3B82F6', label: 'Super Admin' };
+            case 'financial': return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981', label: 'Financial' };
+            case 'events': return { bg: 'rgba(245, 158, 11, 0.1)', text: '#F59E0B', label: 'Events' };
+            default: return { bg: 'rgba(255, 255, 255, 0.05)', text: 'var(--text-muted)', label: r };
         }
     };
 
     return (
-        <div className="animate-fade-in">
+        <div className="team-management-view" style={{ paddingBottom: '60px' }}>
             <AdminPageHeader
                 title="Team Management"
                 subtitle="Invite and manage administrative access."
             />
 
-            <div style={{ maxWidth: '600px' }}>
-                <div className="admin-card" style={{ padding: '32px' }}>
+            {/* Layout Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '32px', alignItems: 'start', marginBottom: '48px' }}>
+
+                {/* 🔵 Left Side: Invitation Form */}
+                <div className="admin-card" style={{ padding: '32px', position: 'sticky', top: '100px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <UserPlus size={24} color="#3B82F6" />
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(29, 144, 245, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <UserPlus size={24} color="var(--primary-blue)" />
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Invite New Member</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send an invitation link via email.</p>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Invite New Admin</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Grant access to the team.</p>
                         </div>
                     </div>
 
                     <form onSubmit={handleInvite}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Full Name</label>
-                                <div style={{ position: 'relative' }}>
-                                    <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                    <input
-                                        type="text"
-                                        placeholder="Enter full name"
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem' }}
-                                        required
-                                    />
-                                </div>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Full Name</label>
+                            <div style={{ position: 'relative' }}>
+                                <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Amanuel Alex"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none' }}
+                                    required
+                                />
                             </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Phone Number</label>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Phone</label>
                                 <div style={{ position: 'relative' }}>
                                     <Phone size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                     <input
@@ -87,124 +147,269 @@ export const TeamManagementView = () => {
                                         placeholder="+251..."
                                         value={phoneNumber}
                                         onChange={(e) => setPhoneNumber(e.target.value)}
-                                        style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                                        style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none' }}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Email</label>
+                                <div style={{ position: 'relative' }}>
+                                    <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                    <input
+                                        type="email"
+                                        placeholder="admin@ettickets.com"
+                                        value={inviteEmail}
+                                        onChange={(e) => setInviteEmail(e.target.value)}
+                                        style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none' }}
                                         required
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Email Address</label>
-                            <div style={{ position: 'relative' }}>
-                                <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                <input
-                                    type="email"
-                                    placeholder="colleague@example.com"
-                                    value={inviteEmail}
-                                    onChange={(e) => setInviteEmail(e.target.value)}
-                                    style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem' }}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div style={{ marginBottom: '24px' }}>
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Role Assignment</label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div
-                                    onClick={() => setRole('admin')}
-                                    style={{
-                                        padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'admin' ? 'var(--primary)' : 'var(--border)'}`,
-                                        cursor: 'pointer', background: role === 'admin' ? 'var(--bg-subtle)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px', transition: 'all 0.2s ease'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Shield size={16} color={role === 'admin' ? 'var(--primary)' : 'var(--text-muted)'} />
-                                        <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>Super Admin</span>
+                        <div style={{ marginBottom: '28px' }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '12px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Role Assignment</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                                {[
+                                    { id: 'admin', label: 'Super Admin', desc: 'Full system sovereignty control', icon: Shield },
+                                    { id: 'financial', label: 'Financial Officer', desc: 'Ledgers, Payouts & Refunds', icon: AlertCircle },
+                                    { id: 'events', label: 'Events Manager', desc: 'Approvals & Content only', icon: Calendar }
+                                ].map(r => (
+                                    <div
+                                        key={r.id}
+                                        onClick={() => setRole(r.id)}
+                                        style={{
+                                            padding: '12px 16px', borderRadius: '12px', border: `1px solid ${role === r.id ? 'var(--primary-blue)' : 'var(--border)'}`,
+                                            cursor: 'pointer', background: role === r.id ? 'rgba(29, 144, 245, 0.05)' : 'transparent',
+                                            display: 'flex', alignItems: 'center', gap: '16px', transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <div style={{ color: role === r.id ? 'var(--primary-blue)' : 'var(--text-muted)' }}>
+                                            <r.icon size={20} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontWeight: 800, fontSize: '0.85rem', color: role === r.id ? 'white' : 'var(--text-main)' }}>{r.label}</p>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{r.desc}</p>
+                                        </div>
+                                        {role === r.id && <motion.div layoutId="role-check"><CheckCircle2 size={16} color="var(--primary-blue)" /></motion.div>}
                                     </div>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Full system sovereign control</span>
-                                </div>
-                                <div
-                                    onClick={() => setRole('financial')}
-                                    style={{
-                                        padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'financial' ? 'var(--primary)' : 'var(--border)'}`,
-                                        cursor: 'pointer', background: role === 'financial' ? 'var(--bg-subtle)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px', transition: 'all 0.2s ease'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Shield size={16} color={role === 'financial' ? 'var(--primary)' : 'var(--text-muted)'} />
-                                        <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>Financial Officer</span>
-                                    </div>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ledgers, Payouts & Refunds</span>
-                                </div>
-                                <div
-                                    onClick={() => setRole('events')}
-                                    style={{
-                                        padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'events' ? 'var(--primary)' : 'var(--border)'}`,
-                                        cursor: 'pointer', background: role === 'events' ? 'var(--bg-subtle)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px', transition: 'all 0.2s ease'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Shield size={16} color={role === 'events' ? 'var(--primary)' : 'var(--text-muted)'} />
-                                        <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>Events Manager</span>
-                                    </div>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Approvals & Content only</span>
-                                </div>
-                                <div
-                                    onClick={() => setRole('moderator')}
-                                    style={{
-                                        padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'moderator' ? 'var(--primary)' : 'var(--border)'}`,
-                                        cursor: 'pointer', background: role === 'moderator' ? 'var(--bg-subtle)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px', transition: 'all 0.2s ease'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Shield size={16} color={role === 'moderator' ? 'var(--primary)' : 'var(--text-muted)'} />
-                                        <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>Basic Moderator</span>
-                                    </div>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>View only / Read access</span>
-                                </div>
+                                ))}
                             </div>
                         </div>
 
                         <button
                             type="submit"
-                            disabled={status === 'loading'}
+                            disabled={formStatus === 'loading'}
                             style={{
-                                width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: 'var(--bg-active)',
-                                color: 'white', fontWeight: 800, fontSize: '0.95rem', cursor: status === 'loading' ? 'not-allowed' : 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
+                                width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: 'var(--primary-blue)',
+                                color: 'white', fontWeight: 800, fontSize: '1rem', cursor: formStatus === 'loading' ? 'not-allowed' : 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                                boxShadow: '0 10px 25px -5px rgba(29, 144, 245, 0.4)'
                             }}
                         >
-                            {status === 'loading' ? <Loader2 size={20} className="animate-spin" /> : <UserPlus size={20} />}
-                            {status === 'loading' ? 'Sending Invitation...' : 'Send Real Invitation'}
+                            {formStatus === 'loading' ? <Loader2 size={20} className="animate-spin" /> : <Mail size={20} />}
+                            {formStatus === 'loading' ? 'Sending Link...' : 'Send Portal Invitation'}
                         </button>
                     </form>
 
                     <AnimatePresence>
-                        {status === 'success' && (
+                        {formStatus === 'success' && (
                             <motion.div
-                                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', display: 'flex', alignItems: 'center', gap: '12px' }}
+                                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                style={{ marginTop: '24px', padding: '16px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}
                             >
                                 <CheckCircle2 size={20} />
-                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{successMessage}</span>
+                                <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{successMessage}</span>
                             </motion.div>
                         )}
-                        {status === 'error' && (
+                        {formStatus === 'error' && (
                             <motion.div
-                                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '12px' }}
+                                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                style={{ marginTop: '24px', padding: '16px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}
                             >
                                 <AlertCircle size={20} />
-                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{errorMessage}</span>
+                                <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{errorMessage}</span>
                             </motion.div>
                         )}
                     </AnimatePresence>
+                </div>
+
+                {/* 🟢 Right Side: Team Members List */}
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Active Team Members</h3>
+                        <button
+                            onClick={fetchData}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                            <RefreshCcw size={14} className={isLoadingTeam ? 'animate-spin' : ''} />
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Refresh</span>
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {isLoadingTeam ? (
+                            Array(4).fill(0).map((_, i) => (
+                                <div key={i} className="admin-card animate-pulse" style={{ height: '100px', background: 'var(--bg-subtle)' }} />
+                            ))
+                        ) : team.length === 0 ? (
+                            <div className="admin-card" style={{ padding: '48px', textAlign: 'center', opacity: 0.6 }}>
+                                <Shield size={40} style={{ margin: '0 auto 16px', color: 'var(--border)' }} />
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No other admin members found.</p>
+                            </div>
+                        ) : (
+                            <AnimatePresence>
+                                {team.map((member, index) => {
+                                    const roleStyle = getRoleBadgeColor(member.role);
+                                    return (
+                                        <motion.div
+                                            key={member.id}
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            className="admin-card"
+                                            style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', transition: 'transform 0.2s', position: 'relative' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(4px)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}
+                                        >
+                                            <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)' }}>
+                                                {member.profile?.fullName?.[0] || member.role[0]}
+                                            </div>
+
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                                                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800 }}>{member.profile?.fullName || 'Untitled Admin'}</h4>
+                                                    <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '4px', background: roleStyle.bg, color: roleStyle.text, fontWeight: 800, textTransform: 'uppercase' }}>
+                                                        {roleStyle.label}
+                                                    </span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }}>
+                                                        <Mail size={12} />
+                                                        <span>{member.email}</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }}>
+                                                        <Phone size={12} />
+                                                        <span>{member.phoneNumber}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        const confirmResend = window.confirm(`Resend invitation to ${member.email}?`);
+                                                        if (confirmResend) handleInvite(undefined, {
+                                                            email: member.email,
+                                                            phoneNumber: member.phoneNumber,
+                                                            fullName: member.profile?.fullName,
+                                                            role: member.role.toLowerCase()
+                                                        });
+                                                    }}
+                                                    title="Resend Invite"
+                                                    style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary-blue)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                                                >
+                                                    <RefreshCcw size={14} color="var(--primary-blue)" />
+                                                </button>
+                                                <button
+                                                    title="Remove (Coming Soon)"
+                                                    style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', opacity: 0.5 }}
+                                                >
+                                                    <Trash2 size={14} color="#EF4444" />
+                                                </button>
+                                            </div>
+
+                                            <div style={{ position: 'absolute', right: '12px', top: '12px' }}>
+                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: member.status === 'ACTIVE' ? '#10B981' : '#F59E0B' }} />
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </AnimatePresence>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* 📜 Invitation History Table (New Section) */}
+            <div className="admin-card" style={{ padding: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Invitation Distribution History</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Chronological log of administrative portal invitations.</p>
+                    </div>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+                        <thead>
+                            <tr style={{ textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                <th style={{ padding: '0 16px 8px' }}>Recipient</th>
+                                <th style={{ padding: '0 16px 8px' }}>Role</th>
+                                <th style={{ padding: '0 16px 8px' }}>Timestamp</th>
+                                <th style={{ padding: '0 16px 8px' }}>Delivery Status</th>
+                                <th style={{ padding: '0 16px 8px', textAlign: 'right' }}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoadingHistory ? (
+                                Array(3).fill(0).map((_, i) => (
+                                    <tr key={i}><td colSpan={5} style={{ height: '48px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }} className="animate-pulse" /></tr>
+                                ))
+                            ) : history.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', borderRadius: '12px' }}>
+                                        No invitation logs found in system records.
+                                    </td>
+                                </tr>
+                            ) : (
+                                history.map((log) => (
+                                    <tr key={log.id} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', transition: 'background 0.2s' }}>
+                                        <td style={{ padding: '16px', borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <Mail size={14} color="var(--primary-blue)" />
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>{log.recipient}</p>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Via {log.channel}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{log.metadata?.role || 'N/A'}</span>
+                                        </td>
+                                        <td style={{ padding: '16px' }}>
+                                            <div style={{ fontSize: '0.8rem' }}>{new Date(log.createdAt).toLocaleDateString()}</div>
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(log.createdAt).toLocaleTimeString()}</div>
+                                        </td>
+                                        <td style={{ padding: '16px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: log.status === 'SENT' ? '#10B981' : '#EF4444' }} />
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: log.status === 'SENT' ? '#10B981' : '#EF4444' }}>{log.status === 'SENT' ? 'Success' : 'Failed'}</span>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px', borderTopRightRadius: '12px', borderBottomRightRadius: '12px', textAlign: 'right' }}>
+                                            <button
+                                                onClick={() => handleInvite(undefined, {
+                                                    email: log.recipient,
+                                                    phoneNumber: team.find(m => m.id === log.metadata?.invitedUserId)?.phoneNumber || '',
+                                                    fullName: team.find(m => m.id === log.metadata?.invitedUserId)?.profile?.fullName || log.recipient.split('@')[0],
+                                                    role: log.metadata?.role || 'admin'
+                                                })}
+                                                style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', padding: '4px 8px' }}
+                                            >
+                                                Resend
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
