@@ -109,7 +109,7 @@ export const EventApprovalsView = () => {
                     className="btn-blue"
                     style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '12px' }}
                 >
-                    <Download size={18} />
+                    <Download size={8} />
                     {t('admin.export', 'Export CSV')}
                 </button>
             </div>

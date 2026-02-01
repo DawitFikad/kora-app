@@ -395,7 +395,7 @@ export const ContentManagementView = () => {
                 </p>
 
                 {/* Banner Creation Form - More Professional */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', marginBottom: '32px' }}>
+                <div style={{ background: 'var(--bg-subtle)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', marginBottom: '32px' }}>
                     <h4 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '20px', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('admin.content.create_new_banner')}</h4>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '20px' }}>
@@ -571,10 +571,10 @@ export const ContentManagementView = () => {
 
                             <div style={{ padding: '20px' }}>
                                 {/* Metrics Bar - More Integrated */}
-                                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', background: 'var(--bg-subtle)', borderRadius: '20px', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '24px' }}>
                                     <div style={{ flex: 1, padding: '16px', textAlign: 'center', borderRight: '1px solid var(--border)' }}>
                                         <p style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('admin.content.impressions')}</p>
-                                        <p style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white' }}>{(b.viewCount || 0).toLocaleString()}</p>
+                                        <p style={{ fontSize: '1.25rem', fontWeight: 950, color: 'var(--text-main)' }}>{(b.viewCount || 0).toLocaleString()}</p>
                                     </div>
                                     <div style={{ flex: 1, padding: '16px', textAlign: 'center' }}>
                                         <p style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('admin.content.click_rate')}</p>
