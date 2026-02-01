@@ -122,7 +122,7 @@ export const SettlementLedger: React.FC = () => {
                                     <td style={{ padding: '20px 24px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <Calendar size={14} color="var(--text-muted)" />
-                                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white' }}>{formatDate(r.timestamp)}</span>
+                                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>{formatDate(r.timestamp)}</span>
                                         </div>
                                     </td>
                                     <td style={{ padding: '20px 24px' }}>
@@ -140,7 +140,7 @@ export const SettlementLedger: React.FC = () => {
                                             {String(r.type).replace(/_/g, ' ')}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '20px 24px', textAlign: 'right', fontWeight: 950, fontSize: '1.05rem', color: 'white', fontFamily: 'var(--font-mono)' }}>
+                                    <td style={{ padding: '20px 24px', textAlign: 'right', fontWeight: 950, fontSize: '1.05rem', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                                         {r.amount > 0 ? '+' : ''}{Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </td>
                                     <td style={{ padding: '20px 24px', textAlign: 'center' }}>
@@ -153,7 +153,7 @@ export const SettlementLedger: React.FC = () => {
                 )}
 
                 {/* 🔢 Pagination */}
-                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', background: 'rgba(15, 23, 42, 0.2)' }}>
+                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>
                         ENTRY NODE <strong>{page * pageSize + 1}</strong> TO <strong>{Math.min(filtered.length, (page + 1) * pageSize)}</strong> <span style={{ opacity: 0.5 }}>/ TOTAL {filtered.length}</span>
                     </div>
@@ -161,14 +161,14 @@ export const SettlementLedger: React.FC = () => {
                         <button
                             disabled={page === 0}
                             onClick={() => setPage(p => p - 1)}
-                            style={{ padding: '10px 20px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'white', fontWeight: 800, fontSize: '0.75rem', cursor: page === 0 ? 'not-allowed' : 'pointer', opacity: page === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', gap: '8px' }}
+                            style={{ padding: '10px 20px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.75rem', cursor: page === 0 ? 'not-allowed' : 'pointer', opacity: page === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', gap: '8px' }}
                         >
                             <ChevronLeft size={16} /> PREV
                         </button>
                         <button
                             disabled={page >= totalPages - 1}
                             onClick={() => setPage(p => p + 1)}
-                            style={{ padding: '10px 20px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'white', fontWeight: 800, fontSize: '0.75rem', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', opacity: page >= totalPages - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', gap: '8px' }}
+                            style={{ padding: '10px 20px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.75rem', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', opacity: page >= totalPages - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', gap: '8px' }}
                         >
                             NEXT <ChevronRight size={16} />
                         </button>

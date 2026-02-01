@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import DecisionModal from './DecisionModal';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
-import { Download, Loader2, Check, X, Building2, MapPin, Calendar, Mail, Phone, Edit3 } from 'lucide-react';
+import { Download, Loader2, Check, X, Building2, MapPin, Calendar, Mail, Phone, Edit3, FileText, Image } from 'lucide-react';
 
 export const OrganizerApprovalsView = () => {
     const { t } = useTranslation();
@@ -18,6 +18,7 @@ export const OrganizerApprovalsView = () => {
     const [editingOrgId, setEditingOrgId] = useState<number | null>(null);
     const [decisionOpen, setDecisionOpen] = useState(false);
     const [decisionContext, setDecisionContext] = useState<any>(null);
+    const [selectedItem, setSelectedItem] = useState<any>(null);
 
     const fetchData = async () => {
         try {
@@ -227,6 +228,32 @@ export const OrganizerApprovalsView = () => {
                                     <td style={{ textAlign: 'right' }}>
                                         {activeTab === 'pending' ? (
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                {(org.businessLicense || org.eventPoster) && (
+                                                    <div style={{ display: 'flex', gap: '4px', marginRight: '8px' }}>
+                                                        {org.businessLicense && (
+                                                            <a
+                                                                href={org.businessLicense}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ padding: '8px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                title={t('admin.approvals.view_license', 'View Business License')}
+                                                            >
+                                                                <FileText size={16} />
+                                                            </a>
+                                                        )}
+                                                        {org.eventPoster && (
+                                                            <a
+                                                                href={org.eventPoster}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ padding: '8px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                title={t('admin.approvals.view_poster', 'View Event Poster')}
+                                                            >
+                                                                <Image size={16} />
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                )}
                                                 <button
                                                     onClick={() => handleReview(org.id, 'APPROVED')}
                                                     style={{ background: '#10B981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -243,7 +270,7 @@ export const OrganizerApprovalsView = () => {
                                             </div>
                                         ) : (
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button onClick={() => fetchData()} style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
+                                                <button onClick={() => setSelectedItem(org)} style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
                                                     {t('admin.overview.details')}
                                                 </button>
                                             </div>
@@ -266,6 +293,58 @@ export const OrganizerApprovalsView = () => {
                     onConfirm={(p: any) => confirmDecision(p)}
                 />
             )}
+
+            <AnimatePresence>
+                {selectedItem && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedItem(null)}
+                        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            onClick={e => e.stopPropagation()}
+                            style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-card)', borderRadius: '32px', border: '1px solid var(--border)', padding: '40px', boxShadow: '0 40px 100px rgba(0,0,0,0.5)' }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{t('admin.overview.details')}</p>
+                                    <h2 style={{ margin: 0, fontWeight: 950, fontSize: '1.8rem' }}>{selectedItem.organizationName}</h2>
+                                </div>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setSelectedItem(null)}>
+                                    <X size={18} />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                <div style={{ padding: '20px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+                                    <p style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>{t('admin.decision.reason_label')}</p>
+                                    <p style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)', lineHeight: 1.6, fontWeight: 600 }}>
+                                        {selectedItem.adminNote || selectedItem.rejectionReason || selectedItem.statusReason || t('admin.decision.no_reason', 'No specific reason or note provided.')}
+                                    </p>
+                                </div>
+
+                                {selectedItem.status === 'APPROVED' && selectedItem.feePercentage !== undefined && (
+                                    <div style={{ padding: '20px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                        <p style={{ fontSize: '0.65rem', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', marginBottom: '8px' }}>{t('admin.approvals.commission_config')}</p>
+                                        <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                                            {selectedItem.feePercentage}% + {selectedItem.feeFixed} ETB
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <button onClick={() => setSelectedItem(null)} style={{ marginTop: '32px', width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 950, fontSize: '0.9rem', cursor: 'pointer' }}>
+                                {t('common.close', 'Close')}
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

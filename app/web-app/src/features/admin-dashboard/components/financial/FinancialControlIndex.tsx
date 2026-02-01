@@ -32,7 +32,7 @@ export const FinancialControlIndex: React.FC = () => {
         >
             {/* 🏦 Global Financial Header */}
             <div style={{
-                background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%)',
+                background: 'var(--bg-card)',
                 backdropFilter: 'blur(12px)',
                 border: '1px solid var(--border)',
                 borderRadius: '32px',
@@ -41,12 +41,12 @@ export const FinancialControlIndex: React.FC = () => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.2)'
+                boxShadow: '0 20px 50px rgba(0,0,0,0.05)'
             }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 15px #10B981' }} />
-                        <h1 style={{ fontSize: '2.4rem', fontWeight: 950, margin: 0, letterSpacing: '-0.02em' }}>Financial Control</h1>
+                        <h1 style={{ fontSize: '2.4rem', fontWeight: 950, margin: 0, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>Financial Control</h1>
                     </div>
                     <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', fontWeight: 600, maxWidth: '500px' }}>
                         Unified command center for platform liquidity, Gross Merchandise Value (GMV), and settlement records.
@@ -56,7 +56,7 @@ export const FinancialControlIndex: React.FC = () => {
                 <div style={{ display: 'flex', gap: '24px' }}>
                     <div style={{ textAlign: 'right', padding: '0 24px', borderRight: '1px solid var(--border)' }}>
                         <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Platform Liquidity</p>
-                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{stats ? currency(stats.financials?.totalVolume || 0) : '---'}</p>
+                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text-main)' }}>{stats ? currency(stats.financials?.totalVolume || 0) : '---'}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                         <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Live GMV</p>
@@ -70,7 +70,7 @@ export const FinancialControlIndex: React.FC = () => {
                 display: 'flex',
                 gap: '12px',
                 marginBottom: '40px',
-                background: 'rgba(15, 23, 42, 0.3)',
+                background: 'var(--bg-subtle)',
                 padding: '8px',
                 borderRadius: '20px',
                 width: 'fit-content',
@@ -101,7 +101,7 @@ export const FinancialControlIndex: React.FC = () => {
                             }}
                             onMouseEnter={(e) => {
                                 if (!isActive) {
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                                    e.currentTarget.style.background = 'var(--bg-hover)';
                                     e.currentTarget.style.color = t.color;
                                 }
                             }}

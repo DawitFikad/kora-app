@@ -65,7 +65,7 @@ export const OrganizerPayouts: React.FC = () => {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>{label}</div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{currency(amount)}</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text-main)' }}>{currency(amount)}</div>
                 </div>
             </div>
 
@@ -76,10 +76,10 @@ export const OrganizerPayouts: React.FC = () => {
                         <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>No active settlements found</span>
                     </div>
                 ) : items?.map((r: any, i: number) => (
-                    <div key={i} style={{
+                    <div style={{
                         padding: '16px',
                         borderRadius: '20px',
-                        background: 'rgba(255,255,255,0.02)',
+                        background: 'var(--bg-subtle)',
                         border: '1px solid var(--border)',
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -87,11 +87,11 @@ export const OrganizerPayouts: React.FC = () => {
                         transition: 'all 0.2s'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.8rem', color: 'var(--primary)' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.8rem', color: 'var(--primary)' }}>
                                 {r.organizerName?.[0] || 'O'}
                             </div>
                             <div>
-                                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'white' }}>{r.organizerName || r.organizer || 'Unnamed Partner'}</div>
+                                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>{r.organizerName || r.organizer || 'Unnamed Partner'}</div>
                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{type === 'paid' ? (r.settledAt ? new Date(r.settledAt).toLocaleDateString() : 'Settled') : `ID: #${r.organizerId || '---'}`}</div>
                             </div>
                         </div>
@@ -103,7 +103,7 @@ export const OrganizerPayouts: React.FC = () => {
                 ))}
             </div>
 
-            <button style={{ marginTop: '24px', width: '100%', padding: '14px', borderRadius: '16px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'white', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <button style={{ marginTop: '24px', width: '100%', padding: '14px', borderRadius: '16px', background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 View Full Audit
                 <MoreHorizontal size={14} />
             </button>

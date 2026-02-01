@@ -64,7 +64,7 @@ export const RevenueBreakdown: React.FC = () => {
             </div>
 
             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{label}</p>
-            <h3 style={{ fontSize: '1.8rem', fontWeight: 950, margin: 0, color: 'white' }}>{currency(amount)}</h3>
+            <h3 style={{ fontSize: '1.8rem', fontWeight: 950, margin: 0, color: 'var(--text-main)' }}>{currency(amount)}</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 600 }}>{description}</p>
         </motion.div>
     );
@@ -117,7 +117,7 @@ export const RevenueBreakdown: React.FC = () => {
             </div>
 
             {/* ℹ️ Protocol Information */}
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '24px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '24px', background: 'var(--bg-subtle)', borderRadius: '24px', border: '1px solid var(--border)' }}>
                 <Info size={20} color="var(--text-muted)" />
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                     These figures are extracted from the **Audit-Signed Ledger** and include VAT where applicable. Data refreshes every 30 minutes.

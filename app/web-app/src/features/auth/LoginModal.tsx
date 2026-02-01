@@ -107,7 +107,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         city,
                         payoutDetails
                     });
-                    
+
                     const regRes: any = await AuthService.registerOrganizer({
                         phoneNumber: normalized,
                         email,
@@ -117,9 +117,11 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         organizerType,
                         shortDescription,
                         categories,
-                        operatingCities
+                        operatingCities,
+                        businessLicense,
+                        eventPoster
                     });
-                    
+
                     console.log('Registration successful:', regRes);
                     await login({ accessToken: regRes.accessToken, user: regRes.user });
                     onClose();
@@ -289,7 +291,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                         </div>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.email')}</label>
-                                                <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'relative' }}>
                                                 <Mail size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
                                                 <input
                                                     type="email"
@@ -356,7 +358,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                 }} />
                             )}
 
-                                <div style={{ marginBottom: '24px' }}>
+                            <div style={{ marginBottom: '24px' }}>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>{t('auth.phone')}</label>
                                 <div style={{ position: 'relative' }}>
                                     <Phone size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />

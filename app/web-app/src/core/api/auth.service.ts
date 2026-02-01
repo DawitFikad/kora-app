@@ -18,8 +18,19 @@ export const AuthService = {
         shortDescription?: string;
         categories?: string;
         operatingCities?: string;
-    }) =>
-        api.post('/auth/organizer/register', data).then(res => res as any),
+        businessLicense?: File | null;
+        eventPoster?: File | null;
+    }) => {
+        const formData = new FormData();
+        Object.entries(data).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                formData.append(key, value);
+            }
+        });
+        return api.post('/auth/organizer/register', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        }).then(res => res as any);
+    },
 
     // Token Refresh
     refreshToken: (refreshToken: string) => api.post('/auth/refresh', { refreshToken }),
