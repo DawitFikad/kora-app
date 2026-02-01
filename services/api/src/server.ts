@@ -5,9 +5,8 @@ import app from "./app";
 import { EmailService } from "./services/email.service";
 
 EmailService.initialize();
-
 const PORT = Number(process.env.PORT) || 4000;
-const HOST = '0.0.0.0'; // Bind to all network interfaces to allow Android emulator access
+const HOST = '0.0.0.0'; 
 
 app.listen(PORT, HOST, () => {
   console.log(`Server running on http://localhost:${PORT}`);

@@ -8,8 +8,8 @@ const ContactPage: React.FC = () => {
                 For partnerships, media, or enterprise support, reach out directly.
             </p>
             <div style={{ marginTop: '1.5rem', color: 'var(--text-main)', lineHeight: 1.8 }}>
-                <div>Email: hello@et-tickets.com</div>
-                <div>Phone: +251 9XX XXX XXX</div>
+                <div>Email: support@et-tickets.com</div>
+                <div>Phone: +251 911 223 344</div>
                 <div>Address: Addis Ababa, Ethiopia</div>
             </div>
         </PublicPageLayout>
