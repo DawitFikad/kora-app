@@ -267,7 +267,6 @@ const translations: Record<Language, Record<string, string>> = {
         'org.actions.view': 'View',
     },
     am: {
-        'footer.helpCenter': 'የእገዛ ማዕከል',
         'nav.home': 'መነሻ',
         'nav.howItWorks': 'እንዴት እንደሚሰራ',
         'nav.features': 'ባህሪያት',

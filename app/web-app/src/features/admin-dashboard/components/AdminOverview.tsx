@@ -57,6 +57,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
         const fetchDashboardData = async () => {
             try {
                 setIsLoading(true);
+
                 const results = await Promise.allSettled([
                     AdminService.getPendingOrganizers(),
                     AdminService.getStats(),

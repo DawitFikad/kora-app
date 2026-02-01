@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { AdminService } from '../../../../core/api/admin.service';
-import ReadOnlyBanner from './ReadOnlyBanner';
-import { PAYMENTS_LIVE } from './financialConfig';
 
 const currency = (v: number) => v == null ? '—' : `ETB ${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -13,21 +11,6 @@ export const OrganizerPayouts: React.FC = () => {
     useEffect(() => {
         let mounted = true;
         setError(null);
-        if (!PAYMENTS_LIVE) {
-            // Audit-safe: do not call live payments API while payments are not live
-            if (mounted) {
-                setPayouts({
-                    available: [],
-                    pending: [],
-                    paid: [],
-                    availableTotal: 0,
-                    pendingTotal: 0,
-                    paidTotal: 0
-                });
-                setLoading(false);
-            }
-            return () => { mounted = false };
-        }
 
         AdminService.getOrganizerPayouts()
             .then((res: any) => { if (mounted) setPayouts(res?.data || res || {}); })
@@ -66,10 +49,9 @@ export const OrganizerPayouts: React.FC = () => {
 
     return (
         <div>
-            <ReadOnlyBanner message={PAYMENTS_LIVE ? 'Organizer payouts are live from API.' : 'Organizer payouts are audit-safe until payments are live.'} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div>
-                    <h2 style={{ margin: 0 }}>Organizer Payouts <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>{PAYMENTS_LIVE ? '(PROD)' : '(AUDIT)'}</span></h2>
+                    <h2 style={{ margin: 0 }}>Organizer Payouts</h2>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Manage fund separation and settlement queues for partners.</p>
                 </div>
                 <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)' }} />

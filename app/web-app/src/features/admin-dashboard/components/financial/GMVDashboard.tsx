@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AdminService } from '../../../../core/api/admin.service';
 import { downloadBlobAsCSV } from './csvExport';
-import ReadOnlyBanner from './ReadOnlyBanner';
-import { PAYMENTS_LIVE } from './financialConfig';
 
 const formatCurrency = (v: any) => {
     const n = Number(v || 0);
@@ -19,6 +17,7 @@ export const GMVDashboard: React.FC = () => {
         let mounted = true;
         setLoading(true);
         setError(null);
+
         AdminService.getGMV({ range })
             .then((res: any) => {
                 if (!mounted) return;
@@ -36,8 +35,8 @@ export const GMVDashboard: React.FC = () => {
 
     const handleExport = async () => {
         try {
-            const blob = await AdminService.exportSettlementLedgerCSV({ type: 'gmv', range });
-            downloadBlobAsCSV(blob, `gmv_export_${range}.csv`);
+            const res: any = await AdminService.exportSettlementLedgerCSV({ type: 'gmv', range });
+            downloadBlobAsCSV(res.data || res, `gmv_export_${range}.csv`);
         } catch (e) {
             console.error(e);
         }
@@ -47,14 +46,13 @@ export const GMVDashboard: React.FC = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <ReadOnlyBanner message={PAYMENTS_LIVE ? 'GMV data is live from API.' : 'GMV showing audit-safe preview until payments are live.'} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                 <div>
-                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>GMV Tracking <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>{PAYMENTS_LIVE ? '(live API)' : '(audit-safe preview)'}</span></h2>
-                    <p className="text-muted" style={{ marginTop: 6 }}>Bank-style financial controls — read-only until payments live</p>
+                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>GMV Tracking</h2>
+                    <p className="text-muted" style={{ marginTop: 6 }}>Bank-style financial controls — live platform data</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <select value={range} onChange={e => setRange(e.target.value as any)} disabled={!PAYMENTS_LIVE} style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border)', color: PAYMENTS_LIVE ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                    <select value={range} onChange={e => setRange(e.target.value as any)} style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)' }}>
                         <option value="7d">Last 7 days</option>
                         <option value="30d">Last 30 days</option>
                         <option value="90d">Last 90 days</option>

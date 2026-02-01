@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AdminService } from '../../../../core/api/admin.service';
 import { downloadBlobAsCSV } from './csvExport';
-import ReadOnlyBanner from './ReadOnlyBanner';
-import { PAYMENTS_LIVE } from './financialConfig';
 
 export const SettlementLedger: React.FC = () => {
     const [rows, setRows] = useState<any[]>([]);
@@ -15,6 +13,7 @@ export const SettlementLedger: React.FC = () => {
     useEffect(() => {
         let mounted = true;
         setError(null);
+
         AdminService.getSettlementLedger({ limit: 100 })
             .then((res: any) => { if (mounted) setRows(res?.data || res || []); })
             .catch((err: any) => { console.error('Ledger fetch failed', err); if (mounted) setError('Failed to load ledger'); setRows([]); })
@@ -57,10 +56,9 @@ export const SettlementLedger: React.FC = () => {
 
     return (
         <div>
-            <ReadOnlyBanner message={PAYMENTS_LIVE ? 'Settlement ledger is live from API.' : 'Settlement ledger is audit-safe until payments are live.'} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div>
-                    <h2 style={{ margin: 0 }}>System Ledger <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>{PAYMENTS_LIVE ? '(PROD)' : '(AUDIT-ONLY)'}</span></h2>
+                    <h2 style={{ margin: 0 }}>System Ledger</h2>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Immutable append-only record of all financial movements.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -103,7 +101,7 @@ export const SettlementLedger: React.FC = () => {
                                     </td>
                                 </tr>
                             )}
-                            {visible.map((r, i) => (
+                            {visible.map((r) => (
                                 <tr key={r.refId}>
                                     <td style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.75rem', fontWeight: 800, color: 'var(--bg-active)' }}>
                                         #{r.refId}

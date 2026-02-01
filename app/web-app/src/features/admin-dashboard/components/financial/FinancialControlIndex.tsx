@@ -16,8 +16,10 @@ export const FinancialControlIndex: React.FC = () => {
 
     return (
         <div>
-            <h1 style={{ marginBottom: 6 }}>Financial Control <span style={{ fontWeight: 700, color: 'var(--accent)' }}>(Preview — live API)</span></h1>
-            <p className="text-muted">Read-only mode until payments live — audit-safe views</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: 6 }}>
+                <h1 style={{ margin: 0 }}>Financial Control</h1>
+            </div>
+            <p className="text-muted" style={{ marginBottom: 20 }}>Unified command center for platform liquidity, Gross Merchandise Value (GMV), and settlement records.</p>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                 {tabs.map(t => (
                     <button key={t.id} className={`nav-item ${active === t.id ? 'active' : ''}`} onClick={() => setActive(t.id)}>{t.label}</button>

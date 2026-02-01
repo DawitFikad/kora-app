@@ -186,32 +186,104 @@ export class FinancialController {
 
     static async getPlatformRevenue(req: Request, res: Response) {
         try {
-            const since = new Date(); since.setMonth(since.getMonth() - 1);
-            const fees = await prisma.financialTransaction.findMany({ where: { createdAt: { gte: since } } });
-            const summary: Record<string, number> = { commission: 0, convenience: 0, adjustments: 0 };
-            fees.forEach(f => {
-                if ((f as any).type === 'PLATFORM_FEE') summary.commission += Number(f.amount || 0);
-                else if ((f as any).type === 'CONVENIENCE_FEE') summary.convenience += Number(f.amount || 0);
-                else summary.adjustments += Number(f.amount || 0);
+            const { range = '30d' } = req.query as any;
+            const since = new Date();
+            if (range === '7d') since.setDate(since.getDate() - 7);
+            else if (range === '90d') since.setDate(since.getDate() - 90);
+            else since.setDate(since.getDate() - 30);
+
+            const transactions = await prisma.financialTransaction.findMany({
+                where: { createdAt: { gte: since } }
             });
-            res.json({ success: true, data: { commissionTotal: summary.commission, convenienceTotal: summary.convenience, adjustmentsTotal: summary.adjustments } });
-        } catch (error: any) { res.status(500).json({ success: false, message: error.message }); }
+
+            const summary = { commission: 0, convenience: 0, adjustments: 0 };
+
+            transactions.forEach(t => {
+                if (t.type === 'TICKET_PURCHASE') {
+                    // Try to parse metadata for breakdown, otherwise use feeAmount as commission
+                    const meta = (t.metadata as any) || {};
+                    const commission = meta.priceBreakdown?.commission ?? Number(t.feeAmount || 0);
+                    const convenience = meta.priceBreakdown?.convenienceFee ?? 0;
+
+                    summary.commission += Number(commission);
+                    summary.convenience += Number(convenience);
+                } else if (t.type === 'PLATFORM_FEE') {
+                    summary.commission += Number(t.amount || 0);
+                } else if ((t.type as any) === 'CONVENIENCE_FEE') {
+                    summary.convenience += Number(t.amount || 0);
+                } else if (t.type === 'ADJUSTMENT' || t.type === 'REFUND') {
+                    summary.adjustments += Number(t.amount || 0);
+                }
+            });
+
+            res.json({
+                success: true,
+                data: {
+                    commissionTotal: summary.commission,
+                    convenienceTotal: summary.convenience,
+                    adjustmentsTotal: summary.adjustments,
+                    totalPlatformRevenue: summary.commission + summary.convenience + summary.adjustments
+                }
+            });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     }
 
     static async listPayouts(req: Request, res: Response) {
         try {
-            const batches = await prisma.payoutBatch.findMany({ orderBy: { createdAt: 'desc' }, take: 100 });
-            // Map into available/pending/paid for admin preview
-            const available: any[] = [];
+            const [batches, wallets] = await Promise.all([
+                prisma.payoutBatch.findMany({
+                    orderBy: { createdAt: 'desc' },
+                    take: 50,
+                    include: { wallet: { include: { organizer: { select: { organizationName: true } } } } }
+                }),
+                prisma.organizerWallet.findMany({
+                    where: { availableBalance: { gt: 0 } },
+                    include: { organizer: { select: { organizationName: true } } }
+                })
+            ]);
+
+            const available = wallets.map(w => ({
+                organizerId: w.organizerId,
+                organizerName: w.organizer.organizationName,
+                available: Number(w.availableBalance)
+            }));
+
             const pending: any[] = [];
             const paid: any[] = [];
+
             batches.forEach(b => {
-                if (b.status === FinancialStatus.PAID_OUT) paid.push(b);
-                else if (b.status === FinancialStatus.INITIATED) pending.push(b);
-                else available.push(b);
+                const item = {
+                    batchId: b.id,
+                    organizerName: b.wallet?.organizer?.organizationName || 'Unknown',
+                    amount: Number(b.amount),
+                    status: b.status,
+                    createdAt: b.createdAt,
+                    settledAt: b.processedAt
+                };
+
+                if (b.status === FinancialStatus.PAID_OUT) {
+                    paid.push(item);
+                } else if (b.status === FinancialStatus.INITIATED) {
+                    pending.push(item);
+                }
             });
-            res.json({ success: true, data: { available, pending, paid } });
-        } catch (error: any) { res.status(500).json({ success: false, message: error.message }); }
+
+            res.json({
+                success: true,
+                data: {
+                    available,
+                    pending,
+                    paid,
+                    availableTotal: available.reduce((s, x) => s + x.available, 0),
+                    pendingTotal: pending.reduce((s, x) => s + x.amount, 0),
+                    paidTotal: paid.reduce((s, x) => s + x.amount, 0)
+                }
+            });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     }
 
     static async getSettlementLedger(req: Request, res: Response) {
