@@ -156,8 +156,8 @@ const AdminDashboard = () => {
                         <img src="https://ui-avatars.com/api/?name=Admin+Portal&background=000&color=fff" style={{ width: '100%' }} />
                     </div>
                     <div>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 900 }}>Admin Portal</h2>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Super Admin Access</p>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: 900 }}>{t('admin.brand', 'Admin Portal')}</h2>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.super_admin_access', 'Super Admin Access')}</p>
                     </div>
                 </div>
 
@@ -169,33 +169,33 @@ const AdminDashboard = () => {
                         style={{ marginBottom: '24px' }} // Spacing after dashboard
                     >
                         <Layout size={18} />
-                        <span style={{ fontSize: '0.9rem' }}>{t('admin.dashboard')}</span>
+                        <span style={{ fontSize: '0.9rem' }}>{t('admin.sidebar.dashboard')}</span>
                     </div>
 
                     {[
                         {
-                            title: 'Org. & Event Management',
+                            title: t('admin.sidebar.management_group'),
                             items: [
-                                { icon: Users, label: 'Organizer Approvals', count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers') },
-                                { icon: Calendar, label: 'Event Approvals', count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events') },
-                                { icon: Crown, label: 'Feature Requests', count: featureRequestCount > 0 ? featureRequestCount : undefined, display: t('admin.featureRequests', 'Feature Requests') },
-                                { icon: BarChart3, label: 'Commissions', display: t('admin.commissions') }
+                                { icon: Users, label: 'Organizer Approvals', count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.sidebar.organizers') },
+                                { icon: Calendar, label: 'Event Approvals', count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.sidebar.events') },
+                                { icon: Crown, label: 'Feature Requests', count: Array.isArray(notifications) ? notifications.filter((n: any) => n.metadata?.type === 'FEATURE_REQUEST').length : 0, display: t('admin.sidebar.feature_requests') },
+                                { icon: BarChart3, label: 'Commissions', display: t('admin.sidebar.commissions') }
                             ]
                         },
                         {
-                            title: 'Financial Control',
+                            title: t('admin.sidebar.finance_group'),
                             items: [
-                                { icon: DollarSign, label: 'GMV Tracking', display: 'GMV Tracking' }
+                                { icon: DollarSign, label: 'GMV Tracking', display: t('admin.sidebar.gmv_tracking') }
                             ]
                         },
                         {
-                            title: 'Security & System',
+                            title: t('admin.sidebar.security_group'),
                             items: [
-                                { icon: ShieldAlert, label: 'Fraud Monitoring', display: 'Fraud Monitoring' },
-                                { icon: Activity, label: 'Platform Health', display: 'Platform Health' },
-                                { icon: ClipboardList, label: 'Audit Logs', display: 'Audit Logs' },
-                                { icon: Users, label: 'Invite Admin', display: 'Invite Admin' },
-                                { icon: FileText, label: 'Content', display: 'Content Management' }
+                                { icon: ShieldAlert, label: 'Fraud Monitoring', display: t('admin.sidebar.fraud') },
+                                { icon: Activity, label: 'Platform Health', display: t('admin.sidebar.platform_health') },
+                                { icon: ClipboardList, label: 'Audit Logs', display: t('admin.sidebar.audit_logs') },
+                                { icon: Users, label: 'Invite Admin', display: t('admin.sidebar.team') },
+                                { icon: FileText, label: 'Content', display: t('admin.sidebar.content') }
                             ]
                         }
                     ].map((group, groupIndex) => (
@@ -235,11 +235,11 @@ const AdminDashboard = () => {
                 <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
                     <div className="nav-item" onClick={() => setActiveTab('Settings')}>
                         <Settings size={18} />
-                        <span>{t('admin.settings', 'Settings')}</span>
+                        <span>{t('admin.sidebar.settings')}</span>
                     </div>
                     <div className="nav-item" style={{ color: '#EF4444' }} onClick={handleLogout}>
                         <LogOut size={18} />
-                        <span>{t('admin.logout')}</span>
+                        <span>{t('admin.sidebar.logout')}</span>
                     </div>
                 </div>
             </aside>
@@ -277,8 +277,8 @@ const AdminDashboard = () => {
                                     }}
                                 >
                                     <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 800 }}>Notifications</h4>
-                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{pendingCount + eventPendingCount} Pending</span>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 800 }}>{t('admin.notifications')}</h4>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{pendingCount + eventPendingCount} {t('admin.review_pending')}</span>
                                     </div>
                                     <div style={{ padding: '8px' }}>
                                         {pendingCount > 0 && (
@@ -292,8 +292,8 @@ const AdminDashboard = () => {
                                                     <Users size={16} color="#3B82F6" />
                                                 </div>
                                                 <div>
-                                                    <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>Organizer Review</p>
-                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{pendingCount} applications waiting</p>
+                                                    <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>{t('admin.organizers')}</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{pendingCount} {t('admin.pending_applications')}</p>
                                                 </div>
                                             </div>
                                         )}
@@ -308,8 +308,8 @@ const AdminDashboard = () => {
                                                     <Calendar size={16} color="#F59E0B" />
                                                 </div>
                                                 <div>
-                                                    <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>Event Moderation</p>
-                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{eventPendingCount} events pending</p>
+                                                    <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>{t('admin.events')}</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{eventPendingCount} {t('admin.review_pending')}</p>
                                                 </div>
                                             </div>
                                         )}

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
 import { Loader2, ClipboardList, Shield, Clock, Trash2, ChevronLeft, ChevronRight, Info, X } from 'lucide-react';
 
 export const ActivityLogView = () => {
+    const { t } = useTranslation();
     const [logs, setLogs] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -31,23 +33,23 @@ export const ActivityLogView = () => {
     }, []);
 
     const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this log entry?')) return;
+        if (!confirm(t('admin.logs.delete_confirm'))) return;
         try {
             await AdminService.deleteAuditLog(id);
             fetchLogs(page);
         } catch (err) {
-            alert('Failed to delete log entry');
+            alert(t('admin.team.failed'));
         }
     };
 
     const handleClearAll = async () => {
-        if (!confirm('CRITICAL: This will permanently delete the entire audit history. Proceed?')) return;
+        if (!confirm(t('admin.logs.clear_all_confirm'))) return;
         setIsClearing(true);
         try {
             await AdminService.clearAuditLogs();
             fetchLogs(1);
         } catch (err) {
-            alert('Failed to clear logs');
+            alert(t('admin.team.failed'));
         } finally {
             setIsClearing(false);
         }
@@ -56,15 +58,15 @@ export const ActivityLogView = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AdminPageHeader
-                title="Admin Activity Logs"
-                subtitle="Every action is logged, timestamped, and attributable for total accountability."
+                title={t('admin.logs.title')}
+                subtitle={t('admin.logs.subtitle')}
             />
 
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <ClipboardList size={22} color="var(--primary)" />
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Audit Trail</h3>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>{t('admin.logs.audit_trail')}</h3>
                     </div>
                     <button
                         onClick={handleClearAll}
@@ -84,7 +86,7 @@ export const ActivityLogView = () => {
                         }}
                     >
                         <Trash2 size={16} />
-                        {isClearing ? 'CLEARING...' : 'CLEAR HISTORY'}
+                        {isClearing ? t('admin.logs.clearing') : t('admin.logs.clear_history')}
                     </button>
                 </div>
 
@@ -97,7 +99,7 @@ export const ActivityLogView = () => {
                         {logs.length === 0 ? (
                             <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-subtle)', borderRadius: '24px', border: '1px dashed var(--border)' }}>
                                 <Shield size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
-                                <p style={{ fontWeight: 700 }}>No audit logs found.</p>
+                                <p style={{ fontWeight: 700 }}>{t('admin.logs.no_logs')}</p>
                             </div>
                         ) : (
                             <>
@@ -120,20 +122,21 @@ export const ActivityLogView = () => {
                                             <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-active)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                                                 <Shield size={20} />
                                             </div>
-                                            <div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                                    <h4 style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--text-main)' }}>{log.title}</h4>
-                                                    {log.metadata && (
-                                                        <button
-                                                            onClick={() => setSelectedLog(log)}
-                                                            style={{ background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: '#3B82F6', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer' }}
-                                                        >
-                                                            DETAILS
-                                                        </button>
-                                                    )}
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)' }}>{log.description}</p>
+                                                <div style={{ display: 'flex', gap: '12px', marginTop: '4px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                                    <span>{t('admin.logs.id')}: {log.id}</span>
+                                                    <span>{t('admin.logs.ip')}: {log.ipAddress || 'Internal'}</span>
                                                 </div>
-                                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>{log.content}</p>
                                             </div>
+                                            {log.metadata && (
+                                                <button
+                                                    onClick={() => setSelectedLog(log)}
+                                                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: '#3B82F6', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer' }}
+                                                >
+                                                    DETAILS
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>

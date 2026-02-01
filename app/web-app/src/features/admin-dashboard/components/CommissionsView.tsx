@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Loader2, DollarSign, Wallet, ArrowUpRight, ChevronLeft, ChevronRight, Hash, Eye, Calendar, User, Ticket } from 'lucide-react';
 import { AdminPageHeader } from './AdminPageHeader';
@@ -7,6 +8,7 @@ import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
 
 export const CommissionsView = () => {
+    const { t } = useTranslation();
     const [transactions, setTransactions] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [fees, setFees] = useState<any[]>([]);
@@ -96,32 +98,32 @@ export const CommissionsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader title="Commissions & Revenue" subtitle="Detailed audit of platform fees, commission rates, and real-time revenue collection." />
+            <AdminPageHeader title={t('admin.commissions.title')} subtitle={t('admin.commissions.subtitle')} />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Platform Commission</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{t('admin.platform_commission')}</p>
                         <DollarSign size={18} color="#10B981" />
                     </div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>ETB {metrics.platformCommission.toLocaleString()}</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 700 }}>Total revenue earned</p>
+                    <p style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 700 }}>{t('admin.commissions.revenue_earned')}</p>
                 </div>
                 <div className="admin-stat-card-main">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Pending Payouts</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{t('admin.pending_payouts')}</p>
                         <Wallet size={18} color="#F59E0B" />
                     </div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>ETB {metrics.pendingPayouts.amount.toLocaleString()}</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#F59E0B', fontWeight: 700 }}>{metrics.pendingPayouts.count} batches ready</p>
+                    <p style={{ fontSize: '0.8rem', color: '#F59E0B', fontWeight: 700 }}>{metrics.pendingPayouts.count} {t('admin.commissions.batches_ready')}</p>
                 </div>
                 <div className="admin-stat-card-main">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Monthly GMV</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>{t('admin.commissions.monthly_gmv')}</p>
                         <ArrowUpRight size={18} color="var(--primary)" />
                     </div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>ETB {metrics.monthlyGMV.toLocaleString()}</h2>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Gross volume this month</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('admin.commissions.gross_volume_month')}</p>
                 </div>
             </div>
 
@@ -131,18 +133,18 @@ export const CommissionsView = () => {
                     <div style={{ padding: '8px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px' }}>
                         <Hash size={20} color="#3B82F6" />
                     </div>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Global Fee Configuration</h3>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>{t('admin.commissions.fee_config')}</h3>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
                     {fees.filter(f => f.isDefault).map(fee => (
                         <div key={fee.id} style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
-                            <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px 12px', background: '#3B82F6', color: 'white', fontSize: '0.65rem', fontWeight: 900, borderRadius: '0 0 0 10px' }}>DEFAULT CONFIG</div>
+                            <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px 12px', background: '#3B82F6', color: 'white', fontSize: '0.65rem', fontWeight: 900, borderRadius: '0 0 0 10px' }}>{t('admin.commissions.default_config')}</div>
                             <div style={{ marginBottom: '16px' }}>
                                 <span style={{ fontWeight: 950, color: 'white', fontSize: '1.1rem' }}>{fee.name}</span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 800 }}>RATE (%)</label>
+                                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 800 }}>{t('admin.commissions.rate')}</label>
                                     <input
                                         type="number"
                                         defaultValue={fee.feePercentage}
@@ -151,7 +153,7 @@ export const CommissionsView = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 800 }}>FIXED (ETB)</label>
+                                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 800 }}>{t('admin.commissions.fixed')}</label>
                                     <input
                                         type="number"
                                         defaultValue={fee.feeFixed}
@@ -171,7 +173,7 @@ export const CommissionsView = () => {
                                 className="btn-blue"
                                 style={{ marginTop: '20px', width: '100%', borderRadius: '12px', height: '45px', fontWeight: 900 }}
                             >
-                                {isSaving ? <Loader2 size={18} className="animate-spin" /> : 'Apply Global Update'}
+                                {isSaving ? <Loader2 size={18} className="animate-spin" /> : t('admin.commissions.apply_update')}
                             </button>
                         </div>
                     ))}
@@ -182,8 +184,8 @@ export const CommissionsView = () => {
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
                     <div>
-                        <h3 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Fee Audit Ledger</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Review platform cuts from every verified ticket sale.</p>
+                        <h3 style={{ fontSize: '1.3rem', fontWeight: 900 }}>{t('admin.commissions.audit_ledger')}</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.commissions.audit_desc')}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <select
@@ -191,7 +193,7 @@ export const CommissionsView = () => {
                             onChange={(e) => { setOrganizerFilter(e.target.value); setCurrentPage(1); }}
                             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: '12px', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.9rem' }}
                         >
-                            <option value="all">All Organizers</option>
+                            <option value="all">{t('admin.commissions.all_organizers')}</option>
                             {organizerOptions.map((org: any) => (
                                 <option key={org.id} value={String(org.id)}>
                                     {org.organizationName}
@@ -202,7 +204,7 @@ export const CommissionsView = () => {
                             onClick={handleExport}
                             style={{ background: 'var(--bg-black)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '12px', color: 'white', fontWeight: 800, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
                         >
-                            <Download size={18} /> Export CSV
+                            <Download size={18} /> {t('admin.commissions.export_csv')}
                         </button>
                     </div>
                 </div>
@@ -212,18 +214,18 @@ export const CommissionsView = () => {
                         <thead>
                             <tr>
                                 <th style={{ width: '60px' }}>#</th>
-                                <th>TX ID</th>
-                                <th>TRANSACTION DETAIL</th>
-                                <th>GROSS</th>
-                                <th style={{ color: '#F59E0B' }}>PLATFORM FEE</th>
-                                <th style={{ color: '#1D90F5' }}>NET PAYOUT</th>
-                                <th>STATUS</th>
-                                <th>ACTIONS</th>
+                                <th>{t('admin.commissions.tx_id')}</th>
+                                <th>{t('admin.commissions.tx_detail')}</th>
+                                <th>{t('admin.commissions.gross')}</th>
+                                <th style={{ color: '#F59E0B' }}>{t('admin.commissions.platform_fee')}</th>
+                                <th style={{ color: '#1D90F5' }}>{t('admin.commissions.net_payout')}</th>
+                                <th>{t('admin.commissions.status')}</th>
+                                <th>{t('admin.commissions.actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedTransactions.length === 0 ? (
-                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No audit records found.</td></tr>
+                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>{t('admin.commissions.no_records')}</td></tr>
                             ) : (
                                 paginatedTransactions.map((tx, idx) => (
                                     <tr key={tx.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedTx(tx)}>
@@ -234,8 +236,8 @@ export const CommissionsView = () => {
                                             TX-{tx.id.toString().padStart(6, '0')}
                                         </td>
                                         <td>
-                                            <p style={{ fontWeight: 950, fontSize: '0.9rem', marginBottom: '4px' }}>{tx.event?.title || 'System Operation'}</p>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{tx.event?.organizer?.organizationName || 'Global System'}</p>
+                                            <p style={{ fontWeight: 950, fontSize: '0.9rem', marginBottom: '4px' }}>{tx.event?.title || t('admin.platform.platform_sovereignty')}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{tx.event?.organizer?.organizationName || t('admin.platform.global_broadcast')}</p>
                                         </td>
                                         <td style={{ fontWeight: 900, fontSize: '0.9rem' }}>ETB {Number(tx.amount).toLocaleString()}</td>
                                         <td style={{ color: '#F59E0B', fontWeight: 950, fontSize: '0.9rem' }}>{tx.feeAmount > 0 ? `ETB ${Number(tx.feeAmount).toLocaleString()}` : '—'}</td>
@@ -246,7 +248,7 @@ export const CommissionsView = () => {
                                                 color: tx.status === 'SETTLED' ? '#10B981' : '#F59E0B',
                                                 fontWeight: 900
                                             }}>
-                                                {tx.status}
+                                                {tx.status === 'SETTLED' ? t('admin.all_settled') : t('admin.awaiting_settlement')}
                                             </span>
                                         </td>
                                         <td>
@@ -265,7 +267,7 @@ export const CommissionsView = () => {
                 {totalPages > 1 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', padding: '0 10px' }}>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            Showing <b>{(currentPage - 1) * pageSize + 1}</b> to <b>{Math.min(currentPage * pageSize, filteredTransactions.length)}</b> of <b>{filteredTransactions.length}</b> records
+                            {t('admin.commissions.showing')} <b>{(currentPage - 1) * pageSize + 1}</b> {t('admin.commissions.to')} <b>{Math.min(currentPage * pageSize, filteredTransactions.length)}</b> {t('admin.commissions.of')} <b>{filteredTransactions.length}</b> {t('admin.commissions.records')}
                         </p>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <button
@@ -321,37 +323,37 @@ export const CommissionsView = () => {
                             }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                                <h3 style={{ fontSize: '1.4rem', fontWeight: 950 }}>Audit Details</h3>
-                                <button onClick={() => setSelectedTx(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 800 }}>CLOSE</button>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: 950 }}>{t('admin.commissions.audit_details')}</h3>
+                                <button onClick={() => setSelectedTx(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 800 }}>{t('admin.overview.close')}</button>
                             </div>
 
                             <div style={{ display: 'grid', gap: '24px' }}>
                                 <div style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '20px', border: '1px solid var(--border)' }}>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Transaction ID</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>{t('admin.commissions.transaction_id')}</p>
                                     <p style={{ fontSize: '1.2rem', fontWeight: 950, fontFamily: 'monospace', color: 'var(--primary)' }}>TX-{selectedTx.id.toString().padStart(6, '0')}</p>
                                 </div>
 
                                 <div>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '16px' }}>Order Information</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '16px' }}>{t('admin.commissions.order_info')}</p>
                                     <div style={{ display: 'grid', gap: '12px' }}>
                                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                             <Calendar size={16} color="var(--text-muted)" />
                                             <div>
-                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>Date & Time</p>
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>{t('admin.commissions.date_time')}</p>
                                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(selectedTx.createdAt).toLocaleString()}</p>
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                             <User size={16} color="var(--text-muted)" />
                                             <div>
-                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>Organizer</p>
-                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedTx.event?.organizer?.organizationName || 'System'}</p>
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>{t('admin.commissions.organizer_label')}</p>
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedTx.event?.organizer?.organizationName || t('admin.platform.global_broadcast')}</p>
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                             <Ticket size={16} color="var(--text-muted)" />
                                             <div>
-                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>Linked Event</p>
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>{t('admin.commissions.linked_event')}</p>
                                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedTx.event?.title || 'N/A'}</p>
                                             </div>
                                         </div>
@@ -359,18 +361,18 @@ export const CommissionsView = () => {
                                 </div>
 
                                 <div style={{ marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '16px' }}>Revenue Breakdown</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '16px' }}>{t('admin.commissions.revenue_breakdown')}</p>
                                     <div style={{ display: 'grid', gap: '12px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Gross Amount</span>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{t('admin.commissions.gross_amount')}</span>
                                             <span style={{ fontSize: '0.85rem', fontWeight: 900 }}>ETB {Number(selectedTx.amount).toLocaleString()}</span>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.1)' }}>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F59E0B' }}>Platform Fee</span>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F59E0B' }}>{t('admin.platform_commission')}</span>
                                             <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#F59E0B' }}>- ETB {Number(selectedTx.feeAmount).toLocaleString()}</span>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'var(--bg-active)', borderRadius: '12px', marginTop: '8px' }}>
-                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: 'white' }}>Organizer Net</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: 'white' }}>{t('admin.commissions.organizer_net')}</span>
                                             <span style={{ fontSize: '1rem', fontWeight: 950, color: 'white' }}>ETB {Number(selectedTx.netAmount).toLocaleString()}</span>
                                         </div>
                                     </div>
@@ -382,7 +384,7 @@ export const CommissionsView = () => {
                                     onClick={() => setSelectedTx(null)}
                                     style={{ width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'white', fontWeight: 900, cursor: 'pointer' }}
                                 >
-                                    Dismiss View
+                                    {t('admin.commissions.dismiss')}
                                 </button>
                             </div>
                         </motion.div>

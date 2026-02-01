@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     open: boolean;
@@ -13,7 +14,8 @@ type Props = {
     onConfirm: (payload: { reason: string; commission?: any; priority?: string; revenueEstimate?: number }) => void;
 };
 
-const DecisionModal: React.FC<Props> = ({ open, title = 'Decision', showCommission = false, showPriority = false, showRevenueEstimate = false, initialCommission, initialPriority, initialRevenue, onCancel, onConfirm }) => {
+const DecisionModal: React.FC<Props> = ({ open, title, showCommission = false, showPriority = false, showRevenueEstimate = false, initialCommission, initialPriority, initialRevenue, onCancel, onConfirm }) => {
+    const { t } = useTranslation();
     const [reason, setReason] = useState('');
     const [feePercentage, setFeePercentage] = useState(initialCommission?.feePercentage ?? 10);
     const [feeFixed, setFeeFixed] = useState(initialCommission?.feeFixed ?? 0);
@@ -35,20 +37,20 @@ const DecisionModal: React.FC<Props> = ({ open, title = 'Decision', showCommissi
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4000 }} onClick={onCancel}>
             <div style={{ width: 520, maxWidth: '96%', background: 'var(--bg-card)', borderRadius: 12, padding: 20, border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900 }}>{title}</h3>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900 }}>{title || t('admin.decision.title')}</h3>
                 <div style={{ marginTop: 12 }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 800, display: 'block', marginBottom: 6 }}>Decision reason (required)</label>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 800, display: 'block', marginBottom: 6 }}>{t('admin.decision.reason_label')}</label>
                     <textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)' }} />
                 </div>
 
                 {showCommission && (
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                         <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Platform %</label>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>{t('admin.decision.platform_percent')}</label>
                             <input type="number" value={feePercentage} onChange={e => setFeePercentage(Number(e.target.value))} style={{ width: '100%', padding: 8, borderRadius: 8, background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)' }} />
                         </div>
                         <div style={{ width: 120 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Fixed ETB</label>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>{t('admin.decision.fixed_etb')}</label>
                             <input type="number" value={feeFixed} onChange={e => setFeeFixed(Number(e.target.value))} style={{ width: '100%', padding: 8, borderRadius: 8, background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)' }} />
                         </div>
                     </div>
@@ -56,35 +58,35 @@ const DecisionModal: React.FC<Props> = ({ open, title = 'Decision', showCommissi
 
                 {showPriority && (
                     <div style={{ marginTop: 12 }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Priority</label>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>{t('admin.decision.priority')}</label>
                         <select value={priority} onChange={e => setPriority(e.target.value)} style={{ width: 160, padding: 8, borderRadius: 8, background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)' }}>
-                            <option value="">None</option>
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
+                            <option value="">{t('admin.decision.none')}</option>
+                            <option value="High">{t('admin.decision.high')}</option>
+                            <option value="Medium">{t('admin.decision.medium')}</option>
+                            <option value="Low">{t('admin.decision.low')}</option>
                         </select>
                     </div>
                 )}
 
                 {showRevenueEstimate && (
                     <div style={{ marginTop: 12 }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Estimated revenue impact (ETB)</label>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>{t('admin.decision.revenue_estimate')}</label>
                         <input type="number" value={revenueEstimate === '' ? '' : revenueEstimate} onChange={e => setRevenueEstimate(e.target.value === '' ? '' : Number(e.target.value))} style={{ width: 200, padding: 8, borderRadius: 8, background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)' }} />
                     </div>
                 )}
 
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-                    <button onClick={onCancel} style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)' }}>Cancel</button>
+                    <button onClick={onCancel} style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)' }}>{t('admin.decision.cancel')}</button>
                     <button
                         onClick={() => {
                             if (!reason || reason.trim().length === 0) {
-                                alert('Decision reason is required');
+                                alert(t('admin.decision.reason_required'));
                                 return;
                             }
                             onConfirm({ reason: reason.trim(), commission: showCommission ? { feePercentage, feeFixed, feeType: 'PERCENTAGE' } : undefined, priority: showPriority ? priority : undefined, revenueEstimate: showRevenueEstimate && revenueEstimate !== '' ? Number(revenueEstimate) : undefined });
                         }}
                         style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--bg-active)', border: 'none', color: 'white', fontWeight: 800 }}
-                    >Confirm</button>
+                    >{t('admin.decision.confirm')}</button>
                 </div>
             </div>
         </div>

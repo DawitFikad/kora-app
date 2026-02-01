@@ -123,22 +123,22 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AdminPageHeader
-                title={view === 'SETTLEMENTS' ? 'Settlement Ledger' : t('admin.payouts')}
+                title={view === 'SETTLEMENTS' ? t('admin.payouts.ledger_tab') : t('admin.payouts')}
                 subtitle={view === 'SETTLEMENTS'
-                    ? 'Complete fiscal audit of all resolved funds and platform transfers.'
-                    : t('admin.payouts_desc', 'Track platform sales volume and settle organizer balances.')}
+                    ? t('admin.commissions.subtitle')
+                    : t('admin.payouts_desc')}
                 actions={
                     <div style={{ display: 'flex', gap: '12px' }}>
                         {view === 'QUEUE' && (
                             <button
-                                onClick={() => { setDecisionContext({ action: 'bulkSettlement', title: 'Initiate Bulk Settlement' }); setDecisionOpen(true); }}
+                                onClick={() => { setDecisionContext({ action: 'bulkSettlement', title: t('admin.payouts.initiate_bulk') }); setDecisionOpen(true); }}
                                 style={{ background: 'var(--bg-active)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 800, fontSize: '0.85rem' }}
                             >
-                                Initiate Bulk Settlement
+                                {t('admin.payouts.initiate_bulk')}
                             </button>
                         )}
                         <button
-                            onClick={() => exportToCSV((viewMode === 'SETTLEMENTS' ? settlementLedger : pendingPayouts).map(p => ({
+                            onClick={() => exportToCSV((view === 'SETTLEMENTS' ? processedPayouts : pendingPayouts).map(p => ({
                                 Transaction: p.transactionId || p.id,
                                 Organizer: p.wallet?.organizer?.organizationName || p.organizerName,
                                 Event: p.eventTitle || p.event?.title || '',
@@ -147,10 +147,10 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                                 OrganizerNet: p.netAmount || '',
                                 Status: p.status,
                                 Timestamp: p.processedAt || p.createdAt
-                            })), `${viewMode.toLowerCase()}_export.csv`)}
+                            })), `${view.toLowerCase()}_export.csv`)}
                             className="btn-blue" style={{ background: '#12171F', color: 'white', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
                         >
-                            <Download size={16} /> {t('admin.export_queue', 'Export List')}
+                            <Download size={16} /> {t('admin.export_queue')}
                         </button>
                     </div>
                 }
@@ -158,24 +158,24 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main">
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800, marginBottom: '8px' }}>{view === 'SETTLEMENTS' ? 'TOTAL SETTLED' : 'MONTHLY GMV'}</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800, marginBottom: '8px' }}>{view === 'SETTLEMENTS' ? t('admin.payouts.total_settled') : t('admin.commissions.monthly_gmv')}</p>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>ETB {(view === 'SETTLEMENTS' ? processedPayouts.reduce((sum, p) => sum + Number(p.amount), 0) : metrics.monthlyGMV).toLocaleString()}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3B82F6', fontSize: '0.75rem', fontWeight: 700, marginTop: '12px' }}>
-                        <DollarSign size={14} /> {view === 'SETTLEMENTS' ? 'Lifetime platform settlements' : 'Gross volume this month'}
+                        <DollarSign size={14} /> {view === 'SETTLEMENTS' ? t('admin.payouts.lifetime_settlements') : t('admin.commissions.gross_volume_month')}
                     </div>
                 </div>
                 <div className="admin-stat-card-main">
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800, marginBottom: '8px' }}>{view === 'SETTLEMENTS' ? 'AUDITED COUNT' : 'PENDING PAYOUTS'}</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800, marginBottom: '8px' }}>{view === 'SETTLEMENTS' ? t('admin.payouts.audited_count') : t('admin.pending_payouts')}</p>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>{view === 'SETTLEMENTS' ? processedPayouts.length : metrics.pendingPayouts.amount.toLocaleString()}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#F59E0B', fontSize: '0.75rem', fontWeight: 700, marginTop: '12px' }}>
-                        <Clock size={14} /> {view === 'SETTLEMENTS' ? 'Resolved financial records' : `${metrics.pendingPayouts.count} requests waiting`}
+                        <Clock size={14} /> {view === 'SETTLEMENTS' ? t('admin.payouts.resolved_records') : `${metrics.pendingPayouts.count} ${t('admin.payouts.requests_waiting')}`}
                     </div>
                 </div>
                 <div className="admin-stat-card-main" style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800, marginBottom: '8px' }}>PLATFORM COMMISSION</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800, marginBottom: '8px' }}>{t('admin.platform_commission')}</p>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#10B981' }}>ETB {metrics.platformCommission.toLocaleString()}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10B981', fontSize: '0.75rem', fontWeight: 700, marginTop: '12px' }}>
-                        <ShieldCheck size={14} /> Net revenue earned
+                        <ShieldCheck size={14} /> {t('admin.commissions.revenue_earned')}
                     </div>
                 </div>
             </div>
@@ -183,21 +183,21 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
             {view === 'QUEUE' ? (
                 <div className="admin-card">
                     <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Payout Queue</h3>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('admin.payouts.payout_queue')}</h3>
                         <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
-                            {pendingPayouts.length} REQUESTS
+                            {pendingPayouts.length} {t('admin.payouts.requests_count')}
                         </div>
                     </div>
 
                     <table className="admin-table">
                         <thead>
                             <tr>
-                                <th>ORGANIZER</th>
-                                <th>AMOUNT</th>
-                                <th>METHOD</th>
-                                <th>DETAILS</th>
-                                <th>REQUESTED</th>
-                                <th style={{ textAlign: 'right' }}>ACTION</th>
+                                <th>{t('admin.commissions.organizer_label')}</th>
+                                <th>{t('admin.commissions.gross')}</th>
+                                <th>{t('admin.payouts.method')}</th>
+                                <th>{t('admin.overview.details')}</th>
+                                <th>{t('admin.payouts.requested')}</th>
+                                <th style={{ textAlign: 'right' }}>{t('admin.commissions.actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -205,7 +205,7 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                                 <tr>
                                     <td colSpan={6} style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
                                         <div style={{ marginBottom: '12px' }}><Wallet size={40} opacity={0.2} style={{ margin: '0 auto' }} /></div>
-                                        No pending payout requests found.
+                                        {t('admin.payouts.no_payouts')}
                                     </td>
                                 </tr>
                             ) : (
@@ -213,7 +213,7 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                                     <tr key={p.id}>
                                         <td>
                                             <p style={{ fontWeight: 800 }}>{p.wallet?.organizer?.organizationName}</p>
-                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Method: {p.method}</p>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('admin.payouts.method_label')}: {p.method}</p>
                                         </td>
                                         <td>
                                             <p style={{ fontWeight: 900, color: 'var(--text-main)' }}>ETB {Number(p.amount).toLocaleString()}</p>
@@ -229,9 +229,9 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button onClick={() => handleReject(p.id)} disabled={processingId === p.id} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid #EF4444', padding: '8px 12px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>Reject</button>
+                                                <button onClick={() => handleReject(p.id)} disabled={processingId === p.id} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid #EF4444', padding: '8px 12px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>{t('admin.features.reject')}</button>
                                                 <button onClick={() => handleApprove(p.id)} disabled={processingId === p.id} style={{ background: '#10B981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                                    {processingId === p.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Approve
+                                                    {processingId === p.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} {t('admin.features.approve')}
                                                 </button>
                                             </div>
                                         </td>
@@ -244,27 +244,27 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
             ) : (
                 <div className="admin-card">
                     <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Fiscal Audit Ledger</h3>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('admin.payouts.fiscal_ledger')}</h3>
                         <div style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
-                            {processedPayouts.length} SETTLED RECORDS
+                            {processedPayouts.length} {t('admin.payouts.settled_records_count')}
                         </div>
                     </div>
                     <table className="admin-table">
                         <thead>
                             <tr>
-                                <th>TRANSACTION ID</th>
-                                <th>EVENT</th>
-                                <th>ORGANIZER</th>
-                                <th>GROSS</th>
-                                <th>PLATFORM CUT</th>
-                                <th>ORGANIZER NET</th>
-                                <th>STATUS</th>
-                                <th>TIMESTAMP</th>
+                                <th>{t('admin.commissions.transaction_id')}</th>
+                                <th>{t('admin.sidebar.events')}</th>
+                                <th>{t('admin.commissions.organizer_label')}</th>
+                                <th>{t('admin.commissions.gross')}</th>
+                                <th>{t('admin.commissions.platform_fee')}</th>
+                                <th>{t('admin.commissions.organizer_net')}</th>
+                                <th>{t('admin.commissions.status')}</th>
+                                <th>{t('admin.logs.timestamp')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {settlementLedger.length === 0 ? (
-                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No settlement history found.</td></tr>
+                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>{t('admin.payouts.no_settlements')}</td></tr>
                             ) : (
                                 settlementLedger.map((t) => (
                                     <tr key={t.transactionId || t.id}>

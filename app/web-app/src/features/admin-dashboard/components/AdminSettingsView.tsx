@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
@@ -39,6 +40,7 @@ interface AuditLog {
 }
 
 export const AdminSettingsView = () => {
+    const { t } = useTranslation();
     const [activeCategory, setActiveCategory] = useState<SettingsCategory>('GENERAL');
     const [configs, setConfigs] = useState<ConfigItem[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -46,15 +48,15 @@ export const AdminSettingsView = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const categories: { id: SettingsCategory; label: string; icon: any; color: string }[] = [
-        { id: 'GENERAL', label: 'General', icon: Settings, color: '#3B82F6' },
-        { id: 'LANGUAGE', label: 'Language & Locales', icon: Globe, color: '#10B981' },
-        { id: 'AUTH', label: 'Authentication', icon: Lock, color: '#F59E0B' },
-        { id: 'COMMISSION', label: 'Commission Rates', icon: Percent, color: '#6366F1' },
-        { id: 'EVENT', label: 'Event Rules', icon: FileText, color: '#A78BFA' },
-        { id: 'HOMEPAGE', label: 'Homepage Logic', icon: Layout, color: '#EC4899' },
-        { id: 'NOTIFICATION', label: 'Notifications', icon: Bell, color: '#F97316' },
-        { id: 'PAYMENT', label: 'Payment Channels', icon: CreditCard, color: '#06B6D4' },
-        { id: 'LOGS', label: 'Platform Activity', icon: ShieldCheck, color: '#64748B' },
+        { id: 'GENERAL', label: t('admin.settings.categories.general'), icon: Settings, color: '#3B82F6' },
+        { id: 'LANGUAGE', label: t('admin.settings.categories.language'), icon: Globe, color: '#10B981' },
+        { id: 'AUTH', label: t('admin.settings.categories.auth'), icon: Lock, color: '#F59E0B' },
+        { id: 'COMMISSION', label: t('admin.settings.categories.commission'), icon: Percent, color: '#6366F1' },
+        { id: 'EVENT', label: t('admin.settings.categories.event'), icon: FileText, color: '#A78BFA' },
+        { id: 'HOMEPAGE', label: t('admin.settings.categories.homepage'), icon: Layout, color: '#EC4899' },
+        { id: 'NOTIFICATION', label: t('admin.settings.categories.notification'), icon: Bell, color: '#F97316' },
+        { id: 'PAYMENT', label: t('admin.settings.categories.payment'), icon: CreditCard, color: '#06B6D4' },
+        { id: 'LOGS', label: t('admin.settings.categories.logs'), icon: ShieldCheck, color: '#64748B' },
     ];
 
     const fetchData = useCallback(async () => {
@@ -81,9 +83,9 @@ export const AdminSettingsView = () => {
         try {
             await AdminService.updateSystemConfig({ key, value, description });
             await fetchData();
-            showMessage('success', `${key.split('.').pop()?.toUpperCase()} updated successfully`);
+            showMessage('success', t('admin.settings.update_success'));
         } catch (err) {
-            showMessage('error', 'Failed to update configuration');
+            showMessage('error', t('admin.settings.update_failed'));
         } finally {
             // setIsLoading(false); // Removed duplicate or unused finally block logic
         }
@@ -101,8 +103,8 @@ export const AdminSettingsView = () => {
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <AdminPageHeader
-                title="System Configuration"
-                subtitle="Manage global platform state, financial parameters, and core business rules."
+                title={t('admin.settings.title')}
+                subtitle={t('admin.settings.subtitle')}
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px', minHeight: '600px' }}>

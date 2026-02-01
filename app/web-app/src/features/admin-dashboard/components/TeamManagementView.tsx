@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
 import {
@@ -17,6 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const TeamManagementView = () => {
+    const { t } = useTranslation();
     // --- Form State ---
     const [inviteEmail, setInviteEmail] = useState('');
     const [fullName, setFullName] = useState('');
@@ -86,7 +88,7 @@ export const TeamManagementView = () => {
             const res: any = await AdminService.inviteAdmin(payload);
 
             setFormStatus('success');
-            setSuccessMessage(res.message || 'Invitation sent successfully!');
+            setSuccessMessage(res.message || t('admin.team.success'));
 
             if (!data) {
                 setInviteEmail('');
@@ -99,7 +101,7 @@ export const TeamManagementView = () => {
         } catch (err: any) {
             console.error('[Invitation Error]', err);
             setFormStatus('error');
-            const msg = err.error || err.message || 'Failed to send invitation';
+            const msg = err.error || err.message || t('admin.team.failed');
             setErrorMessage(msg);
             setTimeout(() => setFormStatus('idle'), 5000);
         }
@@ -108,13 +110,13 @@ export const TeamManagementView = () => {
     const handleDelete = async (userId: number) => {
         try {
             await AdminService.removeAdmin(userId);
-            setSuccessMessage("Administrator removed successfully");
+            setSuccessMessage(t('admin.team.success'));
             setFormStatus('success');
             fetchData();
             setTimeout(() => setFormStatus('idle'), 3000);
         } catch (err: any) {
             console.error('[Delete Error]', err);
-            setErrorMessage(err.error || "Failed to remove administrator");
+            setErrorMessage(err.error || t('admin.team.failed'));
             setFormStatus('error');
             setTimeout(() => setFormStatus('idle'), 5000);
         }
@@ -122,9 +124,9 @@ export const TeamManagementView = () => {
 
     const getRoleBadgeColor = (r: string) => {
         switch (r.toLowerCase()) {
-            case 'admin': return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3B82F6', label: 'Super Admin' };
-            case 'financial': return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981', label: 'Financial' };
-            case 'events': return { bg: 'rgba(245, 158, 11, 0.1)', text: '#F59E0B', label: 'Events' };
+            case 'admin': return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3B82F6', label: t('admin.team.roles.admin') };
+            case 'financial': return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981', label: t('admin.team.roles.financial') };
+            case 'events': return { bg: 'rgba(245, 158, 11, 0.1)', text: '#F59E0B', label: t('admin.team.roles.events') };
             default: return { bg: 'rgba(255, 255, 255, 0.05)', text: 'var(--text-muted)', label: r };
         }
     };
@@ -132,8 +134,8 @@ export const TeamManagementView = () => {
     return (
         <div className="team-management-view" style={{ paddingBottom: '60px' }}>
             <AdminPageHeader
-                title="Team Management"
-                subtitle="Invite and manage administrative access."
+                title={t('admin.team.title')}
+                subtitle={t('admin.team.subtitle')}
             />
 
             {/* Layout Grid */}
@@ -146,14 +148,14 @@ export const TeamManagementView = () => {
                             <UserPlus size={24} color="var(--primary-blue)" />
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Invite New Admin</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Grant access to the team.</p>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{t('admin.team.invite_title')}</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('admin.team.invite_desc')}</p>
                         </div>
                     </div>
 
                     <form onSubmit={handleInvite}>
                         <div style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Full Name</label>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>{t('admin.team.full_name')}</label>
                             <div style={{ position: 'relative' }}>
                                 <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                 <input
@@ -169,7 +171,7 @@ export const TeamManagementView = () => {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Phone</label>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>{t('admin.team.phone')}</label>
                                 <div style={{ position: 'relative' }}>
                                     <Phone size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                     <input
@@ -199,12 +201,12 @@ export const TeamManagementView = () => {
                         </div>
 
                         <div style={{ marginBottom: '28px' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '12px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Role Assignment</label>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '12px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>{t('admin.team.role_assignment')}</label>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
                                 {[
-                                    { id: 'admin', label: 'Super Admin', desc: 'Full system sovereignty control', icon: Shield },
-                                    { id: 'financial', label: 'Financial Officer', desc: 'Ledgers, Payouts & Refunds', icon: AlertCircle },
-                                    { id: 'events', label: 'Events Manager', desc: 'Approvals & Content only', icon: Calendar }
+                                    { id: 'admin', label: t('admin.team.roles.admin'), desc: t('admin.team.roles.admin_desc'), icon: Shield },
+                                    { id: 'financial', label: t('admin.team.roles.financial'), desc: t('admin.team.roles.financial_desc'), icon: AlertCircle },
+                                    { id: 'events', label: t('admin.team.roles.events'), desc: t('admin.team.roles.events_desc'), icon: Calendar }
                                 ].map(r => (
                                     <div
                                         key={r.id}
@@ -239,7 +241,7 @@ export const TeamManagementView = () => {
                             }}
                         >
                             {formStatus === 'loading' ? <Loader2 size={20} className="animate-spin" /> : <Mail size={20} />}
-                            {formStatus === 'loading' ? 'Sending Link...' : 'Send Portal Invitation'}
+                            {formStatus === 'loading' ? t('admin.team.sending') : t('admin.team.send_invitation')}
                         </button>
                     </form>
 
@@ -268,7 +270,7 @@ export const TeamManagementView = () => {
                 {/* 🟢 Right Side: Team Members List */}
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Active Team Members</h3>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{t('admin.team.active_members')}</h3>
                         <button
                             onClick={fetchData}
                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -286,7 +288,7 @@ export const TeamManagementView = () => {
                         ) : team.length === 0 ? (
                             <div className="admin-card" style={{ padding: '48px', textAlign: 'center', opacity: 0.6 }}>
                                 <Shield size={40} style={{ margin: '0 auto 16px', color: 'var(--border)' }} />
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No other admin members found.</p>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{t('admin.team.no_members')}</p>
                             </div>
                         ) : (
                             <AnimatePresence>
@@ -331,8 +333,8 @@ export const TeamManagementView = () => {
                                                     onClick={() => {
                                                         setModalConfig({
                                                             isOpen: true,
-                                                            title: 'Resend Invitation',
-                                                            message: `Are you sure you want to resend the administrative invitation to ${member.email}?`,
+                                                            title: t('admin.team.resend'),
+                                                            message: `${t('admin.team.resend')}... to ${member.email}?`,
                                                             type: 'info',
                                                             onConfirm: () => handleInvite(undefined, {
                                                                 email: member.email,
@@ -353,8 +355,8 @@ export const TeamManagementView = () => {
                                                     onClick={() => {
                                                         setModalConfig({
                                                             isOpen: true,
-                                                            title: 'Remove Administrator',
-                                                            message: `This will permanently revoke all administrative access for ${member.profile?.fullName || member.email}. This action cannot be undone.`,
+                                                            title: t('admin.team.remove'),
+                                                            message: `${t('admin.team.remove')}... for ${member.profile?.fullName || member.email}.`,
                                                             type: 'danger',
                                                             onConfirm: () => handleDelete(member.id)
                                                         });
@@ -384,8 +386,8 @@ export const TeamManagementView = () => {
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <div>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Invitation Distribution History</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Chronological log of administrative portal invitations.</p>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{t('admin.team.history_title')}</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('admin.team.history_desc')}</p>
                     </div>
                 </div>
 
@@ -393,10 +395,10 @@ export const TeamManagementView = () => {
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                         <thead>
                             <tr style={{ textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                <th style={{ padding: '0 16px 8px' }}>Recipient</th>
+                                <th style={{ padding: '0 16px 8px' }}>{t('admin.team.recipient')}</th>
                                 <th style={{ padding: '0 16px 8px' }}>Role</th>
                                 <th style={{ padding: '0 16px 8px' }}>Timestamp</th>
-                                <th style={{ padding: '0 16px 8px' }}>Delivery Status</th>
+                                <th style={{ padding: '0 16px 8px' }}>{t('admin.team.delivery_status')}</th>
                                 <th style={{ padding: '0 16px 8px', textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
@@ -408,7 +410,7 @@ export const TeamManagementView = () => {
                             ) : history.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', borderRadius: '12px' }}>
-                                        No invitation logs found in system records.
+                                        {t('admin.team.no_history')}
                                     </td>
                                 </tr>
                             ) : (
@@ -435,7 +437,7 @@ export const TeamManagementView = () => {
                                         <td style={{ padding: '16px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: log.status === 'SENT' ? '#10B981' : '#EF4444' }} />
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: log.status === 'SENT' ? '#10B981' : '#EF4444' }}>{log.status === 'SENT' ? 'Success' : 'Failed'}</span>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: log.status === 'SENT' ? '#10B981' : '#EF4444' }}>{log.status === 'SENT' ? t('admin.team.success') : t('admin.team.failed')}</span>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px', borderTopRightRadius: '12px', borderBottomRightRadius: '12px', textAlign: 'right' }}>
@@ -448,7 +450,7 @@ export const TeamManagementView = () => {
                                                 })}
                                                 style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', padding: '4px 8px' }}
                                             >
-                                                Resend
+                                                {t('admin.team.resend')}
                                             </button>
                                         </td>
                                     </tr>
@@ -481,7 +483,7 @@ export const TeamManagementView = () => {
                                     onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}
                                     style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'transparent', color: 'white', fontWeight: 700, cursor: 'pointer' }}
                                 >
-                                    Cancel
+                                    {t('admin.overview.close')}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -490,7 +492,7 @@ export const TeamManagementView = () => {
                                     }}
                                     style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: modalConfig.type === 'danger' ? '#EF4444' : 'var(--primary-blue)', color: 'white', fontWeight: 700, cursor: 'pointer' }}
                                 >
-                                    Confirm
+                                    {t('admin.overview.details')}
                                 </button>
                             </div>
                         </motion.div>

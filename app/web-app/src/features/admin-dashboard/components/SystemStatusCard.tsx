@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ShieldCheck, AlertTriangle } from 'lucide-react';
 
 export const SystemStatusCard: React.FC<{
@@ -7,6 +8,7 @@ export const SystemStatusCard: React.FC<{
     refundFlags?: number;
     warnings?: string[];
 }> = ({ health, fraudCount = 0, refundFlags = 0, warnings = [] }) => {
+    const { t } = useTranslation();
     const color = health === 'Healthy' ? '#10B981' : health === 'Attention' ? '#F59E0B' : '#EF4444';
 
     return (
@@ -17,23 +19,27 @@ export const SystemStatusCard: React.FC<{
                         <ShieldCheck size={22} color={color} />
                     </div>
                     <div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '2px' }}>Platform Integrity</h3>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Security & uptime monitoring</p>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '2px' }}>{t('admin.overview.integrity')}</h3>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.overview.integrity_desc')}</p>
                     </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color, letterSpacing: '0.05em' }}>{health.toUpperCase()}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>{warnings.length} SECURITY EVENTS</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color, letterSpacing: '0.05em' }}>
+                        {health === 'Healthy' ? t('admin.overview.healthy') : health === 'Attention' ? t('admin.overview.attention') : t('admin.overview.critical')}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                        {warnings.length} {t('admin.overview.security_events')}
+                    </div>
                 </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>Fraud Flags</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>{t('admin.overview.fraud_flags')}</div>
                     <div style={{ fontSize: '1.2rem', fontWeight: 900, color: fraudCount > 0 ? '#EF4444' : 'var(--text-main)' }}>{fraudCount}</div>
                 </div>
                 <div style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>Refund Alerts</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>{t('admin.overview.refund_alerts')}</div>
                     <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{refundFlags}</div>
                 </div>
             </div>
@@ -41,7 +47,7 @@ export const SystemStatusCard: React.FC<{
             {warnings.length > 0 ? (
                 <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)', color: '#EF4444' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 800, display: 'flex', gap: 8, alignItems: 'center', marginBottom: '8px', textTransform: 'uppercase' }}>
-                        <AlertTriangle size={14} /> Critical Warnings
+                        <AlertTriangle size={14} /> {t('admin.overview.critical_warnings')}
                     </div>
                     <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
                         {warnings.slice(0, 3).map((w, i) => <li key={i} style={{ marginBottom: '4px' }}>{w}</li>)}
@@ -50,7 +56,7 @@ export const SystemStatusCard: React.FC<{
             ) : (
                 <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} />
-                    <span style={{ fontSize: '0.72rem', color: '#10B981', fontWeight: 800 }}>API & GATEWAYS OPERATING WITHIN OPTIMAL PARAMETERS</span>
+                    <span style={{ fontSize: '0.72rem', color: '#10B981', fontWeight: 800 }}>{t('admin.overview.optimal_parameters')}</span>
                 </div>
             )}
         </div>

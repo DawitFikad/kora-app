@@ -92,33 +92,33 @@ export const FraudMonitoringView = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main" style={{ borderColor: metrics.criticalAlerts > 0 ? 'rgba(239, 68, 68, 0.3)' : 'var(--border)' }}>
-                    <h4 style={{ color: '#EF4444', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>CRITICAL ALERTS</h4>
+                    <h4 style={{ color: '#EF4444', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>{t('admin.fraud.critical_alerts')}</h4>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>{String(metrics.criticalAlerts).padStart(2, '0')}</h2>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Action Required</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.fraud.action_required')}</p>
                 </div>
                 <div className="admin-stat-card-main">
-                    <h4 style={{ color: '#F59E0B', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>SUSPICIOUS SCANS</h4>
+                    <h4 style={{ color: '#F59E0B', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>{t('admin.fraud.suspicious_scans')}</h4>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>{String(metrics.duplicateScans || 0).padStart(2, '0')}</h2>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Verify QR Integrity</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.fraud.verify_qr')}</p>
                 </div>
                 <div className="admin-stat-card-main">
-                    <h4 style={{ color: 'var(--bg-active)', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>REFUND RATIO</h4>
+                    <h4 style={{ color: 'var(--bg-active)', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>{t('admin.fraud.refund_ratio')}</h4>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>{metrics.refundRatio || '1.2'}%</h2>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Market Average: 0.8%</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.overview.market')}: 0.8%</p>
                 </div>
                 <div className="admin-stat-card-main" style={{ background: 'var(--bg-active)', border: 'none' }}>
-                    <h4 style={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', opacity: 0.8, letterSpacing: '0.05em' }}>TRUST SCORE</h4>
+                    <h4 style={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', opacity: 0.8, letterSpacing: '0.05em' }}>{t('admin.fraud.trust_score')}</h4>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>{metrics.authSuccessRate}%</h2>
-                    <p style={{ fontSize: '0.75rem', color: 'white', opacity: 0.8, fontWeight: 600 }}>System Integrity</p>
+                    <p style={{ fontSize: '0.75rem', color: 'white', opacity: 0.8, fontWeight: 600 }}>{t('admin.overview.integrity')}</p>
                 </div>
             </div>
 
             <div className="admin-card" style={{ padding: '24px', marginBottom: '32px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '16px', color: '#EF4444' }}>Manual Security Override</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '16px', color: '#EF4444' }}>{t('admin.fraud.security_override')}</h3>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <input
                         id="manual-ticket-id"
-                        placeholder="Enter Ticket ID or Reference to invalidate..."
+                        placeholder={t('admin.fraud.invalidate_placeholder')}
                         style={{ flex: 1, background: '#0B0E14', border: '1px solid var(--border)', padding: '12px 16px', borderRadius: '8px', color: 'white' }}
                     />
                     <button
@@ -130,18 +130,18 @@ export const FraudMonitoringView = () => {
                         }}
                         style={{ background: '#EF4444', color: 'white', border: 'none', padding: '0 24px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}
                     >
-                        Invalidate Ticket
+                        {t('admin.fraud.invalidate_button')}
                     </button>
                 </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '12px' }}>Use this to manually blacklist a ticket due to physical theft, chargebacks, or verified abuse reports.</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '12px' }}>{t('admin.fraud.override_desc')}</p>
             </div>
 
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Live Security Log</h3>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{t('admin.fraud.security_log')}</h3>
                     <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Activity size={14} color="#10B981" />
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10B981' }}>Monitoring Live...</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10B981' }}>{t('admin.fraud.monitoring_live')}</span>
                     </div>
                 </div>
 
@@ -149,7 +149,7 @@ export const FraudMonitoringView = () => {
                     {alerts.length === 0 ? (
                         <div style={{ padding: '40px', textAlign: 'center', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
                             <ShieldCheck size={40} color="#10B981" style={{ opacity: 0.3, marginBottom: '12px' }} />
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No fraud alerts detected in the last 24 hours.</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('admin.fraud.no_alerts')}</p>
                         </div>
                     ) : (
                         alerts.map((alert) => (
@@ -175,7 +175,7 @@ export const FraudMonitoringView = () => {
                                         onClick={() => handleAnalyze(alert.id)}
                                         style={{ color: '#3B82F6', background: 'none', border: 'none', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
                                     >
-                                        ANALYZE ROOT CAUSE
+                                        {t('admin.fraud.analyze_root')}
                                     </button>
                                 </div>
                             </div>
@@ -192,7 +192,7 @@ export const FraudMonitoringView = () => {
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>{selectedAlert.message}</p>
 
                         <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid var(--border)' }}>
-                            <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B82F6', marginBottom: '8px', textTransform: 'uppercase' }}>Metadata Analysis</h4>
+                            <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B82F6', marginBottom: '8px', textTransform: 'uppercase' }}>{t('admin.fraud.metadata_analysis')}</h4>
                             <pre style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-muted)', overflow: 'auto', maxHeight: '200px' }}>
                                 {JSON.stringify(selectedAlert.metadata, null, 2)}
                             </pre>
@@ -205,7 +205,7 @@ export const FraudMonitoringView = () => {
                                 disabled={isResolving}
                                 style={{ flex: 1.5, padding: '12px', background: '#10B981', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700 }}
                             >
-                                {isResolving ? 'Resolving...' : 'Mark as Resolved'}
+                                {isResolving ? t('admin.fraud.resolving') : t('admin.fraud.mark_resolved')}
                             </button>
                         </div>
                     </motion.div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, MapPin, Tag, Loader2, X, Calendar as CalendarIcon, Image as ImageIcon, CheckCircle2, AlertCircle, RefreshCcw } from 'lucide-react';
 import { AdminPageHeader } from './AdminPageHeader';
@@ -6,6 +7,7 @@ import { ContentService } from '../../../core/api/content.service';
 import { AdminService } from '../../../core/api/admin.service';
 
 export const ContentManagementView = () => {
+    const { t } = useTranslation();
     const [categories, setCategories] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
     const [banners, setBanners] = useState<any[]>([]);
@@ -94,9 +96,9 @@ export const ContentManagementView = () => {
             await ContentService.addCategory(newCat.name, newCat.slug);
             setNewCat({ name: '', slug: '' });
             fetchData();
-            showStatus('success', 'Category added successfully');
+            showStatus('success', t('admin.content.added_success'));
         } catch (err: any) {
-            showStatus('error', err.error || 'Failed to add category');
+            showStatus('error', err.error || t('admin.team.failed'));
         } finally {
             setFormStatus('idle');
         }
@@ -109,9 +111,9 @@ export const ContentManagementView = () => {
             await ContentService.addCity(newCity.name, newCity.slug);
             setNewCity({ name: '', slug: '' });
             fetchData();
-            showStatus('success', 'City developed successfully');
+            showStatus('success', t('admin.content.added_success'));
         } catch (err: any) {
-            showStatus('error', err.error || 'Failed to add city');
+            showStatus('error', err.error || t('admin.team.failed'));
         } finally {
             setFormStatus('idle');
         }
@@ -140,10 +142,10 @@ export const ContentManagementView = () => {
                 targetRules: {}
             });
             fetchData();
-            showStatus('success', 'Hero banner launched successfully');
+            showStatus('success', t('admin.content.banner_added_success'));
         } catch (err: any) {
             console.error(err);
-            showStatus('error', err.response?.data?.error || err.message || 'Failed to add banner');
+            showStatus('error', err.response?.data?.error || err.message || t('admin.team.failed'));
         } finally {
             setFormStatus('idle');
         }
@@ -155,9 +157,9 @@ export const ContentManagementView = () => {
             await ContentService.updateBanner(editingBanner.id, editingBanner);
             setEditingBanner(null);
             fetchData();
-            showStatus('success', 'Banner updated successfully');
+            showStatus('success', t('admin.content.banner_updated_success'));
         } catch (err: any) {
-            showStatus('error', 'Failed to update banner');
+            showStatus('error', t('admin.team.failed'));
         }
     };
 
@@ -166,7 +168,7 @@ export const ContentManagementView = () => {
             await ContentService.updateBanner(banner.id, { isActive: !banner.isActive });
             fetchData();
         } catch (err) {
-            showStatus('error', 'Failed to toggle status');
+            showStatus('error', t('admin.team.failed'));
         }
     };
 
@@ -174,15 +176,15 @@ export const ContentManagementView = () => {
         e.stopPropagation();
         setModalConfig({
             isOpen: true,
-            title: 'Delete Category',
-            message: `Are you sure you want to delete "${name}"? This might affect existing events associated with this category.`,
+            title: t('admin.content.delete_category_title'),
+            message: t('admin.content.delete_category_message', { name }),
             type: 'danger',
             onConfirm: async () => {
                 try {
                     await ContentService.removeCategory(id);
                     fetchData();
-                    showStatus('success', 'Category deleted');
-                } catch (err: any) { showStatus('error', err.error || 'Failed to delete'); }
+                    showStatus('success', t('admin.content.category_deleted'));
+                } catch (err: any) { showStatus('error', err.error || t('admin.team.failed')); }
             }
         });
     };
@@ -191,15 +193,15 @@ export const ContentManagementView = () => {
         e.stopPropagation();
         setModalConfig({
             isOpen: true,
-            title: 'Delete City',
-            message: `Are you sure you want to delete "${name}"? This will remove the city from the platform's searchable metrics.`,
+            title: t('admin.content.delete_city_title'),
+            message: t('admin.content.delete_city_message', { name }),
             type: 'danger',
             onConfirm: async () => {
                 try {
                     await ContentService.removeCity(id);
                     fetchData();
-                    showStatus('success', 'City removed');
-                } catch (err: any) { showStatus('error', err.error || 'Failed to delete'); }
+                    showStatus('success', t('admin.content.city_removed'));
+                } catch (err: any) { showStatus('error', err.error || t('admin.team.failed')); }
             }
         });
     };
@@ -207,15 +209,15 @@ export const ContentManagementView = () => {
     const handleDeleteBanner = async (id: number) => {
         setModalConfig({
             isOpen: true,
-            title: 'Delete Banner',
-            message: 'Are you sure you want to remove this hero banner from the homepage?',
+            title: t('admin.content.delete_banner_title'),
+            message: t('admin.content.delete_banner_message'),
             type: 'danger',
             onConfirm: async () => {
                 try {
                     await ContentService.removeBanner(id);
                     fetchData();
-                    showStatus('success', 'Banner deleted');
-                } catch (err: any) { showStatus('error', 'Failed to delete banner'); }
+                    showStatus('success', t('admin.content.banner_deleted'));
+                } catch (err: any) { showStatus('error', t('admin.team.failed')); }
             }
         });
     };
@@ -230,20 +232,22 @@ export const ContentManagementView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader title="Content Management" subtitle="Manage platform metadata: Categories, Cities, and Hero Banners." />
-
+            <AdminPageHeader
+                title={t('admin.content.title')}
+                subtitle={t('admin.content.subtitle')}
+            />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
                 {/* Categories Section */}
                 <div className="admin-card" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                         <Tag color="#D946EF" />
-                        <h3 style={{ fontWeight: 800 }}>Event Categories</h3>
+                        <h3 style={{ fontWeight: 800 }}>{t('admin.content.event_categories')}</h3>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
                         <div style={{ flex: 1, position: 'relative' }}>
                             <input
-                                placeholder="Category Name"
+                                placeholder={t('admin.content.category_name')}
                                 value={newCat.name}
                                 onChange={e => {
                                     const name = e.target.value;
@@ -291,7 +295,7 @@ export const ContentManagementView = () => {
                                     </div>
                                     <div>
                                         <p style={{ fontWeight: 800, fontSize: '0.95rem' }}>{c.name}</p>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>/{c.slug} • {c._count?.events || 0} Events</p>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>/{c.slug} • {c._count?.events || 0} {t('admin.content.events')}</p>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -313,13 +317,13 @@ export const ContentManagementView = () => {
                 <div className="admin-card" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                         <MapPin color="#3B82F6" />
-                        <h3 style={{ fontWeight: 800 }}>Active Cities</h3>
+                        <h3 style={{ fontWeight: 800 }}>{t('admin.content.active_cities')}</h3>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
                         <div style={{ flex: 1 }}>
                             <input
-                                placeholder="City Name"
+                                placeholder={t('admin.content.city_name')}
                                 value={newCity.name}
                                 onChange={e => {
                                     const name = e.target.value;
@@ -366,7 +370,7 @@ export const ContentManagementView = () => {
                                     </div>
                                     <div>
                                         <p style={{ fontWeight: 800, fontSize: '0.95rem' }}>{c.name}</p>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>/{c.slug} • {c._count?.events || 0} Events</p>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>/{c.slug} • {c._count?.events || 0} {t('admin.content.events')}</p>
                                     </div>
                                 </div>
                                 <button
@@ -387,37 +391,37 @@ export const ContentManagementView = () => {
             <div className="admin-card" style={{ padding: '24px', marginTop: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                     <ImageIcon color="var(--primary)" />
-                    <h3 style={{ fontWeight: 800 }}>Homepage Hero Banners</h3>
+                    <h3 style={{ fontWeight: 800 }}>{t('admin.content.homepage_hero_banners')}</h3>
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '24px' }}>
-                    Manage banners that appear on the mobile and web homepages. Higher priority banners appear first.
+                    {t('admin.content.homepage_hero_banners_subtitle')}
                 </p>
 
                 {/* Banner Creation Form - More Professional */}
                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', marginBottom: '32px' }}>
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '20px', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Create New Banner</h4>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '20px', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('admin.content.create_new_banner')}</h4>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '20px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Banner Title (Optional)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.banner_title_label')}</label>
                             <input
-                                placeholder="e.g. Early Bird Tickets"
+                                placeholder={t('admin.content.banner_title_placeholder')}
                                 value={newBanner.title}
                                 onChange={e => setNewBanner({ ...newBanner, title: e.target.value })}
                                 style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Subtitle (Optional)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.subtitle_label')}</label>
                             <input
-                                placeholder="e.g. Get 20% off today"
+                                placeholder={t('admin.content.subtitle_placeholder')}
                                 value={newBanner.subtitle}
                                 onChange={e => setNewBanner({ ...newBanner, subtitle: e.target.value })}
                                 style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Image URL (Required)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.image_url_label')}</label>
                             <input
                                 placeholder="https://..."
                                 value={newBanner.imageUrl}
@@ -427,7 +431,7 @@ export const ContentManagementView = () => {
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>CTA Text</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.cta_text_label')}</label>
                             <input
                                 value={newBanner.ctaText}
                                 onChange={e => setNewBanner({ ...newBanner, ctaText: e.target.value })}
@@ -435,7 +439,7 @@ export const ContentManagementView = () => {
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Link / Destination</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.link_destination_label')}</label>
                             <input
                                 placeholder="/events/123 or https://..."
                                 value={newBanner.linkUrl}
@@ -445,7 +449,7 @@ export const ContentManagementView = () => {
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Priority (Ranking)</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.priority_label')}</label>
                                 <input
                                     type="number"
                                     value={newBanner.priority}
@@ -454,7 +458,7 @@ export const ContentManagementView = () => {
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Internal Order</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.internal_order_label')}</label>
                                 <input
                                     type="number"
                                     value={newBanner.order}
@@ -465,7 +469,7 @@ export const ContentManagementView = () => {
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Start Date (Optional)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.start_date_label')}</label>
                             <input
                                 type="datetime-local"
                                 value={newBanner.startDate}
@@ -474,7 +478,7 @@ export const ContentManagementView = () => {
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>End Date (Optional)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.end_date_label')}</label>
                             <input
                                 type="datetime-local"
                                 value={newBanner.endDate}
@@ -484,24 +488,24 @@ export const ContentManagementView = () => {
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Target City</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.target_city_label')}</label>
                                 <select
                                     value={(newBanner.targetRules as any).city || ''}
                                     onChange={e => setNewBanner({ ...newBanner, targetRules: { ...newBanner.targetRules, city: e.target.value } })}
                                     style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
                                 >
-                                    <option value="">All Cities</option>
+                                    <option value="">{t('admin.content.all_cities')}</option>
                                     {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                 </select>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Target Language</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('admin.content.target_language_label')}</label>
                                 <select
                                     value={(newBanner.targetRules as any).lang || ''}
                                     onChange={e => setNewBanner({ ...newBanner, targetRules: { ...newBanner.targetRules, lang: e.target.value } })}
                                     style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.9rem' }}
                                 >
-                                    <option value="">All Languages</option>
+                                    <option value="">{t('admin.content.all_languages')}</option>
                                     <option value="en">English</option>
                                     <option value="am">Amharic</option>
                                 </select>
@@ -514,7 +518,7 @@ export const ContentManagementView = () => {
                                 style={{ width: '100%', background: 'linear-gradient(135deg, var(--primary), #3B82F6)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
                             >
                                 <Plus size={20} />
-                                Create Banner
+                                {t('admin.content.create_banner_button')}
                             </button>
                         </div>
                     </div>
@@ -545,7 +549,7 @@ export const ContentManagementView = () => {
                             {/* Priority & Status Controls */}
                             <div style={{ position: 'absolute', top: '16px', left: '16px', right: '16px', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    PRIORITY {b.priority}
+                                    {t('admin.content.priority')} {b.priority}
                                 </div>
                                 <button
                                     onClick={() => handleToggleBannerStatus(b)}
@@ -556,15 +560,15 @@ export const ContentManagementView = () => {
                                         transition: 'all 0.2s'
                                     }}
                                 >
-                                    {b.isActive ? '• LIVE' : '• PAUSED'}
+                                    {b.isActive ? t('admin.content.live_status') : t('admin.content.paused_status')}
                                 </button>
                             </div>
 
                             <div style={{ height: '180px', position: 'relative' }}>
                                 <img src={b.imageUrl} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 20px', background: 'linear-gradient(transparent, rgba(15, 23, 42, 0.95))' }}>
-                                    <h4 style={{ fontWeight: 900, fontSize: '1.2rem', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{b.title || 'Mobile Campaign'}</h4>
-                                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>{b.subtitle || 'General platform promotion'}</p>
+                                    <h4 style={{ fontWeight: 900, fontSize: '1.2rem', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{b.title || t('admin.content.mobile_campaign')}</h4>
+                                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>{b.subtitle || t('admin.content.general_promotion')}</p>
                                 </div>
                             </div>
 
@@ -572,11 +576,11 @@ export const ContentManagementView = () => {
                                 {/* Metrics Bar - More Integrated */}
                                 <div style={{ display: 'flex', background: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '24px' }}>
                                     <div style={{ flex: 1, padding: '16px', textAlign: 'center', borderRight: '1px solid var(--border)' }}>
-                                        <p style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Impressions</p>
+                                        <p style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('admin.content.impressions')}</p>
                                         <p style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white' }}>{(b.viewCount || 0).toLocaleString()}</p>
                                     </div>
                                     <div style={{ flex: 1, padding: '16px', textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Click Rate</p>
+                                        <p style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('admin.content.click_rate')}</p>
                                         <p style={{ fontSize: '1.25rem', fontWeight: 950, color: 'var(--primary)' }}>
                                             {b.viewCount ? ((b.clickCount || 0) / b.viewCount * 100).toFixed(1) : '0.0'}%
                                         </p>
@@ -587,13 +591,13 @@ export const ContentManagementView = () => {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem' }}>
                                         <MapPin size={16} color="var(--primary-blue)" />
-                                        <span style={{ fontWeight: 700 }}>{(b.targetRules as any)?.city || 'Global (All Cities)'}</span>
+                                        <span style={{ fontWeight: 700 }}>{(b.targetRules as any)?.city || t('admin.content.global_cities')}</span>
                                     </div>
                                     {(b.startDate || b.endDate) && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem' }}>
                                             <CalendarIcon size={16} color="#D946EF" />
                                             <span style={{ fontWeight: 700, color: 'var(--text-muted)' }}>
-                                                {b.startDate ? new Date(b.startDate).toLocaleDateString() : 'Now'} - {b.endDate ? new Date(b.endDate).toLocaleDateString() : 'Forever'}
+                                                {b.startDate ? new Date(b.startDate).toLocaleDateString() : t('admin.content.now')} - {b.endDate ? new Date(b.endDate).toLocaleDateString() : t('admin.content.forever')}
                                             </span>
                                         </div>
                                     )}
@@ -606,7 +610,7 @@ export const ContentManagementView = () => {
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                                     >
-                                        Edit Details
+                                        {t('admin.content.edit_details_button')}
                                     </button>
                                     <button
                                         onClick={() => handleDeleteBanner(b.id)}
@@ -623,8 +627,8 @@ export const ContentManagementView = () => {
                     {banners.length === 0 && (
                         <div style={{ gridColumn: 'span 3', padding: '60px', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '2px dashed var(--border)' }}>
                             <ImageIcon size={48} color="var(--text-muted)" style={{ marginBottom: '16px', opacity: 0.3 }} />
-                            <h4 style={{ fontWeight: 800, color: 'var(--text-muted)' }}>No homepage banners active.</h4>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>Create your first banner to see it live on the homepage.</p>
+                            <h4 style={{ fontWeight: 800, color: 'var(--text-muted)' }}>{t('admin.content.no_banners_active_title')}</h4>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>{t('admin.content.no_banners_active_message')}</p>
                         </div>
                     )}
                 </div>
@@ -637,52 +641,52 @@ export const ContentManagementView = () => {
                         <motion.div initial={{ scale: 0.9, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 30 }} style={{ width: '650px', background: 'var(--bg-sidebar)', border: '1px solid var(--border)', borderRadius: '32px', padding: '40px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                                 <div>
-                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 950 }}>Edit Banner</h3>
-                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '4px' }}>Update campaign parameters and targeting.</p>
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 950 }}>{t('admin.content.edit_banner_modal_title')}</h3>
+                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '4px' }}>{t('admin.content.edit_banner_modal_subtitle')}</p>
                                 </div>
                                 <button onClick={() => setEditingBanner(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', padding: '12px', borderRadius: '50%', cursor: 'pointer' }}><X size={20} /></button>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                                 <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Image URL</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('admin.content.image_url_label')}</label>
                                     <input value={editingBanner.imageUrl} onChange={e => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', fontWeight: 600 }} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Campaign Title</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('admin.content.campaign_title_label')}</label>
                                     <input value={editingBanner.title} onChange={e => setEditingBanner({ ...editingBanner, title: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', fontWeight: 600 }} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Subtitle</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('admin.content.subtitle_label')}</label>
                                     <input value={editingBanner.subtitle} onChange={e => setEditingBanner({ ...editingBanner, subtitle: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', fontWeight: 600 }} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>CTA Text</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('admin.content.cta_text_label')}</label>
                                     <input value={editingBanner.ctaText} onChange={e => setEditingBanner({ ...editingBanner, ctaText: e.target.value })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', fontWeight: 600 }} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Priority Index</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('admin.content.priority_index_label')}</label>
                                     <input type="number" value={editingBanner.priority} onChange={e => setEditingBanner({ ...editingBanner, priority: parseInt(e.target.value) || 0 })} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', fontWeight: 600 }} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Target City</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('admin.content.target_city_label')}</label>
                                     <select
                                         value={(editingBanner.targetRules as any)?.city || ''}
                                         onChange={e => setEditingBanner({ ...editingBanner, targetRules: { ...(editingBanner.targetRules as any), city: e.target.value } })}
                                         style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', fontWeight: 600 }}
                                     >
-                                        <option value="">Global Coverage</option>
+                                        <option value="">{t('admin.content.global_coverage')}</option>
                                         {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                     </select>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Target Language</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('admin.content.target_language_label')}</label>
                                     <select
                                         value={(editingBanner.targetRules as any)?.lang || ''}
                                         onChange={e => setEditingBanner({ ...editingBanner, targetRules: { ...(editingBanner.targetRules as any), lang: e.target.value } })}
                                         style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '14px', borderRadius: '14px', color: 'white', fontWeight: 600 }}
                                     >
-                                        <option value="">Universal Language</option>
+                                        <option value="">{t('admin.content.universal_language')}</option>
                                         <option value="en">English</option>
                                         <option value="am">Amharic</option>
                                     </select>
@@ -690,8 +694,8 @@ export const ContentManagementView = () => {
                             </div>
 
                             <div style={{ display: 'flex', gap: '16px', marginTop: '40px' }}>
-                                <button onClick={() => setEditingBanner(null)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--border)', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s' }}>Discard Changes</button>
-                                <button onClick={handleUpdateBanner} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 950, cursor: 'pointer', boxShadow: '0 8px 20px rgba(29, 144, 245, 0.3)' }}>Update Campaign</button>
+                                <button onClick={() => setEditingBanner(null)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--border)', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s' }}>{t('admin.content.discard_changes_button')}</button>
+                                <button onClick={handleUpdateBanner} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 950, cursor: 'pointer', boxShadow: '0 8px 20px rgba(29, 144, 245, 0.3)' }}>{t('admin.content.update_campaign_button')}</button>
                             </div>
                         </motion.div>
                     </div>
@@ -713,19 +717,19 @@ export const ContentManagementView = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                                 <div>
                                     <h2 style={{ fontSize: '1.5rem', fontWeight: 900 }}>{selectedItem.data.name}</h2>
-                                    <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Slug: /{selectedItem.data.slug}</p>
+                                    <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.content.slug_label')}: /{selectedItem.data.slug}</p>
                                 </div>
                                 <button onClick={() => setSelectedItem(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '10px', borderRadius: '50%', cursor: 'pointer' }}>
                                     <X size={20} />
                                 </button>
                             </div>
 
-                            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '20px' }}>ASSOCIATED EVENTS ({selectedItem.data.events?.length || 0})</h3>
+                            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '20px' }}>{t('admin.content.associated_events_title', { count: selectedItem.data.events?.length || 0 })}</h3>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
                                 {selectedItem.data.events?.length === 0 ? (
                                     <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'var(--bg-subtle)', borderRadius: '16px' }}>
-                                        No events found for this {selectedItem.type}.
+                                        {t('admin.content.no_events_found', { type: selectedItem.type })}
                                     </div>
                                 ) : (
                                     selectedItem.data.events.map((evt: any) => (
@@ -749,7 +753,7 @@ export const ContentManagementView = () => {
                                                 </div>
                                                 <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)' }}>
-                                                        By {evt.organizer?.organizationName}
+                                                        {t('admin.content.by_organizer', { organizer: evt.organizer?.organizationName })}
                                                     </span>
                                                     <button
                                                         onClick={async (e) => {
@@ -757,7 +761,7 @@ export const ContentManagementView = () => {
                                                             try {
                                                                 await AdminService.toggleFeaturedEvent(evt.id, !evt.featured);
                                                                 handleFetchDetail(selectedItem.type, selectedItem.data.id);
-                                                            } catch (err) { alert('Failed to update'); }
+                                                            } catch (err) { alert(t('admin.content.failed_to_update')); }
                                                         }}
                                                         style={{
                                                             background: evt.featured ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
@@ -765,7 +769,7 @@ export const ContentManagementView = () => {
                                                             padding: '4px 10px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer'
                                                         }}
                                                     >
-                                                        {evt.featured ? '★ Featured' : '☆ Feature'}
+                                                        {evt.featured ? t('admin.content.featured_status') : t('admin.content.feature_button')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -781,7 +785,7 @@ export const ContentManagementView = () => {
             {isFetchingDetail && (
                 <div style={{ position: 'fixed', top: '20px', right: '20px', background: 'var(--primary)', color: 'white', padding: '12px 24px', borderRadius: '12px', zIndex: 1100, display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 800 }}>
                     <Loader2 size={18} className="animate-spin" />
-                    Fetching Details...
+                    {t('admin.content.fetching_details')}
                 </div>
             )}
 

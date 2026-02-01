@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DecisionModal from './DecisionModal';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Crown, Loader2, History, Inbox, Calendar, User } from 'lucide-react';
 import { AdminService } from '../../../core/api/admin.service';
 
 export const FeatureRequestsView = () => {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [requests, setRequests] = useState<any[]>([]);
     const [history, setHistory] = useState<any[]>([]);
@@ -74,8 +76,8 @@ export const FeatureRequestsView = () => {
                         <Crown size={24} color="#FBBF24" />
                     </div>
                     <div>
-                        <h3 style={{ fontSize: '1.4rem', fontWeight: 950, color: 'white' }}>Feature Requests</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>Manage placement and visibility upgrades for events.</p>
+                        <h3 style={{ fontSize: '1.4rem', fontWeight: 950, color: 'white' }}>{t('admin.feature_requests')}</h3>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.features.requests_desc')}</p>
                     </div>
                 </div>
 
@@ -91,7 +93,7 @@ export const FeatureRequestsView = () => {
                             transition: 'all 0.2s'
                         }}
                     >
-                        <Inbox size={16} /> Pending ({requests.length})
+                        {t('admin.features.pending')} ({requests.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
@@ -103,7 +105,7 @@ export const FeatureRequestsView = () => {
                             transition: 'all 0.2s'
                         }}
                     >
-                        <History size={16} /> Decided ({history.length})
+                        {t('admin.features.history')} ({history.length})
                     </button>
                 </div>
             </div>
@@ -134,7 +136,7 @@ export const FeatureRequestsView = () => {
                                                 <Calendar size={12} /> {new Date(n.createdAt).toLocaleDateString()}
                                             </span>
                                             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <User size={12} /> {n.senderId ? `Admin ID: ${n.senderId}` : 'Organizer'}
+                                                <User size={12} /> {n.senderId ? `${t('admin.team.recipient')} ID: ${n.senderId}` : t('admin.sidebar.management_group')}
                                             </span>
                                         </div>
                                     </div>
@@ -144,21 +146,21 @@ export const FeatureRequestsView = () => {
                                         onClick={() => handleRespond(n.id, false)}
                                         style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444', borderRadius: '12px', cursor: 'pointer', color: '#EF4444', fontWeight: 800, fontSize: '0.85rem' }}
                                     >
-                                        <XCircle size={16} /> Reject
+                                        <XCircle size={16} /> {t('admin.features.reject')}
                                     </button>
                                     <button
                                         onClick={() => handleRespond(n.id, true)}
                                         style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: '#10B981', border: 'none', borderRadius: '12px', cursor: 'pointer', color: 'white', fontWeight: 800, fontSize: '0.85rem' }}
                                     >
-                                        <CheckCircle size={16} /> Approve
+                                        <CheckCircle size={16} /> {t('admin.features.approve')}
                                     </button>
                                 </div>
                             </motion.div>
                         )) : (
                             <div style={{ padding: '80px 0', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px dashed var(--border)' }}>
                                 <Inbox size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
-                                <p style={{ fontSize: '1rem', fontWeight: 700 }}>No feature requests pending.</p>
-                                <p style={{ fontSize: '0.85rem', opacity: 0.6 }}>Check back later for new requests.</p>
+                                <p style={{ fontSize: '1rem', fontWeight: 700 }}>{t('admin.features.no_pending')}</p>
+                                <p style={{ fontSize: '0.85rem', opacity: 0.6 }}>{t('admin.features.check_back')}</p>
                             </div>
                         )}
                     </div>
@@ -196,7 +198,7 @@ export const FeatureRequestsView = () => {
                         )) : (
                             <div style={{ padding: '80px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
                                 <History size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
-                                <p style={{ fontSize: '1rem', fontWeight: 700 }}>Decision log is empty.</p>
+                                <p style={{ fontSize: '1rem', fontWeight: 700 }}>{t('admin.features.empty_log')}</p>
                             </div>
                         )}
                     </div>
@@ -206,7 +208,7 @@ export const FeatureRequestsView = () => {
             {decisionOpen && (
                 <DecisionModal
                     open={decisionOpen}
-                    title={`${decisionContext?.approved ? 'Approve' : 'Reject'} Feature Request`}
+                    title={`${decisionContext?.approved ? t('admin.features.approve') : t('admin.features.reject')} ${t('admin.feature_requests')}`}
                     showPriority={true}
                     showRevenueEstimate={true}
                     onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AdminService } from '../../../core/api/admin.service';
 import { AdminPageHeader } from './AdminPageHeader';
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 
 export const PlatformControlView = () => {
+    const { t } = useTranslation();
     const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
     const [globalMessage, setGlobalMessage] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
@@ -67,15 +69,15 @@ export const PlatformControlView = () => {
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <AdminPageHeader
-                title="Platform Control & Monitoring"
-                subtitle="Manage global system state and monitor live infrastructure health."
+                title={t('admin.platform.title')}
+                subtitle={t('admin.platform.subtitle')}
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', marginBottom: '24px' }}>
                 {/* 🔴 Left Side: Live Monitoring */}
                 <div className="admin-card" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Infrastructure Health</h3>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('admin.platform.infra_health')}</h3>
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -88,21 +90,21 @@ export const PlatformControlView = () => {
                             fontWeight: 900
                         }}>
                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }} />
-                            {healthStatus.toUpperCase()}
+                            {healthStatus === 'Healthy' ? t('admin.platform.healthy').toUpperCase() : t('admin.platform.critical').toUpperCase()}
                         </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                        <MetricCard label="CPU Usage" value={`${systemMetrics.cpu.toFixed(0)}%`} icon={Server} color="#3B82F6" progress={systemMetrics.cpu} />
-                        <MetricCard label="RAM Usage" value={`${systemMetrics.memory.toFixed(0)}%`} icon={Zap} color="#A78BFA" progress={systemMetrics.memory} />
-                        <MetricCard label="Active Sessions" value={systemMetrics.activeConnections.toLocaleString()} icon={Globe} color="#10B981" />
-                        <MetricCard label="DB Latency" value={`${systemMetrics.dbLatency.toFixed(0)}ms`} icon={Database} color="#F59E0B" warn={systemMetrics.dbLatency > 80} />
-                        <MetricCard label="API Latency" value={`${systemMetrics.apiLatency.toFixed(0)}ms`} icon={Activity} color="#6366F1" />
-                        <MetricCard label="Cache Hit Rate" value="98.2%" icon={Zap} color="#10B981" />
+                        <MetricCard label={t('admin.platform.cpu_usage')} value={`${systemMetrics.cpu.toFixed(0)}%`} icon={Server} color="#3B82F6" progress={systemMetrics.cpu} />
+                        <MetricCard label={t('admin.platform.ram_usage')} value={`${systemMetrics.memory.toFixed(0)}%`} icon={Zap} color="#A78BFA" progress={systemMetrics.memory} />
+                        <MetricCard label={t('admin.platform.active_sessions')} value={systemMetrics.activeConnections.toLocaleString()} icon={Globe} color="#10B981" />
+                        <MetricCard label={t('admin.platform.db_latency')} value={`${systemMetrics.dbLatency.toFixed(0)}ms`} icon={Database} color="#F59E0B" warn={systemMetrics.dbLatency > 80} />
+                        <MetricCard label={t('admin.platform.api_latency')} value={`${systemMetrics.apiLatency.toFixed(0)}ms`} icon={Activity} color="#6366F1" />
+                        <MetricCard label={t('admin.platform.cache_hit_rate')} value="98.2%" icon={Zap} color="#10B981" />
                     </div>
 
                     <div style={{ marginTop: '32px' }}>
-                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '16px' }}>NETWORK TRAFFIC (REAL-TIME)</h4>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '16px' }}>{t('admin.platform.network_traffic_realtime')}</h4>
                         <div style={{ height: '120px', width: '100%', background: 'var(--bg-main)', borderRadius: '12px', overflow: 'hidden', position: 'relative', border: '1px solid var(--border)' }}>
                             <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
                                 <motion.path
@@ -124,7 +126,7 @@ export const PlatformControlView = () => {
                     </div>
 
                     <div style={{ marginTop: '24px' }}>
-                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '12px' }}>API SERVICE CLUSTERS</h4>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '12px' }}>{t('admin.platform.api_service_clusters')}</h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '4px' }}>
                             {Array.from({ length: 24 }).map((_, i) => (
                                 <div key={i} title="Service Node Online" style={{ height: '12px', background: Math.random() > 0.1 ? '#10B981' : '#F59E0B', borderRadius: '2px', opacity: 0.6 }} />
@@ -136,55 +138,37 @@ export const PlatformControlView = () => {
                 {/* 🔵 Right Side: Platform Controls */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div className="admin-card" style={{ padding: '24px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '24px' }}>Platform Sovereignty</h3>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '24px' }}>{t('admin.platform.platform_sovereignty')}</h3>
 
-                        <div className="metric-card" style={{ marginBottom: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div>
-                                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#EF4444' }}>MAINTENANCE PROTOCOL</h4>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Read-only mode for maintenance tasks.</p>
-                                </div>
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            setIsUpdating(true);
-                                            const newValue = !isMaintenanceMode;
-                                            await AdminService.updateSystemConfig({
-                                                key: 'maintenance_mode',
-                                                value: String(newValue),
-                                                description: 'Global maintenance mode'
-                                            });
-                                            setIsMaintenanceMode(newValue);
-                                        } catch (err) {
-                                            alert('Failed to update maintenance mode');
-                                        } finally {
-                                            setIsUpdating(false);
-                                        }
-                                    }}
-                                    disabled={isUpdating}
-                                    style={{
-                                        padding: '8px 16px',
-                                        borderRadius: '8px',
-                                        background: isMaintenanceMode ? '#EF4444' : 'var(--bg-card)',
-                                        color: isMaintenanceMode ? 'white' : '#EF4444',
-                                        border: isMaintenanceMode ? 'none' : '1px solid #EF4444',
-                                        fontWeight: 800,
-                                        cursor: 'pointer',
-                                        fontSize: '0.75rem',
-                                        opacity: isUpdating ? 0.5 : 1
-                                    }}
-                                >
-                                    {isUpdating ? '...' : (isMaintenanceMode ? 'DEACTIVATE' : 'ACTIVATE')}
-                                </button>
-                            </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                                {isMaintenanceMode ? t('admin.platform.maintenance_active') : t('admin.platform.maintenance_inactive')}
+                            </span>
+                            <button
+                                onClick={handleMaintenanceToggle}
+                                disabled={isUpdating}
+                                style={{
+                                    padding: '12px 24px',
+                                    borderRadius: '12px',
+                                    background: isMaintenanceMode ? '#10B981' : '#EF4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    fontWeight: 800,
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    opacity: isUpdating ? 0.5 : 1
+                                }}
+                            >
+                                {isUpdating ? <Loader2 size={16} className="animate-spin" /> : t('admin.platform.maintenance_toggle')}
+                            </button>
                         </div>
 
                         <div style={{ padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
-                            <h4 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '12px', color: 'var(--text-main)' }}>GLOBAL BROADCAST</h4>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '12px', color: 'var(--text-main)' }}>{t('admin.platform.global_broadcast')}</h4>
                             <div style={{ position: 'relative' }}>
                                 <MessageSquare size={16} style={{ position: 'absolute', left: 16, top: 16, color: 'var(--text-muted)' }} />
                                 <textarea
-                                    placeholder="Alert all active users..."
+                                    placeholder={t('admin.platform.broadcast_placeholder')}
                                     value={globalMessage}
                                     onChange={(e) => setGlobalMessage(e.target.value)}
                                     style={{
@@ -201,38 +185,23 @@ export const PlatformControlView = () => {
                                 />
                             </div>
                             <button
-                                onClick={async () => {
-                                    if (!globalMessage) return;
-                                    try {
-                                        setIsUpdating(true);
-                                        // In real app, this would hit a push-notify endpoint
-                                        // For now, we log it as an audit event
-                                        await AdminService.updateSystemConfig({
-                                            key: 'last_broadcast',
-                                            value: globalMessage,
-                                            description: 'Last global broadcast message'
-                                        });
-                                        alert('Global broadcast sent to all active users!');
-                                        setGlobalMessage('');
-                                    } catch (err) {
-                                        alert('Failed to send broadcast');
-                                    } finally {
-                                        setIsUpdating(false);
-                                    }
-                                }}
+                                onClick={handleBroadcast}
                                 disabled={isUpdating || !globalMessage}
                                 className="btn-blue"
                                 style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'var(--bg-active)', borderRadius: '10px', color: 'white', fontWeight: 800, border: 'none', cursor: 'pointer', fontSize: '0.85rem', opacity: isUpdating ? 0.5 : 1 }}>
-                                {isUpdating ? 'BROADCASTING...' : 'EXECUTE BROADCAST'}
+                                {isUpdating ? t('admin.platform.broadcasting') : t('admin.platform.broadcast_button')}
                             </button>
                         </div>
                     </div>
 
                     <div className="admin-card" style={{ padding: '24px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px' }}>Security Events</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                            <ShieldAlert size={20} color="#EF4444" />
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('admin.platform.security_events')}</h3>
+                        </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {securityEvents.length === 0 ? (
-                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px' }}>No recent security events.</p>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px' }}>{t('admin.platform.no_events')}</p>
                             ) : (
                                 securityEvents.map((event) => (
                                     <AuditItem

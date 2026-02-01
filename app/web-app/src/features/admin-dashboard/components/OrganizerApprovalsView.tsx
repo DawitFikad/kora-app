@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DecisionModal from './DecisionModal';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
-import { Download, Loader2, Check, X, ShieldCheck } from 'lucide-react';
+import { Download, Loader2, Check, X, Building2, MapPin, Calendar, Mail, Phone, Edit3 } from 'lucide-react';
 
 export const OrganizerApprovalsView = () => {
     const { t } = useTranslation();
+    const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
     const [pendingOrganizers, setPendingOrganizers] = useState<any[]>([]);
     const [approvedOrganizers, setApprovedOrganizers] = useState<any[]>([]);
     const [rejectedOrganizers, setRejectedOrganizers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState('');
     const [processingId, setProcessingId] = useState<number | null>(null);
     const [editingOrgId, setEditingOrgId] = useState<number | null>(null);
     const [decisionOpen, setDecisionOpen] = useState(false);
@@ -27,11 +27,11 @@ export const OrganizerApprovalsView = () => {
                 AdminService.getApprovedOrganizers(),
                 AdminService.getRejectedOrganizers()
             ]);
-            setPendingOrganizers(pending);
-            setApprovedOrganizers(approved);
-            setRejectedOrganizers(rejected);
-        } catch (err: any) {
-            setError(err.error || 'Failed to load organizers');
+            setPendingOrganizers(pending || []);
+            setApprovedOrganizers(approved || []);
+            setRejectedOrganizers(rejected || []);
+        } catch (err) {
+            console.error('Failed to load organizers', err);
         } finally {
             setIsLoading(false);
         }
@@ -41,8 +41,7 @@ export const OrganizerApprovalsView = () => {
         fetchData();
     }, []);
 
-    const handleReview = async (id: number, status: 'APPROVED' | 'REJECTED', commission?: any) => {
-        // open modal to collect reason and optional commission
+    const handleReview = (id: number, status: 'APPROVED' | 'REJECTED', commission?: any) => {
         setDecisionContext({ type: 'organizer', id, status, commission });
         setDecisionOpen(true);
     };
@@ -84,235 +83,193 @@ export const OrganizerApprovalsView = () => {
         );
     }
 
+    const currentList = activeTab === 'pending' ? pendingOrganizers : activeTab === 'approved' ? approvedOrganizers : rejectedOrganizers;
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AdminPageHeader
                 title={t('admin.organizers')}
-                subtitle={t('admin.organizer_approvals_desc', 'Review and process official organizer registration applications.')}
+                subtitle={t('admin.organizer_approvals_desc')}
                 actions={
                     <button
-                        onClick={() => exportToCSV(pendingOrganizers.map(o => ({
+                        onClick={() => exportToCSV(currentList.map(o => ({
                             Organization: o.organizationName,
-                            Contact: o.contactPhone,
                             Email: o.contactEmail,
                             City: o.city,
-                            Details: o.payoutDetails,
-                            Status: o.status,
-                            Joined: o.createdAt
-                        })), 'organizer_applications.csv')}
-                        className="btn-blue" style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+                            Status: o.status
+                        })), 'organizers.csv')}
+                        className="btn-blue"
+                        style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px' }}
                     >
-                        <Download size={16} /> {t('admin.export_list', 'Export List')}
+                        <Download size={16} />
+                        {t('admin.export')}
                     </button>
                 }
             />
 
-            {error && (
-                <div style={{ padding: '20px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', borderRadius: '12px', marginBottom: '24px', fontWeight: 600 }}>
-                    {error}
-                </div>
-            )}
+            {/* Tab Navigation */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'var(--bg-sidebar)', padding: '6px', borderRadius: '16px', width: 'fit-content', border: '1px solid var(--border)' }}>
+                {(['pending', 'approved', 'rejected'] as const).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{
+                            padding: '10px 24px',
+                            borderRadius: '12px',
+                            border: 'none',
+                            background: activeTab === tab ? 'var(--bg-active)' : 'transparent',
+                            color: activeTab === tab ? 'white' : 'var(--text-muted)',
+                            fontSize: '0.85rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        {tab === 'pending' ? t('admin.approvals.pending_tab') : tab === 'approved' ? t('admin.approvals.approved_tab') : t('admin.approvals.rejected_tab')}
+                        {tab === 'pending' && pendingOrganizers.length > 0 && (
+                            <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#EF4444', color: 'white', borderRadius: '6px', fontSize: '0.65rem' }}>
+                                {pendingOrganizers.length}
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
 
-            {/* 🟠 Pending Section */}
-            <div style={{ marginBottom: '40px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ background: '#F59E0B', width: '12px', height: '12px', borderRadius: '50%' }} />
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>Moderation Queue ({pendingOrganizers.length})</h3>
-                </div>
-
-                <div className="admin-card" style={{ padding: '0', overflow: 'hidden' }}>
-                    <table className="admin-table">
-                        <thead>
+            <div className="admin-card" style={{ padding: '0', overflow: 'hidden' }}>
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>{t('admin.approvals.organizer_name')}</th>
+                            <th>{t('admin.approvals.contact_info')}</th>
+                            <th>{t('admin.approvals.location')}</th>
+                            {activeTab === 'approved' && <th>{t('admin.approvals.commission_config')}</th>}
+                            <th style={{ textAlign: 'right' }}>{t('admin.approvals.actions')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {currentList.length === 0 ? (
                             <tr>
-                                <th>ORGANIZATION</th>
-                                <th>CONTACT</th>
-                                <th>CITY</th>
-                                <th style={{ textAlign: 'right' }}>ACTION</th>
+                                <td colSpan={5} style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>
+                                    <Building2 size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
+                                    <p>{activeTab === 'pending' ? t('admin.approvals.no_pending') : activeTab === 'approved' ? t('admin.approvals.no_approved') : t('admin.approvals.no_rejected')}</p>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {pendingOrganizers.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                                        No pending organizers found.
+                        ) : (
+                            currentList.map((org) => (
+                                <tr key={org.id}>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Building2 size={20} color="var(--primary)" />
+                                            </div>
+                                            <div>
+                                                <p style={{ fontWeight: 800, color: 'var(--text-main)' }}>{org.organizationName}</p>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                    <Calendar size={10} />
+                                                    {new Date(org.createdAt).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
-                                </tr>
-                            ) : (
-                                pendingOrganizers.map((org) => (
-                                    <tr key={org.id}>
+                                    <td>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700 }}>
+                                                <Mail size={12} color="var(--text-muted)" />
+                                                {org.contactEmail}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                <Phone size={12} />
+                                                {org.contactPhone}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700 }}>
+                                            <MapPin size={12} color="var(--primary)" />
+                                            {org.city}
+                                        </div>
+                                    </td>
+                                    {activeTab === 'approved' && (
                                         <td>
-                                            <p style={{ fontWeight: 800, color: 'var(--text-main)' }}>{org.organizationName}</p>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Reg: {new Date(org.createdAt).toLocaleDateString()}</p>
-                                            {org.documents && org.documents.length > 0 && (
-                                                <div style={{ marginTop: 8 }}>
-                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 800 }}>Documents</div>
-                                                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                                                        {org.documents.map((d: any, idx: number) => (
-                                                            <a key={idx} href={d.url || '#'} target="_blank" rel="noreferrer" style={{ padding: '6px 8px', background: 'var(--bg-subtle)', borderRadius: 8, fontSize: '0.75rem', color: 'var(--text-main)', textDecoration: 'none' }}>{d.name || `Doc ${idx + 1}`}</a>
-                                                        ))}
-                                                    </div>
+                                            {editingOrgId === org.id ? (
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    <input
+                                                        type="number"
+                                                        className="admin-input-small"
+                                                        style={{ width: '60px' }}
+                                                        defaultValue={org.feePercentage}
+                                                        id={`rate-${org.id}`}
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        className="admin-input-small"
+                                                        style={{ width: '60px' }}
+                                                        defaultValue={org.feeFixed}
+                                                        id={`fixed-${org.id}`}
+                                                    />
+                                                    <button
+                                                        onClick={() => handleUpdateCommission(org.id, {
+                                                            feePercentage: parseFloat((document.getElementById(`rate-${org.id}`) as HTMLInputElement).value),
+                                                            feeFixed: parseFloat((document.getElementById(`fixed-${org.id}`) as HTMLInputElement).value),
+                                                            feeType: 'PERCENTAGE'
+                                                        })}
+                                                        className="btn-blue-icon-small"
+                                                    >
+                                                        <Check size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>{org.feePercentage}% + {org.feeFixed} ETB</span>
+                                                    <button onClick={() => setEditingOrgId(org.id)} style={{ padding: '4px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                                        <Edit3 size={12} />
+                                                    </button>
                                                 </div>
                                             )}
                                         </td>
-                                        <td>
-                                            <p style={{ fontSize: '0.9rem' }}>{org.contactPhone}</p>
-                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{org.contactEmail}</p>
-                                        </td>
-                                        <td>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                                <div>{org.city}</div>
-                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    Risk Profile:
-                                                    <span style={{
-                                                        padding: '2px 8px',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.65rem',
-                                                        fontWeight: 900,
-                                                        background: !org.documents?.length ? 'rgba(239, 68, 68, 0.1)' : (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)'),
-                                                        color: !org.documents?.length ? '#EF4444' : (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? '#10B981' : '#F59E0B'),
-                                                        border: `1px solid ${!org.documents?.length ? '#EF444430' : (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? '#10B98130' : '#F59E0B30')}`
-                                                    }}>
-                                                        {!org.documents?.length ? 'CRITICAL (No Docs)' : (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? 'LOW (Vetted)' : 'MEDIUM (New)')}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                                                <input
-                                                    type="number"
-                                                    id={`org-comm-${org.id}`}
-                                                    placeholder="Comm %"
-                                                    defaultValue={10}
-                                                    style={{ width: '80px', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-main)' }}
-                                                />
-                                                <input
-                                                    type="number"
-                                                    id={`org-conv-${org.id}`}
-                                                    placeholder="Fixed Fee"
-                                                    defaultValue={0}
-                                                    style={{ width: '80px', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-main)' }}
-                                                />
-                                            </div>
+                                    )}
+                                    <td style={{ textAlign: 'right' }}>
+                                        {activeTab === 'pending' ? (
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                 <button
-                                                    disabled={processingId === org.id}
-                                                    onClick={() => {
-                                                        const comm = (document.getElementById(`org-comm-${org.id}`) as HTMLInputElement).value;
-                                                        const conv = (document.getElementById(`org-conv-${org.id}`) as HTMLInputElement).value;
-                                                        handleReview(org.id, 'APPROVED', { feePercentage: Number(comm), feeFixed: Number(conv), feeType: 'PERCENTAGE' });
-                                                    }}
-                                                    style={{ background: '#10B981', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                                    onClick={() => handleReview(org.id, 'APPROVED')}
+                                                    style={{ background: '#10B981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                                                 >
                                                     {processingId === org.id ? <Loader2 className="animate-spin" size={14} /> : <Check size={16} />}
-                                                    Approve
+                                                    {t('admin.approvals.approve')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleReview(org.id, 'REJECTED')}
-                                                    disabled={processingId === org.id}
                                                     style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                                 >
                                                     <X size={18} />
                                                 </button>
                                             </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button onClick={() => fetchData()} style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
+                                                    {t('admin.overview.details')}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
 
-            {/* Decision Modal */}
             {decisionOpen && (
                 <DecisionModal
                     open={decisionOpen}
-                    title={`${decisionContext?.status} Organizer`}
-                    showCommission={true}
+                    title={`${decisionContext?.status === 'APPROVED' ? t('admin.approvals.approve') : t('admin.approvals.reject')} ${t('admin.organizers')}`}
+                    showCommission={decisionContext?.status === 'APPROVED'}
                     initialCommission={decisionContext?.commission}
                     onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
                     onConfirm={(p: any) => confirmDecision(p)}
                 />
             )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                {/* 🟢 Approved Section */}
-                <div className="admin-card" style={{ padding: '24px' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10B981', marginBottom: '20px' }}>Verified Partners ({approvedOrganizers.length})</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {approvedOrganizers.length > 0 ? approvedOrganizers.map((org) => (
-                            <div key={org.id} style={{ display: 'flex', flexDirection: 'column', padding: '16px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: editingOrgId === org.id ? '16px' : '0' }}>
-                                    <div>
-                                        <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>{org.organizationName}</p>
-                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{org.feePercentage}% + ETB {org.feeFixed} | {org.city}</p>
-                                    </div>
-                                    {editingOrgId === org.id ? (
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={() => setEditingOrgId(null)} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.7rem' }}>Cancel</button>
-                                            <button
-                                                onClick={() => {
-                                                    const comm = (document.getElementById(`edit-comm-${org.id}`) as HTMLInputElement).value;
-                                                    const conv = (document.getElementById(`edit-conv-${org.id}`) as HTMLInputElement).value;
-                                                    handleUpdateCommission(org.id, { feePercentage: Number(comm), feeFixed: Number(conv), feeType: 'PERCENTAGE' });
-                                                }}
-                                                style={{ background: 'var(--bg-active)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}
-                                            >Save</button>
-                                        </div>
-                                    ) : (
-                                        <button onClick={() => setEditingOrgId(org.id)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>Edit Settings</button>
-                                    )}
-                                </div>
-
-                                {editingOrgId === org.id && (
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, display: 'block', marginBottom: '4px' }}>Percent %</label>
-                                            <input
-                                                type="number"
-                                                id={`edit-comm-${org.id}`}
-                                                defaultValue={org.feePercentage}
-                                                style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', color: 'white' }}
-                                            />
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, display: 'block', marginBottom: '4px' }}>Fixed Fee</label>
-                                            <input
-                                                type="number"
-                                                id={`edit-conv-${org.id}`}
-                                                defaultValue={org.feeFixed}
-                                                style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', color: 'white' }}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )) : <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No verified partners yet.</p>}
-                    </div>
-                </div>
-
-                {/* 🔴 Rejected Section */}
-                <div className="admin-card" style={{ padding: '24px' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#EF4444', marginBottom: '20px' }}>Rejected Applications</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {rejectedOrganizers.length > 0 ? rejectedOrganizers.map((org) => (
-                            <div key={org.id} style={{ display: 'flex', flexDirection: 'column', padding: '16px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div>
-                                        <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)' }}>{org.organizationName}</p>
-                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{org.city || '—'} · {org.contactEmail || 'No email'}</p>
-                                    </div>
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#EF4444' }}>Rejected</span>
-                                </div>
-                                <p style={{ marginTop: '8px', fontSize: '0.7rem', color: 'var(--text-muted)' }}>Submitted {new Date(org.createdAt).toLocaleDateString()}</p>
-                            </div>
-                        )) : (
-                            <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No rejected applications yet.</p>
-                        )}
-                    </div>
-                </div>
-            </div>
         </motion.div>
     );
 };
