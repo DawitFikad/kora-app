@@ -32,6 +32,21 @@ export const TeamManagementView = () => {
     const [isLoadingTeam, setIsLoadingTeam] = useState(true);
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
+    // --- Modal State ---
+    const [modalConfig, setModalConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'info';
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'info'
+    });
+
     const fetchData = async () => {
         setIsLoadingTeam(true);
         setIsLoadingHistory(true);
@@ -86,6 +101,21 @@ export const TeamManagementView = () => {
             setFormStatus('error');
             const msg = err.error || err.message || 'Failed to send invitation';
             setErrorMessage(msg);
+            setTimeout(() => setFormStatus('idle'), 5000);
+        }
+    };
+
+    const handleDelete = async (userId: number) => {
+        try {
+            await AdminService.removeAdmin(userId);
+            setSuccessMessage("Administrator removed successfully");
+            setFormStatus('success');
+            fetchData();
+            setTimeout(() => setFormStatus('idle'), 3000);
+        } catch (err: any) {
+            console.error('[Delete Error]', err);
+            setErrorMessage(err.error || "Failed to remove administrator");
+            setFormStatus('error');
             setTimeout(() => setFormStatus('idle'), 5000);
         }
     };
@@ -299,12 +329,17 @@ export const TeamManagementView = () => {
                                             <div style={{ display: 'flex', gap: '8px' }}>
                                                 <button
                                                     onClick={() => {
-                                                        const confirmResend = window.confirm(`Resend invitation to ${member.email}?`);
-                                                        if (confirmResend) handleInvite(undefined, {
-                                                            email: member.email,
-                                                            phoneNumber: member.phoneNumber,
-                                                            fullName: member.profile?.fullName,
-                                                            role: member.role.toLowerCase()
+                                                        setModalConfig({
+                                                            isOpen: true,
+                                                            title: 'Resend Invitation',
+                                                            message: `Are you sure you want to resend the administrative invitation to ${member.email}?`,
+                                                            type: 'info',
+                                                            onConfirm: () => handleInvite(undefined, {
+                                                                email: member.email,
+                                                                phoneNumber: member.phoneNumber,
+                                                                fullName: member.profile?.fullName,
+                                                                role: member.role.toLowerCase()
+                                                            })
                                                         });
                                                     }}
                                                     title="Resend Invite"
@@ -315,8 +350,19 @@ export const TeamManagementView = () => {
                                                     <RefreshCcw size={14} color="var(--primary-blue)" />
                                                 </button>
                                                 <button
-                                                    title="Remove (Coming Soon)"
-                                                    style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', opacity: 0.5 }}
+                                                    onClick={() => {
+                                                        setModalConfig({
+                                                            isOpen: true,
+                                                            title: 'Remove Administrator',
+                                                            message: `This will permanently revoke all administrative access for ${member.profile?.fullName || member.email}. This action cannot be undone.`,
+                                                            type: 'danger',
+                                                            onConfirm: () => handleDelete(member.id)
+                                                        });
+                                                    }}
+                                                    title="Remove Admin"
+                                                    style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
                                                 >
                                                     <Trash2 size={14} color="#EF4444" />
                                                 </button>
@@ -412,6 +458,45 @@ export const TeamManagementView = () => {
                     </table>
                 </div>
             </div>
+
+            {/* 🛡️ Confirmation Modal */}
+            <AnimatePresence>
+                {modalConfig.isOpen && (
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            style={{ width: '400px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                        >
+                            <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: modalConfig.type === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(29, 144, 245, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                                {modalConfig.type === 'danger' ? <Trash2 color="#EF4444" size={24} /> : <RefreshCcw color="var(--primary-blue)" size={24} />}
+                            </div>
+
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '12px' }}>{modalConfig.title}</h3>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '32px' }}>{modalConfig.message}</p>
+
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button
+                                    onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'transparent', color: 'white', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        modalConfig.onConfirm();
+                                        setModalConfig({ ...modalConfig, isOpen: false });
+                                    }}
+                                    style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: modalConfig.type === 'danger' ? '#EF4444' : 'var(--primary-blue)', color: 'white', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Confirm
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

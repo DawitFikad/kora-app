@@ -61,4 +61,5 @@ export const AdminService = {
     inviteAdmin: (data: { email: string, phoneNumber: string, fullName: string, role: string }) => api.post('/admin/invite', data),
     getTeamMembers: () => api.get('/admin/users', { params: { role: 'ADMIN' } }),
     getInvitationHistory: () => api.get('/admin/notifications', { params: { title: 'Admin Invited' } }),
+    removeAdmin: (userId: number) => api.delete(`/admin/users/${userId}`),
 };

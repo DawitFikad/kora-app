@@ -31,6 +31,9 @@ router.patch("/users/:userId/suspend", authenticate, authorize([Role.ADMIN]), Ad
 // Activate user
 router.patch("/users/:userId/activate", authenticate, authorize([Role.ADMIN]), AdminController.activateUser);
 
+// Delete user (Admin management)
+router.delete("/users/:userId", authenticate, authorize([Role.ADMIN]), AdminController.deleteUser);
+
 // Feature Event
 router.patch("/events/:eventId/featured", authenticate, authorize([Role.ADMIN]), AdminController.toggleEventFeatured);
 

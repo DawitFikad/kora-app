@@ -596,4 +596,38 @@ export class AdminController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // Delete a user
+    static async deleteUser(req: Request, res: Response) {
+        try {
+            const { userId } = req.params;
+
+            // Block deleting self
+            const requestingAdminId = (req as any).user?.userId || (req as any).user?.id;
+            if (parseInt(userId) === requestingAdminId) {
+                return res.status(400).json({ error: "You cannot delete your own administrative account." });
+            }
+
+            await prisma.user.delete({
+                where: { id: parseInt(userId) }
+            });
+
+            // Audit Log
+            await prisma.notificationLog.create({
+                data: {
+                    userId: requestingAdminId,
+                    channel: 'PUSH',
+                    recipient: 'Audit Log',
+                    title: 'Admin Deleted',
+                    content: `Admin ${requestingAdminId} deleted user record for ID: ${userId}`,
+                    status: 'DELIVERED',
+                    metadata: { deletedUserId: userId }
+                }
+            });
+
+            res.json({ success: true, message: "User deleted successfully" });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
