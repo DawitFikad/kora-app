@@ -10,7 +10,9 @@ import {
     Server,
     Database,
     Globe,
-    MessageSquare
+    MessageSquare,
+    Loader2,
+    ShieldAlert
 } from 'lucide-react';
 
 export const PlatformControlView = () => {
@@ -63,6 +65,41 @@ export const PlatformControlView = () => {
         const interval = setInterval(fetchData, 10000); // Poll every 10s
         return () => clearInterval(interval);
     }, []);
+
+    const handleMaintenanceToggle = async () => {
+        setIsUpdating(true);
+        try {
+            const newValue = !isMaintenanceMode;
+            await AdminService.updateSystemConfig({
+                key: 'maintenance_mode',
+                value: String(newValue),
+                description: 'System-wide maintenance mode'
+            });
+            setIsMaintenanceMode(newValue);
+        } catch (err) {
+            console.error('Failed to toggle maintenance mode', err);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleBroadcast = async () => {
+        if (!globalMessage.trim()) return;
+        setIsUpdating(true);
+        try {
+            await AdminService.updateSystemConfig({
+                key: 'global_notice',
+                value: globalMessage.trim(),
+                description: 'Active announcement for all users'
+            });
+            setGlobalMessage('');
+            alert(t('admin.platform.broadcast_success', 'Broadcast sent successfully!'));
+        } catch (err) {
+            console.error('Failed to send broadcast', err);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
     const healthStatus = systemMetrics.cpu > 80 || systemMetrics.dbLatency > 100 ? 'Critical' : 'Healthy';
 
@@ -240,9 +277,9 @@ const MetricCard = ({ label, value, icon: Icon, color, progress, warn }: any) =>
     </div>
 );
 
-const AuditItem = ({ time, action }: any) => (
-    <div className="audit-item">
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)' }}>{action}</span>
+const AuditItem = ({ time, action, isCritical }: any) => (
+    <div className="audit-item" style={{ borderLeft: isCritical ? '3px solid #EF4444' : '3px solid transparent', paddingLeft: isCritical ? '12px' : '0' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: isCritical ? '#EF4444' : 'var(--text-main)' }}>{action}</span>
         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>{time}</span>
     </div>
 );

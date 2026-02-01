@@ -57,7 +57,8 @@
 
     /* Text */
     --text-main: #0F172A;
-    --text-muted: #475569; /* Darkened for better readability in light mode */
+    --text-muted: #475569;
+    /* Darkened for better readability in light mode */
 
     /* Borders & Glass */
     --border: #E2E8F0;
@@ -184,7 +185,8 @@ body {
     border-radius: 12px;
     color: var(--text-muted);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
+    /* Increased from 500 for better visibility */
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 4px;
     cursor: pointer;
@@ -194,12 +196,14 @@ body {
 .nav-item:hover {
     background: var(--bg-hover);
     color: var(--text-main);
+    font-weight: 700;
 }
 
 .nav-item.active {
     background: var(--bg-active);
     color: white;
     /* Always white text on active blue bg */
+    font-weight: 700;
     box-shadow: 0 4px 15px rgba(29, 144, 245, 0.3);
 }
 

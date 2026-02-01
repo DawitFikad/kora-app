@@ -50,8 +50,8 @@ export const PendingActionsCard: React.FC<{
                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: (pendingOrganizers + pendingEvents + pendingRefunds > 0) ? '#F59E0B' : '#10B981' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {item(t('admin.sidebar.organizers'), pendingOrganizers, onOpenOrganizers)}
-                {item(t('admin.sidebar.events'), pendingEvents, onOpenEvents)}
+                {item(t('admin.sidebar.organizers_nav'), pendingOrganizers, onOpenOrganizers)}
+                {item(t('admin.sidebar.events_nav'), pendingEvents, onOpenEvents)}
                 {item(t('admin.overview.refund_requests'), pendingRefunds, onOpenRefunds, '#EF4444')}
             </div>
         </div>

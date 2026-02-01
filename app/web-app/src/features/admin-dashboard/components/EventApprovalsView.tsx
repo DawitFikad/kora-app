@@ -70,7 +70,7 @@ export const EventApprovalsView = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AdminPageHeader
-                title={t('admin.events')}
+                title={t('admin.sidebar.events_nav')}
                 subtitle={t('admin.events_queue_desc')}
                 actions={
                     <button
@@ -206,7 +206,7 @@ export const EventApprovalsView = () => {
             {decisionOpen && (
                 <DecisionModal
                     open={decisionOpen}
-                    title={`${decisionContext?.status === 'APPROVED' ? t('admin.approvals.approve') : t('admin.approvals.reject')} ${t('admin.events')}`}
+                    title={`${decisionContext?.status === 'APPROVED' ? t('admin.approvals.approve') : t('admin.approvals.reject')} ${t('admin.sidebar.events_nav')}`}
                     showCommission={decisionContext?.status === 'APPROVED'}
                     initialCommission={decisionContext?.commission}
                     onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}

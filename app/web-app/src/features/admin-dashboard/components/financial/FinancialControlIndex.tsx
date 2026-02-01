@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, TrendingUp, Wallet, Receipt, ArrowRight, ShieldCheck, Download, Calendar } from 'lucide-react';
+import { DollarSign, TrendingUp, Wallet, Receipt } from 'lucide-react';
 import GMVDashboard from './GMVDashboard';
 import RevenueBreakdown from './RevenueBreakdown';
 import OrganizerPayouts from './OrganizerPayouts';
@@ -89,18 +89,30 @@ export const FinancialControlIndex: React.FC = () => {
                                 gap: '10px',
                                 padding: '14px 24px',
                                 borderRadius: '14px',
-                                border: 'none',
+                                border: isActive ? `1px solid ${t.color}30` : '1px solid transparent',
                                 background: isActive ? 'var(--bg-card)' : 'transparent',
-                                color: isActive ? 'white' : 'var(--text-muted)',
+                                color: isActive ? t.color : 'var(--text-muted)',
                                 fontWeight: 800,
                                 fontSize: '0.95rem',
                                 cursor: 'pointer',
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                boxShadow: isActive ? '0 10px 20px rgba(0,0,0,0.2)' : 'none',
+                                boxShadow: isActive ? `0 10px 20px ${t.color}20` : 'none',
                                 position: 'relative'
                             }}
+                            onMouseEnter={(e) => {
+                                if (!isActive) {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                                    e.currentTarget.style.color = t.color;
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isActive) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'var(--text-muted)';
+                                }
+                            }}
                         >
-                            <Icon size={18} color={isActive ? t.color : 'currentColor'} />
+                            <Icon size={18} color={isActive ? t.color : t.color + '60'} />
                             {t.label}
                             {isActive && (
                                 <motion.div

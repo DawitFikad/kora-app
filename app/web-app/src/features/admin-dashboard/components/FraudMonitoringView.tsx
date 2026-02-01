@@ -88,7 +88,7 @@ export const FraudMonitoringView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader title={t('admin.fraud')} subtitle={t('admin.fraud_desc', 'Real-time monitoring of suspicious ticket activity and identity fraud.')} />
+            <AdminPageHeader title={t('admin.sidebar.fraud_nav')} subtitle={t('admin.fraud_desc', 'Real-time monitoring of suspicious ticket activity and identity fraud.')} />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main" style={{ borderColor: metrics.criticalAlerts > 0 ? 'rgba(239, 68, 68, 0.3)' : 'var(--border)' }}>

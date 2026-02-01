@@ -195,8 +195,8 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                     <StatCard
                         label={
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                {t('admin.sidebar.organizers')}
-                                <AdminTooltip title={t('admin.sidebar.organizers')} content={t('admin.overview.organizer_metrics_tooltip')} />
+                                {t('admin.sidebar.organizers_nav')}
+                                <AdminTooltip title={t('admin.sidebar.organizers_nav')} content={t('admin.overview.organizer_metrics_tooltip')} />
                             </div>
                         }
                         value={stats.activeOrganizers.toLocaleString()}
@@ -207,8 +207,8 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                     <StatCard
                         label={
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                {t('admin.sidebar.events')}
-                                <AdminTooltip title={t('admin.sidebar.events')} content={t('admin.overview.integrity_tooltip')} />
+                                {t('admin.sidebar.events_nav')}
+                                <AdminTooltip title={t('admin.sidebar.events_nav')} content={t('admin.overview.integrity_tooltip')} />
                             </div>
                         }
                         value={stats.totalTicketsSold.toLocaleString()}

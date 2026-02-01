@@ -140,7 +140,7 @@ export const CommissionsView = () => {
                         <div key={fee.id} style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
                             <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px 12px', background: '#3B82F6', color: 'white', fontSize: '0.65rem', fontWeight: 900, borderRadius: '0 0 0 10px' }}>{t('admin.commissions.default_config')}</div>
                             <div style={{ marginBottom: '16px' }}>
-                                <span style={{ fontWeight: 950, color: 'white', fontSize: '1.1rem' }}>{fee.name}</span>
+                                <span style={{ fontWeight: 950, color: 'var(--text-main)', fontSize: '1.1rem' }}>{fee.name}</span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>
@@ -149,7 +149,7 @@ export const CommissionsView = () => {
                                         type="number"
                                         defaultValue={fee.feePercentage}
                                         onChange={(e) => fee.newPercentage = Number(e.target.value)}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'white', fontWeight: 900 }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 900 }}
                                     />
                                 </div>
                                 <div>
@@ -158,7 +158,7 @@ export const CommissionsView = () => {
                                         type="number"
                                         defaultValue={fee.feeFixed}
                                         onChange={(e) => fee.newFixed = Number(e.target.value)}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'white', fontWeight: 900 }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 900 }}
                                     />
                                 </div>
                             </div>

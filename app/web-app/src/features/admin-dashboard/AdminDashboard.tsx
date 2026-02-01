@@ -106,14 +106,14 @@ const AdminDashboard = () => {
     const featureRequestCount = notifications.filter(n => n.metadata?.type === 'FEATURE_REQUEST').length;
 
     const navItems = [
-        { icon: Layout, label: 'Dashboard' as AdminTab, display: t('admin.dashboard'), key: 'dashboard' },
-        { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.organizers'), key: 'organizers' },
-        { icon: Calendar, label: 'Event Approvals' as AdminTab, count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.events'), key: 'events' },
-        { icon: Crown, label: 'Feature Requests' as AdminTab, count: featureRequestCount > 0 ? featureRequestCount : undefined, display: t('admin.featureRequests', 'Feature Requests'), key: 'feature_requests' },
-        { icon: BarChart3, label: 'Commissions' as AdminTab, display: t('admin.commissions'), key: 'commissions' },
+        { icon: Layout, label: 'Dashboard' as AdminTab, display: t('admin.sidebar.dashboard_nav'), key: 'dashboard' },
+        { icon: Users, label: 'Organizer Approvals' as AdminTab, count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.sidebar.organizers_nav'), key: 'organizers' },
+        { icon: Calendar, label: 'Event Approvals' as AdminTab, count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.sidebar.events_nav'), key: 'events' },
+        { icon: Crown, label: 'Feature Requests' as AdminTab, count: featureRequestCount > 0 ? featureRequestCount : undefined, display: t('admin.sidebar.feature_requests_nav'), key: 'feature_requests' },
+        { icon: BarChart3, label: 'Commissions' as AdminTab, display: t('admin.sidebar.commissions_nav'), key: 'commissions' },
         { icon: DollarSign, label: 'GMV' as AdminTab, display: t('admin.gmv', 'GMV Tracking'), key: 'gmv' },
-        { icon: ShieldAlert, label: 'Fraud' as AdminTab, display: t('admin.fraud'), key: 'fraud' },
-        { icon: FileText, label: 'Content' as AdminTab, display: t('admin.content'), key: 'content' },
+        { icon: ShieldAlert, label: 'Fraud' as AdminTab, display: t('admin.sidebar.fraud_nav'), key: 'fraud' },
+        { icon: FileText, label: 'Content' as AdminTab, display: t('admin.sidebar.content_nav'), key: 'content' },
         { icon: Activity, label: 'Analytics' as AdminTab, display: t('admin.analytics'), key: 'analytics' },
         { icon: BarChart3, label: 'Reports' as AdminTab, display: t('admin.reports', 'Reports'), key: 'reports' },
         { icon: Users, label: 'Invite Admin' as AdminTab, display: t('admin.invite', 'Invite Admin'), key: 'invite_admin' },
@@ -169,17 +169,17 @@ const AdminDashboard = () => {
                         style={{ marginBottom: '24px' }} // Spacing after dashboard
                     >
                         <Layout size={18} />
-                        <span style={{ fontSize: '0.9rem' }}>{t('admin.sidebar.dashboard')}</span>
+                        <span style={{ fontSize: '0.9rem' }}>{t('admin.sidebar.dashboard_nav')}</span>
                     </div>
 
                     {[
                         {
                             title: t('admin.sidebar.management_group'),
                             items: [
-                                { icon: Users, label: 'Organizer Approvals', count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.sidebar.organizers') },
-                                { icon: Calendar, label: 'Event Approvals', count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.sidebar.events') },
-                                { icon: Crown, label: 'Feature Requests', count: Array.isArray(notifications) ? notifications.filter((n: any) => n.metadata?.type === 'FEATURE_REQUEST').length : 0, display: t('admin.sidebar.feature_requests') },
-                                { icon: BarChart3, label: 'Commissions', display: t('admin.sidebar.commissions') }
+                                { icon: Users, label: 'Organizer Approvals', count: pendingCount > 0 ? pendingCount : undefined, display: t('admin.sidebar.organizers_nav') },
+                                { icon: Calendar, label: 'Event Approvals', count: eventPendingCount > 0 ? eventPendingCount : undefined, display: t('admin.sidebar.events_nav') },
+                                { icon: Crown, label: 'Feature Requests', count: Array.isArray(notifications) ? notifications.filter((n: any) => n.metadata?.type === 'FEATURE_REQUEST').length : 0, display: t('admin.sidebar.feature_requests_nav') },
+                                { icon: BarChart3, label: 'Commissions', display: t('admin.sidebar.commissions_nav') }
                             ]
                         },
                         {
@@ -191,11 +191,11 @@ const AdminDashboard = () => {
                         {
                             title: t('admin.sidebar.security_group'),
                             items: [
-                                { icon: ShieldAlert, label: 'Fraud Monitoring', display: t('admin.sidebar.fraud') },
-                                { icon: Activity, label: 'Platform Health', display: t('admin.sidebar.platform_health') },
+                                { icon: ShieldAlert, label: 'Fraud Monitoring', display: t('admin.sidebar.fraud_nav') },
+                                { icon: Activity, label: 'Platform Health', display: t('admin.sidebar.platform_health_nav') },
                                 { icon: ClipboardList, label: 'Audit Logs', display: t('admin.sidebar.audit_logs') },
-                                { icon: Users, label: 'Invite Admin', display: t('admin.sidebar.team') },
-                                { icon: FileText, label: 'Content', display: t('admin.sidebar.content') }
+                                { icon: Users, label: 'Invite Admin', display: t('admin.sidebar.team_nav') },
+                                { icon: FileText, label: 'Content', display: t('admin.sidebar.content_nav') }
                             ]
                         }
                     ].map((group, groupIndex) => (
