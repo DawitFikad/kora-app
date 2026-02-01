@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AdminPageHeader } from './AdminPageHeader';
-import { AdminService } from '../../../core/api/admin.service';
-import { Loader2, ClipboardList, Shield, Clock, Trash2, ChevronLeft, ChevronRight, Info, X } from 'lucide-react';
+import { Loader2, ClipboardList, Shield, Clock, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 export const ActivityLogView = () => {
     const { t } = useTranslation();
@@ -57,10 +55,7 @@ export const ActivityLogView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader
-                title={t('admin.logs.title')}
-                subtitle={t('admin.logs.subtitle')}
-            />
+
 
             <div className="admin-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>

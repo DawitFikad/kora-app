@@ -10,7 +10,7 @@ import {
     ShieldCheck
 } from 'lucide-react';
 import { AdminService } from '../../../core/api/admin.service';
-import { AdminPageHeader } from './AdminPageHeader';
+
 import { exportToCSV } from '../../../core/utils/export';
 import { Download } from 'lucide-react';
 import DecisionModal from './DecisionModal';
@@ -122,39 +122,33 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader
-                title={view === 'SETTLEMENTS' ? t('admin.payouts.ledger_tab') : t('admin.payouts')}
-                subtitle={view === 'SETTLEMENTS'
-                    ? t('admin.commissions.subtitle')
-                    : t('admin.payouts_desc')}
-                actions={
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        {view === 'QUEUE' && (
-                            <button
-                                onClick={() => { setDecisionContext({ action: 'bulkSettlement', title: t('admin.payouts.initiate_bulk') }); setDecisionOpen(true); }}
-                                style={{ background: 'var(--bg-active)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 800, fontSize: '0.85rem' }}
-                            >
-                                {t('admin.payouts.initiate_bulk')}
-                            </button>
-                        )}
-                        <button
-                            onClick={() => exportToCSV((view === 'SETTLEMENTS' ? processedPayouts : pendingPayouts).map(p => ({
-                                Transaction: p.transactionId || p.id,
-                                Organizer: p.wallet?.organizer?.organizationName || p.organizerName,
-                                Event: p.eventTitle || p.event?.title || '',
-                                Gross: p.grossAmount || p.amount,
-                                PlatformCut: p.platformCut || '',
-                                OrganizerNet: p.netAmount || '',
-                                Status: p.status,
-                                Timestamp: p.processedAt || p.createdAt
-                            })), `${view.toLowerCase()}_export.csv`)}
-                            className="btn-blue" style={{ background: '#12171F', color: 'white', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
-                        >
-                            <Download size={16} /> {t('admin.export_queue')}
-                        </button>
-                    </div>
-                }
-            />
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+                {view === 'QUEUE' && (
+                    <button
+                        onClick={() => { setDecisionContext({ action: 'bulkSettlement', title: t('admin.payouts.initiate_bulk') }); setDecisionOpen(true); }}
+                        style={{ background: 'var(--bg-active)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 800, fontSize: '0.85rem' }}
+                    >
+                        {t('admin.payouts.initiate_bulk')}
+                    </button>
+                )}
+                <button
+                    onClick={() => exportToCSV((view === 'SETTLEMENTS' ? processedPayouts : pendingPayouts).map(p => ({
+                        Transaction: p.transactionId || p.id,
+                        Organizer: p.wallet?.organizer?.organizationName || p.organizerName,
+                        Event: p.eventTitle || p.event?.title || '',
+                        Gross: p.grossAmount || p.amount,
+                        PlatformCut: p.platformCut || '',
+                        OrganizerNet: p.netAmount || '',
+                        Status: p.status,
+                        Timestamp: p.processedAt || p.createdAt
+                    })), `${view.toLowerCase()}_export.csv`)}
+                    className="btn-blue" style={{ background: '#12171F', color: 'white', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                    <Download size={16} /> {t('admin.export_queue')}
+                </button>
+            </div>
+
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main">

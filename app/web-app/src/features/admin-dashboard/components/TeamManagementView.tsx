@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AdminPageHeader } from './AdminPageHeader';
+
 import { AdminService } from '../../../core/api/admin.service';
 import {
     UserPlus,
@@ -133,10 +133,7 @@ export const TeamManagementView = () => {
 
     return (
         <div className="team-management-view" style={{ paddingBottom: '60px' }}>
-            <AdminPageHeader
-                title={t('admin.team.title')}
-                subtitle={t('admin.team.subtitle')}
-            />
+
 
             {/* Layout Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '32px', alignItems: 'start', marginBottom: '48px' }}>

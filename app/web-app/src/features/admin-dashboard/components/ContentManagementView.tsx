@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, MapPin, Tag, Loader2, X, Calendar as CalendarIcon, Image as ImageIcon, CheckCircle2, AlertCircle, RefreshCcw } from 'lucide-react';
-import { AdminPageHeader } from './AdminPageHeader';
+
 import { ContentService } from '../../../core/api/content.service';
 import { AdminService } from '../../../core/api/admin.service';
 
@@ -232,10 +232,7 @@ export const ContentManagementView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader
-                title={t('admin.content.title')}
-                subtitle={t('admin.content.subtitle')}
-            />
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
                 {/* Categories Section */}
                 <div className="admin-card" style={{ padding: '24px' }}>

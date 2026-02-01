@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, MapPin, Users, Tag, Calendar, Download, Search, ChevronRight } from 'lucide-react';
+import { TrendingUp, MapPin, Calendar, Download } from 'lucide-react';
 import { AdminService } from '../../../../core/api/admin.service';
 import { downloadBlobAsCSV } from './csvExport';
 
@@ -58,7 +58,7 @@ export const GMVDashboard: React.FC = () => {
                         <div style={{ padding: '4px 12px', borderRadius: '100px', background: 'rgba(16, 185, 129, 0.1)', fontSize: '0.7rem', color: '#10B981', fontWeight: 900 }}>+12.5%</div>
                     </div>
                     <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Total Period GMV</p>
-                    <p style={{ fontSize: '2.2rem', fontWeight: 950, color: 'white', letterSpacing: '-0.03em' }}>ETB {formatCurrency(totalGMV)}</p>
+                    <p style={{ fontSize: '2.2rem', fontWeight: 950, color: 'var(--text-main)', letterSpacing: '-0.03em' }}>ETB {formatCurrency(totalGMV)}</p>
                 </div>
 
                 <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '32px', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
@@ -69,31 +69,31 @@ export const GMVDashboard: React.FC = () => {
                         <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>Top Region</span>
                     </div>
                     <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Leading Performance</p>
-                    <p style={{ fontSize: '2.2rem', fontWeight: 950, color: 'white', letterSpacing: '-0.03em' }}>Addis Ababa</p>
+                    <p style={{ fontSize: '2.2rem', fontWeight: 950, color: 'var(--text-main)', letterSpacing: '-0.03em' }}>Addis Ababa</p>
                 </div>
 
                 <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '32px', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
                             <p style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Range</p>
-                            <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>{range.toUpperCase()}</p>
+                            <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{range.toUpperCase()}</p>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Data Nodes</p>
-                            <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>{rows.length}</p>
+                            <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{rows.length}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* 🛠️ Action & Filter Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15, 23, 42, 0.3)', padding: '16px 24px', borderRadius: '24px', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '16px 24px', borderRadius: '24px', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <Calendar size={18} color="var(--text-muted)" />
                     <select
                         value={range}
                         onChange={e => setRange(e.target.value as any)}
-                        style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', outline: 'none' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', outline: 'none' }}
                     >
                         <option value="7d" style={{ background: 'var(--bg-card)' }}>Last 7 Fiscal Days</option>
                         <option value="30d" style={{ background: 'var(--bg-card)' }}>Last 30 Fiscal Days</option>

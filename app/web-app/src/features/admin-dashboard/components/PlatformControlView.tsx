@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AdminService } from '../../../core/api/admin.service';
-import { AdminPageHeader } from './AdminPageHeader';
+
 import {
     Activity,
     AlertTriangle,
@@ -105,10 +105,7 @@ export const PlatformControlView = () => {
 
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader
-                title={t('admin.platform.title')}
-                subtitle={t('admin.platform.subtitle')}
-            />
+
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', marginBottom: '24px' }}>
                 {/* 🔴 Left Side: Live Monitoring */}

@@ -69,46 +69,34 @@ export const FeatureRequestsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ padding: '12px', background: 'rgba(251, 191, 36, 0.1)', borderRadius: '16px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-                        <Crown size={24} color="#FBBF24" />
-                    </div>
-                    <div>
-                        <h3 style={{ fontSize: '1.4rem', fontWeight: 950, color: 'white' }}>{t('admin.feature_requests')}</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.features.requests_desc')}</p>
-                    </div>
-                </div>
-
-                {/* Tab Switcher */}
-                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <button
-                        onClick={() => setActiveTab('pending')}
-                        style={{
-                            padding: '8px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                            background: activeTab === 'pending' ? 'white' : 'transparent',
-                            color: activeTab === 'pending' ? 'black' : 'var(--text-muted)',
-                            fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        {t('admin.features.pending')} ({requests.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('history')}
-                        style={{
-                            padding: '8px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                            background: activeTab === 'history' ? 'white' : 'transparent',
-                            color: activeTab === 'history' ? 'black' : 'var(--text-muted)',
-                            fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        {t('admin.features.history')} ({history.length})
-                    </button>
-                </div>
+            {/* Tab Switcher */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '32px' }}>
+                <button
+                    onClick={() => setActiveTab('pending')}
+                    style={{
+                        padding: '8px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                        background: activeTab === 'pending' ? 'white' : 'transparent',
+                        color: activeTab === 'pending' ? 'black' : 'var(--text-muted)',
+                        fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    {t('admin.features.pending')} ({requests.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('history')}
+                    style={{
+                        padding: '8px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                        background: activeTab === 'history' ? 'white' : 'transparent',
+                        color: activeTab === 'history' ? 'black' : 'var(--text-muted)',
+                        fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    {t('admin.features.history')} ({history.length})
+                </button>
             </div>
+
 
             <div style={{ minHeight: '400px' }}>
                 {activeTab === 'pending' ? (
@@ -205,17 +193,19 @@ export const FeatureRequestsView = () => {
                 )}
             </div>
 
-            {decisionOpen && (
-                <DecisionModal
-                    open={decisionOpen}
-                    title={`${decisionContext?.approved ? t('admin.features.approve') : t('admin.features.reject')} ${t('admin.feature_requests')}`}
-                    showPriority={true}
-                    showRevenueEstimate={true}
-                    onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
-                    onConfirm={(p: any) => confirmDecision(p)}
-                />
-            )}
-        </motion.div>
+            {
+                decisionOpen && (
+                    <DecisionModal
+                        open={decisionOpen}
+                        title={`${decisionContext?.approved ? t('admin.features.approve') : t('admin.features.reject')} ${t('admin.feature_requests')}`}
+                        showPriority={true}
+                        showRevenueEstimate={true}
+                        onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
+                        onConfirm={(p: any) => confirmDecision(p)}
+                    />
+                )
+            }
+        </motion.div >
     );
 };
 

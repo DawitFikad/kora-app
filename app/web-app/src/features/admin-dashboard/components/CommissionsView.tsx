@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Loader2, DollarSign, Wallet, ArrowUpRight, ChevronLeft, ChevronRight, Hash, Eye, Calendar, User, Ticket } from 'lucide-react';
-import { AdminPageHeader } from './AdminPageHeader';
+
 import { AdminService } from '../../../core/api/admin.service';
 
 import { exportToCSV } from '../../../core/utils/export';
@@ -12,7 +12,6 @@ export const CommissionsView = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [fees, setFees] = useState<any[]>([]);
-    const [overrides, setOverrides] = useState<any[]>([]);
     const [organizerFilter, setOrganizerFilter] = useState('all');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -48,7 +47,8 @@ export const CommissionsView = () => {
             setTransactions(txResponse.data || []);
             setMetrics(metricsResponse.data || null);
             setFees(feesResponse.data || []);
-            setOverrides(feesResponse.overrides || []);
+            setFees(feesResponse.data || []);
+            // overrides removed as unused
         } catch (err) {
             console.error('Failed to fetch commission data', err);
         } finally {
@@ -98,7 +98,7 @@ export const CommissionsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader title={t('admin.commissions.title')} subtitle={t('admin.commissions.subtitle')} />
+
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main">

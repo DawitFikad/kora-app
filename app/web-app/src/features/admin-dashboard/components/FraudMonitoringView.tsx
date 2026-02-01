@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ShieldAlert, ShieldCheck, Activity, Loader2 } from 'lucide-react';
-import { AdminPageHeader } from './AdminPageHeader';
+
 import { AdminService } from '../../../core/api/admin.service';
 import DecisionModal from './DecisionModal';
 
@@ -88,7 +88,7 @@ export const FraudMonitoringView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader title={t('admin.sidebar.fraud_nav')} subtitle={t('admin.fraud_desc', 'Real-time monitoring of suspicious ticket activity and identity fraud.')} />
+
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main" style={{ borderColor: metrics.criticalAlerts > 0 ? 'rgba(239, 68, 68, 0.3)' : 'var(--border)' }}>
@@ -119,7 +119,7 @@ export const FraudMonitoringView = () => {
                     <input
                         id="manual-ticket-id"
                         placeholder={t('admin.fraud.invalidate_placeholder')}
-                        style={{ flex: 1, background: '#0B0E14', border: '1px solid var(--border)', padding: '12px 16px', borderRadius: '8px', color: 'white' }}
+                        style={{ flex: 1, background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--text-main)' }}
                     />
                     <button
                         onClick={() => {

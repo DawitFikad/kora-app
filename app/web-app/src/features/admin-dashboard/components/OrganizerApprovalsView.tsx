@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DecisionModal from './DecisionModal';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { AdminPageHeader } from './AdminPageHeader';
+
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
 import { Download, Loader2, Check, X, Building2, MapPin, Calendar, Mail, Phone, Edit3 } from 'lucide-react';
@@ -87,52 +87,48 @@ export const OrganizerApprovalsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AdminPageHeader
-                title={t('admin.sidebar.organizers_nav')}
-                subtitle={t('admin.organizer_approvals_desc')}
-                actions={
-                    <button
-                        onClick={() => exportToCSV(currentList.map(o => ({
-                            Organization: o.organizationName,
-                            Email: o.contactEmail,
-                            City: o.city,
-                            Status: o.status
-                        })), 'organizers.csv')}
-                        className="btn-blue"
-                        style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px' }}
-                    >
-                        <Download size={16} />
-                        {t('admin.export')}
-                    </button>
-                }
-            />
+            {/* Tab Navigation & Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-sidebar)', padding: '6px', borderRadius: '16px', width: 'fit-content', border: '1px solid var(--border)' }}>
+                    {(['pending', 'approved', 'rejected'] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            style={{
+                                padding: '10px 24px',
+                                borderRadius: '12px',
+                                border: 'none',
+                                background: activeTab === tab ? 'var(--bg-active)' : 'transparent',
+                                color: activeTab === tab ? 'white' : 'var(--text-muted)',
+                                fontSize: '0.85rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            {tab === 'pending' ? t('admin.approvals.pending_tab') : tab === 'approved' ? t('admin.approvals.approved_tab') : t('admin.approvals.rejected_tab')}
+                            {tab === 'pending' && pendingOrganizers.length > 0 && (
+                                <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#EF4444', color: 'white', borderRadius: '6px', fontSize: '0.65rem' }}>
+                                    {pendingOrganizers.length}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
 
-            {/* Tab Navigation */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'var(--bg-sidebar)', padding: '6px', borderRadius: '16px', width: 'fit-content', border: '1px solid var(--border)' }}>
-                {(['pending', 'approved', 'rejected'] as const).map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        style={{
-                            padding: '10px 24px',
-                            borderRadius: '12px',
-                            border: 'none',
-                            background: activeTab === tab ? 'var(--bg-active)' : 'transparent',
-                            color: activeTab === tab ? 'white' : 'var(--text-muted)',
-                            fontSize: '0.85rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        {tab === 'pending' ? t('admin.approvals.pending_tab') : tab === 'approved' ? t('admin.approvals.approved_tab') : t('admin.approvals.rejected_tab')}
-                        {tab === 'pending' && pendingOrganizers.length > 0 && (
-                            <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#EF4444', color: 'white', borderRadius: '6px', fontSize: '0.65rem' }}>
-                                {pendingOrganizers.length}
-                            </span>
-                        )}
-                    </button>
-                ))}
+                <button
+                    onClick={() => exportToCSV(currentList.map(o => ({
+                        Organization: o.organizationName,
+                        Email: o.contactEmail,
+                        City: o.city,
+                        Status: o.status
+                    })), 'organizers.csv')}
+                    className="btn-blue"
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '12px' }}
+                >
+                    <Download size={18} />
+                    {t('admin.export', 'Export CSV')}
+                </button>
             </div>
 
             <div className="admin-card" style={{ padding: '0', overflow: 'hidden' }}>
