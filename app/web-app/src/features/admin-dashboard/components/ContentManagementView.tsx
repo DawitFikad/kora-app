@@ -439,26 +439,39 @@ export const ContentManagementView = () => {
                             <div style={{ padding: '20px' }}>
                                 {/* Metrics Bar */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
-                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Impressions</p>
-                                        <p style={{ fontSize: '1.2rem', fontWeight: 900, color: '#3B82F6' }}>{b.viewCount || 0}</p>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.02)' }}>
+                                        <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Impressions</p>
+                                        <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#3B82F6' }}>{b.viewCount || 0}</p>
                                     </div>
-                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Engagement</p>
-                                        <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--primary)' }}>{b.clickCount || 0}</p>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '16px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.02)' }}>
+                                        <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Engagement (CTR)</p>
+                                        <p style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary)' }}>
+                                            {b.viewCount ? ((b.clickCount || 0) / b.viewCount * 100).toFixed(1) : '0.0'}%
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Scheduling Header */}
+                                <div style={{ marginBottom: '12px' }}>
+                                    <h5 style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Deployment Status</h5>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: b.isActive ? '#10B981' : '#EF4444' }} />
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                                            {b.isActive ? 'Active on Storefront' : 'Provisionally Paused'}
+                                        </span>
                                     </div>
                                 </div>
 
                                 {/* Scheduling Info */}
                                 {(b.startDate || b.endDate) && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px', fontSize: '0.75rem', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px', fontSize: '0.7rem', padding: '12px', background: 'var(--bg-subtle)', borderRadius: '14px', border: '1px dashed var(--border)' }}>
                                         {b.startDate && <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>Starts:</span>
-                                            <span style={{ fontWeight: 700 }}>{new Date(b.startDate).toLocaleDateString()}</span>
+                                            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Activation:</span>
+                                            <span style={{ fontWeight: 800 }}>{new Date(b.startDate).toLocaleString()}</span>
                                         </div>}
                                         {b.endDate && <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>Ends:</span>
-                                            <span style={{ fontWeight: 700 }}>{new Date(b.endDate).toLocaleDateString()}</span>
+                                            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Deactivation:</span>
+                                            <span style={{ fontWeight: 800 }}>{new Date(b.endDate).toLocaleString()}</span>
                                         </div>}
                                     </div>
                                 )}

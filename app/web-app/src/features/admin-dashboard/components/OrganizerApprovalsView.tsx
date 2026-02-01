@@ -161,7 +161,20 @@ export const OrganizerApprovalsView = () => {
                                         <td>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                                 <div>{org.city}</div>
-                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Risk: <strong style={{ color: org.documents && org.documents.length > 0 ? (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? '#10B981' : '#F59E0B') : '#EF4444' }}>{org.documents && org.documents.length > 0 ? (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? 'Low' : 'Medium') : 'High'}</strong></div>
+                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    Risk Profile:
+                                                    <span style={{
+                                                        padding: '2px 8px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 900,
+                                                        background: !org.documents?.length ? 'rgba(239, 68, 68, 0.1)' : (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)'),
+                                                        color: !org.documents?.length ? '#EF4444' : (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? '#10B981' : '#F59E0B'),
+                                                        border: `1px solid ${!org.documents?.length ? '#EF444430' : (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? '#10B98130' : '#F59E0B30')}`
+                                                    }}>
+                                                        {!org.documents?.length ? 'CRITICAL (No Docs)' : (new Date(org.createdAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000 ? 'LOW (Vetted)' : 'MEDIUM (New)')}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
@@ -195,7 +208,7 @@ export const OrganizerApprovalsView = () => {
                                                     Approve
                                                 </button>
                                                 <button
-                                                        onClick={() => handleReview(org.id, 'REJECTED')}
+                                                    onClick={() => handleReview(org.id, 'REJECTED')}
                                                     disabled={processingId === org.id}
                                                     style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                                 >
@@ -211,17 +224,17 @@ export const OrganizerApprovalsView = () => {
                 </div>
             </div>
 
-                {/* Decision Modal */}
-                {decisionOpen && (
-                    <DecisionModal
-                        open={decisionOpen}
-                        title={`${decisionContext?.status} Organizer`}
-                        showCommission={true}
-                        initialCommission={decisionContext?.commission}
-                        onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
-                        onConfirm={(p: any) => confirmDecision(p)}
-                    />
-                )}
+            {/* Decision Modal */}
+            {decisionOpen && (
+                <DecisionModal
+                    open={decisionOpen}
+                    title={`${decisionContext?.status} Organizer`}
+                    showCommission={true}
+                    initialCommission={decisionContext?.commission}
+                    onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
+                    onConfirm={(p: any) => confirmDecision(p)}
+                />
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 {/* 🟢 Approved Section */}

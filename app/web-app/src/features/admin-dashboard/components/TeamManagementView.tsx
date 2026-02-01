@@ -110,37 +110,63 @@ export const TeamManagementView = () => {
                         </div>
 
                         <div style={{ marginBottom: '24px' }}>
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Role</label>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>Role Assignment</label>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div
                                     onClick={() => setRole('admin')}
                                     style={{
                                         padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'admin' ? 'var(--primary)' : 'var(--border)'}`,
                                         cursor: 'pointer', background: role === 'admin' ? 'var(--bg-subtle)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px',
-                                        transition: 'all 0.2s ease'
+                                        display: 'flex', flexDirection: 'column', gap: '8px', transition: 'all 0.2s ease'
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <Shield size={16} color={role === 'admin' ? 'var(--primary)' : 'var(--text-muted)'} />
-                                        <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Super Admin</span>
+                                        <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>Super Admin</span>
                                     </div>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Full sovereign control</span>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Full system sovereign control</span>
+                                </div>
+                                <div
+                                    onClick={() => setRole('financial')}
+                                    style={{
+                                        padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'financial' ? 'var(--primary)' : 'var(--border)'}`,
+                                        cursor: 'pointer', background: role === 'financial' ? 'var(--bg-subtle)' : 'transparent',
+                                        display: 'flex', flexDirection: 'column', gap: '8px', transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Shield size={16} color={role === 'financial' ? 'var(--primary)' : 'var(--text-muted)'} />
+                                        <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>Financial Officer</span>
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ledgers, Payouts & Refunds</span>
+                                </div>
+                                <div
+                                    onClick={() => setRole('events')}
+                                    style={{
+                                        padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'events' ? 'var(--primary)' : 'var(--border)'}`,
+                                        cursor: 'pointer', background: role === 'events' ? 'var(--bg-subtle)' : 'transparent',
+                                        display: 'flex', flexDirection: 'column', gap: '8px', transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Shield size={16} color={role === 'events' ? 'var(--primary)' : 'var(--text-muted)'} />
+                                        <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>Events Manager</span>
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Approvals & Content only</span>
                                 </div>
                                 <div
                                     onClick={() => setRole('moderator')}
                                     style={{
                                         padding: '16px', borderRadius: '12px', border: `2px solid ${role === 'moderator' ? 'var(--primary)' : 'var(--border)'}`,
                                         cursor: 'pointer', background: role === 'moderator' ? 'var(--bg-subtle)' : 'transparent',
-                                        display: 'flex', flexDirection: 'column', gap: '8px',
-                                        transition: 'all 0.2s ease'
+                                        display: 'flex', flexDirection: 'column', gap: '8px', transition: 'all 0.2s ease'
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <Shield size={16} color={role === 'moderator' ? 'var(--primary)' : 'var(--text-muted)'} />
-                                        <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Moderator</span>
+                                        <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>Basic Moderator</span>
                                     </div>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ops & Audit only</span>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>View only / Read access</span>
                                 </div>
                             </div>
                         </div>

@@ -2,40 +2,31 @@
 import {
     Activity,
     ArrowUpRight,
-    BarChart3,
     Calendar,
-    CalendarCheck,
     CheckCircle2,
-    ClipboardList,
-    DollarSign,
     Download,
     Globe,
     LayoutDashboard,
     Loader2,
     MapPin,
-    ShieldCheck,
     TrendingUp,
     UserPlus
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { AdminService } from '../../../core/api/admin.service';
 import type { AdminTab } from '../AdminDashboard';
 import { exportToCSV } from '../../../core/utils/export';
 import { exportToPDF } from '../../../core/utils/pdf';
 import SystemStatusCard from './SystemStatusCard';
 import FinancialSnapshot from './FinancialSnapshot';
-import PendingActionsCard from './PendingActionsCard';
+import { PendingActionsCard } from './PendingActionsCard';
+import { AdminTooltip } from '../../../core/components/AdminTooltip';
 
 export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) => void }) => {
-    const { t } = useTranslation();
     const [organizers, setOrganizers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [monthlySales, setMonthlySales] = useState<any[]>([]);
     const [recentEvents, setRecentEvents] = useState<any[]>([]);
-    const [showInviteModal, setShowInviteModal] = useState(false);
-    const [inviteEmail, setInviteEmail] = useState('');
-    // no live time state; overview should not auto-refresh
     const [stats, setStats] = useState({
         pendingOrganizers: 0,
         pendingEvents: 0,
@@ -155,14 +146,6 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
         }
     };
 
-    const handleInviteAdmin = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!inviteEmail) return;
-        alert(`Invitation sent to ${inviteEmail} (Simulated)`);
-        setInviteEmail('');
-        setShowInviteModal(false);
-    };
-
     const colors = ['#8B5CF6', '#10B981', '#EC4899', '#3B82F6', '#F59E0B', '#64748B'];
 
     // Lightweight derived health/warnings for a quick command-center view
@@ -185,35 +168,60 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                 {/* 1. Header KPIs (4 Cards) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '16px' }}>
                     <StatCard
-                        label="Total GMV"
+                        label={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Total GMV
+                                <AdminTooltip title="GMV Definition" content="Gross Merchandise Value. Total volume of all ticket sales processed through the platform before any deductions." />
+                            </div>
+                        }
                         value={`ETB ${stats.totalGMV.toLocaleString()}`}
                         trend="Gross Sales Volume"
                         trendColor="var(--text-muted)"
                         icon={null}
                     />
                     <StatCard
-                        label="Platform Profit"
+                        label={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Platform Profit
+                                <AdminTooltip title="Profit Definition" content="Net revenue for the platform, including commission per ticket and convenience fees." />
+                            </div>
+                        }
                         value={`ETB ${stats.platformCommission.toLocaleString()}`}
                         trend="Commission + Fees"
                         trendColor="#10B981"
                         icon={Activity}
                     />
                     <StatCard
-                        label="Org. Earnings"
+                        label={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Org. Earnings
+                                <AdminTooltip title="Earnings Definition" content="Net amount earned by organizers after platform deductions. This is the pool available for payout requests." />
+                            </div>
+                        }
                         value={`ETB ${stats.organizerEarnings.toLocaleString()}`}
                         trend="Net paid to partners"
                         trendColor="#8B5CF6"
                         icon={TrendingUp}
                     />
                     <StatCard
-                        label="Active Organizers"
+                        label={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Active Organizers
+                                <AdminTooltip title="Organizer Metrics" content="Total number of approved partners currently hosting or eligible to host events on the platform." />
+                            </div>
+                        }
                         value={stats.activeOrganizers.toLocaleString()}
                         trend={`${stats.activeEvents} Global Events`}
                         trendColor="#3B82F6"
                         icon={UserPlus}
                     />
                     <StatCard
-                        label="Verified Sales"
+                        label={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Verified Sales
+                                <AdminTooltip title="Sales Integrity" content="Total tickets successfully issued and recorded in the immutable ledger. Excludes pending attempts." />
+                            </div>
+                        }
                         value={stats.totalTicketsSold.toLocaleString()}
                         trend="Total Tickets Issued"
                         trendColor="var(--text-muted)"
@@ -268,7 +276,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Globe size={14} color="var(--text-muted)" />
-                                   
+
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)' }}>
@@ -287,39 +295,39 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
                                     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
                                     const today = currentTime.getDate();
-                                    
+
                                     const days = [];
-                                    
+
                                     // Empty cells for days before month starts
                                     for (let i = 0; i < firstDay; i++) {
                                         days.push(<span key={`empty-${i}`} style={{ opacity: 0.2 }}>-</span>);
                                     }
-                                    
+
                                     // Days of the month
                                     for (let day = 1; day <= daysInMonth; day++) {
                                         const isToday = day === today;
                                         const isPast = day < today;
                                         const isFuture = day > today;
-                                        
+
                                         days.push(
-                                            <span 
-                                                key={day} 
+                                            <span
+                                                key={day}
                                                 style={{
-                                                    background: isToday 
-                                                        ? 'var(--bg-active)' 
-                                                        : isPast 
-                                                            ? 'rgba(16, 185, 129, 0.1)' 
-                                                            : isFuture 
-                                                                ? 'rgba(59, 130, 246, 0.05)' 
+                                                    background: isToday
+                                                        ? 'var(--bg-active)'
+                                                        : isPast
+                                                            ? 'rgba(16, 185, 129, 0.1)'
+                                                            : isFuture
+                                                                ? 'rgba(59, 130, 246, 0.05)'
                                                                 : 'transparent',
-                                                    color: isToday 
-                                                        ? 'white' 
-                                                        : isPast 
-                                                            ? '#10B981' 
-                                                            : isFuture 
-                                                                ? '#3B82F6' 
+                                                    color: isToday
+                                                        ? 'white'
+                                                        : isPast
+                                                            ? '#10B981'
+                                                            : isFuture
+                                                                ? '#3B82F6'
                                                                 : 'var(--text-main)',
-                                                    borderRadius: '8px', 
+                                                    borderRadius: '8px',
                                                     padding: '4px 0',
                                                     fontWeight: isToday ? 900 : isPast ? 700 : 600,
                                                     fontSize: isToday ? '0.7rem' : '0.62rem',
@@ -344,16 +352,16 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                             </span>
                                         );
                                     }
-                                    
+
                                     return days;
                                 })()}
                             </div>
-                            
+
                             {/* Current time indicator */}
-                            <div style={{ 
-                                marginTop: '12px', 
-                                padding: '8px', 
-                                background: 'rgba(16, 185, 129, 0.1)', 
+                            <div style={{
+                                marginTop: '12px',
+                                padding: '8px',
+                                background: 'rgba(16, 185, 129, 0.1)',
                                 borderRadius: '8px',
                                 textAlign: 'center',
                                 border: '1px solid rgba(16, 185, 129, 0.2)'
@@ -365,11 +373,11 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                     {currentTime.toLocaleTimeString()}
                                 </div>
                                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                    {currentTime.toLocaleDateString('default', { 
-                                        weekday: 'long', 
-                                        year: 'numeric', 
-                                        month: 'long', 
-                                        day: 'numeric' 
+                                    {currentTime.toLocaleDateString('default', {
+                                        weekday: 'long',
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
                                     })}
                                 </div>
                             </div>
@@ -444,7 +452,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {/* Legend with better styling */}
                             <div style={{ display: 'flex', gap: '24px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -462,7 +470,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {/* Percentage indicator */}
                             <div style={{ textAlign: 'center' }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
@@ -485,10 +493,10 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>MONTHLY PERFORMANCE</span>
-                                    <div style={{ 
-                                        width: '8px', 
-                                        height: '8px', 
-                                        background: '#10B981', 
+                                    <div style={{
+                                        width: '8px',
+                                        height: '8px',
+                                        background: '#10B981',
                                         borderRadius: '50%',
                                         animation: 'pulse 2s infinite'
                                     }} />
@@ -498,11 +506,11 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                 {monthlySales.length > 0 ? (
                                     <>
                                         {/* Chart bars */}
-                                        <div style={{ 
-                                            display: 'flex', 
-                                            alignItems: 'flex-end', 
-                                            gap: '8px', 
-                                            flex: 1, 
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'flex-end',
+                                            gap: '8px',
+                                            flex: 1,
                                             minHeight: '140px',
                                             padding: '10px 0',
                                             position: 'relative'
@@ -511,30 +519,30 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                                 const max = Math.max(...monthlySales.map(m => m.amount), 1);
                                                 const h = (s.amount / max) * 100;
                                                 const isCurrentMonth = i === monthlySales.length - 1;
-                                                
+
                                                 return (
-                                                    <div key={i} style={{ 
-                                                        flex: 1, 
-                                                        display: 'flex', 
-                                                        flexDirection: 'column', 
-                                                        alignItems: 'center', 
+                                                    <div key={i} style={{
+                                                        flex: 1,
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
                                                         gap: '8px',
                                                         position: 'relative'
                                                     }}>
-                                                        <div style={{ 
-                                                            position: 'relative', 
-                                                            width: '100%', 
-                                                            display: 'flex', 
+                                                        <div style={{
+                                                            position: 'relative',
+                                                            width: '100%',
+                                                            display: 'flex',
                                                             justifyContent: 'center',
                                                             alignItems: 'flex-end'
                                                         }}>
-                                                            <div 
-                                                                style={{ 
-                                                                    height: `${h}%`, 
-                                                                    width: isCurrentMonth ? '18px' : '14px', 
-                                                                    background: isCurrentMonth 
-                                                                        ? 'linear-gradient(180deg, #10B981 0%, #059669 100%)' 
-                                                                        : 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)', 
+                                                            <div
+                                                                style={{
+                                                                    height: `${h}%`,
+                                                                    width: isCurrentMonth ? '18px' : '14px',
+                                                                    background: isCurrentMonth
+                                                                        ? 'linear-gradient(180deg, #10B981 0%, #059669 100%)'
+                                                                        : 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)',
                                                                     borderRadius: '4px',
                                                                     transition: 'all 0.3s ease',
                                                                     cursor: 'pointer',
@@ -566,16 +574,16 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                                                 pointerEvents: 'none',
                                                                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                                                             }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                                                            onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+                                                                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                                                onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
                                                             >
                                                                 ETB {s.amount.toLocaleString()}
                                                             </div>
                                                         </div>
-                                                        <span style={{ 
-                                                            fontSize: '0.62rem', 
+                                                        <span style={{
+                                                            fontSize: '0.62rem',
                                                             fontWeight: isCurrentMonth ? 900 : 600,
-                                                            color: isCurrentMonth ? '#10B981' : 'var(--text-muted)' 
+                                                            color: isCurrentMonth ? '#10B981' : 'var(--text-muted)'
                                                         }}>
                                                             {s.name}
                                                         </span>
@@ -583,11 +591,11 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                                 )
                                             })}
                                         </div>
-                                        
+
                                         {/* Summary stats */}
-                                        <div style={{ 
-                                            display: 'flex', 
-                                            justifyContent: 'space-between', 
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
                                             alignItems: 'center',
                                             padding: '12px 0 0 0',
                                             borderTop: '1px solid var(--border)',
@@ -608,11 +616,11 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                         </div>
                                     </>
                                 ) : (
-                                    <div style={{ 
-                                        flex: 1, 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        alignItems: 'center', 
+                                    <div style={{
+                                        flex: 1,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
                                         justifyContent: 'center',
                                         color: 'var(--text-muted)',
                                         gap: '12px'
@@ -813,7 +821,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
     );
 };
 
-const StatCard = ({ label, value, trend, trendColor, icon: Icon, isLive = false }: any) => (
+const StatCard = ({ label, value, trend, trendColor, icon: Icon }: any) => (
     <div
         style={{
             background: 'var(--bg-card)',

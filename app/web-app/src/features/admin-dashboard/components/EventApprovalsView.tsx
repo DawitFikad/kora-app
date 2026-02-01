@@ -165,12 +165,18 @@ export const EventApprovalsView = () => {
 
                                 {/* Net Earnings Preview */}
                                 <div style={{ background: 'var(--bg-subtle)', padding: '10px', borderRadius: '10px', marginBottom: '16px', border: '1px dashed var(--border)' }}>
-                                    <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Earnings Preview (Per Ticket)</p>
+                                    <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>Earnings Preview (Per Ticket)</span>
+                                        <span style={{ color: 'var(--bg-active)' }}>ESTIMATED</span>
+                                    </p>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Typical Tier (ETB 500)</span>
-                                        <span style={{ fontSize: '1rem', fontWeight: 900, color: '#10B981' }}>
-                                            ETB 450.00
-                                        </span>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Typical Tier (ETB 1,000)</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#10B981' }}>
+                                                ETB {(1000 * (1 - (event.feePercentage || 10) / 100) - (event.feeFixed || 0)).toLocaleString()}
+                                            </span>
+                                            <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0 }}>Incl. {event.feePercentage || 10}% Commission</p>
+                                        </div>
                                     </div>
                                 </div>
 

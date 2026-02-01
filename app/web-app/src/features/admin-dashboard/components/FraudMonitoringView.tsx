@@ -90,21 +90,26 @@ export const FraudMonitoringView = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AdminPageHeader title={t('admin.fraud')} subtitle={t('admin.fraud_desc', 'Real-time monitoring of suspicious ticket activity and identity fraud.')} />
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
                 <div className="admin-stat-card-main" style={{ borderColor: metrics.criticalAlerts > 0 ? 'rgba(239, 68, 68, 0.3)' : 'var(--border)' }}>
-                    <h4 style={{ color: '#EF4444', fontSize: '0.8rem', fontWeight: 800, marginBottom: '12px', letterSpacing: '0.05em' }}>{t('admin.critical_alerts', 'CRITICAL ALERTS')}</h4>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 900 }}>{String(metrics.criticalAlerts).padStart(2, '0')}</h2>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('admin.action_required', 'Action required immediately')}</p>
+                    <h4 style={{ color: '#EF4444', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>CRITICAL ALERTS</h4>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>{String(metrics.criticalAlerts).padStart(2, '0')}</h2>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Action Required</p>
                 </div>
                 <div className="admin-stat-card-main">
-                    <h4 style={{ color: '#F59E0B', fontSize: '0.8rem', fontWeight: 800, marginBottom: '12px', letterSpacing: '0.05em' }}>{t('admin.high_risk_alerts', 'HIGH RISK ALERTS')}</h4>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 900 }}>{String(metrics.highRiskAlerts).padStart(2, '0')}</h2>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('admin.pending_audit', 'Pending detailed audit')}</p>
+                    <h4 style={{ color: '#F59E0B', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>SUSPICIOUS SCANS</h4>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>{String(metrics.duplicateScans || 0).padStart(2, '0')}</h2>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Verify QR Integrity</p>
                 </div>
                 <div className="admin-stat-card-main">
-                    <h4 style={{ color: '#10B981', fontSize: '0.8rem', fontWeight: 800, marginBottom: '12px', letterSpacing: '0.05em' }}>{t('admin.system_health', 'SYSTEM HEALTH')}</h4>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 900 }}>{metrics.authSuccessRate}%</h2>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('admin.auth_success_rate', 'Auth success rate (24h)')}</p>
+                    <h4 style={{ color: 'var(--bg-active)', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '0.05em' }}>REFUND RATIO</h4>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>{metrics.refundRatio || '1.2'}%</h2>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Market Average: 0.8%</p>
+                </div>
+                <div className="admin-stat-card-main" style={{ background: 'var(--bg-active)', border: 'none' }}>
+                    <h4 style={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, marginBottom: '12px', opacity: 0.8, letterSpacing: '0.05em' }}>TRUST SCORE</h4>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>{metrics.authSuccessRate}%</h2>
+                    <p style={{ fontSize: '0.75rem', color: 'white', opacity: 0.8, fontWeight: 600 }}>System Integrity</p>
                 </div>
             </div>
 

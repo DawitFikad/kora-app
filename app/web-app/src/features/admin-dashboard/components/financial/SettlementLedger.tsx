@@ -24,8 +24,9 @@ export const SettlementLedger: React.FC = () => {
 
     const handleExport = async () => {
         try {
-            const blob = await AdminService.exportSettlementLedgerCSV({ format: 'csv' });
-            downloadBlobAsCSV(blob, 'settlement_ledger.csv');
+            const res: any = await AdminService.exportSettlementLedgerCSV({ format: 'csv' });
+            // res.data should be the Blob if responseType was 'blob'
+            downloadBlobAsCSV(res.data || res, 'settlement_ledger.csv');
         } catch (e) {
             console.error(e);
         }
@@ -57,52 +58,101 @@ export const SettlementLedger: React.FC = () => {
     return (
         <div>
             <ReadOnlyBanner message={PAYMENTS_LIVE ? 'Settlement ledger is live from API.' : 'Settlement ledger is audit-safe until payments are live.'} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div>
-                    <h2>Settlement Ledger <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>{PAYMENTS_LIVE ? '(live API)' : '(audit-safe)'}</span></h2>
-                    <p className="text-muted" style={{ margin: 0 }}>Immutable rows; corrections appear as compensating transactions.</p>
+                    <h2 style={{ margin: 0 }}>System Ledger <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.9rem' }}>{PAYMENTS_LIVE ? '(PROD)' : '(AUDIT-ONLY)'}</span></h2>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Immutable append-only record of all financial movements.</p>
                 </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>Append-only</div>
-                    <input placeholder="Search ref, type, notes" value={filter} onChange={e => { setFilter(e.target.value); setPage(0); }} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)' }} />
-                    <button className="btn-blue" onClick={handleExport} style={{ padding: '8px 12px' }}>Export CSV</button>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <input
+                        placeholder="Search Ref ID..."
+                        value={filter}
+                        onChange={e => { setFilter(e.target.value); setPage(0); }}
+                        style={{ padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', width: '240px', fontSize: '0.85rem' }}
+                    />
+                    <button
+                        className="btn-blue"
+                        onClick={handleExport}
+                        style={{ padding: '10px 18px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        Export CSV
+                    </button>
                 </div>
             </div>
-            <div style={{ margin: '8px 0' }}>
-                <button className="btn-blue" onClick={handleExport}>Export CSV</button>
-            </div>
-            {loading ? <div>Loading ledger from API...</div> : error ? <div style={{ color: 'var(--danger)' }}>{error}</div> : (
-                <div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+
+            {loading ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Decrypting ledger rows...</div>
+            ) : error ? (
+                <div style={{ padding: '24px', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', fontWeight: 700 }}>{error}</div>
+            ) : (
+                <div className="admin-card" style={{ padding: '0', overflow: 'hidden' }}>
+                    <table className="admin-table">
                         <thead>
-                            <tr style={{ textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                <th className="py-2">Ref ID</th>
-                                <th className="py-2" style={{ width: '28%' }}>Timestamp</th>
-                                <th className="py-2" style={{ width: '18%' }}>Type</th>
-                                <th className="py-2 text-right" style={{ width: '12%' }}>Amount</th>
+                            <tr>
+                                <th style={{ width: '200px' }}>REFERENCE</th>
+                                <th>EVENT TIMESTAMP</th>
+                                <th>TRANSACTION TYPE</th>
+                                <th style={{ textAlign: 'right' }}>VALUATION (ETB)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.length === 0 && <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>No ledger rows</td></tr>}
-                            {visible.map((r, i) => (
-                                <tr key={r.refId} style={{ borderTop: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'var(--bg-card-hover)' }}>
-                                    <td className="py-2 text-sm text-muted">{r.refId}</td>
-                                    <td className="py-2 text-sm text-muted">{formatDate(r.timestamp as unknown as string)}</td>
-                                    <td className="py-2 text-sm">
-                                        <span style={{ display: 'inline-block', padding: '4px 8px', borderRadius: 9999, border: '1px solid var(--border)', background: 'transparent', fontWeight: 700, fontSize: '0.75rem', letterSpacing: 0.6, textTransform: 'uppercase' }}>{String(r.type).replace(/_/g, ' ')}</span>
+                            {filtered.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                        No transactions found in this period.
                                     </td>
-                                    <td className="py-2 text-sm text-right">{Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                </tr>
+                            )}
+                            {visible.map((r, i) => (
+                                <tr key={r.refId}>
+                                    <td style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.75rem', fontWeight: 800, color: 'var(--bg-active)' }}>
+                                        #{r.refId}
+                                    </td>
+                                    <td>
+                                        <p style={{ fontWeight: 700, margin: 0 }}>{formatDate(r.timestamp)}</p>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>PLATFORM_SETTLEMENT</p>
+                                    </td>
+                                    <td>
+                                        <span style={{
+                                            display: 'inline-block',
+                                            padding: '4px 10px',
+                                            borderRadius: '8px',
+                                            background: r.amount > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                            color: r.amount > 0 ? '#10B981' : '#EF4444',
+                                            fontWeight: 900,
+                                            fontSize: '0.65rem',
+                                            letterSpacing: '0.05em'
+                                        }}>
+                                            {String(r.type).replace(/_/g, ' ').toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: 900, fontSize: '0.95rem', fontFamily: 'var(--font-mono, monospace)' }}>
+                                        {Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-                        <div style={{ color: 'var(--text-muted)' }}>Showing {Math.min(filtered.length, page * pageSize + 1)} - {Math.min(filtered.length, (page + 1) * pageSize)} of {filtered.length}</div>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent' }}>Prev</button>
-                            <div style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent' }}>Page {page + 1}/{totalPages}</div>
-                            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent' }}>Next</button>
+                    <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            Displaying <strong>{page * pageSize + 1}-{Math.min(filtered.length, (page + 1) * pageSize)}</strong> of {filtered.length} entries
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                                style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800 }}
+                            >
+                                PREVIOUS
+                            </button>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                                disabled={page >= totalPages - 1}
+                                style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800 }}
+                            >
+                                NEXT
+                            </button>
                         </div>
                     </div>
                 </div>
