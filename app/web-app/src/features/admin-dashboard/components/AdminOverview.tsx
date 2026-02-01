@@ -2,10 +2,8 @@
 import {
     Activity,
     ArrowUpRight,
-    Calendar,
     CheckCircle2,
     Download,
-    Globe,
     LayoutDashboard,
     Loader2,
     MapPin,
@@ -39,11 +37,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
         activeOrganizers: 0,
         activeEvents: 0
     });
-    const [categoryData, setCategoryData] = useState<any[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
-
-    // Current time captured once on load (no continuous refresh)
-    const currentTime = new Date();
 
     const computeMetrics = (evt: any) => {
         if (!evt) return evt;
@@ -113,7 +107,6 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                 });
 
                 setMonthlySales(analyticsResponse?.monthlySales || []);
-                setCategoryData(analyticsResponse?.categories || []);
 
                 const approvedEventsList = eventsList
                     .filter((e: any) => activeStatuses.includes((e.status || '').toUpperCase()))
@@ -147,7 +140,6 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
         }
     };
 
-    const colors = ['#8B5CF6', '#10B981', '#EC4899', '#3B82F6', '#F59E0B', '#64748B'];
 
     // Lightweight derived health/warnings for a quick command-center view
     const warningsList: string[] = [];
@@ -166,6 +158,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
     return (
         <div>
             <div style={{ paddingBottom: '40px' }}>
+
                 {/* 1. Header KPIs (4 Cards) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '16px' }}>
                     <StatCard
@@ -232,9 +225,9 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
 
                 {/* 2. Main High-Density Grid (DASHBOARD COMMAND CENTER) */}
 
-                {/* Top row: Admin Command Center (left) and Calendar (right) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '16px', marginBottom: '16px' }}>
-                    {/* Admin Command Center (Left) - Reworked for clarity and authority */}
+                {/* Top row: Admin Command Center (Full Width) */}
+                <div style={{ marginBottom: '16px' }}>
+                    {/* Admin Command Center - Reworked for clarity and authority */}
                     <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                             <div style={{ background: 'var(--bg-active)', padding: '6px', borderRadius: '6px' }}>
@@ -271,119 +264,6 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                         </div>
                     </div>
 
-                    {/* Calendar (Right) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div className="admin-card" style={{ flex: 1, padding: '18px', borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Globe size={14} color="var(--text-muted)" />
-
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--text-main)' }}>
-                                        {currentTime.toLocaleDateString('default', { weekday: 'short' })}
-                                    </div>
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                        {currentTime.toLocaleTimeString('default', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.65rem', fontWeight: 700 }}>
-                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <span key={`weekday-${i}`} style={{ color: 'var(--text-muted)', opacity: 0.6 }}>{d}</span>)}
-                                {(() => {
-                                    const currentYear = currentTime.getFullYear();
-                                    const currentMonth = currentTime.getMonth();
-                                    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-                                    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                                    const today = currentTime.getDate();
-
-                                    const days = [];
-
-                                    // Empty cells for days before month starts
-                                    for (let i = 0; i < firstDay; i++) {
-                                        days.push(<span key={`empty-${i}`} style={{ opacity: 0.2 }}>-</span>);
-                                    }
-
-                                    // Days of the month
-                                    for (let day = 1; day <= daysInMonth; day++) {
-                                        const isToday = day === today;
-                                        const isPast = day < today;
-                                        const isFuture = day > today;
-
-                                        days.push(
-                                            <span
-                                                key={day}
-                                                style={{
-                                                    background: isToday
-                                                        ? 'var(--bg-active)'
-                                                        : isPast
-                                                            ? 'rgba(16, 185, 129, 0.1)'
-                                                            : isFuture
-                                                                ? 'rgba(59, 130, 246, 0.05)'
-                                                                : 'transparent',
-                                                    color: isToday
-                                                        ? 'white'
-                                                        : isPast
-                                                            ? '#10B981'
-                                                            : isFuture
-                                                                ? '#3B82F6'
-                                                                : 'var(--text-main)',
-                                                    borderRadius: '8px',
-                                                    padding: '4px 0',
-                                                    fontWeight: isToday ? 900 : isPast ? 700 : 600,
-                                                    fontSize: isToday ? '0.7rem' : '0.62rem',
-                                                    border: isToday ? '2px solid var(--primary)' : 'none',
-                                                    position: 'relative',
-                                                    cursor: isToday ? 'pointer' : 'default'
-                                                }}
-                                            >
-                                                {day}
-                                                {isToday && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        top: '-2px',
-                                                        right: '-2px',
-                                                        width: '6px',
-                                                        height: '6px',
-                                                        background: '#EF4444',
-                                                        borderRadius: '50%',
-                                                        animation: 'pulse 2s infinite'
-                                                    }} />
-                                                )}
-                                            </span>
-                                        );
-                                    }
-
-                                    return days;
-                                })()}
-                            </div>
-
-                            {/* Current time indicator */}
-                            <div style={{
-                                marginTop: '12px',
-                                padding: '8px',
-                                background: 'rgba(16, 185, 129, 0.1)',
-                                borderRadius: '8px',
-                                textAlign: 'center',
-                                border: '1px solid rgba(16, 185, 129, 0.2)'
-                            }}>
-                                <div style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 700 }}>
-                                    CURRENT TIME
-                                </div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--text-main)' }}>
-                                    {currentTime.toLocaleTimeString()}
-                                </div>
-                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                    {currentTime.toLocaleDateString('default', {
-                                        weekday: 'long',
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Second row: Organizer Status (left) and Ticket Sales Trend (right) */}
@@ -638,38 +518,8 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                     </div>
                 </div>
 
-                {/* 3. Bottom Grid: Category & Organizers */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
-                    <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: '20px' }}>Sales per Category</h3>
-                        {categoryData.length > 0 ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                                <div style={{ width: '40%' }}>
-                                    <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '14px' }}>
-                                        {categoryData.map((c, i) => (
-                                            <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                                                <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: colors[i % colors.length] }} />
-                                                {c.name} ({c.percentage}%)
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                                <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                                    <div style={{
-                                        width: '140px', height: '140px', borderRadius: '50%',
-                                        background: `conic-gradient(${categoryData.map((c, i, arr) => {
-                                            const start = arr.slice(0, i).reduce((acc, curr) => acc + curr.percentage, 0);
-                                            const end = start + c.percentage;
-                                            return `${colors[i % colors.length]} ${start}% ${end}%`;
-                                        }).join(', ')})`,
-                                        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}>
-                                        <div style={{ width: '90px', height: '90px', background: 'var(--bg-card)', borderRadius: '50%', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.05)' }} />
-                                    </div>
-                                </div>
-                            </div>
-                        ) : <div style={{ height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>No data available</div>}
-                    </div>
+                {/* 3. Bottom Grid: Organizers Only (Full Width) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
 
                     <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -783,7 +633,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                         <h5 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '20px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Logistics</h5>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                <Calendar size={16} color="var(--text-muted)" />
+
                                                 <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>{new Date(selectedEvent.dateTime).toLocaleString()}</p>
                                             </div>
                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>

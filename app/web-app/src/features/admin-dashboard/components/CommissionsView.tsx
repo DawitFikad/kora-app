@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Download, Loader2, DollarSign, Wallet, ArrowUpRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download, Loader2, DollarSign, Wallet, ArrowUpRight, ChevronLeft, ChevronRight, Hash, Eye, Calendar, User, Ticket } from 'lucide-react';
 import { AdminPageHeader } from './AdminPageHeader';
 import { AdminService } from '../../../core/api/admin.service';
 
@@ -14,6 +14,11 @@ export const CommissionsView = () => {
     const [organizerFilter, setOrganizerFilter] = useState('all');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(10);
+    const [selectedTx, setSelectedTx] = useState<any>(null);
 
     const handleExport = () => {
         const exportData = transactions.map(tx => ({
@@ -38,8 +43,6 @@ export const CommissionsView = () => {
                 AdminService.getFinancialMetrics(),
                 AdminService.getPlatformFees()
             ]);
-            // Filter for only platform fee transactions in the table if desired?
-            // Actually, keep the ledger but focus the title.
             setTransactions(txResponse.data || []);
             setMetrics(metricsResponse.data || null);
             setFees(feesResponse.data || []);
@@ -87,6 +90,10 @@ export const CommissionsView = () => {
         ? transactions
         : transactions.filter((tx) => String(tx.event?.organizer?.id) === organizerFilter);
 
+    // Pagination logic
+    const totalPages = Math.ceil(filteredTransactions.length / pageSize);
+    const paginatedTransactions = filteredTransactions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AdminPageHeader title="Commissions & Revenue" subtitle="Detailed audit of platform fees, commission rates, and real-time revenue collection." />
@@ -120,31 +127,36 @@ export const CommissionsView = () => {
 
             {/* Global Fee Configuration */}
             <div className="admin-card" style={{ padding: '32px', marginBottom: '32px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '24px' }}>Global Fee Configuration</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                    <div style={{ padding: '8px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px' }}>
+                        <Hash size={20} color="#3B82F6" />
+                    </div>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Global Fee Configuration</h3>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
                     {fees.filter(f => f.isDefault).map(fee => (
-                        <div key={fee.id} style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem' }}>{fee.name}</span>
-                                <span className="pill" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6' }}>DEFAULT</span>
+                        <div key={fee.id} style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px 12px', background: '#3B82F6', color: 'white', fontSize: '0.65rem', fontWeight: 900, borderRadius: '0 0 0 10px' }}>DEFAULT CONFIG</div>
+                            <div style={{ marginBottom: '16px' }}>
+                                <span style={{ fontWeight: 950, color: 'white', fontSize: '1.1rem' }}>{fee.name}</span>
                             </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                                <div style={{ flex: 1, minWidth: '120px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 700 }}>PERCENTAGE (%)</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 800 }}>RATE (%)</label>
                                     <input
                                         type="number"
                                         defaultValue={fee.feePercentage}
                                         onChange={(e) => fee.newPercentage = Number(e.target.value)}
-                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'white', fontWeight: 700 }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'white', fontWeight: 900 }}
                                     />
                                 </div>
-                                <div style={{ flex: 1, minWidth: '120px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 700 }}>CONVENIENCE FEE (ETB)</label>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 800 }}>FIXED (ETB)</label>
                                     <input
                                         type="number"
                                         defaultValue={fee.feeFixed}
                                         onChange={(e) => fee.newFixed = Number(e.target.value)}
-                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'white', fontWeight: 700 }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'white', fontWeight: 900 }}
                                     />
                                 </div>
                             </div>
@@ -157,59 +169,29 @@ export const CommissionsView = () => {
                                 })}
                                 disabled={isSaving}
                                 className="btn-blue"
-                                style={{ marginTop: '20px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                style={{ marginTop: '20px', width: '100%', borderRadius: '12px', height: '45px', fontWeight: 900 }}
                             >
-                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : 'Update Settings'}
+                                {isSaving ? <Loader2 size={18} className="animate-spin" /> : 'Apply Global Update'}
                             </button>
                         </div>
                     ))}
-                    {fees.length === 0 && (
-                        <div style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px dotted var(--border)', textAlign: 'center' }}>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No fee configs found. Initializing...</p>
-                            <button
-                                onClick={() => handleUpdateFee(0, { name: 'Standard Commission', feeType: 'PERCENTAGE', feePercentage: 5, feeFixed: 10, isDefault: true })}
-                                className="btn-blue"
-                                style={{ marginTop: '12px' }}
-                            >
-                                Create Default Fee
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
 
-            {/* Overrides Table */}
-            {overrides.length > 0 && (
-                <div className="admin-card" style={{ padding: '32px', marginBottom: '32px', borderLeft: '4px solid #8B5CF6' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        Active Commission Overrides
-                        <span style={{ fontSize: '0.7rem', background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', padding: '4px 8px', borderRadius: '8px' }}>{overrides.length} Partner Overrides</span>
-                    </h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                        {overrides.map(ov => (
-                            <div key={ov.id} style={{ padding: '16px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 900 }}>{ov.organizationName}</p>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{ov.feePercentage}% + ETB {ov.feeFixed}</p>
-                                </div>
-                                <ArrowUpRight size={16} color="var(--text-muted)" style={{ opacity: 0.5 }} />
-                            </div>
-                        ))}
-                    </div>
-                    <p style={{ marginTop: '20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Note: Overrides are set individually via the Organizer Approvals panel.</p>
-                </div>
-            )}
-
+            {/* Audit Table */}
             <div className="admin-card" style={{ padding: '32px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Incoming Transaction Audit</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+                    <div>
+                        <h3 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Fee Audit Ledger</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Review platform cuts from every verified ticket sale.</p>
+                    </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <select
                             value={organizerFilter}
-                            onChange={(e) => setOrganizerFilter(e.target.value)}
-                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.85rem' }}
+                            onChange={(e) => { setOrganizerFilter(e.target.value); setCurrentPage(1); }}
+                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: '12px', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.9rem' }}
                         >
-                            <option value="all">All organizers</option>
+                            <option value="all">All Organizers</option>
                             {organizerOptions.map((org: any) => (
                                 <option key={org.id} value={String(org.id)}>
                                     {org.organizationName}
@@ -218,55 +200,195 @@ export const CommissionsView = () => {
                         </select>
                         <button
                             onClick={handleExport}
-                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                            style={{ background: 'var(--bg-black)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '12px', color: 'white', fontWeight: 800, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
                         >
-                            <Download size={16} /> Download Ledger
+                            <Download size={18} /> Export CSV
                         </button>
                     </div>
                 </div>
-                <table className="admin-table">
-                    <thead>
-                        <tr>
-                            <th>TX ID</th>
-                            <th>EVENT / ORGANIZER</th>
-                            <th>TYPE</th>
-                            <th>GROSS AMOUNT</th>
-                            <th>FEE</th>
-                            <th>NET</th>
-                            <th>STATUS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredTransactions.length === 0 ? (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No transactions found</td></tr>
-                        ) : (
-                            filteredTransactions.map((tx) => (
-                                <tr key={tx.id}>
-                                    <td style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.8rem' }}>TX-{tx.id.toString().padStart(4, '0')}</td>
-                                    <td>
-                                        <p style={{ fontWeight: 800, fontSize: '0.85rem' }}>{tx.event?.title || 'System/Payout'}</p>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.event?.organizer?.organizationName || 'Platform'}</p>
-                                    </td>
-                                    <td>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{tx.type.replace('_', ' ')}</span>
-                                    </td>
-                                    <td style={{ fontWeight: 800, fontSize: '0.85rem' }}>ETB {Number(tx.amount).toLocaleString()}</td>
-                                    <td style={{ color: '#F59E0B', fontWeight: 800, fontSize: '0.85rem' }}>{tx.feeAmount > 0 ? `ETB ${Number(tx.feeAmount).toLocaleString()}` : '-'}</td>
-                                    <td style={{ color: '#1D90F5', fontWeight: 800, fontSize: '0.85rem' }}>ETB {Number(tx.netAmount).toLocaleString()}</td>
-                                    <td>
-                                        <span className="pill" style={{
-                                            background: tx.status === 'SETTLED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                            color: tx.status === 'SETTLED' ? '#10B981' : '#F59E0B'
-                                        }}>
-                                            {tx.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th style={{ width: '60px' }}>#</th>
+                                <th>TX ID</th>
+                                <th>TRANSACTION DETAIL</th>
+                                <th>GROSS</th>
+                                <th style={{ color: '#F59E0B' }}>PLATFORM FEE</th>
+                                <th style={{ color: '#1D90F5' }}>NET PAYOUT</th>
+                                <th>STATUS</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedTransactions.length === 0 ? (
+                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No audit records found.</td></tr>
+                            ) : (
+                                paginatedTransactions.map((tx, idx) => (
+                                    <tr key={tx.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedTx(tx)}>
+                                        <td style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)' }}>
+                                            {(currentPage - 1) * pageSize + idx + 1}
+                                        </td>
+                                        <td style={{ fontFamily: 'monospace', fontWeight: 800, color: 'var(--primary)', fontSize: '0.8rem' }}>
+                                            TX-{tx.id.toString().padStart(6, '0')}
+                                        </td>
+                                        <td>
+                                            <p style={{ fontWeight: 950, fontSize: '0.9rem', marginBottom: '4px' }}>{tx.event?.title || 'System Operation'}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{tx.event?.organizer?.organizationName || 'Global System'}</p>
+                                        </td>
+                                        <td style={{ fontWeight: 900, fontSize: '0.9rem' }}>ETB {Number(tx.amount).toLocaleString()}</td>
+                                        <td style={{ color: '#F59E0B', fontWeight: 950, fontSize: '0.9rem' }}>{tx.feeAmount > 0 ? `ETB ${Number(tx.feeAmount).toLocaleString()}` : '—'}</td>
+                                        <td style={{ color: '#1D90F5', fontWeight: 950, fontSize: '0.9rem' }}>ETB {Number(tx.netAmount).toLocaleString()}</td>
+                                        <td>
+                                            <span className="pill" style={{
+                                                background: tx.status === 'SETTLED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                                color: tx.status === 'SETTLED' ? '#10B981' : '#F59E0B',
+                                                fontWeight: 900
+                                            }}>
+                                                {tx.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button style={{ background: 'var(--bg-subtle)', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer' }}>
+                                                <Eye size={14} color="var(--text-muted)" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', padding: '0 10px' }}>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            Showing <b>{(currentPage - 1) * pageSize + 1}</b> to <b>{Math.min(currentPage * pageSize, filteredTransactions.length)}</b> of <b>{filteredTransactions.length}</b> records
+                        </p>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1 }}
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        style={{
+                                            width: '32px', height: '32px', borderRadius: '8px', border: 'none',
+                                            background: currentPage === i + 1 ? 'var(--bg-active)' : 'transparent',
+                                            color: currentPage === i + 1 ? 'white' : 'var(--text-muted)',
+                                            fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer'
+                                        }}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'white', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.5 : 1 }}
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* Detail Drawer / Modal */}
+            <AnimatePresence>
+                {selectedTx && (
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', justifyContent: 'flex-end' }}>
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setSelectedTx(null)}
+                            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+                        />
+                        <motion.div
+                            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                            style={{
+                                width: '450px', background: 'var(--bg-card)', borderLeft: '1px solid var(--border)',
+                                zIndex: 2001, height: '100%', padding: '40px', display: 'flex', flexDirection: 'column',
+                                boxShadow: '-20px 0 50px rgba(0,0,0,0.3)'
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: 950 }}>Audit Details</h3>
+                                <button onClick={() => setSelectedTx(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 800 }}>CLOSE</button>
+                            </div>
+
+                            <div style={{ display: 'grid', gap: '24px' }}>
+                                <div style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '20px', border: '1px solid var(--border)' }}>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Transaction ID</p>
+                                    <p style={{ fontSize: '1.2rem', fontWeight: 950, fontFamily: 'monospace', color: 'var(--primary)' }}>TX-{selectedTx.id.toString().padStart(6, '0')}</p>
+                                </div>
+
+                                <div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '16px' }}>Order Information</p>
+                                    <div style={{ display: 'grid', gap: '12px' }}>
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            <Calendar size={16} color="var(--text-muted)" />
+                                            <div>
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>Date & Time</p>
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(selectedTx.createdAt).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            <User size={16} color="var(--text-muted)" />
+                                            <div>
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>Organizer</p>
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedTx.event?.organizer?.organizationName || 'System'}</p>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            <Ticket size={16} color="var(--text-muted)" />
+                                            <div>
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>Linked Event</p>
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedTx.event?.title || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '16px' }}>Revenue Breakdown</p>
+                                    <div style={{ display: 'grid', gap: '12px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Gross Amount</span>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 900 }}>ETB {Number(selectedTx.amount).toLocaleString()}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.1)' }}>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F59E0B' }}>Platform Fee</span>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#F59E0B' }}>- ETB {Number(selectedTx.feeAmount).toLocaleString()}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'var(--bg-active)', borderRadius: '12px', marginTop: '8px' }}>
+                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: 'white' }}>Organizer Net</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 950, color: 'white' }}>ETB {Number(selectedTx.netAmount).toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginTop: 'auto' }}>
+                                <button
+                                    onClick={() => setSelectedTx(null)}
+                                    style={{ width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'white', fontWeight: 900, cursor: 'pointer' }}
+                                >
+                                    Dismiss View
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

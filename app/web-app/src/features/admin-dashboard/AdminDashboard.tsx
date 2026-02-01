@@ -233,10 +233,6 @@ const AdminDashboard = () => {
                 </nav>
 
                 <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
-                    <div className="nav-item" onClick={toggleLanguage}>
-                        <Globe size={18} />
-                        <span>{i18n.language === 'en' ? 'Amharic (አማርኛ)' : 'English'}</span>
-                    </div>
                     <div className="nav-item" onClick={() => setActiveTab('Settings')}>
                         <Settings size={18} />
                         <span>{t('admin.settings', 'Settings')}</span>
@@ -356,6 +352,17 @@ const AdminDashboard = () => {
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
+                        <div
+                            className="action-icon"
+                            onClick={toggleLanguage}
+                            style={{ background: 'var(--bg-subtle)', borderRadius: '12px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', border: '1px solid var(--border)' }}
+                        >
+                            <Globe size={16} color="var(--primary)" />
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                {i18n.language === 'en' ? 'አማርኛ' : 'EN'}
+                            </span>
+                        </div>
 
                         <div
                             className="action-icon"
