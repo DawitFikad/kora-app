@@ -29,6 +29,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
     const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [phoneHint, setPhoneHint] = useState('');
+    const [otpHint, setOtpHint] = useState('');
 
     // Registration fields
     const [name, setName] = useState('');
@@ -65,6 +67,35 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
         }
 
         return '';
+    };
+
+    const handlePhoneChange = (val: string) => {
+        const cleaned = val.replace(/[^0-9+]/g, '');
+        if (cleaned !== val) {
+            setPhoneHint(t('auth.hint.numbersOnly', 'Numbers only, please'));
+            setTimeout(() => setPhoneHint(''), 2000);
+        }
+
+        // Limit length: 10 for 09..., 13 for +251...
+        if (cleaned.startsWith('09')) {
+            if (cleaned.length <= 10) setPhoneNumber(cleaned);
+        } else if (cleaned.startsWith('+251')) {
+            if (cleaned.length <= 13) setPhoneNumber(cleaned);
+        } else if (cleaned.startsWith('251')) {
+            if (cleaned.length <= 12) setPhoneNumber(cleaned);
+        } else {
+            // General limit for other inputs while typing
+            if (cleaned.length <= 13) setPhoneNumber(cleaned);
+        }
+    };
+
+    const handleOtpChange = (val: string) => {
+        const cleaned = val.replace(/[^0-9]/g, '');
+        if (cleaned !== val) {
+            setOtpHint(t('auth.hint.numbersOnly', 'Numbers only, please'));
+            setTimeout(() => setOtpHint(''), 2000);
+        }
+        if (cleaned.length <= 6) setOtp(cleaned);
     };
 
     const handleRequestOtp = async (e: React.FormEvent) => {
@@ -393,7 +424,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                         type="tel"
                                         placeholder={t('auth.phonePlaceholder')}
                                         value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+]/g, ''))}
+                                        onChange={(e) => handlePhoneChange(e.target.value)}
                                         required
                                         style={{
                                             width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
@@ -401,6 +432,15 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
                                         }}
                                     />
+                                    {phoneHint && (
+                                        <motion.span
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#F87171', fontSize: '0.75rem', fontWeight: 600, pointerEvents: 'none' }}
+                                        >
+                                            {phoneHint}
+                                        </motion.span>
+                                    )}
                                 </div>
                             </div>
                             <button disabled={isLoading} className="btn-blue" style={{ width: '100%', padding: '16px', justifyContent: 'center', height: 'auto' }}>
@@ -414,20 +454,31 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                             <div style={{ marginBottom: '24px' }}>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>{t('auth.otpLabel')}</label>
-                                <input
-                                    type="text"
-                                    maxLength={6}
-                                    placeholder="000000"
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
-                                    required
-                                    style={{
-                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                        padding: '16px', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1.5rem',
-                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)',
-                                        textAlign: 'center', letterSpacing: '8px', fontWeight: 900
-                                    }}
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="text"
+                                        maxLength={6}
+                                        placeholder="000000"
+                                        value={otp}
+                                        onChange={(e) => handleOtpChange(e.target.value)}
+                                        required
+                                        style={{
+                                            width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                                            padding: '16px', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1.5rem',
+                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)',
+                                            textAlign: 'center', letterSpacing: '8px', fontWeight: 900
+                                        }}
+                                    />
+                                    {otpHint && (
+                                        <motion.span
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            style={{ position: 'absolute', left: 0, right: 0, bottom: -20, textAlign: 'center', color: '#F87171', fontSize: '0.7rem', fontWeight: 700 }}
+                                        >
+                                            {otpHint}
+                                        </motion.span>
+                                    )}
+                                </div>
                             </div>
                             <button disabled={isLoading} className="btn btn-primary" style={{ width: '100%', padding: '16px', justifyContent: 'center' }}>
                                 {isLoading ? <Loader2 className="animate-spin" /> : t('auth.verifyBtn')}
