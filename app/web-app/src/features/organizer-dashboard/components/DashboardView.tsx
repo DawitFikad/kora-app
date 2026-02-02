@@ -64,8 +64,17 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
         const totalMinutes = Math.floor(diffMs / (1000 * 60));
         const days = Math.floor(totalMinutes / (60 * 24));
         const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-        const minutes = totalMinutes % 60;
-        return { days, hours, minutes, event: next };
+
+        let label = "";
+        if (days > 0) {
+            label = `${days}d ${hours}h`;
+        } else if (hours > 0) {
+            label = t('org.dashboard.hoursRemain', '{hours} hours remain').replace('{hours}', String(hours));
+        } else {
+            label = t('org.dashboard.startingSoon', 'Starting soon');
+        }
+
+        return { days, hours, label, event: next };
     }, [upcomingEvents, t]);
 
     const localizedAlerts = useMemo(() => {
@@ -89,23 +98,38 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
             return alert;
         });
 
-        if (upcomingCountdown && (upcomingCountdown as any).days !== undefined) {
-            const soonDays = (upcomingCountdown as any).days;
-            if (soonDays <= 3) {
-                const nextEvent = (upcomingCountdown as any).event;
-                const templateKey = soonDays === 1 ? 'org.dashboard.alertEventSoonSingle' : 'org.dashboard.alertEventSoon';
+        // Add alerts for all upcoming events within 3 days
+        upcomingEvents.forEach(event => {
+            const now = new Date();
+            const eventDate = new Date(event.date);
+            const diffMs = eventDate.getTime() - now.getTime();
+            const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const days = Math.floor(totalHours / 24);
+            const remHours = totalHours % 24;
+
+            if (totalHours >= 0 && totalHours <= 72) { // Within 3 days
+                let timeMsg = "";
+                if (days > 0) {
+                    const templateKey = days === 1 ? 'org.dashboard.alertEventSoonSingle' : 'org.dashboard.alertEventSoon';
+                    timeMsg = t(templateKey, days === 1 ? '{days} day' : '{days} days').replace('{days}', String(days));
+                } else if (remHours > 0) {
+                    timeMsg = t('org.dashboard.hoursRemainShort', '{hours} hours').replace('{hours}', String(remHours));
+                } else {
+                    timeMsg = t('org.dashboard.startingSoon', 'Starting soon');
+                }
+
                 baseAlerts.unshift({
                     type: 'warning',
                     action: 'Events',
-                    message: t(templateKey, soonDays === 1 ? 'Event starting in {days} day: {title}' : 'Event starting in {days} days: {title}')
-                        .replace('{days}', String(soonDays))
-                        .replace('{title}', nextEvent?.title || t('org.dashboard.unknownEvent', 'Event'))
+                    message: t('org.dashboard.alertEventSoonFormat', 'Event starting in {time}: {title}')
+                        .replace('{time}', timeMsg)
+                        .replace('{title}', event.title || t('org.dashboard.unknownEvent', 'Event'))
                 });
             }
-        }
+        });
 
         return baseAlerts;
-    }, [alerts, upcomingCountdown, t]);
+    }, [alerts, upcomingEvents, t]);
 
     if (loading) {
         return (
@@ -196,8 +220,8 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('org.dashboard.velocitySubtitle', 'Last 7 days performance')}</p>
                         </div>
                         <div style={{ position: 'relative' }}>
-                                <select style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, appearance: 'none', cursor: 'pointer', paddingRight: '40px' }}>
-                                    <option>{t('org.dashboard.last7Days', 'Last 7 Days')}</option>
+                            <select style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, appearance: 'none', cursor: 'pointer', paddingRight: '40px' }}>
+                                <option>{t('org.dashboard.last7Days', 'Last 7 Days')}</option>
                             </select>
                             <MoreHorizontal size={14} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%) rotate(90deg)' }} color="var(--text-muted)" />
                         </div>
