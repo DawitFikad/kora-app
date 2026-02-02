@@ -6,6 +6,7 @@ import { Loader2, Calendar, MapPin, Tag, Download, Check, X, Info } from 'lucide
 
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
+import Pagination from '../../../core/components/Pagination';
 
 export const EventApprovalsView = () => {
     const { t } = useTranslation();
@@ -16,6 +17,8 @@ export const EventApprovalsView = () => {
     const [decisionOpen, setDecisionOpen] = useState(false);
     const [decisionContext, setDecisionContext] = useState<any>(null);
     const [selectedItem, setSelectedItem] = useState<any>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
 
     const fetchEvents = async () => {
         try {
@@ -32,6 +35,10 @@ export const EventApprovalsView = () => {
     useEffect(() => {
         fetchEvents();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab]);
 
     const handleReview = (id: number, status: 'APPROVED' | 'REJECTED', commission?: any) => {
         setDecisionContext({ id, status, commission });
@@ -62,11 +69,14 @@ export const EventApprovalsView = () => {
         );
     }
 
-    const filteredEvents = events.filter(e => {
+    const allFilteredEvents = events.filter(e => {
         if (activeTab === 'pending') return e.status === 'PENDING';
         if (activeTab === 'approved') return e.status === 'APPROVED' || e.status === 'PUBLISHED';
         return e.status === 'REJECTED';
     });
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const filteredEvents = allFilteredEvents.slice(startIndex, startIndex + pageSize);
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -100,7 +110,7 @@ export const EventApprovalsView = () => {
                 </div>
 
                 <button
-                    onClick={() => exportToCSV(filteredEvents.map(e => ({
+                    onClick={() => exportToCSV(allFilteredEvents.map(e => ({
                         Title: e.title,
                         Organizer: e.organizer?.organizationName,
                         City: e.city?.name,
@@ -110,7 +120,7 @@ export const EventApprovalsView = () => {
                     className="btn-blue"
                     style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '12px' }}
                 >
-                    <Download size={8} />
+                    <Download size={18} />
                     {t('admin.export', 'Export CSV')}
                 </button>
             </div>
@@ -119,6 +129,7 @@ export const EventApprovalsView = () => {
                 <table className="admin-table">
                     <thead>
                         <tr>
+                            <th style={{ width: '50px' }}>#</th>
                             <th>{t('admin.approvals.event_title')}</th>
                             <th>{t('admin.approvals.category_city')}</th>
                             <th>{t('admin.approvals.date_time')}</th>
@@ -128,14 +139,17 @@ export const EventApprovalsView = () => {
                     <tbody>
                         {filteredEvents.length === 0 ? (
                             <tr>
-                                <td colSpan={4} style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>
+                                <td colSpan={5} style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>
                                     <Calendar size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
-                                    <p>{t('admin.approvals.no_pending')}</p>
+                                    <p>{activeTab === 'pending' ? t('admin.approvals.no_pending') : activeTab === 'approved' ? t('admin.approvals.no_approved') : t('admin.approvals.no_rejected')}</p>
                                 </td>
                             </tr>
                         ) : (
-                            filteredEvents.map((evt) => (
+                            filteredEvents.map((evt, index) => (
                                 <tr key={evt.id}>
+                                    <td style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                        {startIndex + index + 1}
+                                    </td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', overflow: 'hidden' }}>
@@ -199,6 +213,13 @@ export const EventApprovalsView = () => {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                currentPage={currentPage}
+                totalItems={allFilteredEvents.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+            />
 
             {decisionOpen && (
                 <DecisionModal

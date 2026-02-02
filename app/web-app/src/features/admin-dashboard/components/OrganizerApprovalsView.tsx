@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
 import { Download, Loader2, Check, X, Building2, MapPin, Calendar, Mail, Phone, Edit3, FileText, Image } from 'lucide-react';
+import Pagination from '../../../core/components/Pagination';
 
 export const OrganizerApprovalsView = () => {
     const { t } = useTranslation();
@@ -19,6 +20,8 @@ export const OrganizerApprovalsView = () => {
     const [decisionOpen, setDecisionOpen] = useState(false);
     const [decisionContext, setDecisionContext] = useState<any>(null);
     const [selectedItem, setSelectedItem] = useState<any>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
 
     const fetchData = async () => {
         try {
@@ -41,6 +44,10 @@ export const OrganizerApprovalsView = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab]);
 
     const handleReview = (id: number, status: 'APPROVED' | 'REJECTED', commission?: any) => {
         setDecisionContext({ type: 'organizer', id, status, commission });
@@ -84,7 +91,9 @@ export const OrganizerApprovalsView = () => {
         );
     }
 
-    const currentList = activeTab === 'pending' ? pendingOrganizers : activeTab === 'approved' ? approvedOrganizers : rejectedOrganizers;
+    const allItems = activeTab === 'pending' ? pendingOrganizers : activeTab === 'approved' ? approvedOrganizers : rejectedOrganizers;
+    const startIndex = (currentPage - 1) * pageSize;
+    const currentList = allItems.slice(startIndex, startIndex + pageSize);
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -118,7 +127,7 @@ export const OrganizerApprovalsView = () => {
                 </div>
 
                 <button
-                    onClick={() => exportToCSV(currentList.map(o => ({
+                    onClick={() => exportToCSV(allItems.map(o => ({
                         Organization: o.organizationName,
                         Email: o.contactEmail,
                         City: o.city,
@@ -136,6 +145,7 @@ export const OrganizerApprovalsView = () => {
                 <table className="admin-table">
                     <thead>
                         <tr>
+                            <th style={{ width: '50px' }}>#</th>
                             <th>{t('admin.approvals.organizer_name')}</th>
                             <th>{t('admin.approvals.contact_info')}</th>
                             <th>{t('admin.approvals.location')}</th>
@@ -152,8 +162,11 @@ export const OrganizerApprovalsView = () => {
                                 </td>
                             </tr>
                         ) : (
-                            currentList.map((org) => (
+                            currentList.map((org, index) => (
                                 <tr key={org.id}>
+                                    <td style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                        {startIndex + index + 1}
+                                    </td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -282,6 +295,13 @@ export const OrganizerApprovalsView = () => {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                currentPage={currentPage}
+                totalItems={allItems.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+            />
 
             {decisionOpen && (
                 <DecisionModal

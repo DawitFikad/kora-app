@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, MapPin, Calendar, Download } from 'lucide-react';
+import { TrendingUp, MapPin, Download } from 'lucide-react';
 import { AdminService } from '../../../../core/api/admin.service';
 import { downloadBlobAsCSV } from './csvExport';
+import Pagination from '../../../../core/components/Pagination';
 
 const formatCurrency = (v: any) => {
     const n = Number(v || 0);
@@ -14,6 +15,8 @@ export const GMVDashboard: React.FC = () => {
     const [rows, setRows] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [range, setRange] = useState<'7d' | '30d' | '90d'>('30d');
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
 
     useEffect(() => {
         let mounted = true;
@@ -33,6 +36,10 @@ export const GMVDashboard: React.FC = () => {
             })
             .finally(() => mounted && setLoading(false));
         return () => { mounted = false };
+    }, [range]);
+
+    useEffect(() => {
+        setCurrentPage(1);
     }, [range]);
 
     const handleExport = async () => {
@@ -88,17 +95,26 @@ export const GMVDashboard: React.FC = () => {
 
             {/* 🛠️ Action & Filter Bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '16px 24px', borderRadius: '24px', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <Calendar size={18} color="var(--text-muted)" />
-                    <select
-                        value={range}
-                        onChange={e => setRange(e.target.value as any)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', outline: 'none' }}
-                    >
-                        <option value="7d" style={{ background: 'var(--bg-card)' }}>Last 7 Fiscal Days</option>
-                        <option value="30d" style={{ background: 'var(--bg-card)' }}>Last 30 Fiscal Days</option>
-                        <option value="90d" style={{ background: 'var(--bg-card)' }}>Last 90 Fiscal Days</option>
-                    </select>
+                <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-sidebar)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    {(['7d', '30d', '90d'] as const).map((r) => (
+                        <button
+                            key={r}
+                            onClick={() => setRange(r)}
+                            style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                background: range === r ? 'var(--bg-active)' : 'transparent',
+                                color: range === r ? 'white' : 'var(--text-muted)',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            {r === '7d' ? 'Last 7 Days' : r === '30d' ? 'Last 30 Days' : 'Last 90 Days'}
+                        </button>
+                    ))}
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button onClick={handleExport} style={{ padding: '10px 20px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
@@ -121,6 +137,7 @@ export const GMVDashboard: React.FC = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ background: 'rgba(15, 23, 42, 0.4)' }}>
+                                <th style={{ padding: '24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', width: '50px' }}>#</th>
                                 <th style={{ padding: '24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Settlement Date</th>
                                 <th style={{ padding: '24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Regional Node</th>
                                 <th style={{ padding: '24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Organizer Entity</th>
@@ -130,8 +147,8 @@ export const GMVDashboard: React.FC = () => {
                         </thead>
                         <tbody>
                             {rows.length === 0 ? (
-                                <tr><td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>Zero liquidity density detected for this range.</td></tr>
-                            ) : rows.map((r, i) => (
+                                <tr><td colSpan={6} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>Zero liquidity density detected for this range.</td></tr>
+                            ) : rows.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((r, i) => (
                                 <motion.tr
                                     key={i}
                                     initial={{ opacity: 0 }}
@@ -141,6 +158,7 @@ export const GMVDashboard: React.FC = () => {
                                     onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.01)'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                 >
+                                    <td style={{ padding: '20px 24px', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)' }}>{(currentPage - 1) * pageSize + i + 1}</td>
                                     <td style={{ padding: '20px 24px', fontSize: '0.9rem', fontWeight: 700 }}>{r.date}</td>
                                     <td style={{ padding: '20px 24px', fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -159,6 +177,13 @@ export const GMVDashboard: React.FC = () => {
                     </table>
                 )}
             </div>
+
+            <Pagination
+                currentPage={currentPage}
+                totalItems={rows.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+            />
         </div>
     );
 };
