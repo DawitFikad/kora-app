@@ -161,7 +161,7 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                <nav className="nav-group" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 250px)' }}>
+                <nav className="nav-group hide-scrollbar" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 250px)' }}>
                     {/* Dashboard - Always top */}
                     <div
                         className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`}
@@ -245,7 +245,7 @@ const AdminDashboard = () => {
             </aside>
 
             {/* 🔵 Admin Main Content */}
-            <main className="main-content">
+            <main className="main-content hide-scrollbar">
                 <header className="top-header">
                     <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{(currentNavItem as any)?.display || activeTab}</h2>
 
@@ -381,7 +381,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 </header>
-                <div style={{ padding: '32px 40px' }}>
+                <div className="content-scroll-area hide-scrollbar" style={{ padding: '32px 40px' }}>
                     <AnimatePresence mode="wait">
                         {renderContent()}
                     </AnimatePresence>

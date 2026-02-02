@@ -239,7 +239,7 @@ const OrganizerDashboard = () => {
                     </button>
                 </header>
 
-                <main style={{ flex: 1, overflowY: 'auto', padding: '60px 0' }}>
+                <main className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '60px 0' }}>
                     <PendingApprovalView user={user} />
                 </main>
             </div>
@@ -282,7 +282,7 @@ const OrganizerDashboard = () => {
                     </div>
                 </div>
 
-                <nav className="nav-group" style={{ padding: '0 16px', overflowY: 'auto', maxHeight: 'calc(100vh - 280px)' }}>
+                <nav className="nav-group hide-scrollbar" style={{ padding: '0 16px', overflowY: 'auto', maxHeight: 'calc(100vh - 280px)' }}>
                     {navGroups.map((group, groupIndex) => (
                         <div key={groupIndex} style={{ marginBottom: '20px' }}>
                             <h3 style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px', letterSpacing: '0.08em', paddingLeft: '6px' }}>
@@ -334,7 +334,7 @@ const OrganizerDashboard = () => {
             </aside>
 
             {/* 🔵 Main Content */}
-            <main className="main-content">
+            <main className="main-content hide-scrollbar">
                 <header className="top-header" style={{ padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
@@ -398,7 +398,7 @@ const OrganizerDashboard = () => {
                                                         <span onClick={(e) => { e.stopPropagation(); handleMarkAsRead(); }} style={{ fontSize: '0.8rem', color: '#1D90F5', cursor: 'pointer', fontWeight: 600 }}>Mark all read</span>
                                                     )}
                                                 </div>
-                                                <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                                                <div className="hide-scrollbar" style={{ maxHeight: '420px', overflowY: 'auto' }}>
                                                     {(['new', 'today', 'yesterday', 'older'] as const).map(group => {
                                                         const items = getGroupedNotifications()[group];
                                                         if (!items || items.length === 0) return null;
@@ -472,7 +472,7 @@ const OrganizerDashboard = () => {
 
                 </header>
 
-                <div style={{ padding: '40px' }}>
+                <div className="content-scroll-area hide-scrollbar" style={{ padding: '40px' }}>
                     <AnimatePresence mode="wait">
                         {renderContent()}
                     </AnimatePresence>
