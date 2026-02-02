@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import OrganizerLanding from './features/organizer-landing/OrganizerLanding';
 import OrganizerDashboard from './features/organizer-dashboard/OrganizerDashboard';
 import AdminDashboard from './features/admin-dashboard/AdminDashboard';
+import { OnboardingPage } from './features/auth/OnboardingPage';
 import BookingPage from './features/booking/BookingPage';
 import EventDetailsPage from './features/booking/EventDetailsPage';
 import PaymentPage from './features/booking/PaymentPage';
@@ -57,6 +58,10 @@ function App() {
                 {/* Organizer Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['ORGANIZER']} />}>
                   <Route path="/dashboard/*" element={<OrganizerDashboard />} />
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={['ORGANIZER', 'USER']} />}>
+                  <Route path="/onboarding" element={<OnboardingPage />} />
                 </Route>
 
                 {/* Admin Routes */}

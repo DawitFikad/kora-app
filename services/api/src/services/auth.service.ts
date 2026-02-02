@@ -151,17 +151,46 @@ export class AuthService {
         }
     }
 
-    static async registerOrganizer(data: { phoneNumber: string; email?: string | null; name: string; city: string; payoutDetails: string }) {
+    static async registerOrganizer(data: {
+        phoneNumber: string;
+        email?: string | null;
+        name: string;
+        city: string;
+        payoutDetails: string;
+        organizerType?: string;
+        shortDescription?: string;
+        categories?: string;
+        operatingCities?: string;
+        files?: Express.Multer.File[];
+    }) {
+        const { getFileUrl } = await import("../config/upload.config");
         const normalizedPhone = this.normalizeEthiopianPhone(data.phoneNumber);
         console.log(`[AuthService] Starting organizer registration for phone: ${normalizedPhone || data.phoneNumber}`);
-        
+
         const email = data.email && data.email.trim() !== '' ? data.email.trim() : null;
+
+        // Process files
+        const businessLicenseFile = data.files?.find(f => f.fieldname === 'businessLicense');
+        const eventPosterFile = data.files?.find(f => f.fieldname === 'eventPoster');
+
+        const businessLicenseUrl = businessLicenseFile ? getFileUrl(businessLicenseFile) : null;
+        const eventPosterUrl = eventPosterFile ? getFileUrl(eventPosterFile) : null;
 
         const phoneVariants = this.getPhoneVariants(normalizedPhone || data.phoneNumber);
         const existingUser = await prisma.user.findFirst({
             where: { phoneNumber: { in: phoneVariants } },
             include: { organizer: true }
         });
+
+        // Check for email uniqueness if email is provided
+        if (email) {
+            const userWithEmail = await prisma.user.findUnique({
+                where: { email }
+            });
+            if (userWithEmail && userWithEmail.id !== existingUser?.id) {
+                throw new Error(`The email ${email} is already associated with another account.`);
+            }
+        }
 
         if (existingUser?.organizer) {
             console.log(`[AuthService] User ${existingUser.id} already has organizer profile`);
@@ -195,11 +224,16 @@ export class AuthService {
                         organizer: {
                             create: { // Create organizer profile
                                 organizationName: data.name,
+                                description: data.shortDescription,
                                 contactPhone: normalizedPhone || data.phoneNumber,
                                 contactEmail: email,
                                 city: data.city,
                                 payoutDetails: data.payoutDetails,
                                 status: "PENDING",
+                                businessLicense: businessLicenseUrl,
+                                eventPoster: eventPosterUrl,
+                                categoryFocus: data.categories ? data.categories.split(',').map(c => c.trim()) : [],
+                                operatingCities: data.operatingCities ? data.operatingCities.split(',').map(c => c.trim()) : [data.city],
                             }
                         }
                     },
@@ -228,11 +262,16 @@ export class AuthService {
                         organizer: {
                             create: {
                                 organizationName: data.name,
+                                description: data.shortDescription,
                                 contactPhone: normalizedPhone || data.phoneNumber,
                                 contactEmail: email,
                                 city: data.city,
                                 payoutDetails: data.payoutDetails,
                                 status: "PENDING",
+                                businessLicense: businessLicenseUrl,
+                                eventPoster: eventPosterUrl,
+                                categoryFocus: data.categories ? data.categories.split(',').map(c => c.trim()) : [],
+                                operatingCities: data.operatingCities ? data.operatingCities.split(',').map(c => c.trim()) : [data.city],
                             }
                         }
                     },
@@ -246,7 +285,7 @@ export class AuthService {
         }
 
         // Get the organizerId from the newly created organizer profile
-        const organizerId = user.organizer?.id;
+        const organizerId = (user as any).organizer?.id;
         console.log(`[AuthService] Organizer ID: ${organizerId}`);
 
         // Generate tokens
@@ -260,7 +299,7 @@ export class AuthService {
             await prisma.refreshToken.deleteMany({
                 where: { userId: user.id }
             });
-            
+
             // Create new refresh token
             await prisma.refreshToken.create({
                 data: {

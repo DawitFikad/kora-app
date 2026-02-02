@@ -59,11 +59,11 @@ if (env.storageType === 'S3' && s3) {
 
 // 4. File Filter & Multer Export
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Invalid file type. Only JPG, PNG, and WebP images are allowed.'));
+        cb(new Error('Invalid file type. Only JPG, PNG, WebP images and PDF documents are allowed.'));
     }
 };
 

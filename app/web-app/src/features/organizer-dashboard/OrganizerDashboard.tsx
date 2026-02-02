@@ -34,7 +34,6 @@ import { CreateEventView } from './components/CreateEventView';
 import { EditEventView } from './components/EditEventView';
 import { PromotionsView } from './components/PromotionsView';
 import { ScannerView } from './components/ScannerView';
-import { PendingApprovalView } from './components/PendingApprovalView';
 import { EventStatsView } from './components/EventStatsView';
 import { ContentManagementView } from './components/ContentManagementView';
 import { AdvancedAnalyticsView } from './components/AdvancedAnalyticsView';
@@ -209,42 +208,6 @@ const OrganizerDashboard = () => {
     };
 
     const activeTitle = titleMap[activeTab] || t(`org.title.${activeTab.toLowerCase()}`, activeTab);
-
-    // If pending, show the invitation/waiting page instead of the full dashboard
-    if (user?.status === 'PENDING') {
-        return (
-            <div className="container-fluid" style={{ minHeight: '100vh', background: 'var(--bg-main)', flexDirection: 'column' }}>
-                <header style={{
-                    padding: '24px 80px', display: 'flex', justifyContent: 'space-between',
-                    alignItems: 'center', borderBottom: '1px solid var(--border)',
-                    background: 'var(--bg-sidebar)', zIndex: 10
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div className="logo-box">
-                            <BarChart3 color="#1D90F5" size={24} strokeWidth={2.5} />
-                        </div>
-                        <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>ET-Ticket</h2>
-                    </div>
-
-                    <button
-                        onClick={logout}
-                        style={{
-                            background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)',
-                            color: '#EF4444', padding: '10px 24px', borderRadius: '14px',
-                            cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700,
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        {t('org.actions.signOut', 'Sign Out')}
-                    </button>
-                </header>
-
-                <main className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '60px 0' }}>
-                    <PendingApprovalView user={user} />
-                </main>
-            </div>
-        );
-    }
 
     const renderContent = () => {
         switch (activeTab) {

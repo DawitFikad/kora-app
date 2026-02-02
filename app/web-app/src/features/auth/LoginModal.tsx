@@ -181,7 +181,12 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
             }
         } catch (err: any) {
             console.error('[LoginModal] Verification Error:', err);
-            const errorMessage = err.response?.data?.error || err.error || err.message || 'We couldn\'t verify that code. Please try again.';
+            // Extract the most descriptive error message
+            const errorMessage =
+                (err.response?.data?.error) ||
+                (err.error) ||
+                (err.message) ||
+                (typeof err === 'string' ? err : 'We couldn\'t verify that code. Please try again.');
             setError(errorMessage);
         } finally {
             setIsLoading(false);

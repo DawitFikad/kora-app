@@ -17,7 +17,8 @@ import {
     Sun,
     Moon,
     Users,
-    Search
+    Search,
+    Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -531,7 +532,11 @@ const OrganizerLanding = () => {
             if (user.role === 'ADMIN') {
                 navigate('/admin');
             } else if (user.role === 'ORGANIZER') {
-                navigate('/dashboard');
+                if (user.status === 'PENDING' || user.organizer?.status === 'PENDING' || user.organizer?.status === 'REJECTED') {
+                    navigate('/onboarding');
+                } else {
+                    navigate('/dashboard');
+                }
             }
         }
     }, [user, navigate]);

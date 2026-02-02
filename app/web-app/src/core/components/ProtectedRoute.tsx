@@ -30,5 +30,15 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
         return <Navigate to="/" replace />;
     }
 
+    // Redirect pending/rejected organizers to /onboarding
+    const isOrganizer = user.role === 'ORGANIZER';
+    const isPendingOrRejected = user.status === 'PENDING' || user.organizer?.status === 'PENDING' || user.organizer?.status === 'REJECTED';
+    const isToOnboarding = window.location.pathname === '/onboarding';
+
+    if (isOrganizer && isPendingOrRejected && !isToOnboarding) {
+        console.log('ProtectRoute: Organizer pending/rejected, redirecting to onboarding');
+        return <Navigate to="/onboarding" replace />;
+    }
+
     return <Outlet />;
 };

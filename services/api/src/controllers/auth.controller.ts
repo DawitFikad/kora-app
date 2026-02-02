@@ -30,14 +30,26 @@ export class AuthController {
 
     static async registerOrganizer(req: Request, res: Response) {
         try {
+            console.log('[AuthController] Register Organizer Request Body:', req.body);
+            console.log('[AuthController] Register Organizer Request Files:', req.files);
+
             const { phoneNumber, email, name, city, payoutDetails } = req.body;
+
             if (!phoneNumber || !name || !city || !payoutDetails) {
                 return res.status(400).json({ error: "Required fields missing: phoneNumber, name, city, payoutDetails" });
             }
 
-            const result = await AuthService.registerOrganizer({ phoneNumber, email, name, city, payoutDetails });
+            const result = await AuthService.registerOrganizer({
+                phoneNumber,
+                email,
+                name,
+                city,
+                payoutDetails,
+                files: req.files as Express.Multer.File[]
+            });
             res.json(result);
         } catch (error: any) {
+            console.error('[AuthController] Register Organizer Error:', error);
             res.status(400).json({ error: error.message });
         }
     }
