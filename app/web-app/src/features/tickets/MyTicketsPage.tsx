@@ -55,43 +55,76 @@ const MyTicketsPage: React.FC = () => {
                             style={{
                                 background: '#161B22',
                                 border: '1px solid #2D3748',
-                                borderRadius: '20px',
+                                borderRadius: '24px',
                                 overflow: 'hidden',
                                 display: 'flex',
                                 flexWrap: 'wrap',
-                                alignItems: 'stretch'
+                                alignItems: 'stretch',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
                             }}
                         >
-                            <div style={{ padding: '24px', flex: 1, minWidth: '300px', borderRight: '1px dashed #2D3748' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                    <span style={{ background: 'rgba(29, 144, 245, 0.1)', color: '#1D90F5', padding: '4px 12px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 700 }}>{ticket.tier.name}</span>
-                                    <span style={{ color: ticket.status === 'VALID' ? '#48BB78' : '#F56565', fontWeight: 700 }}>{ticket.status}</span>
+                            <div style={{ padding: '28px', flex: '1 1 400px', borderRight: '1px dashed #2D3748' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
+                                    <span style={{ background: 'rgba(29, 144, 245, 0.12)', color: '#1D90F5', padding: '6px 14px', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 800 }}>{ticket.tier.name}</span>
+                                    <span style={{
+                                        color: ticket.status === 'VALID' ? '#4ADE80' : '#F87171',
+                                        fontWeight: 800,
+                                        fontSize: '0.9rem',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.05em'
+                                    }}>
+                                        {ticket.status}
+                                    </span>
                                 </div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>{ticket.event.title}</h3>
+                                <h3 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '20px', color: 'white', lineHeight: 1.2 }}>{ticket.event.title}</h3>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#A0AEC0', fontSize: '0.9rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Calendar size={16} />
-                                        {new Date(ticket.event.dateTime).toLocaleString()}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', color: '#94A3B8', fontSize: '0.95rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Calendar size={18} color="#94A3B8" />
+                                        </div>
+                                        {new Date(ticket.event.dateTime).toLocaleString('en-US', {
+                                            weekday: 'short',
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <MapPin size={16} />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <MapPin size={18} color="#94A3B8" />
+                                        </div>
                                         {ticket.event.venue}
                                     </div>
                                     {ticket.seatNumber && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Tag size={16} />
-                                            Seat: <span style={{ color: 'white', fontWeight: 700 }}>{ticket.seatNumber}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Tag size={18} color="#94A3B8" />
+                                            </div>
+                                            Seat: <span style={{ color: 'white', fontWeight: 800 }}>{ticket.seatNumber}</span>
                                         </div>
                                     )}
                                 </div>
-                                <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #2D3748' }}>
-                                    <p style={{ fontSize: '0.8rem', color: '#718096' }}>Ticket ID: {ticket.ticketCode || ticket.id?.substring(0, 8).toUpperCase()}</p>
+                                <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 600 }}>TICKET ID: <span style={{ color: '#94A3B8' }}>{ticket.ticketCode || ticket.id?.substring(0, 8).toUpperCase()}</span></p>
                                 </div>
                             </div>
 
-                            <div style={{ background: 'white', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '200px', flex: '0 0 auto', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
-                                <QRCodeSVG value={ticket.qrPayload} size={150} />
+                            <div style={{
+                                background: 'white',
+                                padding: '32px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minWidth: '240px',
+                                flex: '1 1 200px',
+                                borderLeft: '1px dashed #E2E8F0'
+                            }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <QRCodeSVG value={ticket.qrPayload} size={160} level="H" />
+                                    <p style={{ marginTop: '16px', color: '#64748B', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em' }}>SCAN AT ENTRY</p>
+                                </div>
                             </div>
                         </motion.div>
                     ))}

@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, ShieldCheck, Mail, ArrowRight, Loader2, MapPin, Building2 } from 'lucide-react';
+import {
+    ShieldCheck,
+    MapPin,
+    Tag,
+    Building2,
+    Loader2,
+    ArrowRight,
+    X,
+    Mail,
+    Phone
+} from 'lucide-react';
 import { AuthService } from '../../core/api/auth.service';
 import { useAuth } from '../../core/context/AuthContext';
 import { useLanguage } from '../../core/context/LanguageContext';
@@ -23,14 +33,13 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
     // Registration fields
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [city, setCity] = useState('');
+    const [city] = useState('');
     const [payoutDetails, setPayoutDetails] = useState('');
     const [organizerType, setOrganizerType] = useState<'company' | 'individual' | ''>('');
     const [shortDescription, setShortDescription] = useState('');
     const [categories, setCategories] = useState('');
     const [operatingCities, setOperatingCities] = useState('');
     const [businessLicense, setBusinessLicense] = useState<File | null>(null);
-    const [idDocument, setIdDocument] = useState<File | null>(null);
     const [eventPoster, setEventPoster] = useState<File | null>(null);
 
     const normalizeEthiopianPhone = (input: string) => {
@@ -272,6 +281,24 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                             />
                                         </div>
                                         <div>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.categories')}</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <Tag size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                                                <input
+                                                    type="text"
+                                                    placeholder={t('auth.categoriesPlaceholder', 'Music, Conference, Sports')}
+                                                    value={categories}
+                                                    onChange={(e) => setCategories(e.target.value)}
+                                                    required
+                                                    style={{
+                                                        width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                                                        padding: '12px 12px 12px 36px', borderRadius: '14px', color: 'var(--text-main)',
+                                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.operatingCities')}</label>
                                             <div style={{ position: 'relative' }}>
                                                 <MapPin size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
@@ -366,7 +393,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                         type="tel"
                                         placeholder={t('auth.phonePlaceholder')}
                                         value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+]/g, ''))}
                                         required
                                         style={{
                                             width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
@@ -392,7 +419,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                     maxLength={6}
                                     placeholder="000000"
                                     value={otp}
-                                    onChange={(e) => setOtp(e.target.value)}
+                                    onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
                                     required
                                     style={{
                                         width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',

@@ -38,7 +38,22 @@ const EventDetailsPage: React.FC = () => {
 
     const handleGetTickets = () => {
         if (event) {
-            setShowDownloadPrompt(true);
+            // Check if user is on mobile
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                setShowDownloadPrompt(true);
+            } else {
+                // Direct to web booking for desktop/tablet
+                navigate(`/book/${event.id}`);
+            }
+        }
+    };
+
+    const handleWebBooking = () => {
+        if (event) {
+            navigate(`/book/${event.id}`);
+            setShowDownloadPrompt(false);
         }
     };
 
@@ -83,10 +98,10 @@ const EventDetailsPage: React.FC = () => {
                     <div className="container">
                         <div className="hero-content">
                             <h1 className="event-title">{event.title}</h1>
-                                    <div className="event-meta">
+                            <div className="event-meta">
                                 <span className="meta-item">
                                     <span className="meta-icon">📍</span>
-                                    {event.venue}, {event.city?.name || event.city}
+                                    {event.venue}, {typeof event.city === 'object' ? event.city.name : event.city || 'Addis Ababa'}
                                 </span>
                                 <span className="meta-item">
                                     <span className="meta-icon">📅</span>
@@ -156,7 +171,7 @@ const EventDetailsPage: React.FC = () => {
                                 <div className="info-grid">
                                     <div className="info-item">
                                         <span className="info-label">Category</span>
-                                        <span className="info-value">{event.category?.name || event.category}</span>
+                                        <span className="info-value">{typeof event.category === 'object' ? event.category.name : event.category}</span>
                                     </div>
                                     <div className="info-item">
                                         <span className="info-label">Event Type</span>
@@ -170,7 +185,7 @@ const EventDetailsPage: React.FC = () => {
                                     </div>
                                     <div className="info-item">
                                         <span className="info-label">Location</span>
-                                        <span className="info-value">{event.city?.name || event.city}</span>
+                                        <span className="info-value">{typeof event.city === 'object' ? event.city.name : event.city}</span>
                                     </div>
                                 </div>
                             </section>
@@ -206,7 +221,7 @@ const EventDetailsPage: React.FC = () => {
                                         <span className="info-icon">📍</span>
                                         <div className="info-text">
                                             <span className="info-label">Location</span>
-                                            <span className="info-value">{event.venue}, {event.city?.name || event.city}</span>
+                                            <span className="info-value">{event.venue}, {typeof event.city === 'object' ? event.city.name : event.city}</span>
                                         </div>
                                     </div>
 
@@ -268,7 +283,14 @@ const EventDetailsPage: React.FC = () => {
                                 iOS
                             </a>
                         </div>
-                        <button className="download-close" onClick={() => setShowDownloadPrompt(false)}>
+                        <button
+                            className="btn-primary"
+                            style={{ width: '100%', marginBottom: '0.75rem', padding: '12px' }}
+                            onClick={handleWebBooking}
+                        >
+                            Continue Booking on Web
+                        </button>
+                        <button className="download-close" onClick={() => setShowDownloadPrompt(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.9rem' }}>
                             Not now
                         </button>
                     </div>

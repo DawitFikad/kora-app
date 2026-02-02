@@ -16,7 +16,8 @@ import {
     ChevronRight,
     Sun,
     Moon,
-    Users
+    Users,
+    Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -487,9 +488,10 @@ const OrganizerLanding = () => {
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
     const { language, setLanguage, t } = useLanguage();
     const [banners, setBanners] = useState<any[]>([]);
-    const [events, setEvents] = useState<PublicEvent[]>([]);
+    const [prioritizedEvents, setPrioritizedEvents] = useState<PublicEvent[]>([]);
     const [eventsLoading, setEventsLoading] = useState(true);
-    const [eventFilter, setEventFilter] = useState<'today' | 'week' | 'all'>('week');
+    const [eventFilter, setEventFilter] = useState<'all' | 'today' | 'week'>('all');
+    const [searchQuery, setSearchQuery] = useState('');
     const [featuredPage, setFeaturedPage] = useState(0);
 
     useEffect(() => {
@@ -512,10 +514,10 @@ const OrganizerLanding = () => {
                 setEventsLoading(true);
                 const data = await EventService.getEvents({ featured: true });
                 const normalized = Array.isArray(data) ? data : [];
-                setEvents(normalized);
+                setPrioritizedEvents(normalized);
             } catch (err) {
                 console.error('Failed to load events', err);
-                setEvents([]);
+                setPrioritizedEvents([]);
             } finally {
                 setEventsLoading(false);
             }
@@ -551,34 +553,43 @@ const OrganizerLanding = () => {
         return d >= startOfToday && d <= endOfWeek;
     };
 
-    const prioritizedEvents = [...events].sort((a, b) => {
+    const sortedEvents = [...prioritizedEvents].sort((a, b) => {
         const featuredDelta = (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
         if (featuredDelta !== 0) return featuredDelta;
         return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
     });
 
-    const filteredEvents = prioritizedEvents.filter((event) => {
+    const featuredItems = sortedEvents.filter((event) => {
+        // Search Filter
+        const matchesSearch = !searchQuery.trim() ||
+            event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (event.city?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (event.venue || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        // Date Filter
         if (eventFilter === 'today') return isSameDay(event.dateTime);
         if (eventFilter === 'week') return isWithinWeek(event.dateTime);
         return true;
     });
 
-    const fallbackFeatured = prioritizedEvents.filter(event => event.featured).slice(0, 5);
-    const fallbackAny = prioritizedEvents.slice(0, 6);
-    const featuredDisplay = filteredEvents.length >= 5
-        ? filteredEvents.slice(0, 6)
-        : filteredEvents.length > 0
-            ? [...filteredEvents, ...fallbackFeatured.filter(e => !filteredEvents.some(f => f.id === e.id))].slice(0, 6)
+    const fallbackFeatured = sortedEvents.filter(event => event.featured).slice(0, 5);
+    const fallbackAny = sortedEvents.slice(0, 6);
+    const featuredDisplay = featuredItems.length >= 5
+        ? featuredItems.slice(0, 6)
+        : featuredItems.length > 0
+            ? [...featuredItems, ...fallbackFeatured.filter(e => !featuredItems.some(f => f.id === e.id))].slice(0, 6)
             : (fallbackFeatured.length > 0 ? fallbackFeatured : fallbackAny);
 
     const featuredPageSize = 3;
     const featuredPageCount = Math.max(1, Math.ceil(featuredDisplay.length / featuredPageSize));
     const featuredStart = featuredPage * featuredPageSize;
-    const featuredItems = featuredDisplay.slice(featuredStart, featuredStart + featuredPageSize);
+    const currentFeaturedItems = featuredDisplay.slice(featuredStart, featuredStart + featuredPageSize);
 
     useEffect(() => {
         setFeaturedPage(0);
-    }, [eventFilter]);
+    }, [eventFilter, searchQuery]);
 
     useEffect(() => {
         if (featuredPageCount <= 1) return;
@@ -768,31 +779,51 @@ const OrganizerLanding = () => {
             {/* 3. Featured Events */}
             <section id="featured-events" style={{ padding: '8rem 0', background: 'var(--bg-subtle)' }}>
                 <div className="container">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '2rem', marginBottom: '2.5rem' }}>
-                        <div>
-                            <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '0.8rem', color: 'var(--text-main)' }}>{t('landing.featured.title')}</h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', marginBottom: '3.5rem' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-main)' }}>{t('landing.featured.title')}</h2>
                             <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>{t('landing.featured.subtitle')}</p>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                            {[
-                                { key: 'today', label: t('landing.featured.filter.today') },
-                                { key: 'week', label: t('landing.featured.filter.week') },
-                                { key: 'all', label: t('landing.featured.filter.all') }
-                            ].map((option) => (
+
+                        <div style={{ width: '100%', maxWidth: '600px', position: 'relative' }}>
+                            <Search size={22} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input
+                                type="text"
+                                placeholder={t('landing.featured.searchPlaceholder', 'Search events by name or city...')}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '1.2rem 1.5rem 1.2rem 4rem',
+                                    borderRadius: '999px',
+                                    background: 'var(--bg-subtle)',
+                                    border: '1px solid var(--border)',
+                                    color: 'var(--text-main)',
+                                    fontSize: '1.1rem',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {(['all', 'today', 'week'] as const).map((tag) => (
                                 <button
-                                    key={option.key}
-                                    onClick={() => setEventFilter(option.key as 'today' | 'week' | 'all')}
+                                    key={tag}
+                                    onClick={() => setEventFilter(tag)}
                                     style={{
-                                        padding: '0.6rem 1.2rem',
+                                        padding: '0.6rem 1.5rem',
                                         borderRadius: '999px',
-                                        border: '1px solid var(--border)',
-                                        background: eventFilter === option.key ? 'var(--primary)' : 'transparent',
-                                        color: eventFilter === option.key ? 'white' : 'var(--text-main)',
-                                        fontWeight: 700,
-                                        cursor: 'pointer'
+                                        border: '1px solid',
+                                        borderColor: eventFilter === tag ? 'var(--primary)' : 'var(--border)',
+                                        background: eventFilter === tag ? 'var(--primary)' : 'transparent',
+                                        color: eventFilter === tag ? 'white' : 'var(--text-muted)',
+                                        fontWeight: 800,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                                     }}
                                 >
-                                    {option.label}
+                                    {t(`landing.featured.filter.${tag}`)}
                                 </button>
                             ))}
                         </div>
@@ -812,50 +843,50 @@ const OrganizerLanding = () => {
                         <div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
                                 {featuredItems.map((event) => (
-                                <div
-                                    key={event.id}
-                                    className="glass"
-                                    style={{ borderRadius: '2rem', border: '1px solid var(--border)', overflow: 'hidden', cursor: 'pointer' }}
-                                    onClick={() => navigate(`/event/${event.id}`)}
-                                >
-                                    <div style={{ position: 'relative', height: '180px', overflow: 'hidden' }}>
-                                        {event.coverImage ? (
-                                            <img src={event.coverImage} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🎟️</div>
-                                        )}
-                                        {event.featured && (
-                                            <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(17, 24, 39, 0.75)', color: 'white', padding: '4px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 800 }}>
-                                                {t('landing.featured.adminPriority')}
+                                    <div
+                                        key={event.id}
+                                        className="glass"
+                                        style={{ borderRadius: '2rem', border: '1px solid var(--border)', overflow: 'hidden', cursor: 'pointer' }}
+                                        onClick={() => navigate(`/event/${event.id}`)}
+                                    >
+                                        <div style={{ position: 'relative', height: '180px', overflow: 'hidden' }}>
+                                            {event.coverImage ? (
+                                                <img src={event.coverImage} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🎟️</div>
+                                            )}
+                                            {event.featured && (
+                                                <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(17, 24, 39, 0.75)', color: 'white', padding: '4px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 800 }}>
+                                                    {t('landing.featured.adminPriority')}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{ padding: '1.5rem' }}>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-main)' }}>{event.title}</h3>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Calendar size={14} /> {formatEventDate(event.dateTime)}</span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={14} /> {formatEventTime(event.dateTime)}</span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><MapPin size={14} /> {event.city?.name || t('landing.featured.cityFallback')}</span>
                                             </div>
-                                        )}
-                                    </div>
-                                    <div style={{ padding: '1.5rem' }}>
-                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-main)' }}>{event.title}</h3>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Calendar size={14} /> {formatEventDate(event.dateTime)}</span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={14} /> {formatEventTime(event.dateTime)}</span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><MapPin size={14} /> {event.city?.name || t('landing.featured.cityFallback')}</span>
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                {event.category?.name && (
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(139, 92, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                        <Tag size={12} /> {event.category?.name}
+                                                    </span>
+                                                )}
+                                                {event.organizer?.organizationName && (
+                                                    <span style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(59, 130, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                        {event.organizer.organizationName}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <button
+                                                style={{ marginTop: '1rem', padding: '0.6rem 1rem', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: 'pointer' }}
+                                            >
+                                                {t('landing.featured.cta')}
+                                            </button>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                            {event.category?.name && (
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(139, 92, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
-                                                    <Tag size={12} /> {event.category?.name}
-                                                </span>
-                                            )}
-                                            {event.organizer?.organizationName && (
-                                                <span style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(59, 130, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
-                                                    {event.organizer.organizationName}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <button
-                                            style={{ marginTop: '1rem', padding: '0.6rem 1rem', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: 'pointer' }}
-                                        >
-                                            {t('landing.featured.cta')}
-                                        </button>
                                     </div>
-                                </div>
                                 ))}
                             </div>
                         </div>

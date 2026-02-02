@@ -19,6 +19,7 @@ import notificationRoutes from "./routes/notification.routes";
 import contentRoutes from "./routes/content.routes";
 import bookingRoutes from "./routes/booking.routes";
 import staffRoutes from "./routes/staff.routes";
+import supportRoutes from "./routes/support.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import cron from "node-cron";
 import { EventService } from "./services/event.service";
@@ -95,6 +96,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/content", contentRoutes);
 app.use("/api/booking", bookingRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/support", supportRoutes);
 app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {
