@@ -96,6 +96,12 @@ body::-webkit-scrollbar {
     /* Chrome, Safari and Opera */
 }
 
+/* Used by dashboards to keep the window from scrolling */
+body.dashboard-no-body-scroll {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
 /* Refunds dropdown theming */
 .refunds-select {
     color: var(--text-main);
@@ -160,7 +166,7 @@ body::-webkit-scrollbar {
 .container-fluid {
     display: flex;
     height: 100vh;
-    width: 100vw;
+    width: 100%;
 }
 
 /* Sidebar */
@@ -266,6 +272,17 @@ body::-webkit-scrollbar {
     flex: 1;
     overflow-y: auto;
     width: 100%;
+}
+
+/* Organizer dashboard: single scroll container (main body) */
+.organizer-dashboard-layout .main-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.organizer-dashboard-layout .content-scroll-area {
+    flex: 0 0 auto;
+    overflow: visible;
 }
 
 /* Header */

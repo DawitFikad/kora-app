@@ -58,6 +58,14 @@ const OrganizerDashboard = () => {
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
 
+    // Keep the page from scrolling; only the dashboard content should scroll.
+    useEffect(() => {
+        document.body.classList.add('dashboard-no-body-scroll');
+        return () => {
+            document.body.classList.remove('dashboard-no-body-scroll');
+        };
+    }, []);
+
     // Fetch organizer profile on mount to get logo and name
     useEffect(() => {
         const fetchData = async () => {
@@ -232,7 +240,7 @@ const OrganizerDashboard = () => {
     };
 
     return (
-        <div className="container-fluid">
+        <div className="container-fluid organizer-dashboard-layout">
             {/* 🟢 Sidebar */}
             <aside className="sidebar">
                 <div className="logo-section" style={{ padding: '32px 24px' }}>
