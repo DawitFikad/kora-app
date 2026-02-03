@@ -31,6 +31,7 @@ export const env = {
     teleBirrAppSecret: clean(process.env.TELEBIRR_APP_SECRET),
     teleBirrPrivateKey: clean(process.env.TELEBIRR_PRIVATE_KEY),
     teleBirrApiUrl: clean(process.env.TELEBIRR_API_URL) || 'https://app.ethiotelebirr.et:9091',
+    teleBirrTestMode: clean(process.env.TELEBIRR_TEST_MODE),
     cbeBirrKey: clean(process.env.CBE_BIRR_API_KEY),
     amoleKey: clean(process.env.AMOLE_API_KEY),
     chapaSecretKey: clean(process.env.CHAPA_SECRET_KEY),

@@ -16,6 +16,7 @@
     "scripts",
     "node_modules",
     "prisma.config.ts",
-    "test-telebirr-query.ts"
+    "test-telebirr-query.ts",
+    "inspect-prisma.ts"
   ]
 }

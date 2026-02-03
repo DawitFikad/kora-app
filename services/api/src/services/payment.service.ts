@@ -6,6 +6,7 @@ import { env } from "../config/env";
 import logger from "../utils/logger";
 const telebirrProvider = require("./providers/telebirr.provider");
 import { ChapaProvider } from "./providers/chapa.provider";
+import { TelebirrProvider } from "./providers/telebirr.provider";
 
 export class PaymentService {
     /**
@@ -141,25 +142,58 @@ export class PaymentService {
 
         try {
             switch (purchase.paymentMethod) {
-                case "TELEBIRR":
-                    // Check if Telebirr is configured
-                    const isTelebirrConfigured = !!(
-                        env.teleBirrMerchantAppId &&
-                        !env.teleBirrMerchantAppId.includes('your_')
-                    );
+             // In the TELEBIRR case of initializePayment:
+case "TELEBIRR":
+    // Define URLs as in initializePayment
+    const baseUrl = process.env.API_URL || "http://10.0.2.2:4000";
+    const tx_ref = purchase.paymentRef;
+    const return_url = `${baseUrl}/api/payments/verify-callback?ref=${tx_ref}`;
+    const callback_url = `${baseUrl}/api/payments/webhook`;
 
-                    if (isTelebirrConfigured) {
-                        const result = await telebirrProvider.TelebirrProvider.verify(paymentRef);
-                        isValid = result.success;
-                        if (result.transactionId) {
-                            externalRef = result.transactionId;
-                        }
-                        verificationResult = result;
-                    } else {
-                        throw new Error("Telebirr provider is not configured for verification");
-                    }
-                    break;
+    // Check if Telebirr is properly configured
+    if (!TelebirrProvider.isConfigured()) {
+        logger.error({ 
+            envVars: {
+                hasAppId: !!env.teleBirrMerchantAppId,
+                hasPrivateKey: !!env.teleBirrPrivateKey,
+                appId: env.teleBirrMerchantAppId?.substring(0, 5) + '...'
+            }
+        }, "Telebirr not configured properly");
+        throw new Error("Telebirr payment provider is not configured properly. Check environment variables.");
+    }
 
+    logger.info({ 
+        tx_ref, 
+        amount: purchase.totalAmount,
+        isConfigured: TelebirrProvider.isConfigured() 
+    }, "Initializing Telebirr payment");
+
+    try {
+        const telebirrResult = await TelebirrProvider.initialize({
+            amount: Number(purchase.totalAmount),
+            orderId: purchase.id.toString(),
+            returnUrl: return_url,
+            notifyUrl: callback_url,
+            subject: `Ticket Purchase #${purchase.id}`,
+            outTradeNo: tx_ref,
+        });
+
+        const checkoutUrl = telebirrResult.checkoutUrl;
+        const providerPayload = { prepayId: telebirrResult.prepayId };
+        
+        logger.info({ 
+            checkoutUrl: checkoutUrl?.substring(0, 100) + '...',
+            hasPrepayId: !!telebirrResult.prepayId 
+        }, "Telebirr initialization successful");
+    } catch (error: any) {
+        logger.error({ 
+            error: error.message,
+            stack: error.stack,
+            purchaseId: purchase.id 
+        }, "Telebirr initialization failed");
+        throw new Error(`Telebirr payment failed: ${error.message}`);
+    }
+    break;
                 case "CHAPA":
                 case "CBE_BIRR":
                 case "AMOLE":

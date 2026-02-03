@@ -140,6 +140,17 @@ body::-webkit-scrollbar {
     background-color: var(--bg-card);
 }
 
+/* Auth modal dropdown theming (Organizer type select) */
+.auth-select {
+    color: var(--text-main);
+    background-color: var(--bg-subtle);
+}
+
+.auth-select option {
+    color: var(--text-main);
+    background-color: var(--bg-card);
+}
+
 .container {
     max-width: 1280px;
     margin: 0 auto;

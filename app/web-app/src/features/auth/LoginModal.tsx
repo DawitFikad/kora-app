@@ -287,6 +287,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.organizerType')}</label>
                                             <select
+                                                className="auth-select"
                                                 value={organizerType}
                                                 onChange={(e) => setOrganizerType(e.target.value as 'company' | 'individual' | '')}
                                                 required
