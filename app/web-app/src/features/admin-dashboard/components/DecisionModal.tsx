@@ -17,6 +17,7 @@ type Props = {
 const DecisionModal: React.FC<Props> = ({ open, title, showCommission = false, showPriority = false, showRevenueEstimate = false, initialCommission, initialPriority, initialRevenue, onCancel, onConfirm }) => {
     const { t } = useTranslation();
     const [reason, setReason] = useState('');
+    const [error, setError] = useState<string | null>(null);
     const [feePercentage, setFeePercentage] = useState(initialCommission?.feePercentage ?? 10);
     const [feeFixed, setFeeFixed] = useState(initialCommission?.feeFixed ?? 0);
     const [priority, setPriority] = useState(initialPriority ?? '');
@@ -25,6 +26,7 @@ const DecisionModal: React.FC<Props> = ({ open, title, showCommission = false, s
     useEffect(() => {
         if (open) {
             setReason('');
+            setError(null);
             setFeePercentage(initialCommission?.feePercentage ?? 10);
             setFeeFixed(initialCommission?.feeFixed ?? 0);
             setPriority(initialPriority ?? '');
@@ -40,7 +42,27 @@ const DecisionModal: React.FC<Props> = ({ open, title, showCommission = false, s
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900 }}>{title || t('admin.decision.title')}</h3>
                 <div style={{ marginTop: 12 }}>
                     <label style={{ fontSize: '0.85rem', fontWeight: 800, display: 'block', marginBottom: 6 }}>{t('admin.decision.reason_label')}</label>
-                    <textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)' }} />
+                    <textarea
+                        value={reason}
+                        onChange={e => {
+                            setReason(e.target.value);
+                            if (error) setError(null);
+                        }}
+                        rows={4}
+                        style={{
+                            width: '100%',
+                            padding: 10,
+                            borderRadius: 8,
+                            background: 'var(--bg-main)',
+                            border: error ? '1px solid #EF4444' : '1px solid var(--border)',
+                            color: 'var(--text-main)'
+                        }}
+                    />
+                    {error && (
+                        <div style={{ marginTop: 6, color: '#EF4444', fontWeight: 800, fontSize: '0.8rem' }}>
+                            {error}
+                        </div>
+                    )}
                 </div>
 
                 {showCommission && (
@@ -80,7 +102,7 @@ const DecisionModal: React.FC<Props> = ({ open, title, showCommission = false, s
                     <button
                         onClick={() => {
                             if (!reason || reason.trim().length === 0) {
-                                alert(t('admin.decision.reason_required'));
+                                setError(t('admin.decision.reason_required'));
                                 return;
                             }
                             onConfirm({ reason: reason.trim(), commission: showCommission ? { feePercentage, feeFixed, feeType: 'PERCENTAGE' } : undefined, priority: showPriority ? priority : undefined, revenueEstimate: showRevenueEstimate && revenueEstimate !== '' ? Number(revenueEstimate) : undefined });

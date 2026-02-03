@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircle, Loader2, XCircle, RefreshCw, Ban, HandCoins } from 'lucide-react';
 import { AdminService } from '../../../core/api/admin.service';
 import DecisionModal from './DecisionModal';
+import ConfirmModal from './ConfirmModal';
 
 export type ReviewTab = 'refunds' | 'cancellations';
 
@@ -18,6 +19,9 @@ export const RefundsCancellationsView = () => {
 
     const [decisionOpen, setDecisionOpen] = useState(false);
     const [decisionContext, setDecisionContext] = useState<null | { kind: 'refund-reject' | 'cancel-reject'; id: number }>(null);
+
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmContext, setConfirmContext] = useState<null | { kind: 'refund-approve' | 'cancel-approve'; id: number }>(null);
 
     const fetchAll = async () => {
         try {
@@ -71,23 +75,31 @@ export const RefundsCancellationsView = () => {
         }
     };
 
-    const approveRefund = async (id: number) => {
-        if (!confirm(t('admin.refunds.confirm_approve', 'Approve this refund?'))) return;
-        try {
-            await AdminService.approveRefund(id);
-            await fetchAll();
-        } catch (e) {
-            console.error('Approve refund failed', e);
-        }
+    const openApproveRefund = (id: number) => {
+        setConfirmContext({ kind: 'refund-approve', id });
+        setConfirmOpen(true);
     };
 
-    const approveCancellation = async (id: number) => {
-        if (!confirm(t('admin.cancellations.confirm_approve', 'Approve this event cancellation? Refunds will be processed automatically.'))) return;
+    const openApproveCancellation = (id: number) => {
+        setConfirmContext({ kind: 'cancel-approve', id });
+        setConfirmOpen(true);
+    };
+
+    const confirmApprove = async (note?: string) => {
+        if (!confirmContext) return;
+
         try {
-            await AdminService.approveCancellationRequest(id);
+            if (confirmContext.kind === 'refund-approve') {
+                await AdminService.approveRefund(confirmContext.id);
+            } else {
+                await AdminService.approveCancellationRequest(confirmContext.id, note);
+            }
+
+            setConfirmOpen(false);
+            setConfirmContext(null);
             await fetchAll();
         } catch (e) {
-            console.error('Approve cancellation failed', e);
+            console.error('Approve action failed', e);
         }
     };
 
@@ -233,7 +245,7 @@ export const RefundsCancellationsView = () => {
                                                     <XCircle size={16} /> {t('common.reject', 'Reject')}
                                                 </button>
                                                 <button
-                                                    onClick={() => approveRefund(r.id)}
+                                                    onClick={() => openApproveRefund(r.id)}
                                                     style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -339,7 +351,7 @@ export const RefundsCancellationsView = () => {
                                                     <XCircle size={16} /> {t('common.reject', 'Reject')}
                                                 </button>
                                                 <button
-                                                    onClick={() => approveCancellation(c.id)}
+                                                    onClick={() => openApproveCancellation(c.id)}
                                                     style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -378,6 +390,26 @@ export const RefundsCancellationsView = () => {
                     }
                     onCancel={() => { setDecisionOpen(false); setDecisionContext(null); }}
                     onConfirm={(p: any) => confirmDecision(p)}
+                />
+            )}
+
+            {confirmOpen && (
+                <ConfirmModal
+                    open={confirmOpen}
+                    title={confirmContext?.kind === 'refund-approve'
+                        ? t('admin.refunds.approve_title', 'Approve Refund')
+                        : t('admin.cancellations.approve_title', 'Approve Cancellation')
+                    }
+                    message={confirmContext?.kind === 'refund-approve'
+                        ? t('admin.refunds.confirm_approve', 'Approve this refund?')
+                        : t('admin.cancellations.confirm_approve', 'Approve this event cancellation? Refunds will be processed automatically.')
+                    }
+                    confirmLabel={t('common.approve', 'Approve')}
+                    cancelLabel={t('common.cancel', 'Cancel')}
+                    showNote={confirmContext?.kind === 'cancel-approve'}
+                    noteLabel={t('admin.cancellations.admin_note', 'Admin note (optional)')}
+                    onCancel={() => { setConfirmOpen(false); setConfirmContext(null); }}
+                    onConfirm={(note?: string) => confirmApprove(note)}
                 />
             )}
         </motion.div>
