@@ -7,10 +7,9 @@ import {
     Loader2,
     MapPin,
     TrendingUp,
-    UserPlus,
-    BarChart3
+    UserPlus
 } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AdminService } from '../../../core/api/admin.service';
 import type { AdminTab } from '../AdminDashboard';

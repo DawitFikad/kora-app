@@ -74,7 +74,6 @@ export const SalesRevenueView = () => {
     const [selectedEvent, setSelectedEvent] = useState<string>('all');
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all');
     const [events, setEvents] = useState<any[]>([]);
-    const [error, setError] = useState<string | null>(null);
     const [salesFilters, setSalesFilters] = useState({
         eventId: 'all',
         customer: '',
@@ -100,7 +99,6 @@ export const SalesRevenueView = () => {
 
     const fetchData = async () => {
         setLoading(true);
-        setError(null);
         try {
             const [financialsResponse, myEventsResponse] = await Promise.all([
                 OrganizerService.getFinancials().catch(() => ({
@@ -154,7 +152,6 @@ export const SalesRevenueView = () => {
             setSalesData(salesData);
         } catch (error: any) {
             console.error('Failed to fetch sales data:', error);
-            setError(error?.message || 'Failed to load sales data');
             if (toast?.error) toast.error('Failed to load sales data');
 
             // Set default data even on error
@@ -960,7 +957,7 @@ export const SalesRevenueView = () => {
                                 fill="#8884d8"
                                 dataKey="value"
                             >
-                                {salesData?.revenueByTicketType.map((entry, index) => (
+                                {salesData?.revenueByTicketType.map((_, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                             </Pie>

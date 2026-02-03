@@ -9,7 +9,6 @@ import {
     Users,
     Headphones,
     AlertTriangle,
-    Mail,
     LogOut,
     CheckCircle2,
     BarChart3

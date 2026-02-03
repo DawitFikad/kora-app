@@ -64,6 +64,7 @@ export class TicketService {
 
             ticketsData.push({
                 id: ticketId,
+                code: ticketCode,
                 qrPayload,
                 status: TicketStatus.VALID,
                 userId: purchase.userId,

@@ -21,22 +21,37 @@ import bookingRoutes from "./routes/booking.routes";
 import staffRoutes from "./routes/staff.routes";
 import supportRoutes from "./routes/support.routes";
 import { errorHandler } from "./middlewares/error.middleware";
-import cron from "node-cron";
+import { errorHandler } from "./middlewares/error.middleware";
 import { EventService } from "./services/event.service";
 import { PaymentService } from "./services/payment.service";
 
 const app = express();
 
-// Scheduler: Send Event Reminders every hour
-cron.schedule("0 * * * *", async () => {
-  console.log("[SCHEDULER] Running Event Reminders...");
-  await EventService.sendReminders();
+// ----------------------------------------
+// 🔹 VERCEL CRON ENDPOINTS
+// ----------------------------------------
+app.get("/api/cron/reminders", async (req, res) => {
+  // Security check: Verify Vercel Signature or simply proceed if internal
+  // For simplicity here, we assume Vercel secures crons or use a shared secret in headers
+  try {
+    console.log("[CRON] Running Event Reminders...");
+    await EventService.sendReminders();
+    res.json({ success: true, message: "Reminders sent" });
+  } catch (error) {
+    console.error("[CRON] Reminders Failed:", error);
+    res.status(500).json({ success: false, error: "Failed to send reminders" });
+  }
 });
 
-// Scheduler: Reconcile Stuck Payments every 15 minutes
-cron.schedule("*/15 * * * *", async () => {
-  console.log("[SCHEDULER] Running Payment Reconciliation...");
-  await PaymentService.reconcileStuckPayments();
+app.get("/api/cron/reconcile", async (req, res) => {
+  try {
+    console.log("[CRON] Running Payment Reconciliation...");
+    await PaymentService.reconcileStuckPayments();
+    res.json({ success: true, message: "Reconciliation complete" });
+  } catch (error) {
+    console.error("[CRON] Reconciliation Failed:", error);
+    res.status(500).json({ success: false, error: "Failed to reconcile payments" });
+  }
 });
 
 // Global Rate Limiting

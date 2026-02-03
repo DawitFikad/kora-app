@@ -17,8 +17,7 @@ import {
     Sun,
     Moon,
     Users,
-    Search,
-    Zap
+    Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -277,54 +276,7 @@ const TrustSignals = () => {
     );
 };
 
-const Testimonials = () => {
-    const { t, language } = useLanguage();
-    const tms = [
-        {
-            name: language === 'am' ? 'አቢነት ከበደ' : 'Abinet Kebede',
-            role: language === 'am' ? 'የኮንሰርት አዘጋጅ' : 'Concert Promoter',
-            quote: language === 'am' ? 'ET-TICKETS የዝግጅት መግቢያ አያያዝ ሂደታችንን ለውጦታል። ከ5000 በላይ ታዳሚዎች ቢኖሩም የQR ቅኝቱ ፍጹም ነው።' : 'ET-TICKETS transformed how we manage gate entry. The QR scanning is flawless even with 5000+ attendees.'
-        },
-        {
-            name: language === 'am' ? 'ሰላም ተክሌ' : 'Selam Tekle',
-            role: language === 'am' ? 'የኮንፈረንስ አዘጋጅ' : 'Conference Organizer',
-            quote: language === 'am' ? 'የእውነተኛ ጊዜ ዳሽቦርዱ የአእምሮ ሰላም ይሰጠናል። ገቢያችን በየደቂቃው ሲያድግ ማየት እንችላለን።' : 'The real-time dashboard gives us peace of mind. We can see revenue growing minute by minute.'
-        },
-        {
-            name: language === 'am' ? 'ዳዊት መንግስቱ' : 'Dawit Mengistu',
-            role: language === 'am' ? 'የስፖርት ዝግጅት መሪ' : 'Sports Event Lead',
-            quote: language === 'am' ? 'በመጨረሻም ቴሌብርን እና ሲቢኢ ብርን የሚረዳ መድረክ አገኘን። የክፍያ አሰፋፈር ሂደቱ በሚገርም ሁኔታ ፈጣን ነው።' : 'Finally, a platform that understands Telebirr and CBE Birr. The settlement process is exceptionally fast.'
-        }
-    ];
 
-    return (
-        <section style={{ padding: '10rem 0' }}>
-            <div className="container">
-                <div style={{ textAlign: 'center', marginBottom: '6rem' }}>
-                    <h2 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('testimonials.title')}</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{t('testimonials.subtitle')}</p>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem' }}>
-                    {tms.map((t, i) => (
-                        <div key={i} className="glass" style={{ padding: '3.5rem', borderRadius: '3rem', position: 'relative' }}>
-                            <div style={{ position: 'absolute', top: '2rem', left: '2rem', color: 'var(--primary)', opacity: 0.2 }}>
-                                <Zap size={48} />
-                            </div>
-                            <p style={{ fontSize: '1.15rem', fontStyle: 'italic', marginBottom: '2.5rem', lineHeight: 1.7, position: 'relative', color: 'var(--text-main)' }}>"{t.quote}"</p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(45deg, var(--primary), var(--secondary))' }} />
-                                <div>
-                                    <h5 style={{ fontWeight: 900, fontSize: '1rem', color: 'var(--text-main)' }}>{t.name}</h5>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t.role}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-};
 
 const InlineBannerCarousel = ({ banners }: { banners: any[] }) => {
     const [index, setIndex] = useState(0);
@@ -493,7 +445,6 @@ const OrganizerLanding = () => {
     const [eventsLoading, setEventsLoading] = useState(true);
     const [eventFilter, setEventFilter] = useState<'all' | 'today' | 'week'>('all');
     const [searchQuery, setSearchQuery] = useState('');
-    const [featuredPage, setFeaturedPage] = useState(0);
 
     useEffect(() => {
         const fetchBanners = async () => {
@@ -587,22 +538,14 @@ const OrganizerLanding = () => {
             ? [...featuredItems, ...fallbackFeatured.filter(e => !featuredItems.some(f => f.id === e.id))].slice(0, 6)
             : (fallbackFeatured.length > 0 ? fallbackFeatured : fallbackAny);
 
-    const featuredPageSize = 3;
-    const featuredPageCount = Math.max(1, Math.ceil(featuredDisplay.length / featuredPageSize));
-    const featuredStart = featuredPage * featuredPageSize;
-    const currentFeaturedItems = featuredDisplay.slice(featuredStart, featuredStart + featuredPageSize);
 
-    useEffect(() => {
-        setFeaturedPage(0);
-    }, [eventFilter, searchQuery]);
 
-    useEffect(() => {
-        if (featuredPageCount <= 1) return;
-        const timer = setInterval(() => {
-            setFeaturedPage(prev => (prev + 1) % featuredPageCount);
-        }, 5000);
-        return () => clearInterval(timer);
-    }, [featuredPageCount]);
+
+
+
+
+
+
 
     const formatEventDate = (value: string) => new Intl.DateTimeFormat(
         language === 'am' ? 'am-ET' : 'en-US',

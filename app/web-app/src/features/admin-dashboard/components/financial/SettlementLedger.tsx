@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Receipt, Search, Download, Filter, ChevronLeft, ChevronRight, Hash, Calendar, ArrowUpRight, ShieldCheck, MoreVertical } from 'lucide-react';
+import { Search, Download, ChevronLeft, ChevronRight, Hash, Calendar, ArrowUpRight, ShieldCheck, MoreVertical } from 'lucide-react';
 import { AdminService } from '../../../../core/api/admin.service';
 import { downloadBlobAsCSV } from './csvExport';
 

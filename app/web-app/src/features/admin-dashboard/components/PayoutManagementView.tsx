@@ -25,7 +25,6 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
     const [metrics, setMetrics] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
-    const [organizerSummaries, setOrganizerSummaries] = useState<any[]>([]);
 
     const fetchData = async () => {
         try {
@@ -51,24 +50,7 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
         fetchData();
     }, []);
 
-    useEffect(() => {
-        // Build simple organizer summary from fetched data if backend summary not provided
-        const summaries: Record<string, any> = {};
-        (pendingPayouts || []).forEach(p => {
-            const key = p.wallet?.organizer?.id || p.organizerId || p.organizerName || 'unknown';
-            summaries[key] = summaries[key] || { organizerName: p.wallet?.organizer?.organizationName || p.organizerName || 'Unknown', pending: 0, paid: 0, total: 0, nextSettlement: p.nextSettlement || null };
-            summaries[key].pending += Number(p.amount || 0);
-            summaries[key].total += Number(p.amount || 0);
-            if (!summaries[key].nextSettlement && p.nextSettlement) summaries[key].nextSettlement = p.nextSettlement;
-        });
-        (processedPayouts || []).forEach(p => {
-            const key = p.wallet?.organizer?.id || p.organizerId || p.organizerName || 'unknown';
-            summaries[key] = summaries[key] || { organizerName: p.wallet?.organizer?.organizationName || p.organizerName || 'Unknown', pending: 0, paid: 0, total: 0, nextSettlement: p.nextSettlement || null };
-            summaries[key].paid += Number(p.amount || 0);
-            summaries[key].total += Number(p.amount || 0);
-        });
-        setOrganizerSummaries(Object.values(summaries));
-    }, [pendingPayouts, processedPayouts]);
+
 
     const [decisionOpen, setDecisionOpen] = useState(false);
     const [decisionContext, setDecisionContext] = useState<any>(null);

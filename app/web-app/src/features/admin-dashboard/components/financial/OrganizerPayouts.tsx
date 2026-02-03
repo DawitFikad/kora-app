@@ -75,7 +75,7 @@ export const OrganizerPayouts: React.FC = () => {
                         <ArrowUpRight size={32} color="var(--text-muted)" />
                         <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>No active settlements found</span>
                     </div>
-                ) : items?.map((r: any, i: number) => (
+                ) : items?.map((r: any) => (
                     <div style={{
                         padding: '16px',
                         borderRadius: '20px',

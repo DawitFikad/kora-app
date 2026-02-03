@@ -16,7 +16,6 @@ export const AnalyticsView = ({ view = 'GMV' }: { view?: 'GMV' | 'REVENUE' }) =>
     const [selectedOrganizer, setSelectedOrganizer] = useState('all');
     const [selectedEvent, setSelectedEvent] = useState('all');
     const [customPeriod, setCustomPeriod] = useState<{ start: Date; end: Date } | null>(null);
-    const [showTooltip, setShowTooltip] = useState(false);
     const [comparisonPeriod, setComparisonPeriod] = useState('previous');
 
     const [organizers, setOrganizers] = useState<any[]>([]);
@@ -103,8 +102,6 @@ export const AnalyticsView = ({ view = 'GMV' }: { view?: 'GMV' | 'REVENUE' }) =>
                     {events.map((ev: any) => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
                 </select>
                 <button
-                    onMouseEnter={() => setShowTooltip(true)}
-                    onMouseLeave={() => setShowTooltip(false)}
                     style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'help', fontSize: '0.85rem' }}
                 >
                     What is GMV?

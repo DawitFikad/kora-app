@@ -255,7 +255,7 @@ const BookingPage: React.FC = () => {
                         <h1>{event.title}</h1>
                         <div className="event-meta">
                             <span className="meta-item">
-                                📍 {event.venue}, {event.city}
+                                📍 {event.venue}, {typeof event.city === 'object' ? event.city.name : event.city}
                             </span>
                             <span className="meta-item">
                                 📅 {new Date(event.dateTime).toLocaleDateString('en-US', {

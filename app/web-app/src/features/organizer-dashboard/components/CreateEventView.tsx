@@ -12,7 +12,6 @@ import {
     Loader2,
     Settings,
     Armchair,
-    Clock,
     AlertCircle
 } from 'lucide-react';
 import { OrganizerService } from '../../../core/api/organizer.service';

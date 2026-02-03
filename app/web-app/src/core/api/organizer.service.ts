@@ -67,7 +67,7 @@ export const OrganizerService = {
 
     // Refunds & Cancellations
     getRefunds: () => api.get('/organizer/refunds'),
-    requestRefund: (data: { purchaseId: number, reason: string, description?: string }) => api.post('/organizer/refunds/request', data),
+    requestRefund: (data: { purchaseId: number, reason: string, description?: string, amount?: number }) => api.post('/organizer/refunds/request', data),
     approveRefund: (refundId: number) => api.post(`/organizer/refunds/${refundId}/approve`),
     rejectRefund: (refundId: number, reason: string) => api.post(`/organizer/refunds/${refundId}/reject`, { reason }),
     getRefundImpact: (eventId: number) => api.get(`/organizer/events/${eventId}/refund-impact`),

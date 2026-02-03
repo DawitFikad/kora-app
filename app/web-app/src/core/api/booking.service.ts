@@ -18,8 +18,8 @@ export interface EventForBooking {
     dateTime: string;
     coverImage: string | null;
     eventType: 'CAPACITY' | 'SEAT_MAP';
-    category: string;
-    city: string;
+    category: string | { name: string };
+    city: string | { name: string };
     organizer: string;
     feeType: string;
     feeFixed: number;

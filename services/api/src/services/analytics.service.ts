@@ -6,11 +6,15 @@ export class AnalyticsService {
      * Updates/Creates an EntryMetric record for the current time bucket.
      */
     static async recordEntryMetric(eventId: number, gateId: string | null, status: "SUCCESS" | "REJECTED") {
+        // EntryMetric.eventId has a FK to Event; avoid writing metrics for unknown/invalid events.
+        if (!eventId || eventId <= 0) return;
+
         const now = new Date();
         // Bucket by hour
         const timestamp = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
 
-        await prisma.entryMetric.upsert({
+        try {
+            await prisma.entryMetric.upsert({
             where: {
                 eventId_gateId_timestamp: {
                     eventId,
@@ -29,7 +33,13 @@ export class AnalyticsService {
                 entryCount: status === "SUCCESS" ? 1 : 0,
                 failedCount: status === "REJECTED" ? 1 : 0
             }
-        });
+            });
+        } catch (err: any) {
+            // If the event was deleted or eventId is invalid, ignore the metric write.
+            // Prisma FK violation code: P2003
+            if (err?.code === 'P2003') return;
+            throw err;
+        }
     }
 
     /**

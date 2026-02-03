@@ -14,7 +14,6 @@ import {
     Users,
     Shield,
     AlertTriangle,
-    TrendingUp,
     Activity
 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
@@ -52,7 +51,6 @@ export const ScannerView = () => {
 
     // Duplicate detection state
     const [scannedTickets, setScannedTickets] = useState<Set<string>>(new Set());
-    const [showAdminOverride, setShowAdminOverride] = useState(false);
     const [pendingOverride, setPendingOverride] = useState<string | null>(null);
 
     useEffect(() => {
@@ -254,7 +252,7 @@ export const ScannerView = () => {
             const reader = new BrowserMultiFormatReader();
             readerRef.current = reader;
             setCameraOn(true);
-            await reader.decodeFromVideoDevice(null, videoRef.current as HTMLVideoElement, (result, err) => {
+            await reader.decodeFromVideoDevice(undefined, videoRef.current as HTMLVideoElement, (result, err) => {
                 if (result) {
                     handleValidate(result.getText());
                 }
