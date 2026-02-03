@@ -68,7 +68,18 @@ export class RefundController {
         try {
             const prisma = (await import("../lib/prisma")).prisma;
             const refunds = await prisma.refund.findMany({
-                include: { purchase: { include: { user: true } } },
+                include: {
+                    purchase: {
+                        include: {
+                            user: { include: { profile: true } },
+                            tickets: {
+                                include: {
+                                    event: { select: { id: true, title: true, dateTime: true, organizerId: true } }
+                                }
+                            }
+                        }
+                    }
+                },
                 orderBy: { createdAt: 'desc' }
             });
             res.json({ success: true, data: refunds });

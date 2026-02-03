@@ -250,7 +250,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                 pendingRefunds={0}
                                 onOpenOrganizers={() => setActiveTab('Organizer Approvals')}
                                 onOpenEvents={() => setActiveTab('Event Approvals')}
-                                onOpenRefunds={() => setActiveTab('Audit Logs')}
+                                onOpenRefunds={() => setActiveTab('Refunds & Cancellations')}
                             />
                         </div>
                     </div>

@@ -43,6 +43,11 @@ router.delete("/notifications/clear", authenticate, authorize([Role.ADMIN]), Adm
 router.delete("/notifications/:id", authenticate, authorize([Role.ADMIN]), AdminController.deleteNotification);
 router.post("/feature-requests/:notificationId/respond", authenticate, authorize([Role.ADMIN]), AdminController.respondToFeatureRequest);
 
+// Refunds & Cancellations (Admin Review)
+router.get('/cancellation-requests', authenticate, authorize([Role.ADMIN]), AdminController.getCancellationRequests);
+router.post('/cancellation-requests/:id/approve', authenticate, authorize([Role.ADMIN]), AdminController.approveCancellationRequest);
+router.post('/cancellation-requests/:id/reject', authenticate, authorize([Role.ADMIN]), AdminController.rejectCancellationRequest);
+
 // System Config
 router.get("/config", authenticate, authorize([Role.ADMIN]), AdminController.getSystemConfigs);
 router.patch("/config", authenticate, authorize([Role.ADMIN]), AdminController.updateSystemConfig);

@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Trash2, CreditCard, Bell, Shield, DollarSign, Users, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
+import { Loader2, Plus, Trash2, CreditCard, Bell, Shield, DollarSign, Users, CheckCircle2, AlertCircle, Lock, LogOut } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
 import { ConfirmDialog } from '../../../core/components/ConfirmDialog';
+import { useAuth } from '../../../core/context/AuthContext';
 
 type TabType = 'General' | 'Payout Methods' | 'Team Access' | 'Notifications' | 'Security' | 'Billing';
 
 export const SettingsView = () => {
     const toast = useToast();
+    const { logout } = useAuth();
     const [activeTab, setActiveTab] = useState<TabType>('General');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -423,7 +425,30 @@ export const SettingsView = () => {
                 onCancel={() => setConfirmState({ open: false, title: '' })}
                 onConfirm={() => confirmState.onConfirm?.()}
             />
-            <PageHeader title="Settings" subtitle="Manage your organization settings and preferences." />
+            <PageHeader
+                title="Settings"
+                subtitle="Manage your organization settings and preferences."
+                actions={
+                    <button
+                        onClick={logout}
+                        style={{
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                            fontWeight: 800,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            color: '#EF4444',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <LogOut size={16} /> Sign Out
+                    </button>
+                }
+            />
 
             <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '32px' }}>
                 {/* Sidebar Tabs */}

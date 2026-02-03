@@ -2130,6 +2130,7 @@ export class OrganizerController {
                         status: 'DELIVERED',
                         metadata: {
                             type: 'CANCELLATION_REQUEST',
+                            status: 'PENDING',
                             eventId: event.id,
                             organizerId,
                             reason
@@ -2148,6 +2149,7 @@ export class OrganizerController {
                     status: 'DELIVERED',
                     metadata: {
                         type: 'CANCELLATION_REQUEST',
+                        status: 'PENDING',
                         eventId: event.id,
                         organizerId,
                         reason

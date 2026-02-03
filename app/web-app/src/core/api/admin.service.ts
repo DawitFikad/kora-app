@@ -62,4 +62,13 @@ export const AdminService = {
     getTeamMembers: () => api.get('/admin/users', { params: { role: 'ADMIN' } }),
     getInvitationHistory: () => api.get('/admin/notifications', { params: { title: 'Admin Invited' } }),
     removeAdmin: (userId: number) => api.delete(`/admin/users/${userId}`),
+
+    // Refunds & Cancellations
+    listRefunds: () => api.get('/refunds'),
+    approveRefund: (refundId: number) => api.post(`/refunds/${refundId}/approve`),
+    rejectRefund: (refundId: number, reason: string) => api.post(`/refunds/${refundId}/reject`, { reason }),
+
+    getCancellationRequests: (params?: any) => api.get('/admin/cancellation-requests', { params }),
+    approveCancellationRequest: (requestId: number, adminNote?: string) => api.post(`/admin/cancellation-requests/${requestId}/approve`, { adminNote }),
+    rejectCancellationRequest: (requestId: number, reason: string) => api.post(`/admin/cancellation-requests/${requestId}/reject`, { reason }),
 };

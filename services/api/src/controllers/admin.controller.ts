@@ -1,10 +1,299 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { Role, AccountStatus, OrganizerStatus, NotificationChannel } from "@prisma/client";
+import { Role, AccountStatus, OrganizerStatus, NotificationChannel, RefundReason, RefundStatus } from "@prisma/client";
 import { AdminAnalyticsService } from "../services/admin-analytics.service";
 import { EmailService } from "../services/email.service";
 
 export class AdminController {
+    static async getCancellationRequests(req: Request, res: Response) {
+        try {
+            const { status, page = 1, limit = 20 } = req.query as any;
+
+            const skip = (Number(page) - 1) * Number(limit);
+            const take = Number(limit);
+
+            const where: any = {
+                recipient: 'Audit Log',
+                title: 'Event Cancellation Request'
+            };
+
+            const [logs, total] = await Promise.all([
+                prisma.notificationLog.findMany({
+                    where,
+                    orderBy: { createdAt: 'desc' },
+                    skip,
+                    take
+                }),
+                prisma.notificationLog.count({ where })
+            ]);
+
+            const eventIds = Array.from(new Set(
+                logs.map(l => Number((l.metadata as any)?.eventId)).filter(n => Number.isFinite(n))
+            ));
+            const organizerIds = Array.from(new Set(
+                logs.map(l => Number((l.metadata as any)?.organizerId)).filter(n => Number.isFinite(n))
+            ));
+
+            const [events, organizers] = await Promise.all([
+                eventIds.length
+                    ? prisma.event.findMany({
+                        where: { id: { in: eventIds } },
+                        select: { id: true, title: true, status: true, dateTime: true }
+                    })
+                    : Promise.resolve([] as any[]),
+                organizerIds.length
+                    ? prisma.organizerProfile.findMany({
+                        where: { id: { in: organizerIds } },
+                        select: { id: true, organizationName: true, contactPhone: true, userId: true }
+                    })
+                    : Promise.resolve([] as any[])
+            ]);
+
+            const eventMap = new Map(events.map(e => [e.id, e] as const));
+            const organizerMap = new Map(organizers.map(o => [o.id, o] as const));
+
+            const items = logs.map(l => {
+                const meta = (l.metadata as any) || {};
+                const eventId = Number(meta.eventId);
+                const organizerId = Number(meta.organizerId);
+                const event = eventMap.get(eventId);
+                const organizer = organizerMap.get(organizerId);
+
+                let effectiveStatus = (meta.status as string) || 'PENDING';
+                if (event?.status === 'CANCELLED') effectiveStatus = 'APPROVED';
+
+                return {
+                    id: l.id,
+                    createdAt: l.createdAt,
+                    content: l.content,
+                    status: effectiveStatus,
+                    metadata: meta,
+                    event,
+                    organizer
+                };
+            });
+
+            const filtered = status ? items.filter(i => i.status === status) : items;
+
+            res.json({
+                success: true,
+                data: filtered,
+                pagination: {
+                    total,
+                    page: Number(page),
+                    limit: Number(limit),
+                    totalPages: Math.ceil(total / Number(limit))
+                }
+            });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async approveCancellationRequest(req: Request, res: Response) {
+        try {
+            const adminUserId = (req as any).user?.userId;
+            if (!adminUserId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+            const logId = Number(req.params.id);
+            const { adminNote } = req.body || {};
+
+            const log = await prisma.notificationLog.findUnique({ where: { id: logId } });
+            if (!log || log.recipient !== 'Audit Log' || log.title !== 'Event Cancellation Request') {
+                return res.status(404).json({ success: false, message: 'Cancellation request not found' });
+            }
+
+            const meta = (log.metadata as any) || {};
+            const eventId = Number(meta.eventId);
+            const organizerId = Number(meta.organizerId);
+            if (!eventId || !organizerId) {
+                return res.status(400).json({ success: false, message: 'Invalid cancellation request metadata' });
+            }
+
+            const event = await prisma.event.findUnique({ where: { id: eventId } });
+            if (!event) return res.status(404).json({ success: false, message: 'Event not found' });
+
+            if (event.status !== 'CANCELLED') {
+                await prisma.event.update({ where: { id: eventId }, data: { status: 'CANCELLED' as any } });
+            }
+
+            await prisma.notificationLog.update({
+                where: { id: logId },
+                data: {
+                    metadata: {
+                        ...meta,
+                        status: 'APPROVED',
+                        processedBy: adminUserId,
+                        processedAt: new Date().toISOString(),
+                        adminNote: adminNote || null
+                    }
+                }
+            });
+
+            // Notify organizer
+            const organizer = await prisma.organizerProfile.findUnique({
+                where: { id: organizerId },
+                select: { id: true, userId: true, organizationName: true }
+            });
+            if (organizer?.userId) {
+                await prisma.notificationLog.create({
+                    data: {
+                        userId: organizer.userId,
+                        organizerId,
+                        channel: NotificationChannel.PUSH,
+                        recipient: 'System',
+                        title: 'Cancellation Approved',
+                        content: `Your cancellation request for event "${event.title}" was approved. Refunds will be processed automatically.`,
+                        status: 'DELIVERED',
+                        metadata: { type: 'CANCELLATION_APPROVED', eventId, adminNote: adminNote || null }
+                    }
+                });
+            }
+
+            // Process refunds for all successful purchases for this event
+            const purchases = await prisma.purchase.findMany({
+                where: {
+                    status: 'SUCCESS' as any,
+                    tickets: { some: { eventId } }
+                },
+                select: { id: true, totalAmount: true }
+            });
+
+            const { RefundService } = await import('../services/refund.service');
+
+            let refundsAttempted = 0;
+            let refundsSucceeded = 0;
+            let refundsFailed = 0;
+
+            for (const p of purchases) {
+                try {
+                    // Find most recent refund, if any
+                    const existing = await prisma.refund.findFirst({
+                        where: { purchaseId: p.id },
+                        orderBy: { createdAt: 'desc' }
+                    });
+
+                    let refundId: number | null = null;
+                    if (existing?.status === RefundStatus.APPROVED) {
+                        continue;
+                    }
+
+                    refundsAttempted++;
+
+                    if (existing?.status === RefundStatus.PENDING) {
+                        refundId = existing.id;
+                    } else {
+                        const created = await prisma.refund.create({
+                            data: {
+                                purchaseId: p.id,
+                                amount: p.totalAmount,
+                                reason: RefundReason.CANCELLATION,
+                                description: 'Event cancelled (admin approved).',
+                                status: RefundStatus.PENDING
+                            }
+                        });
+                        refundId = created.id;
+                    }
+
+                    await RefundService.approveRefund(refundId, adminUserId);
+                    refundsSucceeded++;
+                } catch (e) {
+                    refundsFailed++;
+                }
+            }
+
+            // Store a small summary on the audit log
+            await prisma.notificationLog.update({
+                where: { id: logId },
+                data: {
+                    metadata: {
+                        ...meta,
+                        status: 'APPROVED',
+                        processedBy: adminUserId,
+                        processedAt: new Date().toISOString(),
+                        adminNote: adminNote || null,
+                        refundSummary: { purchases: purchases.length, refundsAttempted, refundsSucceeded, refundsFailed }
+                    }
+                }
+            });
+
+            res.json({
+                success: true,
+                data: {
+                    eventId,
+                    status: 'APPROVED',
+                    refundSummary: { purchases: purchases.length, refundsAttempted, refundsSucceeded, refundsFailed }
+                }
+            });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async rejectCancellationRequest(req: Request, res: Response) {
+        try {
+            const adminUserId = (req as any).user?.userId;
+            if (!adminUserId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+            const logId = Number(req.params.id);
+            const { reason } = req.body || {};
+            if (!reason || String(reason).trim().length === 0) {
+                return res.status(400).json({ success: false, message: 'Rejection reason is required' });
+            }
+
+            const log = await prisma.notificationLog.findUnique({ where: { id: logId } });
+            if (!log || log.recipient !== 'Audit Log' || log.title !== 'Event Cancellation Request') {
+                return res.status(404).json({ success: false, message: 'Cancellation request not found' });
+            }
+
+            const meta = (log.metadata as any) || {};
+            const eventId = Number(meta.eventId);
+            const organizerId = Number(meta.organizerId);
+            if (!eventId || !organizerId) {
+                return res.status(400).json({ success: false, message: 'Invalid cancellation request metadata' });
+            }
+
+            const event = await prisma.event.findUnique({ where: { id: eventId } });
+
+            await prisma.notificationLog.update({
+                where: { id: logId },
+                data: {
+                    metadata: {
+                        ...meta,
+                        status: 'REJECTED',
+                        processedBy: adminUserId,
+                        processedAt: new Date().toISOString(),
+                        rejectionReason: String(reason).trim()
+                    }
+                }
+            });
+
+            // Notify organizer
+            const organizer = await prisma.organizerProfile.findUnique({
+                where: { id: organizerId },
+                select: { id: true, userId: true }
+            });
+            if (organizer?.userId) {
+                await prisma.notificationLog.create({
+                    data: {
+                        userId: organizer.userId,
+                        organizerId,
+                        channel: NotificationChannel.PUSH,
+                        recipient: 'System',
+                        title: 'Cancellation Rejected',
+                        content: `Your cancellation request${event?.title ? ` for event "${event.title}"` : ''} was rejected: ${String(reason).trim()}`,
+                        status: 'DELIVERED',
+                        metadata: { type: 'CANCELLATION_REJECTED', eventId, reason: String(reason).trim() }
+                    }
+                });
+            }
+
+            res.json({ success: true });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
     static async getStats(req: Request, res: Response) {
         try {
             const stats = await AdminAnalyticsService.getPlatformStats();

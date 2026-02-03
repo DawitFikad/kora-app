@@ -39,9 +39,10 @@ import FinancialControlIndex from './components/financial/FinancialControlIndex'
 import { TeamManagementView } from './components/TeamManagementView';
 import { ActivityLogView } from './components/ActivityLogView';
 import { FeatureRequestsView } from './components/FeatureRequestsView';
+import RefundsCancellationsView from './components/RefundsCancellationsView';
 
 // --- Types ---
-export type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Feature Requests' | 'Commissions' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud Monitoring' | 'Content' | 'Invite Admin' | 'Settings' | 'Platform Health' | 'Audit Logs';
+export type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' | 'Feature Requests' | 'Commissions' | 'Refunds & Cancellations' | 'GMV Tracking' | 'Platform Revenue' | 'Organizer Payouts' | 'Settlement Ledger' | 'Fraud Monitoring' | 'Content' | 'Invite Admin' | 'Settings' | 'Platform Health' | 'Audit Logs';
 
 // --- Main Admin Dashboard Component ---
 
@@ -135,6 +136,7 @@ const AdminDashboard = () => {
             case 'Organizer Approvals': return <OrganizerApprovalsView />;
             case 'Event Approvals': return <EventApprovalsView />;
             case 'Feature Requests': return <FeatureRequestsView />;
+            case 'Refunds & Cancellations': return <RefundsCancellationsView />;
             case 'Fraud Monitoring': return <FraudMonitoringView />;
             case 'Commissions': return <CommissionsView />;
             case 'GMV Tracking': return <FinancialControlIndex />;
@@ -185,6 +187,7 @@ const AdminDashboard = () => {
                         {
                             title: t('admin.sidebar.finance_group'),
                             items: [
+                                { icon: DollarSign, label: 'Refunds & Cancellations', display: t('admin.sidebar.refunds_cancellations', 'Refunds & Cancellations') },
                                 { icon: DollarSign, label: 'GMV Tracking', display: t('admin.sidebar.gmv_tracking') }
                             ]
                         },
