@@ -14,9 +14,11 @@ import {
     Loader2,
     ShieldAlert
 } from 'lucide-react';
+import { useDialog } from '../../../core/context/DialogContext';
 
 export const PlatformControlView = () => {
     const { t } = useTranslation();
+    const dialog = useDialog();
     const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
     const [globalMessage, setGlobalMessage] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
@@ -93,7 +95,7 @@ export const PlatformControlView = () => {
                 description: 'Active announcement for all users'
             });
             setGlobalMessage('');
-            alert(t('admin.platform.broadcast_success', 'Broadcast sent successfully!'));
+            await dialog.alert({ title: t('common.success', 'Success'), message: t('admin.platform.broadcast_success', 'Broadcast sent successfully!') });
         } catch (err) {
             console.error('Failed to send broadcast', err);
         } finally {

@@ -7,9 +7,11 @@ import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
 import { Download, Loader2, Check, X, Building2, MapPin, Calendar, Mail, Phone, Edit3, FileText, Image } from 'lucide-react';
 import Pagination from '../../../core/components/Pagination';
+import { useDialog } from '../../../core/context/DialogContext';
 
 export const OrganizerApprovalsView = () => {
     const { t } = useTranslation();
+    const dialog = useDialog();
     const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
     const [pendingOrganizers, setPendingOrganizers] = useState<any[]>([]);
     const [approvedOrganizers, setApprovedOrganizers] = useState<any[]>([]);
@@ -64,7 +66,7 @@ export const OrganizerApprovalsView = () => {
             setDecisionContext(null);
             fetchData();
         } catch (err: any) {
-            alert(err.error || 'Failed to review organizer');
+            await dialog.alert({ title: t('common.error', 'Error'), message: err?.error || t('admin.team.failed', 'Action failed') });
         } finally {
             setProcessingId(null);
         }
@@ -77,7 +79,7 @@ export const OrganizerApprovalsView = () => {
             setEditingOrgId(null);
             fetchData();
         } catch (err: any) {
-            alert(err.error || 'Failed to update commission');
+            await dialog.alert({ title: t('common.error', 'Error'), message: err?.error || t('admin.team.failed', 'Action failed') });
         } finally {
             setProcessingId(null);
         }

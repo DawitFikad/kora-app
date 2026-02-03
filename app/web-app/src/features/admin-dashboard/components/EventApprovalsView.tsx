@@ -7,9 +7,11 @@ import { Loader2, Calendar, MapPin, Tag, Download, Check, X, Info } from 'lucide
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
 import Pagination from '../../../core/components/Pagination';
+import { useDialog } from '../../../core/context/DialogContext';
 
 export const EventApprovalsView = () => {
     const { t } = useTranslation();
+    const dialog = useDialog();
     const [events, setEvents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
@@ -55,7 +57,7 @@ export const EventApprovalsView = () => {
             setDecisionContext(null);
             fetchEvents();
         } catch (err) {
-            alert('Action failed');
+            await dialog.alert({ title: t('common.error', 'Error'), message: t('admin.team.failed', 'Action failed') });
         } finally {
             setProcessingId(null);
         }

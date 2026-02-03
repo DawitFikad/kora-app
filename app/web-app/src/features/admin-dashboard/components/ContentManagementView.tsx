@@ -758,7 +758,15 @@ export const ContentManagementView = () => {
                                                             try {
                                                                 await AdminService.toggleFeaturedEvent(evt.id, !evt.featured);
                                                                 handleFetchDetail(selectedItem.type, selectedItem.data.id);
-                                                            } catch (err) { alert(t('admin.content.failed_to_update')); }
+                                                            } catch (err) {
+                                                                setModalConfig({
+                                                                    isOpen: true,
+                                                                    title: t('common.error', 'Error'),
+                                                                    message: t('admin.content.failed_to_update'),
+                                                                    onConfirm: () => { },
+                                                                    type: 'danger'
+                                                                });
+                                                            }
                                                         }}
                                                         style={{
                                                             background: evt.featured ? 'var(--primary)' : 'rgba(255,255,255,0.05)',

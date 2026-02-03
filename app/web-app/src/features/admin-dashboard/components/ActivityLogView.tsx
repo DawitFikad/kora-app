@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, ClipboardList, Shield, Clock, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { AdminService } from '../../../core/api/admin.service';
+import { useDialog } from '../../../core/context/DialogContext';
 
 export const ActivityLogView = () => {
     const { t } = useTranslation();
+    const dialog = useDialog();
     const [logs, setLogs] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -31,23 +34,37 @@ export const ActivityLogView = () => {
     }, []);
 
     const handleDelete = async (id: number) => {
-        if (!confirm(t('admin.logs.delete_confirm'))) return;
+        const r = await dialog.confirm({
+            title: t('common.confirm', 'Confirm'),
+            message: t('admin.logs.delete_confirm'),
+            confirmText: t('common.delete', 'Delete'),
+            cancelText: t('common.cancel', 'Cancel'),
+            variant: 'danger'
+        });
+        if (!r.confirmed) return;
         try {
             await AdminService.deleteAuditLog(id);
             fetchLogs(page);
         } catch (err) {
-            alert(t('admin.team.failed'));
+            await dialog.alert({ title: t('common.error', 'Error'), message: t('admin.team.failed') });
         }
     };
 
     const handleClearAll = async () => {
-        if (!confirm(t('admin.logs.clear_all_confirm'))) return;
+        const r = await dialog.confirm({
+            title: t('common.confirm', 'Confirm'),
+            message: t('admin.logs.clear_all_confirm'),
+            confirmText: t('admin.logs.clear_history', 'Clear'),
+            cancelText: t('common.cancel', 'Cancel'),
+            variant: 'danger'
+        });
+        if (!r.confirmed) return;
         setIsClearing(true);
         try {
             await AdminService.clearAuditLogs();
             fetchLogs(1);
         } catch (err) {
-            alert(t('admin.team.failed'));
+            await dialog.alert({ title: t('common.error', 'Error'), message: t('admin.team.failed') });
         } finally {
             setIsClearing(false);
         }

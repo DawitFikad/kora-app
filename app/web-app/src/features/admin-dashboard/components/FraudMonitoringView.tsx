@@ -5,9 +5,11 @@ import { ShieldAlert, ShieldCheck, Activity, Loader2 } from 'lucide-react';
 
 import { AdminService } from '../../../core/api/admin.service';
 import DecisionModal from './DecisionModal';
+import { useDialog } from '../../../core/context/DialogContext';
 
 export const FraudMonitoringView = () => {
     const { t } = useTranslation();
+    const dialog = useDialog();
     const [alerts, setAlerts] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +63,7 @@ export const FraudMonitoringView = () => {
                 await fetchData();
             }
         } catch (err) {
-            alert('Failed to perform action');
+            await dialog.alert({ title: t('common.error', 'Error'), message: t('admin.team.failed', 'Action failed') });
         } finally {
             setIsResolving(false);
             setDecisionOpen(false);
@@ -74,7 +76,7 @@ export const FraudMonitoringView = () => {
             const detail = await AdminService.getFraudAlertDetail(id);
             setSelectedAlert(detail.data);
         } catch (err) {
-            alert('Failed to fetch details');
+            await dialog.alert({ title: t('common.error', 'Error'), message: t('admin.team.failed', 'Action failed') });
         }
     };
 

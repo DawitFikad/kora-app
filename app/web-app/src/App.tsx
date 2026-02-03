@@ -23,6 +23,7 @@ import { ProtectedRoute } from './core/components/ProtectedRoute';
 
 import { ThemeProvider } from './core/context/ThemeContext';
 import { LanguageProvider } from './core/context/LanguageContext';
+import { DialogProvider } from './core/context/DialogContext';
 
 function App() {
   return (
@@ -30,9 +31,10 @@ function App() {
       <ThemeProvider>
         <LanguageProvider>
           <ToastProvider>
-            <Router>
-              <Routes>
-                <Route path="/" element={<OrganizerLanding />} />
+            <DialogProvider>
+              <Router>
+                <Routes>
+                  <Route path="/" element={<OrganizerLanding />} />
 
                 {/* Public Booking Route */}
                 <Route path="/book/:eventId" element={<BookingPage />} />
@@ -70,9 +72,10 @@ function App() {
                 </Route>
 
                 {/* Catch All - Redirect to Home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Router>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Router>
+            </DialogProvider>
           </ToastProvider>
         </LanguageProvider>
       </ThemeProvider>

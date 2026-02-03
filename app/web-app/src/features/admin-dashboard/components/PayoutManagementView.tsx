@@ -14,9 +14,11 @@ import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
 import { Download } from 'lucide-react';
 import DecisionModal from './DecisionModal';
+import { useDialog } from '../../../core/context/DialogContext';
 
 export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SETTLEMENTS' }) => {
     const { t } = useTranslation();
+    const dialog = useDialog();
     const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
     const [processedPayouts, setProcessedPayouts] = useState<any[]>([]);
     const [settlementLedger, setSettlementLedger] = useState<any[]>([]);
@@ -101,10 +103,13 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
             } else if (action === 'bulkSettlement') {
                 // Placeholder: no backend endpoint implemented for bulk settlement in MVP
                 // Record admin note in system config/audit and notify
-                alert(`Bulk settlement simulated. Note: ${payload.reason}`);
+                await dialog.alert({
+                    title: t('admin.payouts.initiate_bulk', 'Bulk settlement'),
+                    message: `Bulk settlement simulated. Note: ${payload.reason}`
+                });
             }
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Action failed');
+            await dialog.alert({ title: t('common.error', 'Error'), message: err?.response?.data?.message || t('admin.team.failed', 'Action failed') });
         } finally {
             setProcessingId(null);
             setDecisionOpen(false);
