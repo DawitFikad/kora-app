@@ -136,11 +136,23 @@ app.use("/api/support", supportRoutes);
 app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {
-  res.json({ status: "API is running" });
+  res.json({
+    status: "API is running",
+    diagnostics: {
+      chapa: !!process.env.CHAPA_SECRET_KEY,
+      telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID,
+      apiUrl: process.env.API_URL || "not set",
+      env: process.env.NODE_ENV
+    }
+  });
 });
 
 app.get("/", (req: any, res: any) => {
-  res.status(200).json({ status: "API is running", message: "Welcome to ET Ticket API" });
+  res.status(200).json({
+    status: "API is running",
+    message: "Welcome to ET Ticket API",
+    config_check: !!process.env.CHAPA_SECRET_KEY
+  });
 });
 
 export default app;
