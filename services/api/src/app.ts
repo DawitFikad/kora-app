@@ -37,8 +37,6 @@ app.use((req, res, next) => {
 // 🔹 VERCEL CRON ENDPOINTS
 // ----------------------------------------
 app.get("/api/cron/reminders", async (req, res) => {
-  // Security check: Verify Vercel Signature or simply proceed if internal
-  // For simplicity here, we assume Vercel secures crons or use a shared secret in headers
   try {
     console.log("[CRON] Running Event Reminders...");
     await EventService.sendReminders();
@@ -60,7 +58,7 @@ app.get("/api/cron/reconcile", async (req, res) => {
   }
 });
 
-// Diagnostic route - COMPLETELY PUBLIC
+// Diagnostic route - COMPLETELY PUBLIC & TOP LEVEL
 app.get("/api/config-check", (req, res) => {
   res.json({
     status: "ok",
@@ -76,34 +74,20 @@ app.get("/api/config-check", (req, res) => {
   });
 });
 
-app.use("/api/public", publicRoutes);
+app.get("/api/config", (req, res) => {
+  res.json({
+    status: "API is running",
+    diagnostics: {
+      chapa: !!process.env.CHAPA_SECRET_KEY,
+      telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID,
+      apiUrl: process.env.API_URL || "not set",
+      env: process.env.NODE_ENV,
+      vercel: !!process.env.VERCEL
+    }
+  });
+});
 
 app.use(cors()); // 🔹 CORS MUST BE FIRST
-app.use(express.json({
-  limit: '10mb',
-  verify: (req: any, res, buf) => {
-    req.rawBody = buf;
-  }
-}));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// Global Rate Limiting
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 2000,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests, please try again later." }
-});
-
-app.use(globalLimiter);
-
-// Specific Rate Limiting for Auth/OTP
-const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  limit: 100, // 🔹 Relaxed limit for debugging (was 10)
-  message: { error: "Too many login attempts. Please try again in an hour." }
-});
 app.use(express.json({
   limit: '10mb',
   verify: (req: any, res, buf) => {
@@ -115,6 +99,8 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
 
+// Routes
+app.use("/api/public", publicRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/profiles", profileRoutes);
@@ -140,9 +126,7 @@ app.get("/api", (req: any, res: any) => {
     status: "API is running",
     diagnostics: {
       chapa: !!process.env.CHAPA_SECRET_KEY,
-      telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID,
-      apiUrl: process.env.API_URL || "not set",
-      env: process.env.NODE_ENV
+      telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID
     }
   });
 });
