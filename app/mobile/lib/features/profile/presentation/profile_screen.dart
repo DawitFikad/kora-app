@@ -7,6 +7,7 @@ import 'edit_profile_screen.dart';
 import '../../scanner/services/scanner_service.dart';
 import '../../auth/services/auth_service.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:mobile/core/utils/error_handler.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -41,7 +42,14 @@ class ProfileScreen extends ConsumerWidget {
                   ref.invalidate(userProfileProvider);
                 }
               } catch (e) {
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(ErrorMessageHandler.getReadableError(e)),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             child: Text('profile.join'.tr()),
@@ -304,10 +312,23 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("${"common.error".tr()}: $err", style: const TextStyle(color: Colors.red)),
+                const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
                 const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    ErrorMessageHandler.getReadableError(err),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(color: textColor.withOpacity(0.7)),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => ref.refresh(userProfileProvider),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   child: Text("common.retry".tr()),
                 ),
               ],

@@ -18,6 +18,7 @@ import 'package:mobile/features/events/presentation/favorites_screen.dart';
 import 'package:mobile/core/widgets/app_image.dart';
 import 'package:mobile/core/widgets/offline_banner.dart';
 import 'package:mobile/features/events/models/homepage_banner.dart';
+import 'package:mobile/core/utils/error_handler.dart';
 
 final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
 final selectedCityProvider = StateProvider<City?>((ref) => null);
@@ -303,12 +304,27 @@ class _HomeBody extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(32),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.error_outline, color: mutedColor, size: 48),
+                          const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
                           const SizedBox(height: 16),
-                          Text("home.error_loading".tr(), style: TextStyle(color: textColor, fontSize: 16)),
-                          const SizedBox(height: 8),
-                          Text("home.pull_to_retry".tr(), style: TextStyle(color: mutedColor, fontSize: 14)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: Text(
+                              ErrorMessageHandler.getReadableError(e),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(color: textColor.withOpacity(0.7)),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: () => ref.refresh(filteredEventsProvider),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: Text("common.retry".tr()),
+                          ),
                         ],
                       ),
                     ),

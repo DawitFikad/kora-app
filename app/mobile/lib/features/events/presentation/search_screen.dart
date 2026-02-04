@@ -6,6 +6,7 @@ import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/core/widgets/app_image.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:mobile/core/utils/error_handler.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -132,7 +133,32 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text("search.error".tr())),
+                error: (err, stack) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          ErrorMessageHandler.getReadableError(err),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(color: mutedColor),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => ref.refresh(eventsProvider),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B5CF6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text("common.retry".tr()),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],

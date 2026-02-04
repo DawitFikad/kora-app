@@ -84,7 +84,7 @@ export class PaymentService {
 
                         const chapaResult = await ChapaProvider.initialize({
                             amount: Number(purchase.totalAmount),
-                            email: purchase.user.email || "no-email@et-ticket.com",
+                            email: purchase.user.email || "customer@et-tickets.com",
                             firstName: purchase.user.profile?.fullName?.split(" ")[0] || "Customer",
                             lastName: purchase.user.profile?.fullName?.split(" ").slice(1).join(" ") || "Valued",
                             txRef: tx_ref,
@@ -142,58 +142,15 @@ export class PaymentService {
 
         try {
             switch (purchase.paymentMethod) {
-             // In the TELEBIRR case of initializePayment:
-case "TELEBIRR":
-    // Define URLs as in initializePayment
-    const baseUrl = process.env.API_URL || "http://10.0.2.2:4000";
-    const tx_ref = purchase.paymentRef;
-    const return_url = `${baseUrl}/api/payments/verify-callback?ref=${tx_ref}`;
-    const callback_url = `${baseUrl}/api/payments/webhook`;
-
-    // Check if Telebirr is properly configured
-    if (!TelebirrProvider.isConfigured()) {
-        logger.error({ 
-            envVars: {
-                hasAppId: !!env.teleBirrMerchantAppId,
-                hasPrivateKey: !!env.teleBirrPrivateKey,
-                appId: env.teleBirrMerchantAppId?.substring(0, 5) + '...'
-            }
-        }, "Telebirr not configured properly");
-        throw new Error("Telebirr payment provider is not configured properly. Check environment variables.");
-    }
-
-    logger.info({ 
-        tx_ref, 
-        amount: purchase.totalAmount,
-        isConfigured: TelebirrProvider.isConfigured() 
-    }, "Initializing Telebirr payment");
-
-    try {
-        const telebirrResult = await TelebirrProvider.initialize({
-            amount: Number(purchase.totalAmount),
-            orderId: purchase.id.toString(),
-            returnUrl: return_url,
-            notifyUrl: callback_url,
-            subject: `Ticket Purchase #${purchase.id}`,
-            outTradeNo: tx_ref,
-        });
-
-        const checkoutUrl = telebirrResult.checkoutUrl;
-        const providerPayload = { prepayId: telebirrResult.prepayId };
-        
-        logger.info({ 
-            checkoutUrl: checkoutUrl?.substring(0, 100) + '...',
-            hasPrepayId: !!telebirrResult.prepayId 
-        }, "Telebirr initialization successful");
-    } catch (error: any) {
-        logger.error({ 
-            error: error.message,
-            stack: error.stack,
-            purchaseId: purchase.id 
-        }, "Telebirr initialization failed");
-        throw new Error(`Telebirr payment failed: ${error.message}`);
-    }
-    break;
+                case "TELEBIRR":
+                    if (TelebirrProvider.isConfigured()) {
+                        const result = await TelebirrProvider.verify(paymentRef);
+                        isValid = result.success;
+                        verificationResult = result;
+                    } else {
+                        throw new Error("Telebirr provider is not configured for verification");
+                    }
+                    break;
                 case "CHAPA":
                 case "CBE_BIRR":
                 case "AMOLE":

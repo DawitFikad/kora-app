@@ -10,6 +10,7 @@ import 'package:mobile/features/tickets/presentation/ticket_detail_screen.dart';
 import '../../events/presentation/home_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:mobile/core/utils/error_handler.dart';
 
 final myTicketsProvider = FutureProvider.autoDispose<List<Ticket>>((ref) async {
   // Watch for auth changes to refresh ticket list
@@ -370,7 +371,32 @@ class _TicketsListView extends StatelessWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
-        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        error: (err, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  ErrorMessageHandler.getReadableError(err),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(color: textColor.withOpacity(0.7)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => ref.refresh(myTicketsProvider),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text("common.retry".tr()),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

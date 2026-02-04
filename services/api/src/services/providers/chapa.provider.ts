@@ -79,7 +79,7 @@ export class ChapaProvider {
                 callback_url: params.callbackUrl,
                 return_url: params.returnUrl,
                 customization: params.customization || {
-                    title: 'ET-Tickets Payment',
+                    title: 'ET-Tickets',
                     description: 'Ticket Purchase Payment',
                 },
                 meta: params.meta,

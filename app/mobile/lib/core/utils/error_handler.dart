@@ -88,11 +88,12 @@ class ErrorMessageHandler {
                          data['detail']?.toString();
         }
         
+        // If we have a detailed server message, return it (after cleaning)
         if (serverMessage != null && serverMessage.isNotEmpty) {
           return getReadableError(serverMessage);
         }
         
-        // Fallback to status code messages
+        // Fallback to status code messages only if no server message
         switch (statusCode) {
           case 400:
             return "errors.invalid_request".tr();

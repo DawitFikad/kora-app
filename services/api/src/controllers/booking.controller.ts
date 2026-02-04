@@ -121,7 +121,7 @@ export class BookingController {
                 }
             });
         } catch (error: any) {
-            res.status(500).json({ success: false, error: error.message });
+            res.status(400).json({ success: false, error: error.message });
         }
     }
 
@@ -142,7 +142,7 @@ export class BookingController {
             await BookingService.releaseSeats(eventId, tierId, seatNumbers);
             res.json({ success: true, message: "Seats released" });
         } catch (error: any) {
-            res.status(500).json({ success: false, error: error.message });
+            res.status(400).json({ success: false, error: error.message });
         }
     }
 
@@ -178,7 +178,7 @@ export class BookingController {
 
             res.json({ success: true, data: result });
         } catch (error: any) {
-            res.status(500).json({ success: false, error: error.message });
+            res.status(400).json({ success: false, error: error.message });
         }
     }
 
@@ -221,7 +221,7 @@ export class BookingController {
 
             res.json({ success: true, newExpiry: result.newExpiry });
         } catch (error: any) {
-            res.status(500).json({ success: false, error: error.message });
+            res.status(400).json({ success: false, error: error.message });
         }
     }
 
@@ -245,7 +245,7 @@ export class BookingController {
 
             res.json({ success: true, message: "Reservation cancelled" });
         } catch (error: any) {
-            res.status(500).json({ success: false, error: error.message });
+            res.status(400).json({ success: false, error: error.message });
         }
     }
 }

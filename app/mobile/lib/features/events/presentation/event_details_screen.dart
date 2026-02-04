@@ -11,6 +11,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:mobile/features/profile/services/profile_service.dart';
 import 'seat_selection_screen.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:mobile/core/utils/error_handler.dart';
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final int eventId;
@@ -422,7 +423,32 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       ),
       error: (err, stack) => Scaffold(
         backgroundColor: backgroundColor,
-        body: Center(child: Text("Error: $err", style: const TextStyle(color: Colors.red))),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  ErrorMessageHandler.getReadableError(err),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(color: textColor.withOpacity(0.7)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => ref.refresh(eventDetailsProvider(widget.eventId)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text("common.retry".tr()),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

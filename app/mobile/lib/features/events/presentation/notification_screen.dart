@@ -9,6 +9,7 @@ import 'package:mobile/features/notifications/services/notification_service.dart
 
 import 'package:mobile/features/profile/services/profile_service.dart';
 import '../../../../core/providers.dart';
+import 'package:mobile/core/utils/error_handler.dart';
 
 final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>((ref) async {
   // Watch token to ensure refresh on logout/login
@@ -185,7 +186,32 @@ class NotificationScreen extends ConsumerWidget {
                     );
                 },
                 loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
-                error: (err, stack) => Center(child: Text("${"common.error".tr()}: $err", style: const TextStyle(color: Colors.red))),
+                error: (err, stack) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          ErrorMessageHandler.getReadableError(err),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(color: textColor.withOpacity(0.7)),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => ref.refresh(notificationsProvider),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B5CF6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text("common.retry".tr()),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
