@@ -86,6 +86,12 @@ class ErrorMessageHandler {
           serverMessage = data['error']?.toString() ?? 
                          data['message']?.toString() ??
                          data['detail']?.toString();
+          
+          // If we have a detail field, append it for debugging if it's not too long
+          final detail = data['detail']?.toString();
+          if (detail != null && detail.isNotEmpty && serverMessage != null && !serverMessage.contains(detail)) {
+            serverMessage = "$serverMessage ($detail)";
+          }
         }
         
         // If we have a detailed server message, return it (after cleaning)
