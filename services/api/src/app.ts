@@ -59,6 +59,22 @@ app.get("/api/cron/reconcile", async (req, res) => {
   }
 });
 
+// Diagnostic route - COMPLETELY PUBLIC
+app.get("/api/config-check", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    config: {
+      chapaSecret: !!process.env.CHAPA_SECRET_KEY,
+      chapaKeyLength: process.env.CHAPA_SECRET_KEY?.length || 0,
+      telebirrAppId: !!process.env.TELEBIRR_MERCHANT_APP_ID,
+      apiUrl: process.env.API_URL || "not set",
+      nodeEnv: process.env.NODE_ENV,
+      vercelUrl: process.env.VERCEL_URL
+    }
+  });
+});
+
 app.use(cors()); // 🔹 CORS MUST BE FIRST
 app.use(express.json({
   limit: '10mb',
