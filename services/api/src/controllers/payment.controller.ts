@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PaymentService } from "../services/payment.service";
+import { env } from "../config/env";
 
 export class PaymentController {
     /**
@@ -81,8 +82,7 @@ export class PaymentController {
     static async verifyCallback(req: Request, res: Response) {
         try {
             const { ref } = req.query;
-            // Use 10.0.2.2 for Android Emulator compatibility when running in Dev
-            const defaultUrl = "http://10.0.2.2:4000/api/payments/completion";
+            const defaultUrl = `${env.apiUrl}/api/payments/completion`;
             const clientUrl = process.env.CLIENT_URL || defaultUrl;
 
             if (!ref) {
@@ -98,7 +98,7 @@ export class PaymentController {
                 res.redirect(`${clientUrl}?status=failed&ref=${ref}&reason=${encodeURIComponent(result.failureReason || 'Verification failed')}&purchaseId=${result.id}`);
             }
         } catch (error: any) {
-            const defaultUrl = "http://10.0.2.2:4000/api/payments/completion";
+            const defaultUrl = `${env.apiUrl}/api/payments/completion`;
             const clientUrl = process.env.CLIENT_URL || defaultUrl;
             res.redirect(`${clientUrl}?status=error&message=${encodeURIComponent(error.message)}`);
         }

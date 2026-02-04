@@ -33,9 +33,9 @@ export class PaymentService {
             });
         }
 
-        // Use 10.0.2.2 for Android Emulator compatibility
-        const baseUrl = process.env.API_URL || "http://10.0.2.2:4000";
-        const clientUrl = process.env.CLIENT_URL || "http://10.0.2.2:4000/api/payments/completion";
+        // Use centralized env.apiUrl
+        const baseUrl = env.apiUrl;
+        const clientUrl = process.env.CLIENT_URL || `${baseUrl}/api/payments/completion`;
         let checkoutUrl = "";
         let providerPayload: any = {};
 
