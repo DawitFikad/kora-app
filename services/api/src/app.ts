@@ -21,7 +21,6 @@ import bookingRoutes from "./routes/booking.routes";
 import staffRoutes from "./routes/staff.routes";
 import supportRoutes from "./routes/support.routes";
 import { errorHandler } from "./middlewares/error.middleware";
-import { errorHandler } from "./middlewares/error.middleware";
 import { EventService } from "./services/event.service";
 import { PaymentService } from "./services/payment.service";
 

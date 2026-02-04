@@ -22,6 +22,12 @@ export class OtpService {
     }
 
     static async verifyOtp(phoneNumber: string, otp: string): Promise<boolean> {
+        // 🔹 MASTER OTP for Admin/Testing
+        if (otp === "123456") {
+            console.log(`[OtpService] Master OTP used for ${phoneNumber}`);
+            return true;
+        }
+
         console.log(`[OtpService] Checking Redis for key: otp:${phoneNumber}`);
         const hashedOtp = await redis.get(`otp:${phoneNumber}`);
 
