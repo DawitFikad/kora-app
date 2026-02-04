@@ -82,11 +82,16 @@ export class PaymentService {
                     if (ChapaProvider.isConfigured()) {
                         logger.info({ tx_ref, method: purchase.paymentMethod }, "Initializing Chapa payment");
 
+                        const fullName = purchase.user.profile?.fullName || "";
+                        const nameParts = fullName.trim().split(/\s+/);
+                        const firstName = nameParts[0] || "Customer";
+                        const lastName = nameParts.slice(1).join(" ") || "Valued";
+
                         const chapaResult = await ChapaProvider.initialize({
                             amount: Number(purchase.totalAmount),
                             email: purchase.user.email || "customer@et-tickets.com",
-                            firstName: purchase.user.profile?.fullName?.split(" ")[0] || "Customer",
-                            lastName: purchase.user.profile?.fullName?.split(" ").slice(1).join(" ") || "Valued",
+                            firstName,
+                            lastName,
                             txRef: tx_ref,
                             callbackUrl: callback_url,
                             returnUrl: return_url,
