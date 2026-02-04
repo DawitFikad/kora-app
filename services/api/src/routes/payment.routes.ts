@@ -8,6 +8,7 @@ const router = Router();
 router.get("/verify-callback", PaymentController.verifyCallback);
 // Mobile Completion Page
 router.get("/completion", PaymentController.completion);
+router.get("/health-check", PaymentController.healthCheck);
 
 // Webhook (Public, but should be signature-verified in production)
 router.post("/webhook", PaymentController.webhook);

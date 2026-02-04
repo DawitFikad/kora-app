@@ -29,24 +29,24 @@ export class TelebirrProvider {
     private static formatPrivateKey(): string {
         try {
             const key = env.teleBirrPrivateKey;
-            
+
             if (!key) {
                 throw new Error('Private key is not configured');
             }
-            
+
             // Check if already formatted
             if (key.includes('-----BEGIN PRIVATE KEY-----')) {
                 return key;
             }
-            
+
             // Clean the key - remove any quotes and extra spaces
             let cleanKey = key.trim().replace(/["']/g, '').replace(/\s+/g, '');
-            
+
             // Format as PEM
             const chunked = cleanKey.match(/.{1,64}/g)?.join('\n') || cleanKey;
-            
+
             return `-----BEGIN PRIVATE KEY-----\n${chunked}\n-----END PRIVATE KEY-----`;
-            
+
         } catch (error: any) {
             logger.error({ error: error.message }, 'Failed to format private key');
             throw new Error(`Private key error: ${error.message}`);
@@ -60,35 +60,35 @@ export class TelebirrProvider {
         try {
             // Remove sign and sign_type from signature calculation
             const { sign, sign_type, ...paramsToSign } = params;
-            
+
             // Sort keys alphabetically
             const sortedKeys = Object.keys(paramsToSign).sort();
-            
+
             // Create signature string
             const signString = sortedKeys
                 .map(key => `${key}=${paramsToSign[key]}`)
                 .join('&');
-            
-            logger.debug({ 
-                signString: signString.substring(0, 200) 
+
+            logger.debug({
+                signString: signString.substring(0, 200)
             }, 'Signature string');
-            
+
             // Get formatted private key
             const privateKey = this.formatPrivateKey();
-            
+
             // Create signature using RSA-SHA256
             const signer = crypto.createSign('RSA-SHA256');
             signer.update(signString);
             signer.end();
-            
+
             // Generate signature with PKCS#1 padding (RSA_PKCS1_PADDING)
             const signature = signer.sign({
                 key: privateKey,
                 padding: crypto.constants.RSA_PKCS1_PADDING
             }, 'base64');
-            
+
             return signature;
-            
+
         } catch (error: any) {
             logger.error({ error: error.message, params }, 'Signature generation failed');
             throw new Error(`Signature error: ${error.message}`);
@@ -101,15 +101,15 @@ export class TelebirrProvider {
     private static async getToken(): Promise<string> {
         try {
             logger.info('Requesting Telebirr fabric token');
-            
+
             const gatewayUrl = this.getGatewayUrl();
-            
+
             // Create HTTPS agent
             const httpsAgent = new https.Agent({
                 rejectUnauthorized: false, // Important for Telebirr's self-signed cert
                 keepAlive: true
             });
-            
+
             const response = await axios.post(
                 `${gatewayUrl}/payment/v1/token`,
                 {
@@ -124,25 +124,25 @@ export class TelebirrProvider {
                     timeout: 30000
                 }
             );
-            
-            logger.debug({ 
+
+            logger.debug({
                 tokenResponse: response.data,
-                status: response.status 
+                status: response.status
             }, 'Token response');
-            
+
             if (response.data && response.data.token) {
                 logger.info('Telebirr token obtained successfully');
                 return response.data.token;
             }
-            
+
             throw new Error(`Invalid token response: ${JSON.stringify(response.data)}`);
-            
+
         } catch (error: any) {
-            logger.error({ 
+            logger.error({
                 error: error.message,
                 url: this.getGatewayUrl() + '/payment/v1/token',
                 status: error.response?.status,
-                data: error.response?.data 
+                data: error.response?.data
             }, 'Telebirr token request failed');
             throw new Error(`Token request failed: ${error.response?.data?.message || error.message}`);
         }
@@ -164,30 +164,30 @@ export class TelebirrProvider {
             if (!this.isConfigured()) {
                 throw new Error('Telebirr is not properly configured');
             }
-            
-            logger.info({ 
+
+            logger.info({
                 outTradeNo: params.outTradeNo,
                 amount: params.amount,
-                appId: env.teleBirrMerchantAppId 
+                appId: env.teleBirrMerchantAppId
             }, 'Initializing Telebirr payment');
-            
+
             // Get token
             const token = await this.getToken();
-            
+
             // Prepare request data (Telebirr specific format)
             const bizContent = {
-                appid: env.teleBirrMerchantAppId,
-                merch_code: env.teleBirrShortCode,
+                appid: env.teleBirrMerchantAppId || '',
+                merch_code: env.teleBirrShortCode || '',
                 merch_order_id: params.outTradeNo,
                 trade_type: 'H5',
-                title: this.sanitizeString(params.subject.substring(0, 100)),
+                title: this.sanitizeString((params.subject || 'Ticket Purchase').substring(0, 100)),
                 total_amount: Math.round(params.amount).toString(), // Amount in ETB (not cents)
                 trans_currency: 'ETB',
                 notify_url: params.notifyUrl,
                 return_url: params.returnUrl,
                 timeout_express: '30m'
             };
-            
+
             const requestData = {
                 appid: env.teleBirrMerchantAppId,
                 biz_content: JSON.stringify(bizContent),
@@ -196,28 +196,28 @@ export class TelebirrProvider {
                 method: 'payment.preorder',
                 version: '1.0'
             };
-            
+
             // Generate signature
             const sign = this.generateSignature(requestData);
-            
+
             // Add signature to request
             const finalRequestData = {
                 ...requestData,
                 sign,
                 sign_type: 'SHA256WithRSA'
             };
-            
-            logger.debug({ 
+
+            logger.debug({
                 request: finalRequestData,
                 bizContent,
-                tokenPreview: token.substring(0, 20) + '...' 
+                tokenPreview: token.substring(0, 20) + '...'
             }, 'Sending Telebirr preorder request');
-            
+
             // Send request
-            const httpsAgent = new https.Agent({ 
-                rejectUnauthorized: false 
+            const httpsAgent = new https.Agent({
+                rejectUnauthorized: false
             });
-            
+
             const gatewayUrl = this.getGatewayUrl();
             const response = await axios.post(
                 `${gatewayUrl}/payment/v1/merchant/preOrder`,
@@ -232,16 +232,16 @@ export class TelebirrProvider {
                     timeout: 30000
                 }
             );
-            
-            logger.info({ 
+
+            logger.info({
                 responseCode: response.data?.code,
-                responseMessage: response.data?.msg 
+                responseMessage: response.data?.msg
             }, 'Telebirr preorder response');
-            
+
             // Parse response
             if (response.data && response.data.code === '0') {
                 let bizResponse = response.data.biz_content;
-                
+
                 // Parse if it's a string
                 if (typeof bizResponse === 'string') {
                     try {
@@ -250,43 +250,43 @@ export class TelebirrProvider {
                         logger.warn({ bizResponse }, 'Failed to parse biz_content as JSON');
                     }
                 }
-                
+
                 const prepayId = bizResponse?.prepay_id || bizResponse?.prepayId;
-                
+
                 if (prepayId) {
                     // Construct checkout URL according to Telebirr H5 documentation
                     const checkoutParams = new URLSearchParams({
-                        appid: env.teleBirrMerchantAppId,
-                        merch_code: env.teleBirrShortCode,
+                        appid: env.teleBirrMerchantAppId || '',
+                        merch_code: env.teleBirrShortCode || '',
                         prepay_id: prepayId,
                         nonce_str: crypto.randomBytes(16).toString('hex'),
                         timestamp: Math.floor(Date.now() / 1000).toString(),
                         sign_type: 'SHA256WithRSA',
                         version: '1.0'
                     });
-                    
+
                     // Generate signature for checkout URL
                     const urlSignParams = Object.fromEntries(checkoutParams);
                     const urlSign = this.generateSignature(urlSignParams);
                     checkoutParams.append('sign', urlSign);
-                    
+
                     const checkoutUrl = `${this.H5_CHECKOUT_BASE}/payment/web/paygate?${checkoutParams.toString()}`;
-                    
-                    logger.info({ 
+
+                    logger.info({
                         checkoutUrl: checkoutUrl.substring(0, 100) + '...',
-                        prepayId 
+                        prepayId
                     }, 'Telebirr payment initialized successfully');
-                    
+
                     return { checkoutUrl, prepayId };
                 }
-                
+
                 throw new Error(`No prepay_id in response: ${JSON.stringify(bizResponse)}`);
             }
-            
+
             throw new Error(`Preorder failed: ${JSON.stringify(response.data)}`);
-            
+
         } catch (error: any) {
-            logger.error({ 
+            logger.error({
                 error: error.message,
                 stack: error.stack,
                 params,
@@ -294,7 +294,7 @@ export class TelebirrProvider {
                 responseData: error.response?.data,
                 responseStatus: error.response?.status
             }, 'Telebirr initialization error');
-            
+
             throw new Error(`Telebirr payment failed: ${error.response?.data?.msg || error.message}`);
         }
     }
@@ -302,9 +302,9 @@ export class TelebirrProvider {
     /**
      * Verify Telebirr payment
      */
-    static async verify(outTradeNo: string): Promise<{ 
-        success: boolean; 
-        transactionId?: string; 
+    static async verify(outTradeNo: string): Promise<{
+        success: boolean;
+        transactionId?: string;
         message?: string;
         data?: any;
     }> {
@@ -320,24 +320,24 @@ export class TelebirrProvider {
             }
 
             logger.info({ outTradeNo }, 'Verifying Telebirr payment');
-            
+
             if (!this.isConfigured()) {
                 return {
                     success: false,
                     message: 'Telebirr not configured'
                 };
             }
-            
+
             // Get token
             const token = await this.getToken();
-            
+
             // Prepare query request
             const bizContent = {
                 appid: env.teleBirrMerchantAppId,
                 merch_code: env.teleBirrShortCode,
                 merch_order_id: outTradeNo
             };
-            
+
             const requestData = {
                 appid: env.teleBirrMerchantAppId,
                 biz_content: JSON.stringify(bizContent),
@@ -346,25 +346,25 @@ export class TelebirrProvider {
                 method: 'payment.queryorder',
                 version: '1.0'
             };
-            
+
             // Generate signature
             const sign = this.generateSignature(requestData);
-            
+
             const finalRequestData = {
                 ...requestData,
                 sign,
                 sign_type: 'SHA256WithRSA'
             };
-            
-            logger.debug({ 
-                verifyRequest: finalRequestData 
+
+            logger.debug({
+                verifyRequest: finalRequestData
             }, 'Sending verification request');
-            
+
             // Send query request
-            const httpsAgent = new https.Agent({ 
-                rejectUnauthorized: false 
+            const httpsAgent = new https.Agent({
+                rejectUnauthorized: false
             });
-            
+
             const gatewayUrl = this.getGatewayUrl();
             const response = await axios.post(
                 `${gatewayUrl}/payment/v1/merchant/queryOrder`,
@@ -379,16 +379,16 @@ export class TelebirrProvider {
                     timeout: 30000
                 }
             );
-            
-            logger.info({ 
+
+            logger.info({
                 responseCode: response.data?.code,
-                responseMessage: response.data?.msg 
+                responseMessage: response.data?.msg
             }, 'Telebirr verification response');
-            
+
             // Parse response
             if (response.data && response.data.code === '0') {
                 let bizResponse = response.data.biz_content;
-                
+
                 // Parse if it's a string
                 if (typeof bizResponse === 'string') {
                     try {
@@ -404,21 +404,21 @@ export class TelebirrProvider {
                         }
                     }
                 }
-                
+
                 // Check status
-                const status = bizResponse?.trade_status || 
-                              bizResponse?.order_status || 
-                              bizResponse?.status ||
-                              bizResponse?.result;
-                
+                const status = bizResponse?.trade_status ||
+                    bizResponse?.order_status ||
+                    bizResponse?.status ||
+                    bizResponse?.result;
+
                 logger.debug({ status, bizResponse }, 'Payment status check');
-                
+
                 if (status === 'SUCCESS' || status === 'PAY_SUCCESS' || status === '0') {
                     return {
                         success: true,
-                        transactionId: bizResponse?.transaction_id || 
-                                      bizResponse?.payment_order_id ||
-                                      bizResponse?.out_trade_no,
+                        transactionId: bizResponse?.transaction_id ||
+                            bizResponse?.payment_order_id ||
+                            bizResponse?.out_trade_no,
                         message: 'Payment successful',
                         data: bizResponse
                     };
@@ -436,20 +436,20 @@ export class TelebirrProvider {
                     };
                 }
             }
-            
+
             return {
                 success: false,
                 message: response.data?.msg || 'Verification failed',
                 data: response.data
             };
-            
+
         } catch (error: any) {
-            logger.error({ 
+            logger.error({
                 error: error.message,
                 response: error.response?.data,
-                outTradeNo 
+                outTradeNo
             }, 'Telebirr verification error');
-            
+
             return {
                 success: false,
                 message: error.response?.data?.msg || error.message
@@ -474,43 +474,43 @@ export class TelebirrProvider {
                 'teleBirrAppSecret',
                 'teleBirrPrivateKey'
             ];
-            
+
             // Check all required variables exist and are not placeholders
             for (const varName of requiredVars) {
                 const value = env[varName as keyof typeof env];
-                
+
                 if (!value) {
                     logger.warn({ missingVar: varName }, 'Telebirr configuration missing');
                     return false;
                 }
-                
+
                 // Check for placeholder values
                 if (typeof value === 'string') {
                     const lowerValue = value.toLowerCase();
-                    if (lowerValue.includes('your_') || 
-                        lowerValue.includes('example') || 
-                        lowerValue.includes('test_') && 
+                    if (lowerValue.includes('your_') ||
+                        lowerValue.includes('example') ||
+                        lowerValue.includes('test_') &&
                         !lowerValue.includes('1547579123609609')) { // Your actual app ID
-                        logger.warn({ 
-                            varName, 
-                            value: value.substring(0, 20) + '...' 
+                        logger.warn({
+                            varName,
+                            value: value.substring(0, 20) + '...'
                         }, 'Telebirr configuration has placeholder');
                         return false;
                     }
                 }
             }
-            
+
             // Validate private key length
             if (env.teleBirrPrivateKey && env.teleBirrPrivateKey.length < 100) {
-                logger.warn({ 
-                    keyLength: env.teleBirrPrivateKey.length 
+                logger.warn({
+                    keyLength: env.teleBirrPrivateKey.length
                 }, 'Telebirr private key seems too short');
                 return false;
             }
-            
+
             logger.debug('Telebirr configuration check passed');
             return true;
-            
+
         } catch (error) {
             logger.error({ error }, 'Telebirr configuration check error');
             return false;
@@ -535,9 +535,9 @@ export class TelebirrProvider {
     /**
      * Test connectivity
      */
-    static async testConnection(): Promise<{ 
-        success: boolean; 
-        message: string; 
+    static async testConnection(): Promise<{
+        success: boolean;
+        message: string;
         details?: any;
     }> {
         try {
@@ -553,17 +553,17 @@ export class TelebirrProvider {
                     }
                 };
             }
-            
+
             if (!this.isConfigured()) {
                 return {
                     success: false,
                     message: 'Telebirr not properly configured'
                 };
             }
-            
+
             // Try to get a token
             const token = await this.getToken();
-            
+
             return {
                 success: true,
                 message: 'Connection successful',
@@ -575,28 +575,28 @@ export class TelebirrProvider {
                     gatewayUrl: this.getGatewayUrl()
                 }
             };
-            
+
         } catch (error: any) {
-            logger.error({ 
+            logger.error({
                 error: error.message,
                 response: error.response?.data,
                 url: this.getGatewayUrl() + '/payment/v1/token'
             }, 'Telebirr connection test failed');
-            
+
             // Check if it's a network issue
-            const isNetworkError = error.message.includes('ENOTFOUND') || 
-                                  error.message.includes('ECONNREFUSED') ||
-                                  error.message.includes('ETIMEDOUT');
-            
+            const isNetworkError = error.message.includes('ENOTFOUND') ||
+                error.message.includes('ECONNREFUSED') ||
+                error.message.includes('ETIMEDOUT');
+
             return {
                 success: false,
-                message: isNetworkError ? 
-                    `Cannot connect to Telebirr API at ${this.getGatewayUrl()}. Check network/firewall.` : 
+                message: isNetworkError ?
+                    `Cannot connect to Telebirr API at ${this.getGatewayUrl()}. Check network/firewall.` :
                     error.message,
                 details: {
                     error: error.message,
                     url: this.getGatewayUrl(),
-                    suggestion: isNetworkError ? 
+                    suggestion: isNetworkError ?
                         'Verify the API URL is correct and accessible from your server' :
                         'Check your credentials and API documentation'
                 }
@@ -616,17 +616,17 @@ export class TelebirrProvider {
      */
     static validateWebhook(signature: string, payload: any): boolean {
         try {
-            logger.info({ 
+            logger.info({
                 signature: signature?.substring(0, 50) + '...',
-                payload: typeof payload 
+                payload: typeof payload
             }, 'Telebirr webhook validation');
-            
+
             // TODO: Implement proper validation with Telebirr public key
             // For development/testing, you can accept all webhooks
             // In production, you MUST validate the signature
-            
+
             return true; // Placeholder - implement proper validation
-            
+
         } catch (error) {
             logger.error({ error }, 'Webhook validation error');
             return false;

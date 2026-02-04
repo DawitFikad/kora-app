@@ -15,8 +15,7 @@ export class PaymentService {
         const purchase = await prisma.purchase.findUnique({
             where: { id: purchaseId },
             include: {
-                user: { include: { profile: true } },
-                tickets: { include: { event: true } }
+                user: { include: { profile: true } }
             }
         });
 
@@ -121,7 +120,7 @@ export class PaymentService {
             return {
                 checkoutUrl,
                 paymentRef: purchase.paymentRef,
-                amount: purchase.totalAmount,
+                amount: Number(purchase.totalAmount),
                 method: purchase.paymentMethod,
                 mockPayload: providerPayload
             };

@@ -9,10 +9,40 @@ export class PaymentController {
     static async initialize(req: Request, res: Response) {
         try {
             const { purchaseId } = req.body;
+            console.log(`[Payment] Initializing payment for purchaseId: ${purchaseId}`);
+
+            if (!purchaseId) {
+                return res.status(400).json({ error: "Purchase ID is required" });
+            }
+
             const result = await PaymentService.initializePayment(parseInt(purchaseId));
             res.json(result);
         } catch (error: any) {
-            res.status(400).json({ error: error.message });
+            console.error("❌ Payment Initialization Failed:", error);
+            // Return 400 with detailed message so mobile can display it
+            res.status(400).json({
+                error: error.message || "Unknown error during initialization",
+                detail: error.stack?.split('\n')[0], // Give a hint for debugging
+                purchaseId: req.body?.purchaseId
+            });
+        }
+    }
+
+    /**
+     * Diagnostic endpoint to check configuration without sensitive data
+     */
+    static async healthCheck(req: Request, res: Response) {
+        try {
+            const config = {
+                chapaConfigured: !!(env.chapaSecretKey && !env.chapaSecretKey.includes('your_')),
+                telebirrConfigured: !!(env.teleBirrMerchantAppId && !env.teleBirrMerchantAppId.includes('your_')),
+                apiUrl: env.apiUrl,
+                nodeEnv: process.env.NODE_ENV,
+                vercelUrl: process.env.VERCEL_URL
+            };
+            res.json({ status: "ok", config });
+        } catch (error: any) {
+            res.status(500).json({ status: "error", message: error.message });
         }
     }
 
