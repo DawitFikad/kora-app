@@ -27,116 +27,59 @@ import { PaymentService } from "./services/payment.service";
 
 const app = express();
 
-// DEBUG: Log all requests
-app.use((req, res, next) => {
-  console.log(`[Request] ${req.method} ${req.url}`);
-  next();
-});
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
 
-// ----------------------------------------
-// 🔹 VERCEL CRON ENDPOINTS
-// ----------------------------------------
-app.get("/api/cron/reminders", async (req, res) => {
-  try {
-    console.log("[CRON] Running Event Reminders...");
-    await EventService.sendReminders();
-    res.json({ success: true, message: "Reminders sent" });
-  } catch (error) {
-    console.error("[CRON] Reminders Failed:", error);
-    res.status(500).json({ success: false, error: "Failed to send reminders" });
-  }
-});
-
-app.get("/api/cron/reconcile", async (req, res) => {
-  try {
-    console.log("[CRON] Running Payment Reconciliation...");
-    await PaymentService.reconcileStuckPayments();
-    res.json({ success: true, message: "Reconciliation complete" });
-  } catch (error) {
-    console.error("[CRON] Reconciliation Failed:", error);
-    res.status(500).json({ success: false, error: "Failed to reconcile payments" });
-  }
-});
-
-// Diagnostic route - COMPLETELY PUBLIC & TOP LEVEL
-app.get("/api/config-check", (req, res) => {
+// TOP LEVEL DIAGNOSTICS - BEFORE ANY ROUTING
+app.get("/api/health-check-v3", (req, res) => {
   res.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    config: {
-      chapaSecret: !!process.env.CHAPA_SECRET_KEY,
-      chapaKeyLength: process.env.CHAPA_SECRET_KEY?.length || 0,
-      telebirrAppId: !!process.env.TELEBIRR_MERCHANT_APP_ID,
-      apiUrl: process.env.API_URL || "not set",
-      nodeEnv: process.env.NODE_ENV,
-      vercelUrl: process.env.VERCEL_URL
-    }
-  });
-});
-
-app.get("/api/config", (req, res) => {
-  res.json({
-    status: "API is running",
-    diagnostics: {
+    status: "healthy",
+    version: "3.0.0",
+    env: {
       chapa: !!process.env.CHAPA_SECRET_KEY,
       telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID,
-      apiUrl: process.env.API_URL || "not set",
-      env: process.env.NODE_ENV,
-      vercel: !!process.env.VERCEL
+      node: process.env.NODE_ENV
     }
   });
 });
 
-app.use(cors()); // 🔹 CORS MUST BE FIRST
-app.use(express.json({
-  limit: '10mb',
-  verify: (req: any, res, buf) => {
-    req.rawBody = buf;
-  }
-}));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+// Root check
+app.get("/", (req, res) => {
+  res.json({
+    message: "ET Ticket API",
+    diagnostics: {
+      chapa: !!process.env.CHAPA_SECRET_KEY
+    }
+  });
+});
 
 // Routes
-app.use("/api/public", publicRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/profiles", profileRoutes);
-app.use("/api/events", eventRoutes);
-app.use("/api/tickets", ticketingRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/validate", validationRoutes);
-app.use("/api/financials", financialRoutes);
-app.use("/api/payouts", payoutRoutes);
-app.use("/api/security", securityRoutes);
-app.use("/api/organizer", organizerRoutes);
-app.use("/api/refunds", refundRoutes);
-app.use("/api/disputes", disputeRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/content", contentRoutes);
-app.use("/api/booking", bookingRoutes);
-app.use("/api/staff", staffRoutes);
-app.use("/api/support", supportRoutes);
-app.use("/api", testRoutes);
+const router = express.Router();
 
-app.get("/api", (req: any, res: any) => {
-  res.json({
-    status: "API is running",
-    diagnostics: {
-      chapa: !!process.env.CHAPA_SECRET_KEY,
-      telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID
-    }
-  });
-});
+router.use("/auth", authRoutes);
+router.use("/admin", adminRoutes);
+router.use("/profiles", profileRoutes);
+router.use("/events", eventRoutes);
+router.use("/tickets", ticketingRoutes);
+router.use("/payments", paymentRoutes);
+router.use("/validate", validationRoutes);
+router.use("/financials", financialRoutes);
+router.use("/payouts", payoutRoutes);
+router.use("/security", securityRoutes);
+router.use("/organizer", organizerRoutes);
+router.use("/refunds", refundRoutes);
+router.use("/disputes", disputeRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/content", contentRoutes);
+router.use("/booking", bookingRoutes);
+router.use("/staff", staffRoutes);
+router.use("/support", supportRoutes);
+router.use("/public", publicRoutes);
+router.use("/", testRoutes);
 
-app.get("/", (req: any, res: any) => {
-  res.status(200).json({
-    status: "API is running",
-    message: "Welcome to ET Ticket API",
-    config_check: !!process.env.CHAPA_SECRET_KEY
-  });
-});
+app.use("/api", router);
+
+// Error handler
+app.use(errorHandler);
 
 export default app;
