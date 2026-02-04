@@ -4,7 +4,6 @@ import { TicketService } from "./ticket.service";
 import crypto from "crypto";
 import { env } from "../config/env";
 import logger from "../utils/logger";
-const telebirrProvider = require("./providers/telebirr.provider");
 import { ChapaProvider } from "./providers/chapa.provider";
 import { TelebirrProvider } from "./providers/telebirr.provider";
 
@@ -15,7 +14,10 @@ export class PaymentService {
     static async initializePayment(purchaseId: number) {
         const purchase = await prisma.purchase.findUnique({
             where: { id: purchaseId },
-            include: { user: { include: { profile: true } } }
+            include: {
+                user: { include: { profile: true } },
+                tickets: { include: { event: true } }
+            }
         });
 
         if (!purchase) throw new Error("Purchase not found");
@@ -59,7 +61,7 @@ export class PaymentService {
                     if (isTelebirrConfigured) {
                         logger.info({ tx_ref }, "Initializing Telebirr payment");
 
-                        const telebirrResult = await telebirrProvider.TelebirrProvider.initialize({
+                        const telebirrResult = await TelebirrProvider.initialize({
                             amount: Number(purchase.totalAmount),
                             orderId: purchase.id.toString(),
                             returnUrl: return_url,
