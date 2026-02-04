@@ -20,6 +20,7 @@ import contentRoutes from "./routes/content.routes";
 import bookingRoutes from "./routes/booking.routes";
 import staffRoutes from "./routes/staff.routes";
 import supportRoutes from "./routes/support.routes";
+import publicRoutes from "./routes/public.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import { EventService } from "./services/event.service";
 import { PaymentService } from "./services/payment.service";
@@ -74,6 +75,8 @@ app.get("/api/config-check", (req, res) => {
     }
   });
 });
+
+app.use("/api/public", publicRoutes);
 
 app.use(cors()); // 🔹 CORS MUST BE FIRST
 app.use(express.json({

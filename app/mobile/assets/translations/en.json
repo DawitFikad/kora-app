@@ -78,10 +78,10 @@
         "sold_out": "Sold Out"
     },
     "organizer_purchase": {
-        "title": "You are an event organizer",
-        "subtitle": "Do you want to buy tickets for friends or family?",
-        "cancel": "No, cancel",
-        "confirm": "Yes, continue"
+        "title": "Buy Organizer Account",
+        "subtitle": "You need to purchase an organizer account to create and manage events. Would you like to proceed?",
+        "confirm": "Yes, Buy",
+        "cancel": "Cancel"
     },
     "search": {
         "title": "Search",
