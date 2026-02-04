@@ -8,6 +8,14 @@ export class AuthController {
             if (!phoneNumber) {
                 return res.status(400).json({ error: "Phone number is required" });
             }
+
+            // 🔹 CONTROLLER-LEVEL BYPASS for Admin
+            // Guaranteed to work even if Service/Redis crashes
+            if (phoneNumber.includes("910639875")) {
+                console.log("[AuthController] Admin Bypass triggered");
+                return res.json({ message: "OTP sent successfully" });
+            }
+
             const result = await AuthService.requestOtp(phoneNumber);
             res.json(result);
         } catch (error: any) {

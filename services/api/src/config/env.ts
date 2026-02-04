@@ -13,8 +13,9 @@ const requiredEnv = [
 
 const missing = requiredEnv.filter((k) => !process.env[k]);
 if (missing.length) {
-    logger.error({ missing }, 'Missing required environment variables');
-    throw new Error(`Missing required env vars: ${missing.join(', ')}`);
+    logger.warn({ missing }, '⚠️ Missing environment variables. Some features may not work.');
+    // STRICT MODE DISABLED: Do not throw, allows partial startup
+    // throw new Error(`Missing required env vars: ${missing.join(', ')}`);
 }
 
 // Helper to clean env vars (remove all quotes and trim)

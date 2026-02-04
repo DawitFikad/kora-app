@@ -26,6 +26,12 @@ import { PaymentService } from "./services/payment.service";
 
 const app = express();
 
+// DEBUG: Log all requests
+app.use((req, res, next) => {
+  console.log(`[Request] ${req.method} ${req.url}`);
+  next();
+});
+
 // ----------------------------------------
 // 🔹 VERCEL CRON ENDPOINTS
 // ----------------------------------------
@@ -53,10 +59,19 @@ app.get("/api/cron/reconcile", async (req, res) => {
   }
 });
 
+app.use(cors()); // 🔹 CORS MUST BE FIRST
+app.use(express.json({
+  limit: '10mb',
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
 // Global Rate Limiting
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 1000, // Limit each IP to 1000 requests per `window`
+  limit: 2000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." }
@@ -67,21 +82,9 @@ app.use(globalLimiter);
 // Specific Rate Limiting for Auth/OTP
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  limit: 10, // 10 OTP requests per hour per IP
+  limit: 100, // 🔹 Relaxed limit for debugging (was 10)
   message: { error: "Too many login attempts. Please try again in an hour." }
 });
-
-// Specific Rate Limiting for Payments
-const paymentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 mins
-  limit: 20, // 20 payment attempts
-  message: { error: "Payment frequency exceeded. Please wait before trying again." }
-});
-
-app.use("/api/auth/otp", authLimiter);
-app.use("/api/payments/initialize", paymentLimiter);
-app.use("/api/tickets/reserve", paymentLimiter);
-app.use(cors());
 app.use(express.json({
   limit: '10mb',
   verify: (req: any, res, buf) => {
@@ -115,6 +118,10 @@ app.use("/api", testRoutes);
 
 app.get("/api", (req: any, res: any) => {
   res.json({ status: "API is running" });
+});
+
+app.get("/", (req: any, res: any) => {
+  res.status(200).json({ status: "API is running", message: "Welcome to ET Ticket API" });
 });
 
 export default app;

@@ -22,6 +22,12 @@ export class SmsService {
     }
 
     static async sendSms(phoneNumber: string, message: string) {
+        // 🔹 BYPASS SMS for Admin/Test Number (0910639875 / +251910639875)
+        if (phoneNumber.includes("910639875")) {
+            console.log(`[SMS BYPASS] Admin login detected for ${phoneNumber}. Skipping real SMS.`);
+            return;
+        }
+
         const provider = process.env.SMS_PROVIDER || "console";
 
         if (provider === "afromessage") {

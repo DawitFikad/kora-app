@@ -3,26 +3,47 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import 'dotenv/config';
 
-const databaseUrl = process.env.DATABASE_URL;
+// Try DIRECT_URL first (non-pooled) as it's more reliable for serverless
+const databaseUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 
-if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is not set. Please check your .env file.');
-}
+let prismaInstance: PrismaClient | null = null;
 
-let url: URL;
-try {
-    url = new URL(databaseUrl);
-} catch (error) {
-    throw new Error(`Invalid DATABASE_URL format: ${databaseUrl}`);
-}
+const getPrisma = () => {
+    if (!prismaInstance) {
+        try {
+            if (!databaseUrl) {
+                console.error('DATABASE_URL or DIRECT_URL environment variable is not set.');
+                prismaInstance = new PrismaClient();
+                return prismaInstance;
+            }
 
-const pool = new pg.Pool({
-    host: url.hostname,
-    port: parseInt(url.port || "5432"),
-    database: url.pathname.slice(1),
-    user: url.username,
-    password: url.password,
+            // Using standard Prisma initialization without custom driver adapter for better compatibility
+            prismaInstance = new PrismaClient({
+                datasources: {
+                    db: {
+                        url: databaseUrl
+                    }
+                }
+            });
+            console.log("✅ Prisma Client Initialized (Standard)");
+        } catch (err) {
+            console.error("❌ Failed to initialize Prisma:", err);
+            prismaInstance = new PrismaClient();
+        }
+    }
+    return prismaInstance;
+};
+
+// Proxy to delay initialization until property access
+export const prisma = new Proxy({} as PrismaClient, {
+    get: (_target, prop) => {
+        const client = getPrisma();
+        if (!client) return undefined;
+        // @ts-ignore
+        const value = client[prop];
+        if (typeof value === 'function') {
+            return value.bind(client);
+        }
+        return value;
+    }
 });
-
-const adapter = new PrismaPg(pool);
-export const prisma = new PrismaClient({ adapter });

@@ -73,10 +73,10 @@ model OrganizerProfile {
   feeFixed          Decimal?          @db.Decimal(10, 2)
   feePercentage     Decimal?          @db.Decimal(10, 2)
   feeType           String?
-  description       String?
   businessAddress   Json?
   categoryFocus     String[]
   defaultConfig     Json?
+  description       String?
   notificationPrefs Json?
   operatingCities   String[]
   socialLinks       Json?
@@ -154,20 +154,20 @@ model Event {
   feePercentage    Decimal?               @db.Decimal(10, 2)
   feeType          String?
   refundPolicy     String                 @default("No refunds within 24 hours of event.")
-  descriptionAm    String?
-  titleAm          String?
   additionalPolicy String?
-  minAge           Int                    @default(0)
+  descriptionAm    String?
   hasSeatMap       Boolean                @default(false)
+  minAge           Int                    @default(0)
   seatMapConfig    String?
+  titleAm          String?
+  additionalDates  DateTime[]             @default(dbgenerated("(ARRAY[]::timestamp without time zone[])::timestamp(3) without time zone[]"))
   cast             String?
   director         String?
   duration         Int?
   isMovie          Boolean                @default(false)
+  isPublic         Boolean                @default(true)
   rating           String?
   trailerUrl       String?
-  additionalDates  DateTime[]             @default(dbgenerated("(ARRAY[]::timestamp without time zone[])::timestamp(3) without time zone[]"))
-  isPublic         Boolean                @default(true)
   entryMetrics     EntryMetric[]
   category         Category               @relation(fields: [categoryId], references: [id])
   city             City                   @relation(fields: [cityId], references: [id])
@@ -215,7 +215,6 @@ model TicketTier {
 
 model Ticket {
   id             String       @id @default(uuid())
-  code           String?      @unique
   qrPayload      String       @unique
   status         TicketStatus @default(VALID)
   userId         Int
@@ -231,6 +230,7 @@ model Ticket {
   convenienceFee Decimal?     @default(0.0) @db.Decimal(10, 2)
   organizerNet   Decimal?     @db.Decimal(10, 2)
   platformNet    Decimal?     @db.Decimal(10, 2)
+  code           String?      @unique
   isVip          Boolean      @default(false)
   fraudAlerts    FraudAlert[]
   event          Event        @relation(fields: [eventId], references: [id])

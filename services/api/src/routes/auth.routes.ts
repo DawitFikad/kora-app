@@ -6,7 +6,7 @@ import { upload } from "../config/upload.config";
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 50, // Increased for development/testing
+    limit: 500, // Increased for development/testing
     message: { error: "Too many authentication attempts, please try again in 15 minutes." }
 });
 

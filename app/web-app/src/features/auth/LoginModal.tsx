@@ -112,7 +112,10 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
             setPhoneNumber(normalized);
             setStep('otp');
         } catch (err: any) {
-            setError(err.error || 'Failed to send OTP. Please check the number.');
+            console.error('[LoginModal] OTP Request Error:', err);
+            // 🔹 DEBUGGING: Show exact error
+            const msg = err.error || err.message || JSON.stringify(err);
+            setError(`Error: ${msg}`);
         } finally {
             setIsLoading(false);
         }

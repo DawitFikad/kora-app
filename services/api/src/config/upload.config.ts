@@ -16,13 +16,19 @@ const s3 = env.storageType === 'S3' ? new S3Client({
 }) : null;
 
 // 2. Local Disk Storage Setup (Fallback/Dev)
-const uploadDir = 'uploads';
+// On Vercel, we must use /tmp for uploads if DISK storage is used
+const isVercel = process.env.VERCEL === '1';
+const uploadDir = isVercel ? '/tmp/uploads' : 'uploads';
 const profileDir = path.join(uploadDir, 'profiles');
 const bannerDir = path.join(uploadDir, 'banners');
 
 if (env.storageType === 'DISK') {
     [uploadDir, profileDir, bannerDir].forEach(dir => {
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        try {
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        } catch (error) {
+            console.warn(`[UploadConfig] Could not create directory '${dir}'. This is expected on read-only serverless environments.`);
+        }
     });
 }
 
