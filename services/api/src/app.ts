@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes";
-import testRoutes from "./routes/test.routes";
+// import testRoutes from "./routes/test.routes";
 import adminRoutes from "./routes/admin.routes";
 import profileRoutes from "./routes/profile.routes";
 import eventRoutes from "./routes/event.routes";
@@ -36,7 +36,7 @@ app.use(express.json({
 app.get("/api/health", (req, res) => {
   res.json({
     status: "healthy",
-    version: "3.3.1",
+    version: "3.4.0",
     diagnostics: {
       chapaSecret: !!process.env.CHAPA_SECRET_KEY,
       chapaKeyLength: process.env.CHAPA_SECRET_KEY?.length || 0,
@@ -79,7 +79,7 @@ apiRouter.use("/booking", bookingRoutes);
 apiRouter.use("/staff", staffRoutes);
 apiRouter.use("/support", supportRoutes);
 apiRouter.use("/public", publicRoutes);
-apiRouter.use("/test", testRoutes); // Note: changed from "/" to "/test" to avoid overlap
+// apiRouter.use("/test", testRoutes);
 
 app.use("/api", apiRouter);
 
