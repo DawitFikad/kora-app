@@ -19,11 +19,11 @@ export class PaymentController {
             res.json(result);
         } catch (error: any) {
             console.error("❌ Payment Initialization Failed:", error);
-            const status = error.status || 400;
+            const status = Number(error.status || 400);
             res.status(status).json({
                 error: "Initialization Failed",
                 message: error.message || "Unknown error during initialization",
-                system_error: error.stack?.split('\n')[0].replace(/C:.*\\/g, ''), // Clean local paths
+                detail: error.stack?.split('\n')[0].replace(/C:.*\\/g, ''),
                 purchaseId: req.body?.purchaseId
             });
         }
