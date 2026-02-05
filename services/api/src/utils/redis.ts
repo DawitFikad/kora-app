@@ -7,6 +7,12 @@ const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 let client: Redis | null = null;
 
 const getClient = () => {
+    // If no REDIS_URL is configured, skip entirely (graceful degradation on Vercel)
+    if (!process.env.REDIS_URL) {
+        console.log("[Redis] No REDIS_URL configured, running without Redis");
+        return null;
+    }
+
     if (!client || (client.status === 'end' || client.status === 'close')) {
         console.log("[Redis] Initializing or recreating connection...");
         try {
