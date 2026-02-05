@@ -1,13 +1,13 @@
 import { ChapaProvider } from "./src/services/providers/chapa.provider";
 import { env } from "./src/config/env";
-import axios from 'axios';
 
 async function testChapa() {
     console.log("Testing Chapa Initialization...");
     try {
+        const testEmail = process.env.CHAPA_TEST_EMAIL || "test@gmail.com";
         const result = await ChapaProvider.initialize({
             amount: 100,
-            email: "test@example.com",
+            email: testEmail,
             firstName: "Test",
             lastName: "User",
             txRef: `TEST-REF-${Date.now()}`,

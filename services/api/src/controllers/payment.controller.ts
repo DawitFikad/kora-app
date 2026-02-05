@@ -19,10 +19,11 @@ export class PaymentController {
             res.json(result);
         } catch (error: any) {
             console.error("❌ Payment Initialization Failed:", error);
-            // Return 400 with detailed message so mobile can display it
-            res.status(400).json({
-                error: error.message || "Unknown error during initialization",
-                detail: error.stack?.split('\n')[0], // Give a hint for debugging
+            const status = error.status || 400;
+            res.status(status).json({
+                error: "Initialization Failed",
+                message: error.message || "Unknown error during initialization",
+                system_error: error.stack?.split('\n')[0].replace(/C:.*\\/g, ''), // Clean local paths
                 purchaseId: req.body?.purchaseId
             });
         }

@@ -57,6 +57,10 @@ interface ChapaVerifyResponse {
 export class ChapaProvider {
     private static readonly BASE_URL = 'https://api.chapa.co/v1';
 
+    private static shouldDebug(): boolean {
+        return process.env.CHAPA_DEBUG === '1' || process.env.CHAPA_DEBUG === 'true';
+    }
+
     /**
      * Get the appropriate base URL based on environment
      */
@@ -84,6 +88,19 @@ export class ChapaProvider {
                 },
                 meta: params.meta,
             };
+
+            if (this.shouldDebug()) {
+                logger.info(
+                    {
+                        txRef: params.txRef,
+                        payload,
+                        hasChapaSecretKey: !!env.chapaSecretKey,
+                        chapaSecretKeyLength: env.chapaSecretKey?.length || 0,
+                        cwd: process.cwd(),
+                    },
+                    'CHAPA_DEBUG initialize()'
+                );
+            }
 
             logger.info({ txRef: params.txRef }, 'Initializing Chapa payment');
 

@@ -7,6 +7,50 @@ import logger from "../utils/logger";
 import { ChapaProvider } from "./providers/chapa.provider";
 import { TelebirrProvider } from "./providers/telebirr.provider";
 
+const RESERVED_EMAIL_DOMAINS = new Set([
+    "example.com",
+    "example.org",
+    "example.net",
+    "invalid",
+    "localhost",
+    "test",
+]);
+
+function isValidEmailFormat(email: string): boolean {
+    const trimmed = email.trim();
+    if (!trimmed || trimmed.length > 254) return false;
+    const parts = trimmed.split("@");
+    if (parts.length !== 2) return false;
+    const [local, domain] = parts;
+    if (!local || !domain) return false;
+    if (local.length > 64) return false;
+    if (local.includes("..") || domain.includes("..")) return false;
+    if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(local)) return false;
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) return false;
+    return true;
+}
+
+function isUsablePayerEmail(email: string): boolean {
+    const normalized = email.trim().toLowerCase();
+    if (!isValidEmailFormat(normalized)) return false;
+    const domain = normalized.split("@")[1];
+    if (!domain) return false;
+    if (RESERVED_EMAIL_DOMAINS.has(domain)) return false;
+    return true;
+}
+
+function getSafeChapaPayerEmail(candidate: string | null | undefined, txRef?: string): string {
+    const normalizedCandidate = (candidate || "").trim().toLowerCase();
+    if (isUsablePayerEmail(normalizedCandidate)) return normalizedCandidate;
+
+    const envCandidate = (process.env.CHAPA_TEST_EMAIL || "").trim().toLowerCase();
+    if (isUsablePayerEmail(envCandidate)) return envCandidate;
+
+    const suffixSource = (txRef || Date.now().toString()).toString();
+    const suffix = suffixSource.replace(/[^a-z0-9]/gi, "").slice(-12).toLowerCase() || "payer";
+    return `payer+${suffix}@gmail.com`;
+}
+
 export class PaymentService {
     /**
      * Initializes payment with the selected provider.
@@ -61,7 +105,7 @@ export class PaymentService {
                         logger.info({ tx_ref }, "Initializing Telebirr payment");
 
                         const telebirrResult = await TelebirrProvider.initialize({
-                            amount: Number(purchase.totalAmount),
+                            amount: parseFloat(purchase.totalAmount.toString()),
                             orderId: purchase.id.toString(),
                             returnUrl: return_url,
                             notifyUrl: callback_url,
@@ -83,14 +127,14 @@ export class PaymentService {
                     if (ChapaProvider.isConfigured()) {
                         logger.info({ tx_ref, method: purchase.paymentMethod }, "Initializing Chapa payment");
 
-                        const fullName = purchase.user.profile?.fullName || "";
-                        const nameParts = fullName.trim().split(/\s+/);
-                        const firstName = nameParts[0] || "Customer";
-                        const lastName = nameParts.slice(1).join(" ") || "Valued";
+                        const fullName = (purchase.user.profile?.fullName || "").trim();
+                        const nameParts = fullName.split(/\s+/).filter(Boolean);
+                        const firstName = (nameParts[0] || "Customer").slice(0, 50);
+                        const lastName = (nameParts.slice(1).join(" ") || "Payer").slice(0, 50);
 
                         const chapaResult = await ChapaProvider.initialize({
-                            amount: Number(purchase.totalAmount),
-                            email: purchase.user.email || "customer@et-tickets.com",
+                            amount: parseFloat(purchase.totalAmount.toString()),
+                            email: getSafeChapaPayerEmail(purchase.user.email, tx_ref),
                             firstName,
                             lastName,
                             txRef: tx_ref,

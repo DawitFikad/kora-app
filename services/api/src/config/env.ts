@@ -1,7 +1,8 @@
 import dotenv from 'dotenv';
+import path from 'path';
 import logger from '../utils/logger';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const requiredEnv = [
     'DATABASE_URL',

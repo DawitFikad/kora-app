@@ -8,6 +8,7 @@ declare global {
                 role: Role;
                 organizerId?: number;
             };
+            rawBody?: Buffer;
             file?: Express.Multer.File;
             files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
         }

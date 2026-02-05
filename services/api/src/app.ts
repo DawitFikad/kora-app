@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import { rateLimit } from "express-rate-limit";
 import authRoutes from "./routes/auth.routes";
 import testRoutes from "./routes/test.routes";
 import adminRoutes from "./routes/admin.routes";
@@ -28,29 +27,37 @@ import { PaymentService } from "./services/payment.service";
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
-// TOP LEVEL DIAGNOSTICS - BEFORE ANY ROUTING
-app.get("/api/health-check-v3", (req, res) => {
+// DIAGNOSTICS - VERSION 3.2
+app.get("/api/health", (req, res) => {
   res.json({
     status: "healthy",
-    version: "3.0.0",
-    env: {
+    version: "3.2.0",
+    diagnostics: {
       chapa: !!process.env.CHAPA_SECRET_KEY,
       telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID,
-      node: process.env.NODE_ENV
+      apiUrl: process.env.API_URL || "not set",
+      vercel: !!process.env.VERCEL
     }
   });
 });
 
-// Root check
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.json({
-    message: "ET Ticket API",
-    diagnostics: {
-      chapa: !!process.env.CHAPA_SECRET_KEY
-    }
+    status: "API is running v3.2",
+    has_chapa: !!process.env.CHAPA_SECRET_KEY,
+    has_telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID
   });
+});
+
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to ET Ticket API v3.2" });
 });
 
 // Routes
@@ -79,7 +86,7 @@ router.use("/", testRoutes);
 
 app.use("/api", router);
 
-// Error handler
+// Error handle
 app.use(errorHandler);
 
 export default app;
