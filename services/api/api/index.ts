@@ -18,10 +18,13 @@ try {
 
     // WRAPPER to handle version check before Express
     handler = (req: any, res: any) => {
-        if (req.url.includes('/api/version')) {
+        // Broad check for 'version' in URL
+        if (req.url && req.url.includes('version')) {
             return res.status(200).json({
-                status: "Direct Index Check",
-                version: "3.6.0-INDEX",
+                status: "Direct Index Check v3.7.0",
+                received_url: req.url,
+                original_url: req.originalUrl,
+                headers_host: req.headers.host,
                 timestamp: new Date().toISOString(),
                 env_check: {
                     chapa: !!process.env.CHAPA_SECRET_KEY,
