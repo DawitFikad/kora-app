@@ -38,7 +38,7 @@ app.use(express.json({
 app.get("/api/health", (req, res) => {
   res.json({
     status: "healthy",
-    version: "3.2.0",
+    version: "3.3.0",
     diagnostics: {
       chapa: !!process.env.CHAPA_SECRET_KEY,
       telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID,
@@ -50,14 +50,14 @@ app.get("/api/health", (req, res) => {
 
 app.get("/api", (req, res) => {
   res.json({
-    status: "API is running v3.2",
+    status: "API is running v3.3.0",
     has_chapa: !!process.env.CHAPA_SECRET_KEY,
     has_telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID
   });
 });
 
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to ET Ticket API v3.2" });
+  res.json({ message: "Welcome to ET Ticket API v3.3.0" });
 });
 
 // Routes
