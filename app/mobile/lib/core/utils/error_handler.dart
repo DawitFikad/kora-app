@@ -46,7 +46,7 @@ class ErrorMessageHandler {
     }
     
     if (cleanError.contains('500') || cleanError.contains('Internal Server Error')) {
-      return "errors.internal_server".tr();
+      return "DEBUG SERVER ERROR: $cleanError";
     }
     
     if (cleanError.contains('payment') && cleanError.contains('pending')) {

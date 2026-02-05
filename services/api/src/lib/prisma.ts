@@ -1,14 +1,11 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
-import 'dotenv/config';
 
 // Use pooled DATABASE_URL for serverless to handle many concurrent connections
 let databaseUrl = process.env.DATABASE_URL || process.env.DIRECT_URL;
 
 // 🔹 CRITICAL: Force Transaction Mode (Port 6543) if using the pooler on Port 5432
-// Port 5432 on the pooler is "Session Mode" and will hit "Max Clients" errors immediately on Vercel.
 if (databaseUrl && databaseUrl.includes('pooler.supabase.com:5432')) {
+    console.log("Using Supabase Pooler: Switching to Port 6543 for Transaction Mode");
     databaseUrl = databaseUrl.replace(':5432/', ':6543/');
 }
 
@@ -18,44 +15,23 @@ if (databaseUrl && !databaseUrl.includes('connection_limit')) {
     databaseUrl = `${databaseUrl}${separator}connection_limit=1`;
 }
 
-let prismaInstance: PrismaClient | null = null;
+// Prevent multiple instances in development
+declare global {
+    var prisma: PrismaClient | undefined;
+}
 
-const getPrisma = () => {
-    if (!prismaInstance) {
-        try {
-            if (!databaseUrl) {
-                console.error('DATABASE_URL or DIRECT_URL environment variable is not set.');
-                prismaInstance = new PrismaClient();
-                return prismaInstance;
-            }
-
-            // Using standard Prisma initialization without custom driver adapter for better compatibility
-            prismaInstance = new PrismaClient({
-                datasources: {
-                    db: {
-                        url: databaseUrl
-                    }
-                }
-            });
-            console.log("✅ Prisma Client Initialized (Standard)");
-        } catch (err) {
-            console.error("❌ Failed to initialize Prisma:", err);
-            prismaInstance = new PrismaClient();
+const prisma = global.prisma || new PrismaClient({
+    datasources: {
+        db: {
+            url: databaseUrl
         }
-    }
-    return prismaInstance;
-};
-
-// Proxy to delay initialization until property access
-export const prisma = new Proxy({} as PrismaClient, {
-    get: (_target, prop) => {
-        const client = getPrisma();
-        if (!client) return undefined;
-        // @ts-ignore
-        const value = client[prop];
-        if (typeof value === 'function') {
-            return value.bind(client);
-        }
-        return value;
-    }
+    },
+    // Log queries in dev, warnings/errors in prod
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error', 'warn'],
 });
+
+if (process.env.NODE_ENV !== 'production') {
+    global.prisma = prisma;
+}
+
+export { prisma };
