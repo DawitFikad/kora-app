@@ -33,6 +33,15 @@ app.use(express.json({
 }));
 
 // 🚨 PRIORITY DIAGNOSTICS - VERSION 3.3.1 - MUST BE BEFORE ANY ROUTER
+// Explicit version route that matches the direct function
+app.get("/api/version", (req, res) => {
+  res.json({
+    message: "Express App Working",
+    timestamp: new Date().toISOString(),
+    version: "3.4.1-APP"
+  });
+});
+
 app.get("/api/health", (req, res) => {
   res.json({
     status: "healthy",
