@@ -1,4 +1,5 @@
 // api/index.ts - Vercel Serverless Entry Point
+// Updated: 2026-02-05 11:30 AM
 // This exports the Express app for Vercel's zero-config deployment
 
 let handler: any;
