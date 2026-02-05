@@ -30,35 +30,35 @@ router.get("/organizer-only", authenticate, authorize([Role.ORGANIZER, Role.ADMI
 router.get('/telebirr-config', async (req, res) => {
     try {
         console.log('🔍 Testing Telebirr configuration...');
-        
+
         // Check environment variables
         const envCheck = {
-            TELEBIRR_MERCHANT_APP_ID: env.teleBirrMerchantAppId ? 
-                '✓ Set (' + env.teleBirrMerchantAppId.substring(0, 4) + '...' + env.teleBirrMerchantAppId.slice(-4) + ')' : 
+            TELEBIRR_MERCHANT_APP_ID: env.teleBirrMerchantAppId ?
+                '✓ Set (' + env.teleBirrMerchantAppId.substring(0, 4) + '...' + env.teleBirrMerchantAppId.slice(-4) + ')' :
                 '✗ Missing',
-            TELEBIRR_FABRIC_APP_ID: env.teleBirrFabricAppId ? 
-                '✓ Set (' + env.teleBirrFabricAppId.substring(0, 8) + '...)' : 
+            TELEBIRR_FABRIC_APP_ID: env.teleBirrFabricAppId ?
+                '✓ Set (' + env.teleBirrFabricAppId.substring(0, 8) + '...)' :
                 '✗ Missing',
-            TELEBIRR_SHORT_CODE: env.teleBirrShortCode ? 
-                '✓ Set (' + env.teleBirrShortCode + ')' : 
+            TELEBIRR_SHORT_CODE: env.teleBirrShortCode ?
+                '✓ Set (' + env.teleBirrShortCode + ')' :
                 '✗ Missing',
-            TELEBIRR_APP_SECRET: env.teleBirrAppSecret ? 
-                '✓ Set (' + env.teleBirrAppSecret.substring(0, 8) + '...)' : 
+            TELEBIRR_APP_SECRET: env.teleBirrAppSecret ?
+                '✓ Set (' + env.teleBirrAppSecret.substring(0, 8) + '...)' :
                 '✗ Missing',
-            TELEBIRR_PRIVATE_KEY: env.teleBirrPrivateKey ? 
-                '✓ Set (' + env.teleBirrPrivateKey.length + ' chars)' : 
+            TELEBIRR_PRIVATE_KEY: env.teleBirrPrivateKey ?
+                '✓ Set (' + env.teleBirrPrivateKey.length + ' chars)' :
                 '✗ Missing',
-            TELEBIRR_API_URL: env.teleBirrApiUrl ? 
-                '✓ Set (' + env.teleBirrApiUrl + ')' : 
+            TELEBIRR_API_URL: env.teleBirrApiUrl ?
+                '✓ Set (' + env.teleBirrApiUrl + ')' :
                 '✗ Missing'
         };
-        
+
         // Check configuration
         const isConfigured = TelebirrProvider.isConfigured();
-        
+
         // Test connection
         const connectionTest = await TelebirrProvider.testConnection();
-        
+
         res.json({
             success: true,
             timestamp: new Date().toISOString(),
@@ -96,16 +96,16 @@ router.get('/telebirr-config', async (req, res) => {
 router.post('/telebirr-payment', async (req, res) => {
     try {
         const { amount = 10, returnUrl, notifyUrl } = req.body;
-        
+
         console.log('💳 Testing Telebirr payment initialization...');
-        
+
         // Generate unique transaction reference
         const txRef = `TEST_TX_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
-        
+
         // Use default URLs if not provided
         const testReturnUrl = returnUrl || `${env.apiUrl}/api/payments/verify-callback?ref=${txRef}`;
         const testNotifyUrl = notifyUrl || `${env.apiUrl}/api/payments/webhook`;
-        
+
         const testResult = await TelebirrProvider.initialize({
             amount: Number(amount),
             orderId: `TEST_ORDER_${Date.now()}`,
@@ -114,10 +114,10 @@ router.post('/telebirr-payment', async (req, res) => {
             subject: 'Test Payment - ET Tickets',
             outTradeNo: txRef
         });
-        
+
         // Generate QR code for easy testing
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(testResult.checkoutUrl)}`;
-        
+
         res.json({
             success: true,
             message: '✅ Test payment initialized successfully',
@@ -162,11 +162,11 @@ router.post('/telebirr-payment', async (req, res) => {
 router.get('/telebirr-verify/:txRef', async (req, res) => {
     try {
         const { txRef } = req.params;
-        
+
         console.log(`🔍 Verifying Telebirr payment: ${txRef}`);
-        
+
         const verification = await TelebirrProvider.verify(txRef);
-        
+
         res.json({
             success: true,
             message: 'Verification completed',
@@ -174,7 +174,7 @@ router.get('/telebirr-verify/:txRef', async (req, res) => {
             timestamp: new Date().toISOString(),
             interpretation: {
                 isSuccess: verification.success ? '✅ Payment Successful' : '❌ Payment Failed/Pending',
-                nextSteps: verification.success ? 
+                nextSteps: verification.success ?
                     'Payment verified successfully. Issue tickets.' :
                     'Payment not yet successful. Check again later or investigate.'
             }
@@ -196,9 +196,9 @@ router.get('/payment-providers', async (req, res) => {
     try {
         const telebirrConfigured = TelebirrProvider.isConfigured();
         const chapaConfigured = ChapaProvider.isConfigured();
-        
+
         const telebirrTest = telebirrConfigured ? await TelebirrProvider.testConnection() : null;
-        
+
         res.json({
             success: true,
             providers: {
@@ -237,20 +237,20 @@ router.get('/payment-providers', async (req, res) => {
 router.get('/telebirr-private-key', (req, res) => {
     try {
         const privateKey = env.teleBirrPrivateKey;
-        
+
         if (!privateKey) {
             return res.json({
                 success: false,
                 message: 'Private key not found in environment'
             });
         }
-        
+
         // Check key characteristics
         const hasBegin = privateKey.includes('BEGIN');
         const hasEnd = privateKey.includes('END');
         const hasNewlines = privateKey.includes('\n');
         const length = privateKey.length;
-        
+
         // Try to format it
         let formattedKey = '';
         try {
@@ -263,7 +263,7 @@ router.get('/telebirr-private-key', (req, res) => {
                 : String(error);
             formattedKey = `Format error: ${errorMessage}`;
         }
-        
+
         res.json({
             success: true,
             analysis: {
@@ -301,33 +301,33 @@ router.get('/network', async (req, res) => {
     try {
         const axios = require('axios');
         const https = require('https');
-        
+
         const testUrl = env.teleBirrApiUrl;
-        
+
         if (!testUrl) {
             return res.json({
                 success: false,
                 message: 'No API URL configured'
             });
         }
-        
+
         // Create agent that ignores SSL errors
         const agent = new https.Agent({
             rejectUnauthorized: false
         });
-        
+
         // Test simple connection
         const startTime = Date.now();
-        
+
         try {
             const response = await axios.get(testUrl, {
                 httpsAgent: agent,
                 timeout: 10000
             });
-            
+
             const endTime = Date.now();
             const latency = endTime - startTime;
-            
+
             res.json({
                 success: true,
                 message: `✅ Connected to ${testUrl}`,
@@ -341,7 +341,7 @@ router.get('/network', async (req, res) => {
         } catch (error: any) {
             const endTime = Date.now();
             const latency = endTime - startTime;
-            
+
             res.json({
                 success: false,
                 message: `❌ Cannot connect to ${testUrl}`,
@@ -354,7 +354,7 @@ router.get('/network', async (req, res) => {
                 }
             });
         }
-        
+
     } catch (error: any) {
         res.status(500).json({
             success: false,
@@ -367,23 +367,7 @@ router.get('/network', async (req, res) => {
  * Health Check
  * GET /api/test/health
  */
-router.get('/health', (req, res) => {
-    res.json({
-        success: true,
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        service: 'ET-Tickets Payment Test API',
-        version: '1.0.0',
-        endpoints: {
-            telebirrConfig: 'GET /api/test/telebirr-config',
-            telebirrPayment: 'POST /api/test/telebirr-payment',
-            telebirrVerify: 'GET /api/test/telebirr-verify/:txRef',
-            providers: 'GET /api/test/payment-providers',
-            privateKey: 'GET /api/test/telebirr-private-key',
-            network: 'GET /api/test/network'
-        }
-    });
-});
+// Health route removed to avoid conflict with main app health check
 
 
 // Test admin-only route

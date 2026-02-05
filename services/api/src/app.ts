@@ -21,8 +21,6 @@ import staffRoutes from "./routes/staff.routes";
 import supportRoutes from "./routes/support.routes";
 import publicRoutes from "./routes/public.routes";
 import { errorHandler } from "./middlewares/error.middleware";
-import { EventService } from "./services/event.service";
-import { PaymentService } from "./services/payment.service";
 
 const app = express();
 
@@ -34,59 +32,63 @@ app.use(express.json({
   }
 }));
 
-// DIAGNOSTICS - VERSION 3.2
+// 🚨 PRIORITY DIAGNOSTICS - VERSION 3.3.1 - MUST BE BEFORE ANY ROUTER
 app.get("/api/health", (req, res) => {
   res.json({
     status: "healthy",
-    version: "3.3.0",
+    version: "3.3.1",
     diagnostics: {
-      chapa: !!process.env.CHAPA_SECRET_KEY,
-      telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID,
+      chapaSecret: !!process.env.CHAPA_SECRET_KEY,
+      chapaKeyLength: process.env.CHAPA_SECRET_KEY?.length || 0,
+      telebirrId: !!process.env.TELEBIRR_MERCHANT_APP_ID,
       apiUrl: process.env.API_URL || "not set",
-      vercel: !!process.env.VERCEL
+      nodeEnv: process.env.NODE_ENV
     }
   });
 });
 
 app.get("/api", (req, res) => {
   res.json({
-    status: "API is running v3.3.0",
-    has_chapa: !!process.env.CHAPA_SECRET_KEY,
-    has_telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID
+    status: "API is running v3.3.1",
+    config: {
+      chapa: !!process.env.CHAPA_SECRET_KEY,
+      telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID
+    }
   });
 });
 
+// App Routes
+const apiRouter = express.Router();
+
+apiRouter.use("/auth", authRoutes);
+apiRouter.use("/admin", adminRoutes);
+apiRouter.use("/profiles", profileRoutes);
+apiRouter.use("/events", eventRoutes);
+apiRouter.use("/tickets", ticketingRoutes);
+apiRouter.use("/payments", paymentRoutes);
+apiRouter.use("/validate", validationRoutes);
+apiRouter.use("/financials", financialRoutes);
+apiRouter.use("/payouts", payoutRoutes);
+apiRouter.use("/security", securityRoutes);
+apiRouter.use("/organizer", organizerRoutes);
+apiRouter.use("/refunds", refundRoutes);
+apiRouter.use("/disputes", disputeRoutes);
+apiRouter.use("/notifications", notificationRoutes);
+apiRouter.use("/content", contentRoutes);
+apiRouter.use("/booking", bookingRoutes);
+apiRouter.use("/staff", staffRoutes);
+apiRouter.use("/support", supportRoutes);
+apiRouter.use("/public", publicRoutes);
+apiRouter.use("/test", testRoutes); // Note: changed from "/" to "/test" to avoid overlap
+
+app.use("/api", apiRouter);
+
+// Root check
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to ET Ticket API v3.3.0" });
+  res.json({ message: "Welcome to ET Ticket API v3.3.1" });
 });
 
-// Routes
-const router = express.Router();
-
-router.use("/auth", authRoutes);
-router.use("/admin", adminRoutes);
-router.use("/profiles", profileRoutes);
-router.use("/events", eventRoutes);
-router.use("/tickets", ticketingRoutes);
-router.use("/payments", paymentRoutes);
-router.use("/validate", validationRoutes);
-router.use("/financials", financialRoutes);
-router.use("/payouts", payoutRoutes);
-router.use("/security", securityRoutes);
-router.use("/organizer", organizerRoutes);
-router.use("/refunds", refundRoutes);
-router.use("/disputes", disputeRoutes);
-router.use("/notifications", notificationRoutes);
-router.use("/content", contentRoutes);
-router.use("/booking", bookingRoutes);
-router.use("/staff", staffRoutes);
-router.use("/support", supportRoutes);
-router.use("/public", publicRoutes);
-router.use("/", testRoutes);
-
-app.use("/api", router);
-
-// Error handle
+// Error handling
 app.use(errorHandler);
 
 export default app;
