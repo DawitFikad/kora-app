@@ -94,9 +94,9 @@ class ErrorMessageHandler {
           }
         }
         
-        // If we have a detailed server message, return it (after cleaning)
+        // If we have a detailed server message, return it directly
         if (serverMessage != null && serverMessage.isNotEmpty) {
-          return getReadableError(serverMessage);
+          return serverMessage;
         }
         
         // Fallback to status code messages only if no server message
