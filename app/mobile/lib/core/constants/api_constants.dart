@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'http://10.0.2.2:4000/api'; // Android emulator localhost
+  static const String baseUrl = 'https://et-ticket-api-v2.vercel.app/api';
   
   static const String authOtpRequest = '$baseUrl/auth/otp/request';
   static const String authOtpVerify = '$baseUrl/auth/otp/verify';
