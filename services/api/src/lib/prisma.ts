@@ -1,7 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 
-// Use pooled DATABASE_URL for serverless to handle many concurrent connections
-let databaseUrl = process.env.DATABASE_URL || process.env.DIRECT_URL;
+// 🚀 V3.12.0: Use DIRECT_URL for stability on serverless if possible
+// The pooled URL can sometimes drop connections ("Connection is closed")
+let databaseUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
+
+if (process.env.NODE_ENV === 'production' && process.env.DIRECT_URL) {
+    console.log("[Prisma] Production Mode: Switched to DIRECT_URL for stability");
+    databaseUrl = process.env.DIRECT_URL;
+}
 
 // 🔹 CRITICAL: Handle Supabase Pooler (Port 6543 is Transaction Mode)
 if (databaseUrl && databaseUrl.includes('pooler.supabase.com')) {
@@ -16,6 +22,8 @@ if (databaseUrl && databaseUrl.includes('pooler.supabase.com')) {
         databaseUrl = `${databaseUrl}${separator}pgbouncer=true`;
     }
 }
+
+console.log(`[Prisma] Initializing with URL: ${databaseUrl?.split('@')[1]?.split('?')[0]} (Masked)`);
 
 // Add connection_limit=1 to prevent serverless functions from exhausting the pool
 if (databaseUrl && !databaseUrl.includes('connection_limit')) {
