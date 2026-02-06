@@ -99,7 +99,7 @@ export class EventController {
     static async reviewEvent(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const { status, feeType, feeFixed, feePercentage } = req.body;
+            const { status, feeType, feeFixed, feePercentage, adminNote } = req.body;
 
             if (![EventStatus.APPROVED, EventStatus.REJECTED].includes(status)) {
                 return res.status(400).json({ error: "Invalid status" });
@@ -110,7 +110,8 @@ export class EventController {
                 status,
                 feeType || "PERCENTAGE",
                 feeFixed || 0,
-                feePercentage || 0
+                feePercentage || 0,
+                adminNote
             );
 
             // Audit Log

@@ -1070,7 +1070,7 @@ export const SalesRevenueView = () => {
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                     <span>{type.count} tickets sold</span>
-                                    <span>{formatETB(type.value / type.count)}</span>
+                                    <span>{type.count > 0 ? formatETB(type.value / type.count) : 'ETB 0.00'}</span>
                                 </div>
                                 <div
                                     style={{

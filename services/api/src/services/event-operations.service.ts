@@ -130,7 +130,15 @@ export class EventOperationsService {
      * Gets aggregated stats for an organizer across all their events.
      */
     static async getOrganizerSummary(organizerId: number) {
-        const [events, wallet, recentSales, ticketsForAnalytics] = await Promise.all([
+        const cacheKey = `ops:summary:organizer:${organizerId}`;
+        try {
+            const cached = await redis.get(cacheKey);
+            if (cached) return JSON.parse(cached);
+        } catch (e) {
+            console.error("Redis error in getOrganizerSummary:", e);
+        }
+
+        const [events, wallet, recentSales, ticketsCount, ticketsForAnalytics] = await Promise.all([
             prisma.event.findMany({
                 where: { organizerId },
                 include: {
@@ -156,7 +164,13 @@ export class EventOperationsService {
                 where: {
                     event: { organizerId },
                     status: { in: ["SOLD", "USED", "VALID"] },
-                    createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Extended to 30 days for better insights
+                    createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+                }
+            }),
+            prisma.ticket.count({
+                where: {
+                    event: { organizerId },
+                    status: { in: ["SOLD", "USED", "VALID"] }
                 }
             }),
             prisma.ticket.findMany({
@@ -168,11 +182,12 @@ export class EventOperationsService {
                     createdAt: true,
                     userId: true,
                     eventId: true
-                }
+                },
+                take: 5000 // Sample for analytics to prevent memory issues
             })
         ]);
 
-        const totalTicketsSold = events.reduce((sum, event) => sum + event._count.tickets, 0);
+        const totalTicketsSold = ticketsCount;
         const totalCapacity = events.reduce((sum, event) => {
             return sum + event.tiers.reduce((tSum, tier) => tSum + tier.capacity, 0);
         }, 0);
@@ -199,9 +214,9 @@ export class EventOperationsService {
             date.setDate(date.getDate() - (6 - i));
             const dateString = date.toISOString().split('T')[0];
 
-            const count = recentSales
+            const count = (recentSales as any[])
                 .filter(s => new Date(s.createdAt).toISOString().split('T')[0] === dateString)
-                .reduce((sum, s) => sum + s._count, 0);
+                .reduce((sum, s) => sum + (s._count?._all || s._count || 0), 0);
 
             return { day: date.toLocaleDateString('en-US', { weekday: 'short' }), count };
         });
@@ -226,9 +241,9 @@ export class EventOperationsService {
         const bestEvent = eventRevenues[0] || { title: 'N/A', revenue: 0 };
 
         const dayCounts: Record<string, number> = {};
-        recentSales.forEach(s => {
+        (recentSales as any[]).forEach(s => {
             const day = new Date(s.createdAt).toLocaleDateString('en-US', { weekday: 'long' });
-            dayCounts[day] = (dayCounts[day] || 0) + s._count;
+            dayCounts[day] = (dayCounts[day] || 0) + (s._count?._all || s._count || 0);
         });
         const peakDayEntry = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0] || ['N/A', 0];
 
@@ -261,7 +276,7 @@ export class EventOperationsService {
         });
         const peakHourIndex = hourBuckets.reduce((maxIdx, count, idx, arr) =>
             count > arr[maxIdx] ? idx : maxIdx
-        , 0);
+            , 0);
         const peakBuyingTime = {
             hour: peakHourIndex,
             label: new Date(2020, 0, 1, peakHourIndex).toLocaleTimeString('en-US', { hour: 'numeric' }),
@@ -339,7 +354,7 @@ export class EventOperationsService {
             }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        return {
+        const result = {
             totalRevenue: netEarnings,
             grossVolume: grossVolume,
             ticketsSold: totalTicketsSold,
@@ -367,13 +382,29 @@ export class EventOperationsService {
                 funnel
             }
         };
+
+        try {
+            await redis.setex(cacheKey, this.CACHE_TTL, JSON.stringify(result));
+        } catch (e) {
+            console.error("Redis set error:", e);
+        }
+
+        return result;
     }
 
     /**
      * Gets a detailed financial history for the organizer.
      */
     static async getOrganizerFinancials(organizerId: number) {
-        const [transactions, wallet, events, tickets] = await Promise.all([
+        const cacheKey = `ops:financials:organizer:${organizerId}`;
+        try {
+            const cached = await redis.get(cacheKey);
+            if (cached) return JSON.parse(cached);
+        } catch (e) {
+            console.error("Redis error in getOrganizerFinancials:", e);
+        }
+
+        const [transactions, wallet, events, tickets, ticketingMetrics] = await Promise.all([
             prisma.financialTransaction.findMany({
                 where: { event: { organizerId } },
                 include: {
@@ -390,15 +421,10 @@ export class EventOperationsService {
             }),
             prisma.event.findMany({
                 where: { organizerId },
-                include: {
-                    tiers: {
-                        include: {
-                            tickets: {
-                                where: { status: { in: ["SOLD", "USED", "VALID"] } },
-                                select: { basePrice: true, createdAt: true }
-                            }
-                        }
-                    }
+                select: {
+                    id: true,
+                    title: true,
+                    tiers: { select: { capacity: true } }
                 }
             }),
             prisma.ticket.findMany({
@@ -412,9 +438,21 @@ export class EventOperationsService {
                     tier: { select: { name: true } },
                     event: { select: { id: true, title: true } }
                 },
-                orderBy: { createdAt: 'desc' }
+                orderBy: { createdAt: 'desc' },
+                take: 5000
+            }),
+            prisma.ticket.aggregate({
+                where: {
+                    event: { organizerId },
+                    status: { in: ["SOLD", "USED", "VALID"] }
+                },
+                _sum: { basePrice: true },
+                _count: true
             })
         ]);
+
+        const totalRevenue = Number(ticketingMetrics._sum.basePrice || 0);
+        const totalTicketsSold = ticketingMetrics._count || 0;
 
         const eventTitleMap = new Map<number, string>(events.map((e: any) => [e.id, e.title]));
         const organizerEventIds = new Set(events.map((e: any) => e.id));
@@ -430,9 +468,8 @@ export class EventOperationsService {
             _sum: { amount: true }
         });
 
-        // Calculate total revenue from tickets
-        const totalRevenue = tickets.reduce((sum, t) => sum + Number(t.basePrice), 0);
-        const totalTicketsSold = tickets.length;
+        // Total revenue and sold counts calculated from ticketingMetrics aggregate above
+
 
         // Calculate sales trend (last 30 days by default)
         const salesTrendMap = new Map<string, { revenue: number; tickets: number }>();
@@ -563,7 +600,7 @@ export class EventOperationsService {
         }));
 
         const totalCapacity = events.reduce((sum, event) => {
-            return sum + event.tiers.reduce((tSum, tier) => tSum + tier.capacity, 0);
+            return sum + (event as any).tiers.reduce((tSum: number, tier: any) => tSum + tier.capacity, 0);
         }, 0);
         const conversionRate = totalCapacity > 0 ? (totalTicketsSold / totalCapacity) * 100 : 0;
 
@@ -593,7 +630,7 @@ export class EventOperationsService {
             })
             .filter(p => (p.eventId ? organizerEventIds.has(p.eventId) : false));
 
-        return {
+        const result = {
             totalRevenue,
             grossSales: Number(grossSales._sum.amount || 0),
             totalPayouts: Number(wallet?.totalWithdrawn || 0),
@@ -616,6 +653,14 @@ export class EventOperationsService {
             salesByChannel,
             failedPayments
         };
+
+        try {
+            await redis.setex(cacheKey, this.CACHE_TTL, JSON.stringify(result));
+        } catch (e) {
+            console.error("Redis set error:", e);
+        }
+
+        return result;
     }
 
     /**

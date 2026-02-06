@@ -8,6 +8,7 @@ import '../../scanner/services/scanner_service.dart';
 import '../../auth/services/auth_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:mobile/core/utils/error_handler.dart';
+import 'package:mobile/core/utils/avatar_image_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -149,9 +150,7 @@ class ProfileScreen extends ConsumerWidget {
                         child: CircleAvatar(
                           radius: 50,
                           backgroundColor: Colors.grey[800],
-                          backgroundImage: profile.avatarUrl != null 
-                              ? NetworkImage(profile.avatarUrl!) 
-                              : null,
+                          backgroundImage: avatarImageProvider(profile.avatarUrl),
                           child: profile.avatarUrl == null 
                               ? const Icon(Icons.person, size: 50, color: Colors.white)
                               : null,

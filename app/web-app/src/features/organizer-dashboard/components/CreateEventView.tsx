@@ -69,7 +69,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
     const handleAddTier = () => {
         setForm({
             ...form,
-            tiers: [...form.tiers, { name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
+            tiers: [...form.tiers, { name: 'General Admission', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
         });
     };
 
@@ -416,14 +416,30 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 40px', gap: '16px', alignItems: 'end' }}>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Name</label>
-                                            <input
+                                            <select
                                                 required
-                                                type="text"
-                                                placeholder="VIP, Early Bird, etc."
                                                 value={tier.name}
-                                                onChange={e => handleTierChange(index, 'name', e.target.value)}
-                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
-                                            />
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    handleTierChange(index, 'name', val);
+
+                                                    // Auto-map name to type for better backend categorization
+                                                    if (val === 'VIP') handleTierChange(index, 'type', 'VIP');
+                                                    else if (val === 'Early Bird') handleTierChange(index, 'type', 'EARLY_BIRD');
+                                                    else handleTierChange(index, 'type', 'GENERAL');
+
+                                                    // Proactive: If Reserved Seating is chosen, maybe suggest enabling Seat Map?
+                                                    // For now just keep name consistent.
+                                                }}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
+                                            >
+                                                <option value="">Select Type</option>
+                                                <option value="General Admission">General Admission</option>
+                                                <option value="VIP">VIP</option>
+                                                <option value="Early Bird">Early Bird</option>
+                                                <option value="Group / Family">Group / Family</option>
+                                                <option value="Reserved Seating">Reserved Seating</option>
+                                            </select>
                                         </div>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Price (ETB)</label>

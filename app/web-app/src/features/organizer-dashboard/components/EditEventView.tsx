@@ -40,7 +40,8 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
         cityId: '',
         coverImage: '',
         refundPolicy: '',
-        tiers: [{ id: undefined as number | undefined, name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
+        tiers: [{ id: undefined as number | undefined, name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }],
+        adminNote: ''
     });
 
     useEffect(() => {
@@ -82,7 +83,8 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                 isResellable: !!t.isResellable,
                                 expanded: false
                             }))
-                            : [{ id: undefined, name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
+                            : [{ id: undefined, name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }],
+                        adminNote: event.adminNote || ''
                     });
                 }
             } catch (error) {
@@ -98,7 +100,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
     const handleAddTier = () => {
         setForm({
             ...form,
-            tiers: [...form.tiers, { id: undefined, name: '', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
+            tiers: [...form.tiers, { id: undefined, name: 'General Admission', type: 'GENERAL', price: '', capacity: '', salesStart: '', salesEnd: '', maxPerUser: '5', isTransferable: true, isResellable: false, expanded: false }]
         });
     };
 
@@ -202,6 +204,18 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                     <p style={{ color: 'var(--text-muted)' }}>Update your event details.</p>
                 </div>
             </div>
+
+            {(form as any).adminNote && (
+                <div style={{ background: 'rgba(29, 144, 245, 0.1)', border: '1px solid rgba(29, 144, 245, 0.3)', padding: '20px', borderRadius: '16px', marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                    <div style={{ background: 'var(--primary)', color: 'white', padding: '8px', borderRadius: '10px' }}>
+                        <AlertCircle size={20} />
+                    </div>
+                    <div>
+                        <p style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--primary)', marginBottom: '4px' }}>Boss Comment (Admin Note)</p>
+                        <p style={{ fontSize: '0.95rem', color: 'var(--text-main)', lineHeight: 1.5 }}>{(form as any).adminNote}</p>
+                    </div>
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '32px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -376,13 +390,27 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 40px', gap: '16px', alignItems: 'end' }}>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Name</label>
-                                            <input
+                                            <select
                                                 required
-                                                type="text"
                                                 value={tier.name}
-                                                onChange={e => handleTierChange(index, 'name', e.target.value)}
-                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)' }}
-                                            />
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    handleTierChange(index, 'name', val);
+
+                                                    // Auto-map name to type
+                                                    if (val === 'VIP') handleTierChange(index, 'type', 'VIP');
+                                                    else if (val === 'Early Bird') handleTierChange(index, 'type', 'EARLY_BIRD');
+                                                    else handleTierChange(index, 'type', 'GENERAL');
+                                                }}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
+                                            >
+                                                <option value="">Select Type</option>
+                                                <option value="General Admission">General Admission</option>
+                                                <option value="VIP">VIP</option>
+                                                <option value="Early Bird">Early Bird</option>
+                                                <option value="Group / Family">Group / Family</option>
+                                                <option value="Reserved Seating">Reserved Seating</option>
+                                            </select>
                                         </div>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Price (ETB)</label>

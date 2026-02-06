@@ -219,11 +219,12 @@ export class EventService {
         });
     }
 
-    static async reviewEvent(eventId: number, status: EventStatus, feeType: string, feeFixed: number, feePercentage: number) {
+    static async reviewEvent(eventId: number, status: EventStatus, feeType: string, feeFixed: number, feePercentage: number, adminNote?: string) {
         const event = await prisma.event.update({
             where: { id: eventId },
             data: {
                 status,
+                adminNote: adminNote || null,
                 feeType: feeType || null,
                 feeFixed: feeFixed !== undefined ? feeFixed : null,
                 feePercentage: feePercentage !== undefined ? feePercentage : null
@@ -241,14 +242,14 @@ export class EventService {
                     status === EventStatus.REJECTED ? "Event Rejected ⚠️" : "Event Status Updated";
 
                 const content = status === EventStatus.APPROVED
-                    ? `Your event "${event.title}" has been approved and is now live!`
-                    : `Your event "${event.title}" has been rejected. Please contact support for details.`;
+                    ? `Your event "${event.title}" has been approved and is now live!${adminNote ? ' Note: ' + adminNote : ''}`
+                    : `Your event "${event.title}" has been rejected.${adminNote ? ' Reason: ' + adminNote : ' Please contact support for details.'}`;
 
                 await NotificationService.notifyOrganizer(event.organizerId, {
                     title,
                     content,
                     channels: [NotificationChannel.SMS, NotificationChannel.PUSH],
-                    metadata: { type: 'EVENT_STATUS', eventId, status }
+                    metadata: { type: 'EVENT_STATUS', eventId, status, adminNote }
                 });
             } catch (e) {
                 console.error("Failed to notify organizer of event review:", e);

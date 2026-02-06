@@ -95,7 +95,7 @@ const OrganizerDashboard = () => {
         // Optional: Poll notifications every minute
         const interval = setInterval(fetchData, 60000);
         return () => clearInterval(interval);
-    }, [activeTab]);
+    }, []);
 
     // Group Notifications Helper
     const getGroupedNotifications = () => {

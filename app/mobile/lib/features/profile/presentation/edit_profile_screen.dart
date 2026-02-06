@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../services/profile_service.dart';
+import 'package:mobile/core/utils/avatar_image_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -137,9 +138,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         backgroundColor: Colors.grey[800],
                         backgroundImage: _imageFile != null 
                             ? FileImage(_imageFile!) as ImageProvider
-                            : (ref.read(userProfileProvider).value?.avatarUrl != null 
-                                ? NetworkImage(ref.read(userProfileProvider).value!.avatarUrl!) 
-                                : null),
+                            : avatarImageProvider(ref.read(userProfileProvider).value?.avatarUrl),
                         child: (_imageFile == null && ref.read(userProfileProvider).value?.avatarUrl == null)
                             ? const Icon(Icons.person, size: 60, color: Colors.white)
                             : null,

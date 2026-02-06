@@ -25,10 +25,10 @@ if (databaseUrl && databaseUrl.includes('pooler.supabase.com')) {
 
 console.log(`[Prisma] Initializing with URL: ${databaseUrl?.split('@')[1]?.split('?')[0]} (Masked)`);
 
-// Add connection_limit=1 to prevent serverless functions from exhausting the pool
+// Add connection_limit=3 to allow some parallel queries within the same function instance
 if (databaseUrl && !databaseUrl.includes('connection_limit')) {
     const separator = databaseUrl.includes('?') ? '&' : '?';
-    databaseUrl = `${databaseUrl}${separator}connection_limit=1`;
+    databaseUrl = `${databaseUrl}${separator}connection_limit=3`;
 }
 
 // Prevent multiple instances in development

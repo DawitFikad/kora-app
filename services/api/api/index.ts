@@ -21,7 +21,7 @@ try {
         // Broad check for 'version' in URL
         if (req.url && req.url.includes('version')) {
             return res.status(200).json({
-                status: "Direct Index Check v3.11.0",
+                status: "Direct Index Check v3.12.0",
                 received_url: req.url,
                 original_url: req.originalUrl,
                 headers_host: req.headers.host,

@@ -167,6 +167,7 @@ model Event {
   isPublic         Boolean                @default(true)
   rating           String?
   trailerUrl       String?
+  adminNote        String?
   entryMetrics     EntryMetric[]
   category         Category               @relation(fields: [categoryId], references: [id])
   city             City                   @relation(fields: [cityId], references: [id])

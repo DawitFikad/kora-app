@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:mobile/core/utils/avatar_image_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -148,9 +149,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     CircleAvatar(
                       radius: 32,
                       backgroundColor: Colors.white,
-                      backgroundImage: profile.avatarUrl != null
-                          ? NetworkImage(profile.avatarUrl!)
-                          : null,
+                      backgroundImage: avatarImageProvider(profile.avatarUrl),
                       child: profile.avatarUrl == null
                           ? const Icon(Icons.person, size: 32, color: Color(0xFF8B5CF6))
                           : null,
