@@ -445,13 +445,6 @@ const OrganizerLanding = () => {
     const [eventsLoading, setEventsLoading] = useState(true);
     const [eventFilter, setEventFilter] = useState<'all' | 'today' | 'week'>('all');
     const [searchQuery, setSearchQuery] = useState('');
-    const [categories, setCategories] = useState<any[]>([]);
-    const [cities, setCities] = useState<any[]>([]);
-    const [selectedCatId, setSelectedCatId] = useState<number | null>(null);
-    const [selectedSubCatId, setSelectedSubCatId] = useState<number | null>(null);
-
-    // Derived: subcategories for the selected main category
-    const activeSubcategories = categories.find(c => c.id === selectedCatId)?.subCategories || [];
 
     useEffect(() => {
         const fetchBanners = async () => {
@@ -471,11 +464,7 @@ const OrganizerLanding = () => {
         const fetchEvents = async () => {
             try {
                 setEventsLoading(true);
-                const data = await EventService.getEvents({
-                    featured: !selectedCatId && !searchQuery, // Only focus on featured if no specific filter is active
-                    categoryId: selectedCatId || undefined,
-                    subCategoryId: selectedSubCatId || undefined
-                });
+                const data = await EventService.getEvents({ featured: true });
                 const normalized = Array.isArray(data) ? data : [];
                 setPrioritizedEvents(normalized);
             } catch (err) {
@@ -486,21 +475,6 @@ const OrganizerLanding = () => {
             }
         };
         fetchEvents();
-    }, [selectedCatId, selectedSubCatId]); // Refetch when category filter changes
-
-    useEffect(() => {
-        const fetchMeta = async () => {
-            try {
-                const res = await EventService.getMetadata();
-                if (res) {
-                    setCategories(res.categories || []);
-                    setCities(res.cities || []);
-                }
-            } catch (err) {
-                console.error('Failed to load metadata', err);
-            }
-        };
-        fetchMeta();
     }, []);
 
     useEffect(() => {
@@ -555,15 +529,6 @@ const OrganizerLanding = () => {
         if (eventFilter === 'week') return isWithinWeek(event.dateTime);
         return true;
     });
-
-    const handleCategorySelect = (id: number | null) => {
-        setSelectedCatId(id);
-        setSelectedSubCatId(null); // Reset subcat when main changes
-    };
-
-    const handleSubCategorySelect = (id: number | null) => {
-        setSelectedSubCatId(id);
-    };
 
     const fallbackFeatured = sortedEvents.filter(event => event.featured).slice(0, 5);
     const fallbackAny = sortedEvents.slice(0, 6);
@@ -788,7 +753,7 @@ const OrganizerLanding = () => {
                             />
                         </div>
 
-                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                             {(['all', 'today', 'week'] as const).map((tag) => (
                                 <button
                                     key={tag}
@@ -810,61 +775,6 @@ const OrganizerLanding = () => {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Main Categories Ribbon */}
-                        <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '10px', display: 'flex', justifyContent: 'center' }}>
-                            <div style={{ display: 'flex', gap: '10px', padding: '0 10px' }}>
-                                <button
-                                    onClick={() => handleCategorySelect(null)}
-                                    style={{ padding: '10px 20px', borderRadius: '14px', border: '1px solid', borderColor: !selectedCatId ? 'var(--primary)' : 'var(--border)', background: !selectedCatId ? 'rgba(139, 92, 246, 0.1)' : 'var(--bg-subtle)', color: !selectedCatId ? 'var(--primary)' : 'var(--text-main)', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}
-                                >
-                                    All Categories
-                                </button>
-                                {categories.map(cat => (
-                                    <button
-                                        key={cat.id}
-                                        onClick={() => handleCategorySelect(cat.id)}
-                                        style={{ padding: '10px 20px', borderRadius: '14px', border: '1px solid', borderColor: selectedCatId === cat.id ? 'var(--primary)' : 'var(--border)', background: selectedCatId === cat.id ? 'rgba(139, 92, 246, 0.1)' : 'var(--bg-subtle)', color: selectedCatId === cat.id ? 'var(--primary)' : 'var(--text-main)', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                    >
-                                        {cat.name}
-                                        {cat._count?.events > 0 && <span style={{ opacity: 0.5, fontSize: '0.7rem' }}>({cat._count.events})</span>}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Subcategories Reveal (The Drill-down) */}
-                        <AnimatePresence>
-                            {selectedCatId && activeSubcategories.length > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    style={{ width: '100%', borderTop: '1px solid var(--border)', paddingTop: '20px', marginTop: '10px' }}
-                                >
-                                    <p style={{ textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        Explore {categories.find(c => c.id === selectedCatId)?.name}
-                                    </p>
-                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                        <button
-                                            onClick={() => handleSubCategorySelect(null)}
-                                            style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid', borderColor: !selectedSubCatId ? 'var(--primary)' : 'var(--border)', background: !selectedSubCatId ? 'var(--primary)' : 'transparent', color: !selectedSubCatId ? 'white' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
-                                        >
-                                            Everything in {categories.find(c => c.id === selectedCatId)?.name}
-                                        </button>
-                                        {activeSubcategories.map((sub: any) => (
-                                            <button
-                                                key={sub.id}
-                                                onClick={() => handleSubCategorySelect(sub.id)}
-                                                style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid', borderColor: selectedSubCatId === sub.id ? 'var(--primary)' : 'var(--border)', background: selectedSubCatId === sub.id ? 'var(--primary)' : 'transparent', color: selectedSubCatId === sub.id ? 'white' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
-                                            >
-                                                {sub.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
                     </div>
 
                     {eventsLoading ? (
@@ -913,8 +823,8 @@ const OrganizerLanding = () => {
                                                     </span>
                                                 )}
                                                 {event.subCategory?.name && (
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.15)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
-                                                        {event.subCategory.name}
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(139, 92, 246, 0.08)', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                        <Tag size={12} /> {event.subCategory?.name}
                                                     </span>
                                                 )}
                                                 {event.organizer?.organizationName && (

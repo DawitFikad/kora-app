@@ -119,14 +119,16 @@ model StaffInvitation {
 }
 
 model Category {
-  id             Int        @id @default(autoincrement())
-  name           String     @unique
-  slug           String     @unique
-  parentId       Int?
-  parent         Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id])
-  subCategories  Category[] @relation("CategoryToSubcategory")
-  events         Event[]
-  subEvents      Event[]    @relation("EventSubCategory")
+  id            Int        @id @default(autoincrement())
+  name          String
+  slug          String     @unique
+  parentId      Int?
+  parent        Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  subcategories Category[] @relation("SubCategories")
+  events        Event[]    @relation("CategoryEvents")
+  subCategoryEvents Event[] @relation("SubCategoryEvents")
+
+  @@unique([name, parentId])
 }
 
 model City {
@@ -150,7 +152,7 @@ model Event {
   featured         Boolean                @default(false)
   organizerId      Int
   categoryId       Int
-  subCategoryId    Int?
+  subCategoryId  Int?
   cityId           Int
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
@@ -174,8 +176,8 @@ model Event {
   trailerUrl       String?
   adminNote        String?
   entryMetrics     EntryMetric[]
-  category         Category               @relation(fields: [categoryId], references: [id])
-  subCategory      Category?              @relation("EventSubCategory", fields: [subCategoryId], references: [id])
+  category         Category               @relation("CategoryEvents", fields: [categoryId], references: [id])
+  subCategory      Category?              @relation("SubCategoryEvents", fields: [subCategoryId], references: [id])
   city             City                   @relation(fields: [cityId], references: [id])
   organizer        OrganizerProfile       @relation(fields: [organizerId], references: [id])
   transactions     FinancialTransaction[]

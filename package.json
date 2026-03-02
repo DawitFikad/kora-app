@@ -3,7 +3,9 @@
     "nodemailer": "^7.0.12"
   },
   "devDependencies": {
-    "@types/nodemailer": "^7.0.4"
+    "@types/nodemailer": "^7.0.4",
+    "dotenv-cli": "^11.0.0",
+    "prisma": "^6.1.0"
   },
   "name": "et-ticket-platform",
   "version": "1.1.0",

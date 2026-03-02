@@ -159,18 +159,16 @@ export class EventService {
 
     static async listEvents(filters: {
         categoryId?: number;
-        subCategoryId?: number;
         cityId?: number;
         search?: string;
         featured?: boolean;
     }) {
-        const { categoryId, subCategoryId, cityId, search, featured } = filters;
+        const { categoryId, cityId, search, featured } = filters;
 
         return prisma.event.findMany({
             where: {
                 status: EventStatus.APPROVED,
                 categoryId: categoryId ? parseInt(categoryId as any) : undefined,
-                subCategoryId: subCategoryId ? parseInt(subCategoryId as any) : undefined,
                 cityId: cityId ? parseInt(cityId as any) : undefined,
                 featured: featured ? true : undefined,
                 OR: search ? [
@@ -218,7 +216,6 @@ export class EventService {
         return prisma.event.findMany({
             include: {
                 category: true,
-                subCategory: true,
                 city: true,
                 organizer: true
             },
@@ -269,18 +266,7 @@ export class EventService {
     // --- Meta Data ---
 
     static async getCategories() {
-        return prisma.category.findMany({
-            where: { parentId: null },
-            include: {
-                subCategories: {
-                    include: {
-                        _count: { select: { subEvents: true } }
-                    }
-                },
-                _count: { select: { events: true } }
-            },
-            orderBy: { name: 'asc' }
-        });
+        return prisma.category.findMany();
     }
 
     static async getCities() {

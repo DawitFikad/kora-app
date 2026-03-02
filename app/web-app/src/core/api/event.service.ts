@@ -1,7 +1,6 @@
 import api from './client';
 
 export interface PublicEvent {
-    [x: string]: any;
     id: number;
     title: string;
     description?: string | null;
@@ -10,6 +9,7 @@ export interface PublicEvent {
     coverImage?: string | null;
     featured?: boolean;
     category?: { name: string } | null;
+    subCategory?: { name: string } | null;
     city?: { name: string } | null;
     organizer?: { organizationName?: string | null } | null;
     tiers?: Array<{ price: number }>;
@@ -18,7 +18,6 @@ export interface PublicEvent {
 export const EventService = {
     getEvents: async (params?: {
         categoryId?: number;
-        subCategoryId?: number;
         cityId?: number;
         search?: string;
         featured?: boolean;

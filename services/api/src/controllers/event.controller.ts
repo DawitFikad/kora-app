@@ -61,9 +61,14 @@ export class EventController {
             // Get organizer profile ID linked to user
             const organizer = await ProfileService.getOrganizerProfile(userId);
 
+            const { categoryId, subCategoryId, cityId, dateTime, ...rest } = req.body;
+
             const event = await EventService.createEvent(organizer.id, {
-                ...req.body,
-                dateTime: new Date(req.body.dateTime)
+                ...rest,
+                dateTime: new Date(dateTime),
+                categoryId: parseInt(String(categoryId), 10),
+                subCategoryId: subCategoryId ? parseInt(String(subCategoryId), 10) : undefined,
+                cityId: parseInt(String(cityId), 10)
             });
 
             res.status(201).json(event);

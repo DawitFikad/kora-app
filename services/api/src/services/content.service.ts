@@ -1,28 +1,19 @@
 import { prisma } from "../lib/prisma";
 
 export class ContentService {
-    /** Returns all TOP-LEVEL categories with their subcategories nested */
     static async listCategories() {
         return prisma.category.findMany({
-            where: { parentId: null },
+            where: {
+                parentId: null
+            },
             include: {
-                subCategories: {
-                    orderBy: { name: 'asc' }
+                subcategories: {
+                    include: {
+                        subcategories: true
+                    }
                 },
-                _count: { select: { events: true, subEvents: true } }
-            },
-            orderBy: { name: 'asc' }
-        });
-    }
-
-    /** Returns ALL categories flat (for admin management) */
-    static async listAllCategories() {
-        return prisma.category.findMany({
-            include: {
-                parent: { select: { id: true, name: true } },
-                _count: { select: { events: true, subEvents: true } }
-            },
-            orderBy: [{ parentId: 'asc' }, { name: 'asc' }]
+                _count: { select: { events: true } }
+            }
         });
     }
 
@@ -34,9 +25,9 @@ export class ContentService {
         });
     }
 
-    static async createCategory(name: string, slug: string, parentId?: number) {
+    static async createCategory(name: string, slug: string) {
         return prisma.category.create({
-            data: { name, slug, parentId: parentId || null }
+            data: { name, slug }
         });
     }
 
@@ -47,9 +38,9 @@ export class ContentService {
     }
 
     static async deleteCategory(id: number) {
-        // Delete all subcategories first
-        await prisma.category.deleteMany({ where: { parentId: id } });
-        return prisma.category.delete({ where: { id } });
+        return prisma.category.delete({
+            where: { id }
+        });
     }
 
     static async deleteCity(id: number) {
@@ -62,19 +53,7 @@ export class ContentService {
         return prisma.category.findUnique({
             where: { id },
             include: {
-                subCategories: { orderBy: { name: 'asc' } },
-                parent: { select: { id: true, name: true, slug: true } },
                 events: {
-                    select: {
-                        id: true,
-                        title: true,
-                        status: true,
-                        dateTime: true,
-                        venue: true,
-                        organizer: { select: { organizationName: true } }
-                    }
-                },
-                subEvents: {
                     select: {
                         id: true,
                         title: true,
