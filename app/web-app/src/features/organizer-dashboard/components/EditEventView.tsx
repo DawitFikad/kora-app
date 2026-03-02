@@ -230,67 +230,80 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                     {/* General Info */}
                     <div className="stat-card" style={{ padding: '32px' }}>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Calendar size={20} color="#1D90F5" /> Basic Information
+                            <Calendar size={20} color="#1D90F5" /> Event Title & Category
                         </h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Title</label>
-                                <input
-                                    required
-                                    type="text"
-                                    value={form.title}
-                                    onChange={e => setForm({ ...form, title: e.target.value })}
-                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
-                                />
-                            </div>
-
-                            {/* Main Category + Subcategory two-step picker */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Main Category</label>
-                                    <select
-                                        required
-                                        value={selectedMainCatId}
-                                        onChange={e => {
-                                            const val = e.target.value;
-                                            setSelectedMainCatId(val);
-                                            setForm({ ...form, categoryId: val, subCategoryId: '' });
-                                        }}
-                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
-                                    >
-                                        <option value="">Select Category</option>
-                                        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    </select>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                {/* Left Column: Titles & City */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Title (English)</label>
+                                        <input
+                                            required
+                                            type="text"
+                                            value={form.title}
+                                            onChange={e => setForm({ ...form, title: e.target.value })}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Title (Amharic)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Translation (Optional)"
+                                            value={(form as any).titleAm || ''}
+                                            onChange={e => setForm({ ...form, titleAm: e.target.value } as any)}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>City</label>
+                                        <select
+                                            required
+                                            value={form.cityId}
+                                            onChange={e => setForm({ ...form, cityId: e.target.value })}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                        >
+                                            <option value="">Select City</option>
+                                            {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                                        Subcategory {availableSubcategories.length === 0 && selectedMainCatId ? <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.75rem' }}>(none)</span> : ''}
-                                    </label>
-                                    <select
-                                        value={form.subCategoryId}
-                                        disabled={availableSubcategories.length === 0}
-                                        onChange={e => setForm({ ...form, subCategoryId: e.target.value })}
-                                        style={{ width: '100%', background: availableSubcategories.length === 0 ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', opacity: availableSubcategories.length === 0 ? 0.4 : 1 }}
-                                    >
-                                        <option value="">Select Subcategory (optional)</option>
-                                        {availableSubcategories.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                    </select>
-                                </div>
-                            </div>
 
-                            {/* City */}
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>City</label>
-                                <select
-                                    required
-                                    value={form.cityId}
-                                    onChange={e => setForm({ ...form, cityId: e.target.value })}
-                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
-                                >
-                                    <option value="">Select City</option>
-                                    {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
+                                {/* Right Column: Category & Subcategory */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Category</label>
+                                        <select
+                                            required
+                                            value={selectedMainCatId}
+                                            onChange={e => {
+                                                const val = e.target.value;
+                                                setSelectedMainCatId(val);
+                                                setForm({ ...form, categoryId: val, subCategoryId: '' });
+                                            }}
+                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>
+                                            Sub Category {availableSubcategories.length === 0 && selectedMainCatId ? <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.75rem' }}>(none)</span> : ''}
+                                        </label>
+                                        <select
+                                            value={form.subCategoryId}
+                                            disabled={availableSubcategories.length === 0}
+                                            onChange={e => setForm({ ...form, subCategoryId: e.target.value })}
+                                            style={{ width: '100%', background: availableSubcategories.length === 0 ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', opacity: availableSubcategories.length === 0 ? 0.4 : 1 }}
+                                        >
+                                            <option value="">Select Sub Category</option>
+                                            {availableSubcategories.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
                             <div>
