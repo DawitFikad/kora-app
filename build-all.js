@@ -29,22 +29,22 @@ try {
         fs.rmSync(publicDir, { recursive: true, force: true });
     }
     fs.mkdirSync(publicDir);
-    
+
     const distDir = path.join(clientDir, 'dist');
     if (fs.existsSync(distDir)) {
-       // Node 16.7.0+ supports fs.cpSync
-       if (fs.cpSync) {
-           fs.cpSync(distDir, publicDir, { recursive: true });
-       } else {
-           // Fallback for older Node versions if necessary (unlikely on Vercel)
-           // Simple recursive copy function could be added here
-           console.log('Node version too old for fs.cpSync, attempting shell primitive...');
-           runCommand(`cp -r ${distDir}/* ${publicDir}`, rootDir); 
-       }
-       console.log('Frontend build moved to public/');
+        // Node 16.7.0+ supports fs.cpSync
+        if (fs.cpSync) {
+            fs.cpSync(distDir, publicDir, { recursive: true });
+        } else {
+            // Fallback for older Node versions if necessary (unlikely on Vercel)
+            // Simple recursive copy function could be added here
+            console.log('Node version too old for fs.cpSync, attempting shell primitive...');
+            runCommand(`cp -r ${distDir}/* ${publicDir}`, rootDir);
+        }
+        console.log('Frontend build moved to public/');
     } else {
-       console.error('Frontend build failed: dist directory not found!');
-       process.exit(1);
+        console.error('Frontend build failed: dist directory not found!');
+        process.exit(1);
     }
 
     // 4. Build Backend (API) - ensuring dependencies and prisma client
@@ -54,7 +54,7 @@ try {
     // If not, explicitly run it:
     runCommand('npx prisma generate', serverDir);
     runCommand('npm run build', serverDir);
-    
+
     console.log('--- Build Process Completed Successfully ---');
 
 } catch (error) {
