@@ -456,4 +456,66 @@ router.get("/make-admin", async (req, res) => {
     }
 });
 
+router.get("/seed-categories", async (req, res) => {
+    try {
+        const existingCats = await prisma.mainCategory.count();
+        if (existingCats > 0) {
+            return res.json({ success: true, message: "Categories already exist.", count: existingCats });
+        }
+
+        const categoriesData = [
+            {
+                name: "Music", slug: "music", subCategories: [
+                    { name: "Concert", slug: "concert" },
+                    { name: "Festival", slug: "festival" },
+                    { name: "DJ/Club", slug: "dj-club" }
+                ]
+            },
+            {
+                name: "Sports", slug: "sports", subCategories: [
+                    { name: "Football", slug: "football" },
+                    { name: "Running", slug: "running" },
+                    { name: "Basketball", slug: "basketball" }
+                ]
+            },
+            {
+                name: "Business", slug: "business", subCategories: [
+                    { name: "Conference", slug: "conference" },
+                    { name: "Networking", slug: "networking" },
+                    { name: "Workshop", slug: "workshop" }
+                ]
+            },
+            {
+                name: "Arts & Culture", slug: "arts-culture", subCategories: [
+                    { name: "Theater", slug: "theater" },
+                    { name: "Comedy", slug: "comedy" },
+                    { name: "Exhibition", slug: "exhibition" }
+                ]
+            }
+        ];
+
+        let createdCount = 0;
+        for (const cat of categoriesData) {
+            await prisma.mainCategory.create({
+                data: {
+                    name: cat.name,
+                    slug: cat.slug,
+                    subCategories: {
+                        create: cat.subCategories
+                    }
+                }
+            });
+            createdCount++;
+        }
+
+        res.json({
+            success: true,
+            message: `Successfully seeded ${createdCount} main categories with their sub-categories.`
+        });
+
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 export default router;
