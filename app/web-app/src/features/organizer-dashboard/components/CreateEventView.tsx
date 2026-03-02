@@ -58,7 +58,10 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     ContentService.getCities()
                 ]);
 
-                if (catRes?.data) setCategories(catRes.data);
+                if (catRes?.data) {
+                    console.log('Fetched Categories:', catRes.data);
+                    setCategories(catRes.data);
+                }
                 if (cityRes?.data) setCities(cityRes.data);
             } catch (error) {
                 console.error("Failed to fetch categories/cities", error);
