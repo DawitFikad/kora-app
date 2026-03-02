@@ -1,6 +1,7 @@
 import api from './client';
 
 export interface PublicEvent {
+    [x: string]: any;
     id: number;
     title: string;
     description?: string | null;
@@ -17,6 +18,7 @@ export interface PublicEvent {
 export const EventService = {
     getEvents: async (params?: {
         categoryId?: number;
+        subCategoryId?: number;
         cityId?: number;
         search?: string;
         featured?: boolean;

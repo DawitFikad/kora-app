@@ -197,6 +197,7 @@ export class EventService {
             where: { id },
             include: {
                 category: true,
+                subCategory: true,
                 city: true,
                 tiers: true,
                 organizer: true
@@ -217,6 +218,7 @@ export class EventService {
         return prisma.event.findMany({
             include: {
                 category: true,
+                subCategory: true,
                 city: true,
                 organizer: true
             },

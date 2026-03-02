@@ -35,7 +35,9 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
 
     const [form, setForm] = useState({
         title: '',
+        titleAm: '',
         description: '',
+        descriptionAm: '',
         venue: '',
         dateTime: '',
         additionalDates: [] as string[],
@@ -67,7 +69,9 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                     setSelectedMainCatId(mainCatId);
                     setForm({
                         title: event.title || '',
+                        titleAm: event.titleAm || '',
                         description: event.description || '',
+                        descriptionAm: event.descriptionAm || '',
                         venue: event.venue || '',
                         dateTime: event.dateTime ? new Date(event.dateTime).toISOString().slice(0, 16) : '',
                         categoryId: mainCatId,
@@ -163,6 +167,9 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
         try {
             const cleanForm = {
                 ...form,
+                categoryId: parseInt(form.categoryId as string) || undefined,
+                subCategoryId: form.subCategoryId ? parseInt(form.subCategoryId as string) : undefined,
+                cityId: parseInt(form.cityId as string) || undefined,
                 additionalDates: (form.additionalDates || []).filter(Boolean),
                 tiers: form.tiers.map(t => ({
                     id: (t as any).id,
@@ -252,8 +259,8 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                         <input
                                             type="text"
                                             placeholder="Translation (Optional)"
-                                            value={(form as any).titleAm || ''}
-                                            onChange={e => setForm({ ...form, titleAm: e.target.value } as any)}
+                                            value={form.titleAm || ''}
+                                            onChange={e => setForm({ ...form, titleAm: e.target.value })}
                                             style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
                                         />
                                     </div>
@@ -271,50 +278,63 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                     </div>
                                 </div>
 
-                                {/* Right Column: Category & Subcategory */}
+                                {/* Right Column: Category & Subcategory Selection (Two-Column System) */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Category</label>
-                                        <select
-                                            required
-                                            value={selectedMainCatId}
-                                            onChange={e => {
-                                                const val = e.target.value;
-                                                setSelectedMainCatId(val);
-                                                setForm({ ...form, categoryId: val, subCategoryId: '' });
-                                            }}
-                                            style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
-                                        >
-                                            <option value="">Select Category</option>
-                                            {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                                            Sub Category {availableSubcategories.length === 0 && selectedMainCatId ? <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.75rem' }}>(none)</span> : ''}
-                                        </label>
-                                        <select
-                                            value={form.subCategoryId}
-                                            disabled={availableSubcategories.length === 0}
-                                            onChange={e => setForm({ ...form, subCategoryId: e.target.value })}
-                                            style={{ width: '100%', background: availableSubcategories.length === 0 ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', opacity: availableSubcategories.length === 0 ? 0.4 : 1 }}
-                                        >
-                                            <option value="">Select Sub Category</option>
-                                            {availableSubcategories.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                        </select>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Event Category</label>
+                                            <select
+                                                required
+                                                value={selectedMainCatId}
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    setSelectedMainCatId(val);
+                                                    setForm({ ...form, categoryId: val, subCategoryId: '' });
+                                                }}
+                                                style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                            >
+                                                <option value="">Select Category</option>
+                                                {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>
+                                                Sub Category {availableSubcategories.length === 0 && selectedMainCatId ? <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.75rem' }}>(none)</span> : ''}
+                                            </label>
+                                            <select
+                                                value={form.subCategoryId}
+                                                disabled={availableSubcategories.length === 0}
+                                                onChange={e => setForm({ ...form, subCategoryId: e.target.value })}
+                                                style={{ width: '100%', background: availableSubcategories.length === 0 ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', opacity: availableSubcategories.length === 0 ? 0.4 : 1 }}
+                                            >
+                                                <option value="">Select Sub Category</option>
+                                                {availableSubcategories.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Description</label>
-                                <textarea
-                                    required
-                                    rows={5}
-                                    value={form.description}
-                                    onChange={e => setForm({ ...form, description: e.target.value })}
-                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Description (English)</label>
+                                    <textarea
+                                        required
+                                        rows={5}
+                                        value={form.description}
+                                        onChange={e => setForm({ ...form, description: e.target.value })}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Description (Amharic)</label>
+                                    <textarea
+                                        rows={5}
+                                        value={form.descriptionAm || ''}
+                                        onChange={e => setForm({ ...form, descriptionAm: e.target.value })}
+                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', resize: 'none' }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

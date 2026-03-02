@@ -912,6 +912,11 @@ const OrganizerLanding = () => {
                                                         <Tag size={12} /> {event.category?.name}
                                                     </span>
                                                 )}
+                                                {event.subCategory?.name && (
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.15)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                        {event.subCategory.name}
+                                                    </span>
+                                                )}
                                                 {event.organizer?.organizationName && (
                                                     <span style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(59, 130, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
                                                         {event.organizer.organizationName}
