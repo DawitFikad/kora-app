@@ -1,0 +1,53 @@
+[
+  {
+    "id": 1,
+    "phoneNumber": "+251922222222",
+    "email": null,
+    "password": null,
+    "role": "USER",
+    "status": "ACTIVE",
+    "createdAt": "2026-03-02T21:04:48.619Z",
+    "updatedAt": "2026-03-02T21:04:48.619Z",
+    "organizer": null
+  },
+  {
+    "id": 3,
+    "phoneNumber": "0922222222",
+    "email": null,
+    "password": null,
+    "role": "ORGANIZER",
+    "status": "ACTIVE",
+    "createdAt": "2026-03-02T21:12:27.337Z",
+    "updatedAt": "2026-03-02T21:16:36.038Z",
+    "organizer": {
+      "id": 1,
+      "userId": 3,
+      "organizationName": "Demo Organization",
+      "contactPhone": "0922222222",
+      "contactEmail": "demo@org.com",
+      "city": "Addis Ababa",
+      "payoutDetails": "CBE 1000123456789",
+      "status": "APPROVED",
+      "adminNote": null,
+      "createdAt": "2026-03-02T21:16:37.046Z",
+      "updatedAt": "2026-03-02T21:16:37.046Z",
+      "emailVerified": false,
+      "logoUrl": null,
+      "feeFixed": null,
+      "feePercentage": null,
+      "feeType": null,
+      "businessAddress": null,
+      "categoryFocus": [],
+      "defaultConfig": null,
+      "description": null,
+      "notificationPrefs": null,
+      "operatingCities": [],
+      "socialLinks": null,
+      "supportEmail": null,
+      "supportPhone": null,
+      "websiteUrl": null,
+      "businessLicense": null,
+      "eventPoster": null
+    }
+  }
+]

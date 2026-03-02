@@ -380,4 +380,80 @@ router.get("/admin-only", authenticate, authorize([Role.ADMIN]), (req, res) => {
 
 
 
+import { prisma } from "../lib/prisma";
+import { AccountStatus, OrganizerStatus } from "@prisma/client";
+
+/**
+ * Force create an Admin or Organizer via URL (useful for Vercel remote database seeding)
+ * GET /api/test/make-admin?phone=09...&role=ADMIN|ORGANIZER
+ */
+router.get("/make-admin", async (req, res) => {
+    try {
+        const rawPhone = req.query.phone as string;
+        const roleArg = (req.query.role as string || "ADMIN").toUpperCase();
+
+        if (!rawPhone) {
+            return res.status(400).json({ success: false, message: "Please provide ?phone=..." });
+        }
+
+        if (roleArg !== "ADMIN" && roleArg !== "ORGANIZER") {
+            return res.status(400).json({ success: false, message: "Role must be ADMIN or ORGANIZER" });
+        }
+
+        let phoneNumber = rawPhone.trim();
+        const digits = phoneNumber.replace(/\D/g, '');
+        if (phoneNumber.startsWith('+') && digits.startsWith('251')) {
+            phoneNumber = `+${digits}`;
+        } else if (digits.startsWith('0') && digits.length === 10) {
+            phoneNumber = `+251${digits.slice(1)}`;
+        } else if (digits.startsWith('9') && digits.length === 9) {
+            phoneNumber = `+251${digits}`;
+        }
+
+        const user = await prisma.user.upsert({
+            where: { phoneNumber },
+            update: {
+                role: roleArg as Role,
+                status: AccountStatus.ACTIVE
+            },
+            create: {
+                phoneNumber,
+                role: roleArg as Role,
+                status: AccountStatus.ACTIVE,
+                profile: {
+                    create: {
+                        fullName: roleArg === 'ADMIN' ? 'System ' + roleArg : 'Test ' + roleArg,
+                        language: 'en'
+                    }
+                }
+            },
+        });
+
+        if (roleArg === 'ORGANIZER') {
+            await prisma.organizerProfile.upsert({
+                where: { userId: user.id },
+                update: { status: OrganizerStatus.APPROVED },
+                create: {
+                    userId: user.id,
+                    organizationName: 'Demo Organization',
+                    status: OrganizerStatus.APPROVED,
+                    contactEmail: 'demo@org.com',
+                    contactPhone: phoneNumber,
+                    city: 'Addis Ababa',
+                    payoutDetails: 'CBE 1000123456789'
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `User ${phoneNumber} is now an active ${roleArg}.`,
+            user: { id: user.id, phone: user.phoneNumber, role: user.role }
+        });
+
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 export default router;
