@@ -27,7 +27,6 @@ services:
       DATABASE_URL: "postgresql://postgres:2123@db:5432/Et-ticket-db?schema=public"
       REDIS_URL: "redis://redis:6379"
       API_URL: "http://10.0.2.2:4000"
-      # Enable polling for file watchers inside Docker (fixes missed change events on Windows)
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: "100"
     env_file:
@@ -35,13 +34,15 @@ services:
     ports:
       - "4000:4000"
     volumes:
-      # Use a plain bind mount so inotify / file watching works reliably on Windows
-      - ./:/usr/src/app
-      - /usr/src/app/node_modules
+      # Bind mount the source code (delegated = better Windows FS perf)
+      - ./:/usr/src/app:delegated
+      # Named volume shields node_modules from the bind mount overwrite
+      - api_node_modules:/usr/src/app/node_modules
     depends_on:
       - db
       - redis
-    command: ["npm", "run", "dev"]
+    # Install deps inside the container, generate Prisma client, then start
+    command: sh -c "npm install --silent && npx prisma generate && npm run dev"
 
   web:
     image: node:20-bullseye
@@ -49,13 +50,15 @@ services:
     environment:
       - NODE_ENV=development
     volumes:
-      - ../../app/web-app:/usr/src/app:cached
-      - /usr/src/app/node_modules
+      - ../../app/web-app:/usr/src/app:delegated
+      - web_node_modules:/usr/src/app/node_modules
     ports:
       - "5173:5173"
-    command: sh -c "cd /usr/src/app && npm install --silent && npm run dev -- --host"
+    command: sh -c "npm install --silent && npm run dev -- --host"
     depends_on:
       - api
 
 volumes:
   db-data:
+  api_node_modules:
+  web_node_modules:

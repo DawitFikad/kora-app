@@ -12,6 +12,7 @@ export class EventService {
         eventType: EventType;
         totalCapacity?: number;
         categoryId: number;
+        subCategoryId?: number;
         cityId: number;
         coverImage?: string;
         gallery?: string[];
@@ -40,6 +41,7 @@ export class EventService {
             include: {
                 tiers: true,
                 category: true,
+                subCategory: true,
                 city: true
             }
         });
@@ -157,16 +159,18 @@ export class EventService {
 
     static async listEvents(filters: {
         categoryId?: number;
+        subCategoryId?: number;
         cityId?: number;
         search?: string;
         featured?: boolean;
     }) {
-        const { categoryId, cityId, search, featured } = filters;
+        const { categoryId, subCategoryId, cityId, search, featured } = filters;
 
         return prisma.event.findMany({
             where: {
                 status: EventStatus.APPROVED,
                 categoryId: categoryId ? parseInt(categoryId as any) : undefined,
+                subCategoryId: subCategoryId ? parseInt(subCategoryId as any) : undefined,
                 cityId: cityId ? parseInt(cityId as any) : undefined,
                 featured: featured ? true : undefined,
                 OR: search ? [
@@ -177,6 +181,7 @@ export class EventService {
             } as any,
             include: {
                 category: true,
+                subCategory: true,
                 city: true,
                 tiers: true,
                 organizer: {
@@ -262,7 +267,18 @@ export class EventService {
     // --- Meta Data ---
 
     static async getCategories() {
-        return prisma.category.findMany();
+        return prisma.category.findMany({
+            where: { parentId: null },
+            include: {
+                subCategories: {
+                    include: {
+                        _count: { select: { subEvents: true } }
+                    }
+                },
+                _count: { select: { events: true } }
+            },
+            orderBy: { name: 'asc' }
+        });
     }
 
     static async getCities() {
