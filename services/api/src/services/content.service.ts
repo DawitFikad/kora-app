@@ -17,6 +17,29 @@ export class ContentService {
         });
     }
 
+    static async listMainCategories() {
+        return prisma.category.findMany({
+            where: {
+                parentId: null
+            },
+            include: {
+                _count: { select: { events: true } }
+            }
+        });
+    }
+
+    static async listSubCategories(parentId?: number) {
+        return prisma.category.findMany({
+            where: {
+                parentId: parentId ? parentId : { not: null }
+            },
+            include: {
+                parent: true, // helpful to know the parent
+                _count: { select: { events: true } }
+            }
+        });
+    }
+
     static async listCities() {
         return prisma.city.findMany({
             include: {

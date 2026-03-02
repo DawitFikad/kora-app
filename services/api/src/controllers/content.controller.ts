@@ -11,6 +11,34 @@ export class ContentController {
         }
     }
 
+    static async getMainCategories(req: Request, res: Response) {
+        try {
+            const categories = await ContentService.listMainCategories();
+            res.json({ success: true, data: categories });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async getSubCategories(req: Request, res: Response) {
+        try {
+            const { parentId } = req.query;
+            let pId: number | undefined;
+            if (parentId) {
+                pId = parseInt(parentId as string);
+                if (isNaN(pId)) {
+                     // If invalid ID provided, return error
+                     res.status(400).json({ success: false, message: "Invalid parentId" });
+                     return;
+                }
+            }
+            const subCategories = await ContentService.listSubCategories(pId);
+            res.json({ success: true, data: subCategories });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
     static async getCities(req: Request, res: Response) {
         try {
             const cities = await ContentService.listCities();

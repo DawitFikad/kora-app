@@ -8,6 +8,8 @@ const router = Router();
 
 // Routes for both Public and Admin
 router.get("/categories", ContentController.getCategories);
+router.get("/categories/list/main", ContentController.getMainCategories);
+router.get("/categories/list/sub", ContentController.getSubCategories); // Query param ?parentId=X optional
 router.get("/categories/:id", ContentController.getCategoryDetail);
 router.get("/cities", ContentController.getCities);
 router.get("/cities/:id", ContentController.getCityDetail);
