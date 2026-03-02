@@ -9,7 +9,7 @@
   },
   "name": "et-ticket-platform",
   "version": "1.1.0",
-  "description": "��#\u0000 \u0000e\u0000t\u0000-\u0000t\u0000i\u0000c\u0000k\u0000e\u0000t\u0000-\u0000p\u0000l\u0000a\u0000t\u0000f\u0000o\u0000r\u0000m\u0000\r\u0000 \u0000",
+  "description": "ET-Ticket Platform",
   "main": "index.js",
   "scripts": {
     "build": "node build-all.js",
