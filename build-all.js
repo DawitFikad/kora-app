@@ -69,3 +69,8 @@ module.exports = app;
 `;
     fs.writeFileSync(path.join(apiDestDir, 'index.js'), entryContent);
     console.log('Created Vercel Serverless Function entry point at api/index.js');
+
+} catch (error) {
+    console.error('Build script failed:', error);
+    process.exit(1);
+}

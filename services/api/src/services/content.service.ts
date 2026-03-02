@@ -2,39 +2,33 @@ import { prisma } from "../lib/prisma";
 
 export class ContentService {
     static async listCategories() {
-        return prisma.category.findMany({
-            where: {
-                parentId: null
-            },
+        const categories = await prisma.mainCategory.findMany({
             include: {
-                subcategories: {
-                    include: {
-                        subcategories: true
-                    }
-                },
+                subCategories: true,
                 _count: { select: { events: true } }
             }
         });
+
+        // Map subCategories to subcategories for frontend compatibility
+        return categories.map(c => ({
+            ...c,
+            subcategories: c.subCategories
+        }));
     }
 
     static async listMainCategories() {
-        return prisma.category.findMany({
-            where: {
-                parentId: null
-            },
+        return prisma.mainCategory.findMany({
             include: {
                 _count: { select: { events: true } }
             }
         });
     }
 
-    static async listSubCategories(parentId?: number) {
-        return prisma.category.findMany({
-            where: {
-                parentId: parentId ? parentId : { not: null }
-            },
+    static async listSubCategories(mainCategoryId?: number) {
+        return prisma.subCategory.findMany({
+            where: mainCategoryId ? { mainCategoryId } : undefined,
             include: {
-                parent: true, // helpful to know the parent
+                mainCategory: true,
                 _count: { select: { events: true } }
             }
         });
@@ -48,8 +42,13 @@ export class ContentService {
         });
     }
 
-    static async createCategory(name: string, slug: string) {
-        return prisma.category.create({
+    static async createCategory(name: string, slug: string, mainCategoryId?: number) {
+        if (mainCategoryId) {
+            return prisma.subCategory.create({
+                data: { name, slug, mainCategoryId }
+            });
+        }
+        return prisma.mainCategory.create({
             data: { name, slug }
         });
     }
@@ -61,9 +60,13 @@ export class ContentService {
     }
 
     static async deleteCategory(id: number) {
-        return prisma.category.delete({
-            where: { id }
-        });
+        // Since we don't know if id is main or sub just from `id` if they are disjoint, 
+        // wait, we can try to delete from main first, if not found then from sub.
+        try {
+            return await prisma.mainCategory.delete({ where: { id } });
+        } catch {
+            return await prisma.subCategory.delete({ where: { id } });
+        }
     }
 
     static async deleteCity(id: number) {
@@ -73,21 +76,42 @@ export class ContentService {
     }
 
     static async getCategoryDetails(id: number) {
-        return prisma.category.findUnique({
-            where: { id },
-            include: {
-                events: {
-                    select: {
-                        id: true,
-                        title: true,
-                        status: true,
-                        dateTime: true,
-                        venue: true,
-                        organizer: { select: { organizationName: true } }
+        try {
+            const main = await prisma.mainCategory.findUnique({
+                where: { id },
+                include: {
+                    events: {
+                        select: {
+                            id: true,
+                            title: true,
+                            status: true,
+                            dateTime: true,
+                            venue: true,
+                            organizer: { select: { organizationName: true } }
+                        }
                     }
                 }
-            }
-        });
+            });
+            if (main) return main;
+
+            return await prisma.subCategory.findUnique({
+                where: { id },
+                include: {
+                    events: {
+                        select: {
+                            id: true,
+                            title: true,
+                            status: true,
+                            dateTime: true,
+                            venue: true,
+                            organizer: { select: { organizationName: true } }
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            throw e;
+        }
     }
 
     static async getCityDetails(id: number) {

@@ -176,7 +176,7 @@ export class AdminAnalyticsService {
         });
 
         // 2. Sales by Category
-        const categorySales: any[] = await prisma.category.findMany({
+        const categorySales: any[] = await prisma.mainCategory.findMany({
             include: {
                 events: {
                     include: {

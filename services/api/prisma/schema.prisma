@@ -1,5 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -118,17 +118,23 @@ model StaffInvitation {
   organizer   OrganizerProfile @relation(fields: [organizerId], references: [id], onDelete: Cascade)
 }
 
-model Category {
-  id            Int        @id @default(autoincrement())
+model MainCategory {
+  id            Int           @id @default(autoincrement())
   name          String
-  slug          String     @unique
-  parentId      Int?
-  parent        Category?  @relation("SubCategories", fields: [parentId], references: [id])
-  subcategories Category[] @relation("SubCategories")
-  events        Event[]    @relation("CategoryEvents")
-  subCategoryEvents Event[] @relation("SubCategoryEvents")
+  slug          String        @unique
+  subCategories SubCategory[]
+  events        Event[]       @relation("MainCategoryEvents")
+}
 
-  @@unique([name, parentId])
+model SubCategory {
+  id             Int          @id @default(autoincrement())
+  name           String
+  slug           String       @unique
+  mainCategoryId Int
+  mainCategory   MainCategory @relation(fields: [mainCategoryId], references: [id], onDelete: Cascade)
+  events         Event[]      @relation("SubCategoryEvents")
+
+  @@unique([name, mainCategoryId])
 }
 
 model City {
@@ -152,7 +158,7 @@ model Event {
   featured         Boolean                @default(false)
   organizerId      Int
   categoryId       Int
-  subCategoryId  Int?
+  subCategoryId    Int?
   cityId           Int
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
@@ -176,8 +182,8 @@ model Event {
   trailerUrl       String?
   adminNote        String?
   entryMetrics     EntryMetric[]
-  category         Category               @relation("CategoryEvents", fields: [categoryId], references: [id])
-  subCategory      Category?              @relation("SubCategoryEvents", fields: [subCategoryId], references: [id])
+  category         MainCategory           @relation("MainCategoryEvents", fields: [categoryId], references: [id])
+  subCategory      SubCategory?           @relation("SubCategoryEvents", fields: [subCategoryId], references: [id])
   city             City                   @relation(fields: [cityId], references: [id])
   organizer        OrganizerProfile       @relation(fields: [organizerId], references: [id])
   transactions     FinancialTransaction[]

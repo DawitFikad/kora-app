@@ -182,8 +182,8 @@ const CATEGORY_TREE = [
             { name: 'Short-Term Professional Trainings', slug: 'short-term-professional-trainings' },
             { name: 'University Seminars & Workshops', slug: 'university-seminars-workshops' },
             { name: 'Exam Prep & Certification Courses', slug: 'exam-prep-certification' },
-            { name: 'Language Classes', slug: 'foreign-language-classes' },
-            { name: 'Entrepreneurship & Business Development', slug: 'entrepreneurship-business-development' },
+            { name: 'Language Classes', slug: 'language-classes-edu' },
+            { name: 'Entrepreneurship & Business Development', slug: 'entrepreneurship-business-development-edu' },
             { name: 'STEM & Technical Trainings', slug: 'stem-technical-trainings' },
         ]
     },
@@ -208,59 +208,58 @@ const CATEGORY_TREE = [
     },
     {
         name: 'Awards & Recognition', slug: 'awards-recognition',
+        subcategories: []
+    },
+    {
+        name: 'Film & TV Awards', slug: 'film-tv-awards',
         subcategories: [
-            {
-                name: 'Film & TV Awards', slug: 'film-tv-awards',
-                subcategories: [
-                    { name: 'Gumma Film Awards', slug: 'gumma-film-awards' },
-                    { name: 'Ethiopian International Film Festival Awards', slug: 'eth-intl-film-awards' },
-                    { name: 'Leza Film Awards', slug: 'leza-film-awards' },
-                ]
-            },
-            {
-                name: 'Music & Arts Awards', slug: 'music-arts-awards',
-                subcategories: [
-                    { name: 'Leza Music Awards', slug: 'leza-music-awards' },
-                    { name: 'ODA Awards (Arts & Music)', slug: 'oda-awards' },
-                ]
-            },
-            {
-                name: 'Social Media & Digital Awards', slug: 'social-media-digital-awards',
-                subcategories: [
-                    { name: 'TikTok Creative Awards', slug: 'tiktok-creative-awards' },
-                    { name: 'Ethiopia Influencer Awards', slug: 'ethiopia-influencer-awards' },
-                    { name: 'Digital Content Creator Awards', slug: 'digital-content-creator-awards' },
-                ]
-            },
-            {
-                name: 'Media & Journalism Awards', slug: 'media-journalism-awards',
-                subcategories: [
-                    { name: 'IGAD Media Awards', slug: 'igad-media-awards' },
-                    { name: 'African Media Awards', slug: 'african-media-awards' },
-                ]
-            },
-            {
-                name: 'Sports Recognition Awards', slug: 'sports-recognition-awards',
-                subcategories: [
-                    { name: 'National Sports Awards', slug: 'national-sports-awards' },
-                    { name: 'League MVP & Seasonal Awards', slug: 'league-mvp-seasonal-awards' },
-                ]
-            },
-            {
-                name: 'Business & Innovation Awards', slug: 'business-innovation-awards',
-                subcategories: [
-                    { name: 'Startup / Innovation Awards', slug: 'startup-innovation-awards' },
-                    { name: 'Entrepreneurship Recognition Awards', slug: 'entrepreneurship-recognition-awards' },
-                ]
-            }
+            { name: 'Gumma Film Awards', slug: 'gumma-film-awards' },
+            { name: 'Ethiopian International Film Festival Awards', slug: 'eth-intl-film-awards' },
+            { name: 'Leza Film Awards', slug: 'leza-film-awards' },
         ]
     },
+    {
+        name: 'Music & Arts Awards', slug: 'music-arts-awards',
+        subcategories: [
+            { name: 'Leza Music Awards', slug: 'leza-music-awards' },
+            { name: 'ODA Awards (Arts & Music)', slug: 'oda-awards' },
+        ]
+    },
+    {
+        name: 'Social Media & Digital Awards', slug: 'social-media-digital-awards',
+        subcategories: [
+            { name: 'TikTok Creative Awards', slug: 'tiktok-creative-awards' },
+            { name: 'Ethiopia Influencer Awards', slug: 'ethiopia-influencer-awards' },
+            { name: 'Digital Content Creator Awards', slug: 'digital-content-creator-awards' },
+        ]
+    },
+    {
+        name: 'Media & Journalism Awards', slug: 'media-journalism-awards',
+        subcategories: [
+            { name: 'IGAD Media Awards', slug: 'igad-media-awards' },
+            { name: 'African Media Awards', slug: 'african-media-awards' },
+        ]
+    },
+    {
+        name: 'Sports Recognition Awards', slug: 'sports-recognition-awards',
+        subcategories: [
+            { name: 'National Sports Awards', slug: 'national-sports-awards' },
+            { name: 'League MVP & Seasonal Awards', slug: 'league-mvp-seasonal-awards' },
+        ]
+    },
+    {
+        name: 'Business & Innovation Awards', slug: 'business-innovation-awards',
+        subcategories: [
+            { name: 'Startup / Innovation Awards', slug: 'startup-innovation-awards' },
+            { name: 'Entrepreneurship Recognition', slug: 'entrepreneurship-recognition' },
+        ]
+    }
 ];
 
 async function seed() {
     console.log('🌱 Starting to seed the database...');
 
-    // Wipe all existing categories (subcategories first via parentId, then roots)
+    // Wipe all existing categories (subcategories first to avoid FK constraint)
     console.log('🗑️  Clearing existing categories...');
     try {
         await prisma.category.deleteMany({ where: { parentId: { not: null } } });

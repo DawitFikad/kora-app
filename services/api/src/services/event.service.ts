@@ -266,7 +266,7 @@ export class EventService {
     // --- Meta Data ---
 
     static async getCategories() {
-        return prisma.category.findMany();
+        return prisma.mainCategory.findMany({ include: { subCategories: true } });
     }
 
     static async getCities() {

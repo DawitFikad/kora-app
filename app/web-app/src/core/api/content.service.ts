@@ -13,7 +13,7 @@ export const ContentService = {
     getCities: () => api.get<any, ApiResponse<any[]>>('/content/cities'),
     getCityDetail: (id: number) => api.get<any, ApiResponse<any>>(`/content/cities/${id}`),
 
-    addCategory: (name: string, slug: string) => api.post<any, ApiResponse<any>>('/content/categories', { name, slug }),
+    addCategory: (name: string, slug: string, mainCategoryId?: number) => api.post<any, ApiResponse<any>>('/content/categories', { name, slug, mainCategoryId }),
     removeCategory: (id: number) => api.delete<any, ApiResponse<any>>(`/content/categories/${id}`),
 
     addCity: (name: string, slug: string) => api.post<any, ApiResponse<any>>('/content/cities', { name, slug }),

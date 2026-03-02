@@ -1,14 +1,21 @@
-const { PrismaClient, Role, AccountStatus } = require('@prisma/client');
+const { PrismaClient, Role, AccountStatus, OrganizerStatus } = require('@prisma/client');
 require('dotenv').config();
 
 const prisma = new PrismaClient();
 
 async function main() {
     const phoneNumber = process.argv[2];
+    const roleArg = process.argv[3] ? process.argv[3].toUpperCase() : 'ADMIN';
+
     if (!phoneNumber) {
         console.log('\n❌ Error: Please provide a phone number.');
-        console.log('Usage: node scripts/make-admin.js <phone_number>');
-        console.log('Example: node scripts/make-admin.js 0911223344\n');
+        console.log('Usage: node scripts/make-admin.js <phone_number> [ADMIN|ORGANIZER]');
+        console.log('Example: node scripts/make-admin.js 0911223344 ORGANIZER\n');
+        process.exit(1);
+    }
+
+    if (roleArg !== 'ADMIN' && roleArg !== 'ORGANIZER') {
+        console.log('\n❌ Error: Role must be ADMIN or ORGANIZER');
         process.exit(1);
     }
 
@@ -18,23 +25,43 @@ async function main() {
         const user = await prisma.user.upsert({
             where: { phoneNumber },
             update: {
-                role: Role.ADMIN,
+                role: roleArg,
                 status: AccountStatus.ACTIVE
             },
             create: {
                 phoneNumber,
-                role: Role.ADMIN,
+                role: roleArg,
                 status: AccountStatus.ACTIVE,
                 profile: {
                     create: {
-                        fullName: 'System Admin',
+                        fullName: roleArg === 'ADMIN' ? 'System ' + roleArg : 'Test ' + roleArg,
                         language: 'en'
                     }
                 }
             },
         });
 
-        console.log('✅ SUCCESS!');
+        if (roleArg === 'ORGANIZER') {
+            await prisma.organizerProfile.upsert({
+                where: { userId: user.id },
+                update: {
+                    status: OrganizerStatus.APPROVED
+                },
+                create: {
+                    userId: user.id,
+                    organizationName: 'Demo Organization',
+                    status: OrganizerStatus.APPROVED,
+                    contactEmail: 'demo@org.com',
+                    contactPhone: phoneNumber,
+                    city: 'Addis Ababa',
+                    payoutDetails: 'CBE 1000123456789'
+                }
+            });
+            console.log(`✅ SUCCESS: User is now an APPROVED ORGANIZER.`);
+        } else {
+            console.log('✅ SUCCESS!');
+        }
+
         console.log('-----------------------------------');
         console.log(`User ID:   ${user.id}`);
         console.log(`Phone:     ${user.phoneNumber}`);

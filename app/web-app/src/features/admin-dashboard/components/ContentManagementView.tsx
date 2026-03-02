@@ -14,6 +14,7 @@ export const ContentManagementView = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const [newCat, setNewCat] = useState({ name: '', slug: '' });
+    const [newSubCat, setNewSubCat] = useState<any>({ name: '', slug: '', mainCategoryId: '' });
     const [newCity, setNewCity] = useState({ name: '', slug: '' });
     const [newBanner, setNewBanner] = useState({
         title: '', subtitle: '', imageUrl: '', linkUrl: '',
@@ -95,6 +96,21 @@ export const ContentManagementView = () => {
             setFormStatus('loading');
             await ContentService.addCategory(newCat.name, newCat.slug);
             setNewCat({ name: '', slug: '' });
+            fetchData();
+            showStatus('success', t('admin.content.added_success'));
+        } catch (err: any) {
+            showStatus('error', err.error || t('admin.team.failed'));
+        } finally {
+            setFormStatus('idle');
+        }
+    };
+
+    const handleAddSubCategory = async () => {
+        if (!newSubCat.name || !newSubCat.slug || !newSubCat.mainCategoryId) return;
+        try {
+            setFormStatus('loading');
+            await ContentService.addCategory(newSubCat.name, newSubCat.slug, parseInt(newSubCat.mainCategoryId));
+            setNewSubCat({ name: '', slug: '', mainCategoryId: '' });
             fetchData();
             showStatus('success', t('admin.content.added_success'));
         } catch (err: any) {
@@ -268,41 +284,78 @@ export const ContentManagementView = () => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {categories.map(c => (
-                            <div
-                                key={c.id}
-                                onClick={() => handleFetchDetail('category', c.id)}
-                                style={{
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    background: 'rgba(255,255,255,0.02)', padding: '16px 20px', borderRadius: '16px',
-                                    cursor: 'pointer', border: '1px solid var(--border)', transition: 'all 0.2s',
-                                    position: 'relative', overflow: 'hidden'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
-                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(217, 70, 239, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Tag size={18} color="#D946EF" />
+                            <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                                <div
+                                    onClick={() => handleFetchDetail('category', c.id)}
+                                    style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        background: 'rgba(255,255,255,0.02)', padding: '16px 20px', borderRadius: '16px',
+                                        cursor: 'pointer', border: '1px solid var(--border)', transition: 'all 0.2s',
+                                        position: 'relative', overflow: 'hidden'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(217, 70, 239, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Tag size={18} color="#D946EF" />
+                                        </div>
+                                        <div>
+                                            <p style={{ fontWeight: 800, fontSize: '0.95rem' }}>{c.name}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>/{c.slug} • {c._count?.events || 0} {t('admin.content.events')}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p style={{ fontWeight: 800, fontSize: '0.95rem' }}>{c.name}</p>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>/{c.slug} • {c._count?.events || 0} {t('admin.content.events')}</p>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            onClick={(e) => handleDeleteCat(e, c.id, c.name)}
+                                            style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.05)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
+                                        >
+                                            <Trash2 size={16} color="#EF4444" />
+                                        </button>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                        onClick={(e) => handleDeleteCat(e, c.id, c.name)}
-                                        style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.05)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
-                                    >
-                                        <Trash2 size={16} color="#EF4444" />
+                                {c.subcategories?.map((sc: any) => (
+                                    <div key={sc.id} style={{ marginLeft: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'rgba(217, 70, 239, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D946EF' }}></div>
+                                            </div>
+                                            <div>
+                                                <p style={{ fontWeight: 700, fontSize: '0.85rem' }}>{sc.name}</p>
+                                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>/{sc.slug}</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteCat(e, sc.id, sc.name); }} style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer' }}>
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <div style={{ marginLeft: '32px', display: 'flex', gap: '8px' }}>
+                                    <input
+                                        placeholder="Sub-category name"
+                                        value={newSubCat.mainCategoryId === String(c.id) ? newSubCat.name : ''}
+                                        onChange={e => {
+                                            const name = e.target.value;
+                                            setNewSubCat({ name, slug: toSlug(name), mainCategoryId: String(c.id) });
+                                        }}
+                                        style={{ flex: 2, background: 'var(--bg-main)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.8rem' }}
+                                    />
+                                    <input
+                                        placeholder="slug"
+                                        value={newSubCat.mainCategoryId === String(c.id) ? newSubCat.slug : ''}
+                                        onChange={e => setNewSubCat({ ...newSubCat, slug: e.target.value.toLowerCase(), mainCategoryId: String(c.id) })}
+                                        style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '8px', borderRadius: '8px', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700 }}
+                                    />
+                                    <button onClick={handleAddSubCategory} style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '0 12px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>
+                                        <Plus size={16} />
                                     </button>
                                 </div>
                             </div>

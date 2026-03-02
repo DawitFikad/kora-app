@@ -27,9 +27,9 @@ export class ContentController {
             if (parentId) {
                 pId = parseInt(parentId as string);
                 if (isNaN(pId)) {
-                     // If invalid ID provided, return error
-                     res.status(400).json({ success: false, message: "Invalid parentId" });
-                     return;
+                    // If invalid ID provided, return error
+                    res.status(400).json({ success: false, message: "Invalid parentId" });
+                    return;
                 }
             }
             const subCategories = await ContentService.listSubCategories(pId);
@@ -50,8 +50,8 @@ export class ContentController {
 
     static async addCategory(req: Request, res: Response) {
         try {
-            const { name, slug } = req.body;
-            const category = await ContentService.createCategory(name, slug);
+            const { name, slug, mainCategoryId } = req.body;
+            const category = await ContentService.createCategory(name, slug, mainCategoryId);
             res.json(category);
         } catch (error: any) {
             res.status(400).json({ error: error.message });
