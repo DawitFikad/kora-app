@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../features/auth/presentation/login_screen.dart';
-
-import '../../features/onboarding/presentation/onboarding_screen.dart';
-import '../../features/events/presentation/home_screen.dart';
-import '../../features/settings/presentation/settings_screen.dart';
-import '../storage/local_storage.dart';
-
 import '../../features/events/presentation/event_details_screen.dart';
-import '../../features/tickets/presentation/my_tickets_screen.dart';
 import '../../features/events/presentation/favorites_screen.dart';
+import '../../features/events/presentation/home_screen.dart';
 import '../../features/events/presentation/notification_screen.dart';
+import '../../features/events/presentation/seat_selection_screen.dart';
+import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/scanner/presentation/scanner_screen.dart';
 import '../../features/scanner/presentation/staff_management_screen.dart';
-import '../../features/events/presentation/seat_selection_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/tickets/presentation/my_tickets_screen.dart';
+import '../storage/local_storage.dart';
 
 class AppRouter {
   final LocalStorage storage;

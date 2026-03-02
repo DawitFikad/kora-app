@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Trash2, MapPin, Tag, Loader2, Grid } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Trash2, MapPin, Tag, Loader2, Grid, ChevronDown, ChevronRight, Layers } from 'lucide-react';
 import { ContentService } from '../../../core/api/content.service';
 import { useToast } from '../../../core/components/Toast';
 import { ConfirmDialog } from '../../../core/components/ConfirmDialog';
@@ -10,15 +10,22 @@ export const ContentManagementView = () => {
     const [categories, setCategories] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [expandedCats, setExpandedCats] = useState<Set<number>>(new Set());
 
     const [newCat, setNewCat] = useState({ name: '', slug: '' });
     const [newCity, setNewCity] = useState({ name: '', slug: '' });
+
+    // Subcategory add form state: { parentId: number, name: '', slug: '' }
+    const [subForm, setSubForm] = useState<{ parentId: number | null; name: string; slug: string }>({ parentId: null, name: '', slug: '' });
 
     const [confirmState, setConfirmState] = useState<{ open: boolean; title: string; description?: string; variant?: 'default' | 'danger'; onConfirm?: () => void }>({ open: false, title: '' });
 
     // Seat Map Management
     const [seatMaps, setSeatMaps] = useState<any[]>([]);
     const [newSeatMap, setNewSeatMap] = useState({ name: '', rows: 10, seatsPerRow: 10 });
+
+    const toSlug = (text: string) =>
+        text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
     const fetchData = async () => {
         try {
@@ -37,9 +44,15 @@ export const ContentManagementView = () => {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    useEffect(() => { fetchData(); }, []);
+
+    const toggleExpand = (id: number) => {
+        setExpandedCats(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
 
     const handleAddCategory = async () => {
         if (!newCat.name || !newCat.slug) {
@@ -53,6 +66,21 @@ export const ContentManagementView = () => {
             fetchData();
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Failed to add category');
+        }
+    };
+
+    const handleAddSubCategory = async (parentId: number) => {
+        if (!subForm.name || !subForm.slug) {
+            toast.warning('Please fill in subcategory name');
+            return;
+        }
+        try {
+            await ContentService.addCategory(subForm.name, subForm.slug, parentId);
+            setSubForm({ parentId: null, name: '', slug: '' });
+            toast.success('Subcategory added');
+            fetchData();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to add subcategory');
         }
     };
 
@@ -76,7 +104,7 @@ export const ContentManagementView = () => {
         setConfirmState({
             open: true,
             title: 'Delete category?',
-            description: 'This might affect existing events using this category.',
+            description: 'All subcategories under this category will also be deleted.',
             variant: 'danger',
             onConfirm: async () => {
                 try {
@@ -85,6 +113,27 @@ export const ContentManagementView = () => {
                     fetchData();
                 } catch (err: any) {
                     toast.error(err.response?.data?.error || 'Failed to delete category');
+                } finally {
+                    setConfirmState({ open: false, title: '' });
+                }
+            }
+        });
+    };
+
+    const handleDeleteSubCat = async (e: React.MouseEvent, id: number, name: string) => {
+        e.stopPropagation();
+        setConfirmState({
+            open: true,
+            title: `Delete subcategory "${name}"?`,
+            description: 'This cannot be undone.',
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await ContentService.removeCategory(id);
+                    toast.success('Subcategory deleted');
+                    fetchData();
+                } catch (err: any) {
+                    toast.error(err.response?.data?.error || 'Failed to delete subcategory');
                 } finally {
                     setConfirmState({ open: false, title: '' });
                 }
@@ -118,11 +167,7 @@ export const ContentManagementView = () => {
             toast.warning('Please provide valid seat map details');
             return;
         }
-        const map = {
-            id: Date.now(),
-            ...newSeatMap,
-            totalSeats: newSeatMap.rows * newSeatMap.seatsPerRow
-        };
+        const map = { id: Date.now(), ...newSeatMap, totalSeats: newSeatMap.rows * newSeatMap.seatsPerRow };
         setSeatMaps([...seatMaps, map]);
         setNewSeatMap({ name: '', rows: 10, seatsPerRow: 10 });
         toast.success('Seat map template created');
@@ -153,118 +198,163 @@ export const ContentManagementView = () => {
                 onCancel={() => setConfirmState({ open: false, title: '' })}
                 onConfirm={() => confirmState.onConfirm?.()}
             />
+
             <div style={{ marginBottom: '32px' }}>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>Content Management</h2>
                 <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>
-                    Manage event categories, cities, and seat map templates for your organization
+                    Manage event categories (with subcategories), cities, and seat map templates
                 </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                {/* Categories Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px', marginBottom: '24px' }}>
+
+                {/* ── Categories Tree Section ── */}
                 <div className="stat-card" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                        <Tag color="#D946EF" size={24} />
-                        <h3 style={{ fontWeight: 800, fontSize: '1.1rem' }}>Event Categories</h3>
+                        <Layers color="#D946EF" size={24} />
+                        <div>
+                            <h3 style={{ fontWeight: 800, fontSize: '1.1rem' }}>Event Categories</h3>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                {categories.length} main categories · {categories.reduce((a, c) => a + (c.subCategories?.length || 0), 0)} subcategories
+                            </p>
+                        </div>
                     </div>
 
+                    {/* Add new main category */}
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
                         <input
-                            placeholder="Category Name"
+                            placeholder="New Category Name"
                             value={newCat.name}
-                            onChange={e => {
-                                const name = e.target.value;
-                                setNewCat({
-                                    name,
-                                    slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-                                });
-                            }}
-                            style={{
-                                flex: 1,
-                                background: 'var(--bg-subtle)',
-                                border: '1px solid var(--border)',
-                                padding: '10px 14px',
-                                borderRadius: '10px',
-                                color: 'var(--text-main)'
-                            }}
+                            onChange={e => setNewCat({ name: e.target.value, slug: toSlug(e.target.value) })}
+                            style={{ flex: 1, background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: '10px', color: 'var(--text-main)' }}
                         />
                         <input
                             placeholder="slug"
                             value={newCat.slug}
                             onChange={e => setNewCat({ ...newCat, slug: e.target.value.toLowerCase() })}
-                            style={{
-                                flex: 1,
-                                background: 'var(--bg-subtle)',
-                                border: '1px solid var(--border)',
-                                padding: '10px 14px',
-                                borderRadius: '10px',
-                                color: 'var(--text-main)'
-                            }}
+                            style={{ flex: 1, background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: '10px', color: 'var(--text-main)' }}
                         />
-                        <button
-                            onClick={handleAddCategory}
-                            className="btn-blue"
-                            style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                        >
+                        <button onClick={handleAddCategory} className="btn-blue" style={{ padding: '10px 16px' }}>
                             <Plus size={18} />
                         </button>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
+                    {/* Category tree list */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '500px', overflowY: 'auto' }}>
                         {categories.length === 0 ? (
-                            <div style={{
-                                textAlign: 'center',
-                                padding: '40px 20px',
-                                color: 'var(--text-muted)',
-                                background: 'var(--bg-subtle)',
-                                borderRadius: '12px',
-                                border: '1px dashed var(--border)'
-                            }}>
+                            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
                                 <Tag size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
                                 <p>No categories yet. Add your first one!</p>
                             </div>
                         ) : (
-                            categories.map(c => (
-                                <div
-                                    key={c.id}
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        background: 'rgba(217, 70, 239, 0.05)',
-                                        padding: '14px 16px',
-                                        borderRadius: '12px',
-                                        border: '1px solid rgba(217, 70, 239, 0.2)',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    <div>
-                                        <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>{c.name}</p>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                            /{c.slug}
-                                        </p>
+                            categories.map(cat => {
+                                const isExpanded = expandedCats.has(cat.id);
+                                const subCount = cat.subCategories?.length || 0;
+                                return (
+                                    <div key={cat.id}>
+                                        {/* Main category row */}
+                                        <div
+                                            onClick={() => subCount > 0 && toggleExpand(cat.id)}
+                                            style={{
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                background: 'rgba(217,70,239,0.06)', padding: '12px 16px',
+                                                borderRadius: '12px', border: '1px solid rgba(217,70,239,0.2)',
+                                                cursor: subCount > 0 ? 'pointer' : 'default', transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ color: '#D946EF', display: 'flex' }}>
+                                                    {subCount > 0
+                                                        ? (isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />)
+                                                        : <Tag size={16} />
+                                                    }
+                                                </span>
+                                                <div>
+                                                    <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>{cat.name}</p>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                        /{cat.slug} · {subCount} subcategories
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); setSubForm({ parentId: cat.id, name: '', slug: '' }); }}
+                                                    title="Add subcategory"
+                                                    style={{ padding: '6px 10px', background: 'rgba(217,70,239,0.1)', border: 'none', borderRadius: '8px', color: '#D946EF', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}
+                                                >
+                                                    + Sub
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDeleteCat(e, cat.id)}
+                                                    style={{ padding: '6px 8px', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', color: '#EF4444', cursor: 'pointer' }}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Inline add subcategory form */}
+                                        <AnimatePresence>
+                                            {subForm.parentId === cat.id && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                                                    style={{ overflow: 'hidden' }}
+                                                >
+                                                    <div style={{ display: 'flex', gap: '8px', padding: '8px 8px 8px 32px' }}>
+                                                        <input
+                                                            autoFocus
+                                                            placeholder="Subcategory name"
+                                                            value={subForm.name}
+                                                            onChange={e => setSubForm({ ...subForm, name: e.target.value, slug: toSlug(e.target.value) })}
+                                                            style={{ flex: 1, background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                        />
+                                                        <input
+                                                            placeholder="slug"
+                                                            value={subForm.slug}
+                                                            onChange={e => setSubForm({ ...subForm, slug: e.target.value.toLowerCase() })}
+                                                            style={{ flex: 1, background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                                                        />
+                                                        <button onClick={() => handleAddSubCategory(cat.id)} style={{ padding: '8px 14px', background: '#D946EF', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>Add</button>
+                                                        <button onClick={() => setSubForm({ parentId: null, name: '', slug: '' })} style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>✕</button>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+
+                                        {/* Subcategories (expanded) */}
+                                        <AnimatePresence>
+                                            {isExpanded && subCount > 0 && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                                                    style={{ overflow: 'hidden' }}
+                                                >
+                                                    <div style={{ paddingLeft: '20px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                        {cat.subCategories.map((sub: any) => (
+                                                            <div key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(217,70,239,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(217,70,239,0.1)' }}>
+                                                                <div>
+                                                                    <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>{sub.name}</p>
+                                                                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>/{sub.slug}</p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={(e) => handleDeleteSubCat(e, sub.id, sub.name)}
+                                                                    style={{ padding: '5px 7px', background: 'rgba(239,68,68,0.08)', border: 'none', borderRadius: '6px', color: '#EF4444', cursor: 'pointer' }}
+                                                                >
+                                                                    <Trash2 size={13} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
-                                    <button
-                                        onClick={(e) => handleDeleteCat(e, c.id)}
-                                        style={{
-                                            padding: '8px',
-                                            color: '#EF4444',
-                                            background: 'rgba(239, 68, 68, 0.1)',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
 
-                {/* Cities Section */}
+                {/* ── Cities Section ── */}
                 <div className="stat-card" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                         <MapPin color="#3B82F6" size={24} />
@@ -275,99 +365,34 @@ export const ContentManagementView = () => {
                         <input
                             placeholder="City Name"
                             value={newCity.name}
-                            onChange={e => {
-                                const name = e.target.value;
-                                setNewCity({
-                                    name,
-                                    slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-                                });
-                            }}
-                            style={{
-                                flex: 1,
-                                background: 'var(--bg-subtle)',
-                                border: '1px solid var(--border)',
-                                padding: '10px 14px',
-                                borderRadius: '10px',
-                                color: 'var(--text-main)'
-                            }}
+                            onChange={e => setNewCity({ name: e.target.value, slug: toSlug(e.target.value) })}
+                            style={{ flex: 1, background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: '10px', color: 'var(--text-main)' }}
                         />
                         <input
                             placeholder="slug"
                             value={newCity.slug}
                             onChange={e => setNewCity({ ...newCity, slug: e.target.value.toLowerCase() })}
-                            style={{
-                                flex: 1,
-                                background: 'var(--bg-subtle)',
-                                border: '1px solid var(--border)',
-                                padding: '10px 14px',
-                                borderRadius: '10px',
-                                color: 'var(--text-main)'
-                            }}
+                            style={{ flex: 1, background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: '10px', color: 'var(--text-main)' }}
                         />
-                        <button
-                            onClick={handleAddCity}
-                            style={{
-                                background: '#3B82F6',
-                                color: 'white',
-                                border: 'none',
-                                padding: '10px 16px',
-                                borderRadius: '10px',
-                                fontWeight: 800,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px'
-                            }}
-                        >
+                        <button onClick={handleAddCity} style={{ background: '#3B82F6', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}>
                             <Plus size={18} />
                         </button>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '500px', overflowY: 'auto' }}>
                         {cities.length === 0 ? (
-                            <div style={{
-                                textAlign: 'center',
-                                padding: '40px 20px',
-                                color: 'var(--text-muted)',
-                                background: 'var(--bg-subtle)',
-                                borderRadius: '12px',
-                                border: '1px dashed var(--border)'
-                            }}>
+                            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
                                 <MapPin size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
                                 <p>No cities yet. Add your first one!</p>
                             </div>
                         ) : (
                             cities.map(c => (
-                                <div
-                                    key={c.id}
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        background: 'rgba(59, 130, 246, 0.05)',
-                                        padding: '14px 16px',
-                                        borderRadius: '12px',
-                                        border: '1px solid rgba(59, 130, 246, 0.2)',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
+                                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(59,130,246,0.05)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(59,130,246,0.2)', transition: 'all 0.2s' }}>
                                     <div>
                                         <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>{c.name}</p>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                            /{c.slug}
-                                        </p>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>/{c.slug}</p>
                                     </div>
-                                    <button
-                                        onClick={(e) => handleDeleteCity(e, c.id)}
-                                        style={{
-                                            padding: '8px',
-                                            color: '#EF4444',
-                                            background: 'rgba(239, 68, 68, 0.1)',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
+                                    <button onClick={(e) => handleDeleteCity(e, c.id)} style={{ padding: '8px', color: '#EF4444', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}>
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
@@ -377,149 +402,47 @@ export const ContentManagementView = () => {
                 </div>
             </div>
 
-            {/* Seat Map Templates */}
+            {/* ── Seat Map Templates ── */}
             <div className="stat-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                     <Grid color="#10B981" size={24} />
                     <div style={{ flex: 1 }}>
                         <h3 style={{ fontWeight: 800, fontSize: '1.1rem' }}>Seat Map Templates</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                            Create reusable seat map layouts for your venues
-                        </p>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>Create reusable seat map layouts for your venues</p>
                     </div>
                 </div>
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '16px',
-                    marginBottom: '24px'
-                }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                     {seatMaps.map(map => (
-                        <div
-                            key={map.id}
-                            style={{
-                                background: 'rgba(16, 185, 129, 0.05)',
-                                border: '1px solid rgba(16, 185, 129, 0.2)',
-                                borderRadius: '12px',
-                                padding: '16px',
-                                position: 'relative'
-                            }}
-                        >
-                            <button
-                                onClick={() => handleDeleteSeatMap(map.id)}
-                                style={{
-                                    position: 'absolute',
-                                    top: '8px',
-                                    right: '8px',
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    border: 'none',
-                                    color: '#EF4444',
-                                    padding: '6px',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer'
-                                }}
-                            >
+                        <div key={map.id} style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '12px', padding: '16px', position: 'relative' }}>
+                            <button onClick={() => handleDeleteSeatMap(map.id)} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(239,68,68,0.1)', border: 'none', color: '#EF4444', padding: '6px', borderRadius: '6px', cursor: 'pointer' }}>
                                 <Trash2 size={14} />
                             </button>
                             <h4 style={{ fontWeight: 700, marginBottom: '12px' }}>{map.name}</h4>
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                 <p>Rows: {map.rows}</p>
                                 <p>Seats/Row: {map.seatsPerRow}</p>
-                                <p style={{ marginTop: '8px', color: '#10B981', fontWeight: 700 }}>
-                                    Total: {map.totalSeats} seats
-                                </p>
+                                <p style={{ marginTop: '8px', color: '#10B981', fontWeight: 700 }}>Total: {map.totalSeats} seats</p>
                             </div>
                         </div>
                     ))}
 
-                    {/* Add New Seat Map Card */}
-                    <div
-                        style={{
-                            background: 'var(--bg-subtle)',
-                            border: '2px dashed var(--border)',
-                            borderRadius: '12px',
-                            padding: '16px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '12px'
-                        }}
-                    >
+                    <div style={{ background: 'var(--bg-subtle)', border: '2px dashed var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <h4 style={{ fontWeight: 700, fontSize: '0.9rem' }}>New Template</h4>
-                        <input
-                            placeholder="Template Name"
-                            value={newSeatMap.name}
-                            onChange={e => setNewSeatMap({ ...newSeatMap, name: e.target.value })}
-                            style={{
-                                background: 'var(--bg-subtle)',
-                                border: '1px solid var(--border)',
-                                padding: '8px 10px',
-                                borderRadius: '8px',
-                                color: 'var(--text-main)',
-                                fontSize: '0.85rem'
-                            }}
-                        />
+                        <input placeholder="Template Name" value={newSeatMap.name} onChange={e => setNewSeatMap({ ...newSeatMap, name: e.target.value })} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.85rem' }} />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                            <input
-                                type="number"
-                                placeholder="Rows"
-                                value={newSeatMap.rows}
-                                onChange={e => setNewSeatMap({ ...newSeatMap, rows: parseInt(e.target.value) || 0 })}
-                                style={{
-                                    background: 'var(--bg-subtle)',
-                                    border: '1px solid var(--border)',
-                                    padding: '8px 10px',
-                                    borderRadius: '8px',
-                                    color: 'var(--text-main)',
-                                    fontSize: '0.85rem'
-                                }}
-                            />
-                            <input
-                                type="number"
-                                placeholder="Seats"
-                                value={newSeatMap.seatsPerRow}
-                                onChange={e => setNewSeatMap({ ...newSeatMap, seatsPerRow: parseInt(e.target.value) || 0 })}
-                                style={{
-                                    background: 'var(--bg-subtle)',
-                                    border: '1px solid var(--border)',
-                                    padding: '8px 10px',
-                                    borderRadius: '8px',
-                                    color: 'var(--text-main)',
-                                    fontSize: '0.85rem'
-                                }}
-                            />
+                            <input type="number" placeholder="Rows" value={newSeatMap.rows} onChange={e => setNewSeatMap({ ...newSeatMap, rows: parseInt(e.target.value) || 0 })} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.85rem' }} />
+                            <input type="number" placeholder="Seats" value={newSeatMap.seatsPerRow} onChange={e => setNewSeatMap({ ...newSeatMap, seatsPerRow: parseInt(e.target.value) || 0 })} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.85rem' }} />
                         </div>
-                        <button
-                            onClick={handleAddSeatMap}
-                            style={{
-                                background: '#10B981',
-                                color: 'white',
-                                border: 'none',
-                                padding: '8px',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px'
-                            }}
-                        >
+                        <button onClick={handleAddSeatMap} style={{ background: '#10B981', color: 'white', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                             <Plus size={16} /> Create
                         </button>
                     </div>
                 </div>
 
-                <div style={{
-                    background: 'rgba(59, 130, 246, 0.05)',
-                    border: '1px solid rgba(59, 130, 246, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px'
-                }}>
+                <div style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '12px', padding: '16px' }}>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                         💡 <strong>Tip:</strong> Seat map templates are stored locally and can be used when creating events with seat-based ticketing.
-                        They help you quickly set up venue layouts without recreating them each time.
                     </p>
                 </div>
             </div>

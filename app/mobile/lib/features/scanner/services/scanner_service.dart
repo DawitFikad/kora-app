@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../../../core/constants/api_constants.dart';
+import 'package:mobile/core/network/constants/api_constants.dart';
 import '../../../core/providers.dart';
 import 'scanner_database.dart';
 import 'dart:convert';
@@ -49,23 +49,21 @@ class ScannerService {
     final isOffline = connectivityResult == ConnectivityResult.none;
 
     if (isOffline) {
-       return _validateOffline(qrPayload);
+      return _validateOffline(qrPayload);
     }
 
     try {
       final response = await _dio.post(
         ApiConstants.validateScan,
-        data: {
-          'qrPayload': qrPayload,
-          'mode': 'ONLINE',
-        },
+        data: {'qrPayload': qrPayload, 'mode': 'ONLINE'},
       );
       return ScannerResponse.fromJson(response.data);
     } on DioException catch (e) {
-       // If server is unreachable but internet is technically "on", try offline fallback
-       if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
-          return _validateOffline(qrPayload);
-       }
+      // If server is unreachable but internet is technically "on", try offline fallback
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        return _validateOffline(qrPayload);
+      }
 
       if (e.response?.data != null && e.response?.data is Map) {
         return ScannerResponse.fromJson(e.response!.data);
@@ -75,22 +73,21 @@ class ScannerService {
         message: 'Network error: ${e.message}',
       );
     } catch (e) {
-      return ScannerResponse(
-        success: false,
-        message: 'System error: $e',
-      );
+      return ScannerResponse(success: false, message: 'System error: $e');
     }
   }
 
   Future<ScannerResponse> _validateOffline(String qrPayload) async {
     try {
       // Basic JWT decoding (Offline)
-      // Note: We'd ideally check the signature here too if we have the shared secret, 
+      // Note: We'd ideally check the signature here too if we have the shared secret,
       // but for MVP we check if the ID exists in our local gate_list.
       final parts = qrPayload.split('.');
       if (parts.length < 2) throw Exception("Invalid Ticket Format");
-      
-      final payloadStr = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+
+      final payloadStr = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
       final payload = jsonDecode(payloadStr);
       final String ticketId = payload['tid'];
       final int eventId = payload['eid'];
@@ -105,7 +102,8 @@ class ScannerService {
         );
       }
 
-      if (localTicket['isUsedLocally'] == 1 || localTicket['status'] == 'USED') {
+      if (localTicket['isUsedLocally'] == 1 ||
+          localTicket['status'] == 'USED') {
         return ScannerResponse(
           success: false,
           message: "DUPLICATE ENTRY (Offline check)",
@@ -134,7 +132,9 @@ class ScannerService {
 
   Future<void> downloadGateList(int eventId) async {
     try {
-      final response = await _dio.get('${ApiConstants.validateGateList}/$eventId');
+      final response = await _dio.get(
+        '${ApiConstants.validateGateList}/$eventId',
+      );
       final List<dynamic> tickets = response.data['data'];
       await _db.saveGateList(tickets.cast<Map<String, dynamic>>());
     } catch (e) {
@@ -147,12 +147,16 @@ class ScannerService {
     if (logs.isEmpty) return;
 
     try {
-      final payload = logs.map((l) => {
-        'ticketId': l['ticketId'],
-        'eventId': l['eventId'],
-        'scannedAt': l['scannedAt'],
-        'id': l['id'], // so we can mark as synced
-      }).toList();
+      final payload = logs
+          .map(
+            (l) => {
+              'ticketId': l['ticketId'],
+              'eventId': l['eventId'],
+              'scannedAt': l['scannedAt'],
+              'id': l['id'], // so we can mark as synced
+            },
+          )
+          .toList();
 
       final response = await _dio.post(
         ApiConstants.validateSync,
@@ -169,7 +173,7 @@ class ScannerService {
   // --- STAFF MANAGEMENT ---
 
   Future<List<dynamic>> listStaff() async {
-     try {
+    try {
       final response = await _dio.get(ApiConstants.staff);
       return response.data;
     } catch (e) {
@@ -179,10 +183,10 @@ class ScannerService {
 
   Future<dynamic> inviteStaff(String phone, String role) async {
     try {
-      final response = await _dio.post(ApiConstants.staffInvite, data: {
-        'phoneNumber': phone,
-        'role': role,
-      });
+      final response = await _dio.post(
+        ApiConstants.staffInvite,
+        data: {'phoneNumber': phone, 'role': role},
+      );
       return response.data;
     } catch (e) {
       throw Exception('Failed to invite staff: $e');
@@ -191,9 +195,7 @@ class ScannerService {
 
   Future<void> acceptInvitation(String code) async {
     try {
-      await _dio.post(ApiConstants.staffAccept, data: {
-        'inviteCode': code,
-      });
+      await _dio.post(ApiConstants.staffAccept, data: {'inviteCode': code});
     } catch (e) {
       throw Exception('Failed to accept invitation: $e');
     }

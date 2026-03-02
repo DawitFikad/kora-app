@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/core/network/constants/api_constants.dart';
 import 'package:mobile/core/providers.dart';
-import '../../../core/constants/api_constants.dart';
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
   return BookingService(ref.watch(dioProvider));
@@ -34,7 +34,10 @@ class BookingService {
     }
   }
 
-  Future<Map<String, dynamic>> validatePromoCode(String code, int eventId) async {
+  Future<Map<String, dynamic>> validatePromoCode(
+    String code,
+    int eventId,
+  ) async {
     try {
       final response = await _dio.post(
         ApiConstants.bookingValidatePromo,
@@ -74,7 +77,9 @@ class BookingService {
 
   Future<List<dynamic>> getSeatStatus(int eventId, int tierId) async {
     try {
-      final response = await _dio.get('${ApiConstants.bookingSeats}/$eventId/tiers/$tierId/seats');
+      final response = await _dio.get(
+        '${ApiConstants.bookingSeats}/$eventId/tiers/$tierId/seats',
+      );
       return response.data['data'];
     } catch (e) {
       throw _handleError(e);
@@ -127,7 +132,8 @@ class BookingService {
       final data = error.response?.data;
       String? serverMessage;
       if (data is Map) {
-        serverMessage = data['error']?.toString() ?? data['message']?.toString();
+        serverMessage =
+            data['error']?.toString() ?? data['message']?.toString();
       }
       final msg = serverMessage ?? error.message;
       return Exception('DioError [$code]: $msg');

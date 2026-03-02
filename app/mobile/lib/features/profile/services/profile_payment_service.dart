@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/api_constants.dart';
+import 'package:mobile/core/network/constants/api_constants.dart';
 import '../../../core/providers.dart';
 import '../models/payment_method.dart';
 
@@ -21,7 +21,9 @@ class ProfilePaymentService {
   Future<List<PaymentMethod>> getPaymentMethods() async {
     try {
       final response = await _dio.get(ApiConstants.paymentMethods);
-      return (response.data as List).map((m) => PaymentMethod.fromJson(m)).toList();
+      return (response.data as List)
+          .map((m) => PaymentMethod.fromJson(m))
+          .toList();
     } on DioException catch (e) {
       throw e.response?.data['error'] ?? 'Failed to fetch payment methods';
     }

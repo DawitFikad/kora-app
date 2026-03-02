@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/api_constants.dart';
+import 'package:mobile/core/network/constants/api_constants.dart';
 import '../../../core/providers.dart';
 import '../models/app_notification.dart';
 

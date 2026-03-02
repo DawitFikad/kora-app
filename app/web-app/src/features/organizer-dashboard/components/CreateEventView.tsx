@@ -28,6 +28,10 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
     const [categories, setCategories] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
 
+    // Derived subcategory list from selected main category
+    const [selectedMainCatId, setSelectedMainCatId] = useState('');
+    const availableSubcategories = categories.find((c: any) => String(c.id) === selectedMainCatId)?.subCategories || [];
+
     const [form, setForm] = useState({
         title: '',
         titleAm: '',
@@ -38,6 +42,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         additionalDates: [] as string[],
         isPublic: true,
         categoryId: '',
+        subCategoryId: '' as string,
         cityId: '',
         coverImage: '',
         refundPolicy: 'No refunds within 24 hours of event.',
@@ -205,31 +210,53 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                 </div>
                             </div>
 
+                            {/* Row 1: Main Category + Subcategory */}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Category</label>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Main Category</label>
                                     <select
                                         required
-                                        value={form.categoryId}
-                                        onChange={e => setForm({ ...form, categoryId: e.target.value })}
+                                        value={selectedMainCatId}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setSelectedMainCatId(val);
+                                            // categoryId = the main category itself (fallback if no sub selected)
+                                            setForm({ ...form, categoryId: val, subCategoryId: '' });
+                                        }}
                                         style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
                                     >
                                         <option value="">Select Category</option>
-                                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>City</label>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>
+                                        Subcategory {availableSubcategories.length === 0 && selectedMainCatId ? <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.75rem' }}>(none for this category)</span> : ''}
+                                    </label>
                                     <select
-                                        required
-                                        value={form.cityId}
-                                        onChange={e => setForm({ ...form, cityId: e.target.value })}
-                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                        value={form.subCategoryId}
+                                        disabled={availableSubcategories.length === 0}
+                                        onChange={e => setForm({ ...form, subCategoryId: e.target.value })}
+                                        style={{ width: '100%', background: availableSubcategories.length === 0 ? 'rgba(255,255,255,0.02)' : 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)', opacity: availableSubcategories.length === 0 ? 0.4 : 1 }}
                                     >
-                                        <option value="">Select City</option>
-                                        {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        <option value="">Select Subcategory (optional)</option>
+                                        {availableSubcategories.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
                                 </div>
+                            </div>
+
+                            {/* Row 2: City */}
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>City</label>
+                                <select
+                                    required
+                                    value={form.cityId}
+                                    onChange={e => setForm({ ...form, cityId: e.target.value })}
+                                    style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '14px', borderRadius: '12px', color: 'var(--text-main)' }}
+                                >
+                                    <option value="">Select City</option>
+                                    {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>

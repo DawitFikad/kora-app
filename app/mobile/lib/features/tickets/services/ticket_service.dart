@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/api_constants.dart';
+import 'package:mobile/core/network/constants/api_constants.dart';
 import '../../../core/providers.dart';
 import '../../../core/storage/local_storage.dart';
 import '../models/ticket.dart';
@@ -23,10 +23,10 @@ class TicketService {
       final response = await _dio.get(ApiConstants.myTickets);
       final List<dynamic> data = response.data;
       final tickets = data.map((json) => Ticket.fromJson(json)).toList();
-      
+
       // Save to cache
       await _saveToCache(tickets);
-      
+
       return tickets;
     } on DioException catch (e) {
       // Try load from cache
@@ -59,8 +59,8 @@ class TicketService {
     try {
       final jsonString = _storage.cachedTickets;
       if (jsonString != null && jsonString.isNotEmpty) {
-         final List<dynamic> jsonList = jsonDecode(jsonString);
-         return jsonList.map((json) => Ticket.fromJson(json)).toList();
+        final List<dynamic> jsonList = jsonDecode(jsonString);
+        return jsonList.map((json) => Ticket.fromJson(json)).toList();
       }
     } catch (e) {
       print('Failed to read tickets cache: $e');

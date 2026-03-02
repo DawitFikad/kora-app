@@ -105,7 +105,7 @@ export class PaymentService {
                         logger.info({ tx_ref }, "Initializing Telebirr payment");
 
                         const telebirrResult = await TelebirrProvider.initialize({
-                            amount: parseFloat(purchase.totalAmount.toString()),
+                            amount: Number(purchase.totalAmount),
                             orderId: purchase.id.toString(),
                             returnUrl: return_url,
                             notifyUrl: callback_url,
@@ -127,13 +127,13 @@ export class PaymentService {
                     if (ChapaProvider.isConfigured()) {
                         logger.info({ tx_ref, method: purchase.paymentMethod }, "Initializing Chapa payment");
 
-                        const fullName = (purchase.user.profile?.fullName || "").trim();
-                        const nameParts = fullName.split(/\s+/).filter(Boolean);
-                        const firstName = (nameParts[0] || "Customer").slice(0, 50);
-                        const lastName = (nameParts.slice(1).join(" ") || "Payer").slice(0, 50);
+                        const fullName = purchase.user.profile?.fullName || "";
+                        const nameParts = fullName.trim().split(/\s+/);
+                        const firstName = nameParts[0] || "Customer";
+                        const lastName = nameParts.slice(1).join(" ") || "Valued";
 
                         const chapaResult = await ChapaProvider.initialize({
-                            amount: parseFloat(purchase.totalAmount.toString()),
+                            amount: Number(purchase.totalAmount),
                             email: getSafeChapaPayerEmail(purchase.user.email, tx_ref),
                             firstName,
                             lastName,

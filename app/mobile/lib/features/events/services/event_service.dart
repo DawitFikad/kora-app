@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:mobile/core/constants/api_constants.dart';
+import 'package:mobile/core/network/constants/api_constants.dart';
 import 'package:mobile/core/providers.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/models/category.dart';

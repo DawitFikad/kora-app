@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../../../core/constants/api_constants.dart';
+import 'package:mobile/core/network/constants/api_constants.dart';
 import '../../../core/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,7 +17,10 @@ class AuthService {
 
   Future<void> requestOtp(String phoneNumber) async {
     try {
-      await _dio.post(ApiConstants.authOtpRequest, data: {'phoneNumber': phoneNumber});
+      await _dio.post(
+        ApiConstants.authOtpRequest,
+        data: {'phoneNumber': phoneNumber},
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -25,10 +28,10 @@ class AuthService {
 
   Future<void> verifyOtp(String phoneNumber, String otp) async {
     try {
-      final response = await _dio.post(ApiConstants.authOtpVerify, data: {
-        'phoneNumber': phoneNumber,
-        'otp': otp,
-      });
+      final response = await _dio.post(
+        ApiConstants.authOtpVerify,
+        data: {'phoneNumber': phoneNumber, 'otp': otp},
+      );
 
       final accessToken = response.data['accessToken'];
       if (accessToken != null) {
