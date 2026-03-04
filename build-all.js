@@ -78,14 +78,10 @@ try {
         }
     }
 
-    // Always run from root on Vercel to ensure it hit the main node_modules
-    // where @prisma/client is installed.
-    const prismaCmd = process.env.VERCEL
-        ? 'node node_modules/prisma/build/index.js generate --schema=services/api/prisma/schema.prisma'
-        : 'npx prisma generate --schema=services/api/prisma/schema.prisma';
-
-    console.log(`Executing: ${prismaCmd} in ${rootDir}`);
-    runCommand(prismaCmd, rootDir);
+    // Prisma Generation: 
+    // This is now handled automatically by 'npm install' in the API directory
+    // which triggers the 'postinstall' script in services/api/package.json.
+    // Explicitly calling it again here from root causes path resolution errors on Vercel.
 
     console.log('Compiling TypeScript...');
     runCommand('npm run build', serverDir);
