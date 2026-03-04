@@ -55,28 +55,39 @@ try {
 
     // 4. Build Backend (API)
     console.log('--- Building Backend (API) ---');
-    // Ensure root node_modules has prisma for the generate command
+
+    // FIRST: Install API dependencies so Prisma CLI has all it needs
+    console.log('Installing API dependencies...');
+    runCommand('npm install', serverDir);
+
+    // Ensure root node_modules has prisma for the generate command if needed
+    console.log('Ensuring root prisma is available...');
     runCommand('npm install prisma @prisma/client', rootDir);
 
-    console.log('--- Generating Prisma Client (Root) ---');
-    // Force generation into root node_modules
+    console.log('--- Generating Prisma Client ---');
+
     if (process.env.VERCEL) {
         try {
             console.log('Applying permissions to prisma binary...');
-            execSync('chmod +x ./node_modules/.bin/prisma', { cwd: rootDir });
+            // Try both root and local if they exist
+            if (fs.existsSync(path.join(rootDir, 'node_modules/.bin/prisma'))) {
+                execSync('chmod +x ./node_modules/.bin/prisma', { cwd: rootDir });
+            }
         } catch (e) {
-            console.log('Chmod failed, using Node.js fallback...');
+            console.log('Chmod failed, continuing...');
         }
     }
 
     // Use the node-based call which is more reliable on serverless
+    // On local, we call npx prisma generate directly in the server folder
     const prismaCmd = process.env.VERCEL
-        ? 'node node_modules/prisma/build/index.js generate --schema=services/api/prisma/schema.prisma'
-        : 'npx prisma generate --schema=services/api/prisma/schema.prisma';
+        ? `node ../../node_modules/prisma/build/index.js generate --schema=prisma/schema.prisma`
+        : 'npx prisma generate --schema=prisma/schema.prisma';
 
-    runCommand(prismaCmd, rootDir);
+    console.log(`Executing: ${prismaCmd} in ${serverDir}`);
+    runCommand(prismaCmd, serverDir);
 
-    runCommand('npm install', serverDir);
+    console.log('Compiling TypeScript...');
     runCommand('npm run build', serverDir);
 
     // 5. Create Root Entry Point for Vercel

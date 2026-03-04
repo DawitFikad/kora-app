@@ -1,34 +1,58 @@
-/**
- * Vercel Entrypoint
- * This file acts as the primary orchestrator for the ET-Ticket Platform.
- * During the build, build-all.js replaces this content with the actual logic
- * that connects the backend dist and ensures frontend static serving.
- */
+const express = require('express');
+const path = require('path');
 
-try {
-    // Attempt to load the built app
-    const fs = require('fs');
-    const path = require('path');
-    let backendPath = './services/api/dist/vercel-entry';
+const app = express();
 
-    // Fallback check for nested src if build didn't use rootDir fix yet
-    if (!fs.existsSync(path.join(__dirname, 'services/api/dist/vercel-entry.js')) &&
-        fs.existsSync(path.join(__dirname, 'services/api/dist/src/vercel-entry.js'))) {
-        backendPath = './services/api/dist/src/vercel-entry';
+// Diagnostics Route
+app.get('/api/debug-orchestrator', (req, res) => {
+    try {
+        const fs = require('fs');
+        res.json({
+            status: 'Orchestrator is alive',
+            timestamp: new Date().toISOString(),
+            rootDir: __dirname,
+            backendBuilt: fs.existsSync(path.join(__dirname, 'services/api/dist/vercel-entry.js')),
+            distFound: fs.existsSync(path.join(__dirname, 'dist/index.html')),
+            env: {
+                VERCEL: process.env.VERCEL,
+                NODE_ENV: process.env.NODE_ENV
+            }
+        });
+    } catch (e) {
+        res.status(500).json({ error: "Diagnostics failed", message: e.message });
     }
+});
 
-    module.exports = require(backendPath);
-} catch (e) {
-    // Fallback for Vercel's initial analysis or failed builds
-    const express = require('express');
-    const app = express();
-    // Express 5 needs (.*)
-    app.all('(.*)', (req, res) => {
-        res.status(503).json({
-            error: "Service building or initialization failed",
-            detail: e.message,
-            tip: "Please check Vercel build logs if this persists."
+// 1. Load Backend API
+try {
+    // We expect dist/vercel-entry.js (CommonJS)
+    const backendApp = require('./services/api/dist/vercel-entry');
+    // Ensure the backend app is handled correctly by express
+    app.use(backendApp);
+    console.log("✅ Backend App loaded and mounted");
+} catch (error) {
+    console.error("❌ Backend Load Error:", error);
+    // Express 5: Need (.*) instead of * for wildcards
+    app.all('/api/(.*)', (req, res) => {
+        res.status(500).json({
+            error: "Backend failed to load in orchestrator",
+            message: error.message,
+            stack: error.stack
         });
     });
-    module.exports = app;
 }
+
+// 2. Serve Static Frontend
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// 3. Handle SPA Routing for Frontend
+// Express 5: Need (.*) instead of * for wildcards
+app.get('(.*)', (req, res) => {
+    // If it starts with /api but reached here, it's a 404 for the API
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: "API route not found" });
+    }
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+module.exports = app;
