@@ -59,8 +59,22 @@ try {
     runCommand('npm install prisma @prisma/client', rootDir);
 
     console.log('--- Generating Prisma Client (Root) ---');
-    // Force generation into root node_modules so orchestrator sees it
-    runCommand('npx prisma generate --schema=services/api/prisma/schema.prisma', rootDir);
+    // Force generation into root node_modules
+    if (process.env.VERCEL) {
+        try {
+            console.log('Applying permissions to prisma binary...');
+            execSync('chmod +x ./node_modules/.bin/prisma', { cwd: rootDir });
+        } catch (e) {
+            console.log('Chmod failed, using Node.js fallback...');
+        }
+    }
+
+    // Use the node-based call which is more reliable on serverless
+    const prismaCmd = process.env.VERCEL
+        ? 'node node_modules/prisma/build/index.js generate --schema=services/api/prisma/schema.prisma'
+        : 'npx prisma generate --schema=services/api/prisma/schema.prisma';
+
+    runCommand(prismaCmd, rootDir);
 
     runCommand('npm install', serverDir);
     runCommand('npm run build', serverDir);
