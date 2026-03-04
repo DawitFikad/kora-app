@@ -1,21 +1,32 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
-// Diagnostics Route
+// Diagnostic Info
+const VERSION = '3.12.0';
+
+// 1. Diagnostics Route
 app.get('/api/debug-orchestrator', (req, res) => {
     try {
-        const fs = require('fs');
+        const buildDirDirect = path.join(__dirname, 'services/api/dist/vercel-entry.js');
+        const buildDirNested = path.join(__dirname, 'services/api/dist/src/vercel-entry.js');
+        
         res.json({
-            status: 'Orchestrator is alive',
+            status: 'success',
+            service: 'orchestrator',
+            version: VERSION,
             timestamp: new Date().toISOString(),
-            rootDir: __dirname,
-            backendBuilt: fs.existsSync(path.join(__dirname, 'services/api/dist/vercel-entry.js')),
-            distFound: fs.existsSync(path.join(__dirname, 'dist/index.html')),
+            diagnostics: {
+                rootDir: __dirname,
+                backendBuildDirect: fs.existsSync(buildDirDirect),
+                backendBuildNested: fs.existsSync(buildDirNested),
+                frontendDist: fs.existsSync(path.join(__dirname, 'dist/index.html')),
+            },
             env: {
-                VERCEL: process.env.VERCEL,
-                NODE_ENV: process.env.NODE_ENV
+                VERCEL: process.env.VERCEL || 'false',
+                NODE_ENV: process.env.NODE_ENV || 'development'
             }
         });
     } catch (e) {
@@ -23,36 +34,53 @@ app.get('/api/debug-orchestrator', (req, res) => {
     }
 });
 
-// 1. Load Backend API
+// 2. Load Backend API
 try {
-    // We expect dist/vercel-entry.js (CommonJS)
-    const backendApp = require('./services/api/dist/vercel-entry');
-    // Ensure the backend app is handled correctly by express
+    let backendRelativePath = './services/api/dist/vercel-entry';
+    const directPath = path.join(__dirname, 'services/api/dist/vercel-entry.js');
+    const nestedPath = path.join(__dirname, 'services/api/dist/src/vercel-entry.js');
+    
+    if (!fs.existsSync(directPath) && fs.existsSync(nestedPath)) {
+        console.log("ℹ️ Using nested backend path: /dist/src/vercel-entry");
+        backendRelativePath = './services/api/dist/src/vercel-entry';
+    } else if (!fs.existsSync(directPath)) {
+        console.error("❌ Backend entry point NOT FOUND in /dist or /dist/src");
+    }
+
+    const backendApp = require(backendRelativePath);
+    // Express 5 requires (.*) for wildcards, so we mount the backend app
     app.use(backendApp);
-    console.log("✅ Backend App loaded and mounted");
+    console.log("✅ Backend App mounted successfully from:", backendRelativePath);
 } catch (error) {
     console.error("❌ Backend Load Error:", error);
-    // Express 5: Need (.*) instead of * for wildcards
+    // Graceful failure for API requests
     app.all('/api/(.*)', (req, res) => {
-        res.status(500).json({
-            error: "Backend failed to load in orchestrator",
+        res.status(503).json({
+            error: "Backend unavailable",
             message: error.message,
-            stack: error.stack
+            tip: "Check build logs to ensure 'services/api' compiled without errors.",
+            version: VERSION
         });
     });
 }
 
-// 2. Serve Static Frontend
+// 3. Serve Static Frontend
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// 3. Handle SPA Routing for Frontend
+// 4. Handle SPA Routing for Frontend
 // Express 5: Need (.*) instead of * for wildcards
 app.get('(.*)', (req, res) => {
     // If it starts with /api but reached here, it's a 404 for the API
     if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: "API route not found" });
+        return res.status(404).json({ error: "API route not found", path: req.path });
     }
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    
+    const indexPath = path.join(__dirname, 'dist', 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('Frontend build not found. Please run build script.');
+    }
 });
 
 module.exports = app;

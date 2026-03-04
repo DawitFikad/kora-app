@@ -50,10 +50,13 @@ app.use(
 app.get("/api/health-check-v3", (req, res) => {
   res.json({
     status: "healthy",
-    version: "3.0.0",
+    version: "3.12.0",
+    service: "ET-Ticket API Core",
+    timestamp: new Date().toISOString(),
     env: {
       chapa: !!process.env.CHAPA_SECRET_KEY,
       telebirr: !!process.env.TELEBIRR_MERCHANT_APP_ID,
+      supabase: !!process.env.DATABASE_URL?.includes('supabase'),
       node: process.env.NODE_ENV
     }
   });
