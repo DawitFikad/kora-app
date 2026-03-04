@@ -108,13 +108,15 @@ app.get('/api/debug-orchestrator', (req, res) => {
 
 // 1. Load Backend API
 try {
+    // We expect dist/vercel-entry.js (CommonJS)
     const backendApp = require('./services/api/dist/vercel-entry');
     // Ensure the backend app is handled correctly by express
     app.use(backendApp);
     console.log("✅ Backend App loaded and mounted");
 } catch (error) {
     console.error("❌ Backend Load Error:", error);
-    app.all('/api/*', (req, res) => {
+    // Express 5: Need (.*) instead of * for wildcards
+    app.all('/api/(.*)', (req, res) => {
         res.status(500).json({
             error: "Backend failed to load in orchestrator",
             message: error.message,
@@ -127,7 +129,8 @@ try {
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // 3. Handle SPA Routing for Frontend
-app.get('*', (req, res) => {
+// Express 5: Need (.*) instead of * for wildcards
+app.get('(.*)', (req, res) => {
     // If it starts with /api but reached here, it's a 404 for the API
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: "API route not found" });

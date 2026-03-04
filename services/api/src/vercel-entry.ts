@@ -15,7 +15,7 @@ try {
     // Fallback app to report error to client
     const express = require("express");
     app = express();
-    app.all("*", (req: any, res: any) => {
+    app.all("(.*)", (req: any, res: any) => {
         res.status(500).json({
             error: "Server Startup Failed",
             details: error?.message || String(error),

@@ -23,7 +23,10 @@ if (databaseUrl && databaseUrl.includes('pooler.supabase.com')) {
     }
 }
 
-console.log(`[Prisma] Initializing with URL: ${databaseUrl?.split('@')[1]?.split('?')[0]} (Masked)`);
+const maskedUrl = databaseUrl && databaseUrl.includes('@')
+    ? databaseUrl.split('@')[1].split('?')[0]
+    : 'No URL or Invalid Format';
+console.log(`[Prisma] Initializing with URL: ${maskedUrl} (Masked)`);
 
 // Add connection_limit=3 to allow some parallel queries within the same function instance
 if (databaseUrl && !databaseUrl.includes('connection_limit')) {

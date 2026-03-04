@@ -6,16 +6,27 @@
  */
 
 try {
-    // Attempt to load the built app (this will exist after build-all.js runs)
-    const backendPath = './services/api/dist/vercel-entry';
+    // Attempt to load the built app
+    const fs = require('fs');
+    const path = require('path');
+    let backendPath = './services/api/dist/vercel-entry';
+
+    // Fallback check for nested src if build didn't use rootDir fix yet
+    if (!fs.existsSync(path.join(__dirname, 'services/api/dist/vercel-entry.js')) &&
+        fs.existsSync(path.join(__dirname, 'services/api/dist/src/vercel-entry.js'))) {
+        backendPath = './services/api/dist/src/vercel-entry';
+    }
+
     module.exports = require(backendPath);
 } catch (e) {
     // Fallback for Vercel's initial analysis or failed builds
     const express = require('express');
     const app = express();
-    app.all('*', (req, res) => {
+    // Express 5 needs (.*)
+    app.all('(.*)', (req, res) => {
         res.status(503).json({
-            error: "Service building...",
+            error: "Service building or initialization failed",
+            detail: e.message,
             tip: "Please check Vercel build logs if this persists."
         });
     });
