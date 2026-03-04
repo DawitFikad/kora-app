@@ -2,7 +2,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.975.0",
     "@prisma/adapter-pg": "6.1.0",
-    "@prisma/client": "^6.19.2",
+    "@prisma/client": "6.1.0",
     "@prisma/extension-accelerate": "^3.0.1",
     "@sendgrid/mail": "^8.0.0",
     "axios": "^1.13.2",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@types/nodemailer": "^7.0.4",
     "dotenv-cli": "^11.0.0",
-    "prisma": "^6.19.2"
+    "prisma": "6.1.0"
   },
   "name": "et-ticket-platform",
   "version": "1.1.0",

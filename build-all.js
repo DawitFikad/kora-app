@@ -60,37 +60,13 @@ try {
     console.log('Installing API dependencies...');
     runCommand('npm install', serverDir);
 
-    // Ensure root node_modules has prisma for the generate command if needed
-    console.log('Ensuring root prisma is available...');
-    runCommand('npm install prisma @prisma/client', rootDir);
+    // Root prisma generation logic removed -- we rely on nested generation.
 
-    console.log('--- Generating Prisma Client ---');
 
-    if (process.env.VERCEL) {
-        try {
-            console.log('Applying permissions to prisma binary...');
-            // Try both root and local if they exist
-            if (fs.existsSync(path.join(rootDir, 'node_modules/.bin/prisma'))) {
-                execSync('chmod +x ./node_modules/.bin/prisma', { cwd: rootDir });
-            }
-        } catch (e) {
-            console.log('Chmod failed, continuing...');
-        }
-    }
-
-    // 4. Prisma Generation (CRITICAL FOR RUNTIME)
-    // We generate the client into the ROOT node_modules so the orchestrator can find it.
-    console.log('--- Generating Prisma Client (Root) ---');
-    const prismaCmd = process.env.VERCEL
-        ? 'node node_modules/prisma/build/index.js generate --schema=services/api/prisma/schema.prisma'
-        : 'npx prisma generate --schema=services/api/prisma/schema.prisma';
-
-    console.log(`Executing: ${prismaCmd}`);
-    runCommand(prismaCmd, rootDir);
-
-    // 4b. Generate Nested Prisma Client (Essential for API function)
-    console.log('--- Generating Prisma Client (Nested) ---');
-    // Using simple npx/npm script approach assuming dependencies are installed
+    // 4. Prisma Generation
+    // We rely on the nested 'npm install' -> 'postinstall' -> 'prisma generate'
+    // which happens inside services/api.
+    console.log('--- Verifying Nested Prisma Client Generation ---');
     runCommand('npm run postinstall', serverDir);
 
 
