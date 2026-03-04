@@ -25,8 +25,7 @@ const clean = (val?: string) => val ? val.replace(/["']/g, "").trim() : '';
 export const env = {
     databaseUrl: clean(process.env.DATABASE_URL),
     apiUrl: clean(process.env.API_URL) ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
-            (process.env.NODE_ENV === 'production' ? 'https://et-ticket-api-v2.vercel.app' : 'http://10.0.2.2:4000')),
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://10.0.2.2:4000'),
     jwtSecret: clean(process.env.JWT_SECRET),
     redisUrl: clean(process.env.REDIS_URL),
     teleBirrMerchantAppId: clean(process.env.TELEBIRR_MERCHANT_APP_ID),
