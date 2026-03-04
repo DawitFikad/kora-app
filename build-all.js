@@ -78,10 +78,15 @@ try {
         }
     }
 
-    // Prisma Generation: 
-    // This is now handled automatically by 'npm install' in the API directory
-    // which triggers the 'postinstall' script in services/api/package.json.
-    // Explicitly calling it again here from root causes path resolution errors on Vercel.
+    // 4. Prisma Generation (CRITICAL FOR RUNTIME)
+    // We generate the client into the ROOT node_modules so the orchestrator can find it.
+    console.log('--- Generating Prisma Client (Root) ---');
+    const prismaCmd = process.env.VERCEL
+        ? 'node node_modules/prisma/build/index.js generate --schema=services/api/prisma/schema.prisma'
+        : 'npx prisma generate --schema=services/api/prisma/schema.prisma';
+
+    console.log(`Executing: ${prismaCmd}`);
+    runCommand(prismaCmd, rootDir);
 
     console.log('Compiling TypeScript...');
     runCommand('npm run build', serverDir);
@@ -119,7 +124,6 @@ try {
     const path = require('path');
     let backendRelativePath = './services/api/dist/vercel-entry';
     
-    // Robust Path Check
     const directPath = path.join(__dirname, 'services/api/dist/vercel-entry.js');
     const nestedPath = path.join(__dirname, 'services/api/dist/src/vercel-entry.js');
     
@@ -129,22 +133,13 @@ try {
 
     const backendApp = require(backendRelativePath);
     app.use(backendApp);
-    console.log("✅ Backend App loaded and mounted from:", backendRelativePath);
+    console.log("✅ Backend mounted from:", backendRelativePath);
 } catch (error) {
     console.error("❌ Backend Load Error:", error);
-    const fs = require('fs');
-    app.all('/api/(.*)', (req, res) => {
+    app.all('/api/*', (req, res) => {
         res.status(500).json({
-            error: "Backend failed to load in orchestrator",
-            message: error.message,
-            help: "Check if the build output actually exists in the paths checked.",
-            paths_checked: {
-                direct: path.join(__dirname, 'services/api/dist/vercel-entry.js'),
-                nested: path.join(__dirname, 'services/api/dist/src/vercel-entry.js'),
-                direct_exists: fs.existsSync(path.join(__dirname, 'services/api/dist/vercel-entry.js')),
-                nested_exists: fs.existsSync(path.join(__dirname, 'services/api/dist/src/vercel-entry.js'))
-            },
-            stack: error.stack
+            error: "Backend failed to load",
+            message: error.message
         });
     });
 }
@@ -153,8 +148,7 @@ try {
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // 3. Handle SPA Routing for Frontend
-// Express 5: Need (.*) instead of * for wildcards
-app.get('(.*)', (req, res) => {
+app.get('*', (req, res) => {
     // If it starts with /api but reached here, it's a 404 for the API
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: "API route not found" });
