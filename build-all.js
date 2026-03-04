@@ -56,7 +56,10 @@ try {
     // 4. Build Backend (API)
     console.log('--- Building Backend (API) ---');
     runCommand('npm install', serverDir);
+
+    console.log('--- Generating Prisma Client ---');
     runCommand('npx prisma generate', serverDir);
+
     runCommand('npm run build', serverDir);
 
     // 5. Create Root Entry Point for Vercel

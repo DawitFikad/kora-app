@@ -33,7 +33,7 @@
   "description": "ET-Ticket Platform",
   "scripts": {
     "build": "node build-all.js",
-    "postinstall": "npx prisma generate --schema=services/api/prisma/schema.prisma",
+    "postinstall": "echo 'Skipping auto-prisma during install to avoid permission errors'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
