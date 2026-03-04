@@ -10,6 +10,11 @@
             "destination": "/index.html"
         }
     ],
+    "functions": {
+        "api/index.js": {
+            "runtime": "vercel-node@latest"
+        }
+    },
     "crons": [
         {
             "path": "/api/cron/reminders",
