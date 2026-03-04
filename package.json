@@ -30,7 +30,7 @@
   "description": "ET-Ticket Platform",
   "scripts": {
     "build": "node build-all.js",
-    "postinstall": "cd services/api && npm install && npx prisma generate --schema=./prisma/schema.prisma && npx prisma generate --schema=./prisma/schema.prisma --output=../../node_modules/@prisma/client",
+    "postinstall": "npx prisma generate --schema=services/api/prisma/schema.prisma",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
