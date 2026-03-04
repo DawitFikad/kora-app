@@ -56,13 +56,37 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                 const [catRes, cityRes] = await Promise.all([
                     ContentService.getCategories(),
                     ContentService.getCities()
-                ]);
+                ]).catch(err => {
+                    console.error("API Error in Promise.all", err);
+                    return [null, null];
+                });
 
-                if (catRes?.data) {
-                    console.log('Fetched Categories:', catRes.data);
+                console.log("Categories Response:", catRes);
+                console.log("Cities Response:", cityRes);
+
+                // Defensively extract array from response
+                const extractArray = (res: any) => {
+                    if (!res) return [];
+                    if (Array.isArray(res)) return res;
+                    if (Array.isArray(res.data)) return res.data;
+                    if (res.data && Array.isArray(res.data.data)) return res.data.data;
+                    if (Array.isArray(res.categories)) return res.categories;
+                    return [];
+                };
+
+                const catArray = extractArray(catRes);
+                if (catArray.length > 0) {
+                    setCategories(catArray);
+                } else if (catRes?.data) {
                     setCategories(catRes.data);
                 }
-                if (cityRes?.data) setCities(cityRes.data);
+
+                const cityArray = extractArray(cityRes);
+                if (cityArray.length > 0) {
+                    setCities(cityArray);
+                } else if (cityRes?.data) {
+                    setCities(cityRes.data);
+                }
             } catch (error) {
                 console.error("Failed to fetch categories/cities", error);
             }

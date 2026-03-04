@@ -61,10 +61,30 @@ export const ContentManagementView = () => {
                 ContentService.getCategories(),
                 ContentService.getCities(),
                 ContentService.getBanners(true)
-            ]);
-            if (catRes?.success) setCategories(catRes.data);
-            if (cityRes?.success) setCities(cityRes.data);
-            if (bannerRes?.success) setBanners(bannerRes.data);
+            ]).catch(err => {
+                console.error("API Error in Promise.all", err);
+                return [null, null, null];
+            });
+
+            const extractArray = (res: any) => {
+                if (!res) return [];
+                if (Array.isArray(res)) return res;
+                if (Array.isArray(res.data)) return res.data;
+                if (res.data && Array.isArray(res.data.data)) return res.data.data;
+                return [];
+            };
+
+            const catArray = extractArray(catRes);
+            if (catArray.length > 0) setCategories(catArray);
+            else if (catRes?.success) setCategories(catRes.data);
+
+            const cityArray = extractArray(cityRes);
+            if (cityArray.length > 0) setCities(cityArray);
+            else if (cityRes?.success) setCities(cityRes.data);
+
+            const bannerArray = extractArray(bannerRes);
+            if (bannerArray.length > 0) setBanners(bannerArray);
+            else if (bannerRes?.success) setBanners(bannerRes.data);
         } catch (err) {
             console.error(err);
         } finally {
