@@ -88,6 +88,12 @@ try {
     console.log(`Executing: ${prismaCmd}`);
     runCommand(prismaCmd, rootDir);
 
+    // 4b. Generate Nested Prisma Client (Essential for API function)
+    console.log('--- Generating Prisma Client (Nested) ---');
+    // Using simple npx/npm script approach assuming dependencies are installed
+    runCommand('npm run postinstall', serverDir);
+
+
     console.log('Compiling TypeScript...');
     runCommand('npm run build', serverDir);
 
