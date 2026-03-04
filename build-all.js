@@ -25,13 +25,13 @@ try {
     // 3. Move Frontend Build to Public (for Vercel Static Serving)
     // Vercel project settings might expect 'dist' or 'public'.
     // We will ensure 'dist' (in root) is populated as that matches the error message.
-    
+
     // Define dist directories
     const rootDistDir = path.join(rootDir, 'dist');
     const clientDistDir = path.join(clientDir, 'dist');
 
     console.log('--- Deployment: Moving Frontend Build to /dist ---');
-    
+
     // Clean root dist
     if (fs.existsSync(rootDistDir)) {
         console.log('Cleaning existing root dist directory...');
@@ -40,13 +40,13 @@ try {
     fs.mkdirSync(rootDistDir);
 
     if (fs.existsSync(clientDistDir)) {
-       console.log('Copying build artifacts to dist/ ...');
-       // Use cpSync (Node 16.7+)
-       fs.cpSync(clientDistDir, rootDistDir, { recursive: true });
-       console.log('Frontend build moved to dist/');
+        console.log('Copying build artifacts to dist/ ...');
+        // Use cpSync (Node 16.7+)
+        fs.cpSync(clientDistDir, rootDistDir, { recursive: true });
+        console.log('Frontend build moved to dist/');
     } else {
-       console.error('Frontend build failed: client dist directory not found!');
-       process.exit(1);
+        console.error('Frontend build failed: client dist directory not found!');
+        process.exit(1);
     }
 
     // 4. Build Backend (API)
@@ -54,21 +54,40 @@ try {
     runCommand('npm install', serverDir);
     runCommand('npx prisma generate', serverDir);
     runCommand('npm run build', serverDir);
-    
-    // 5. Ensure critical backend files are in place for Vercel Serverless Function
-    // Vercel looks for api/ folder relative to root for functions configuration
-    const apiDestDir = path.join(rootDir, 'api');
-    if (!fs.existsSync(apiDestDir)) {
-        fs.mkdirSync(apiDestDir);
-    }
-    
-    // Create entry point for Vercel
+
+    // 5. Create Root Entry Point for Vercel
+    // This satisfies Vercel's "No entrypoint found" check and acts as an orchestrator.
+    const rootEntryFile = path.join(rootDir, 'index.js');
     const entryContent = `
-const app = require('../services/api/dist/vercel-entry');
+const express = require('express');
+const path = require('path');
+
+// 1. Load the Backend App
+let app;
+try {
+    app = require('./services/api/dist/vercel-entry');
+    console.log("✅ Backend App loaded into Root Entrypoint");
+} catch (error) {
+    console.error("❌ Failed to load backend:", error);
+    app = express();
+    app.all('/api/*', (req, res) => res.status(503).json({ error: "Backend not built", details: error.message }));
+}
+
+// 2. Serve Static Frontend Files
+// We use the 'dist' directory created in step 3
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// 3. Handle SPA Routing for Frontend
+app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    }
+});
+
 module.exports = app;
 `;
-    fs.writeFileSync(path.join(apiDestDir, 'index.js'), entryContent);
-    console.log('Created Vercel Serverless Function entry point at api/index.js');
+    fs.writeFileSync(rootEntryFile, entryContent);
+    console.log('Created Vercel Entrypoint at /index.js');
 
 } catch (error) {
     console.error('Build script failed:', error);
