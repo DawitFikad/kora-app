@@ -17,6 +17,148 @@ router.get("/protected", authenticate, (req, res) => {
     });
 });
 
+import { prisma } from "../lib/prisma";
+/**
+ * Force create an Admin or Organizer via URL
+ */
+router.get("/make-admin", async (req, res) => {
+    try {
+        const rawPhone = req.query.phone as string;
+        const roleArg = (req.query.role as string || "ADMIN").toUpperCase();
+
+        if (!rawPhone) {
+            return res.status(400).json({ success: false, message: "Please provide ?phone=..." });
+        }
+
+        const Role = require("@prisma/client").Role;
+        const AccountStatus = require("@prisma/client").AccountStatus;
+        const OrganizerStatus = require("@prisma/client").OrganizerStatus;
+
+        if (roleArg !== "ADMIN" && roleArg !== "ORGANIZER") {
+            return res.status(400).json({ success: false, message: "Role must be ADMIN or ORGANIZER" });
+        }
+
+        let phoneNumber = rawPhone.trim();
+        const digits = phoneNumber.replace(/\D/g, '');
+        if (phoneNumber.startsWith('+') && digits.startsWith('251')) {
+            phoneNumber = `+${digits}`;
+        } else if (digits.startsWith('0') && digits.length === 10) {
+            phoneNumber = `+251${digits.slice(1)}`;
+        } else if (digits.startsWith('9') && digits.length === 9) {
+            phoneNumber = `+251${digits}`;
+        }
+
+        const user = await prisma.user.upsert({
+            where: { phoneNumber },
+            update: {
+                role: roleArg as any,
+                status: AccountStatus.ACTIVE
+            },
+            create: {
+                phoneNumber,
+                role: roleArg as any,
+                status: AccountStatus.ACTIVE,
+                profile: {
+                    create: {
+                        fullName: roleArg === 'ADMIN' ? 'System ' + roleArg : 'Test ' + roleArg,
+                        language: 'en'
+                    }
+                }
+            },
+        });
+
+        if (roleArg === 'ORGANIZER') {
+            await prisma.organizerProfile.upsert({
+                where: { userId: user.id },
+                update: { status: OrganizerStatus.APPROVED },
+                create: {
+                    userId: user.id,
+                    organizationName: 'Demo Organization',
+                    status: OrganizerStatus.APPROVED,
+                    contactEmail: 'demo@org.com',
+                    contactPhone: phoneNumber,
+                    city: 'Addis Ababa',
+                    payoutDetails: 'CBE 1000123456789'
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `User ${phoneNumber} is now an active ${roleArg}.`,
+            user: { id: user.id, phone: user.phoneNumber, role: user.role }
+        });
+
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+/**
+ * Seed categories
+ */
+router.get("/seed-categories", async (req, res) => {
+    try {
+        const existingCats = await prisma.mainCategory.count();
+        if (existingCats > 0) {
+            return res.json({ success: true, message: "Categories already exist.", count: existingCats });
+        }
+
+        const categoriesData = [
+            {
+                name: "Music", slug: "music", subCategories: [
+                    { name: "Concert", slug: "concert" },
+                    { name: "Festival", slug: "festival" },
+                    { name: "DJ/Club", slug: "dj-club" }
+                ]
+            },
+            {
+                name: "Sports", slug: "sports", subCategories: [
+                    { name: "Football", slug: "football" },
+                    { name: "Running", slug: "running" },
+                    { name: "Basketball", slug: "basketball" }
+                ]
+            },
+            {
+                name: "Business", slug: "business", subCategories: [
+                    { name: "Conference", slug: "conference" },
+                    { name: "Networking", slug: "networking" },
+                    { name: "Workshop", slug: "workshop" }
+                ]
+            },
+            {
+                name: "Arts & Culture", slug: "arts-culture", subCategories: [
+                    { name: "Theater", slug: "theater" },
+                    { name: "Comedy", slug: "comedy" },
+                    { name: "Exhibition", slug: "exhibition" }
+                ]
+            }
+        ];
+
+        let createdCount = 0;
+        for (const cat of categoriesData) {
+            await prisma.mainCategory.create({
+                data: {
+                    name: cat.name,
+                    slug: cat.slug,
+                    subCategories: {
+                        create: cat.subCategories
+                    }
+                }
+            });
+            createdCount++;
+        }
+
+        res.json({
+            success: true,
+            message: `Successfully seeded ${createdCount} main categories with their sub-categories.`
+        });
+
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Test organizer-only route
 router.get("/organizer-only", authenticate, authorize([Role.ORGANIZER, Role.ADMIN]), (req, res) => {
     res.json({
@@ -380,142 +522,6 @@ router.get("/admin-only", authenticate, authorize([Role.ADMIN]), (req, res) => {
 
 
 
-import { prisma } from "../lib/prisma";
-import { AccountStatus, OrganizerStatus } from "@prisma/client";
-
-/**
- * Force create an Admin or Organizer via URL (useful for Vercel remote database seeding)
- * GET /api/test/make-admin?phone=09...&role=ADMIN|ORGANIZER
- */
-router.get("/make-admin", async (req, res) => {
-    try {
-        const rawPhone = req.query.phone as string;
-        const roleArg = (req.query.role as string || "ADMIN").toUpperCase();
-
-        if (!rawPhone) {
-            return res.status(400).json({ success: false, message: "Please provide ?phone=..." });
-        }
-
-        if (roleArg !== "ADMIN" && roleArg !== "ORGANIZER") {
-            return res.status(400).json({ success: false, message: "Role must be ADMIN or ORGANIZER" });
-        }
-
-        let phoneNumber = rawPhone.trim();
-        const digits = phoneNumber.replace(/\D/g, '');
-        if (phoneNumber.startsWith('+') && digits.startsWith('251')) {
-            phoneNumber = `+${digits}`;
-        } else if (digits.startsWith('0') && digits.length === 10) {
-            phoneNumber = `+251${digits.slice(1)}`;
-        } else if (digits.startsWith('9') && digits.length === 9) {
-            phoneNumber = `+251${digits}`;
-        }
-
-        const user = await prisma.user.upsert({
-            where: { phoneNumber },
-            update: {
-                role: roleArg as Role,
-                status: AccountStatus.ACTIVE
-            },
-            create: {
-                phoneNumber,
-                role: roleArg as Role,
-                status: AccountStatus.ACTIVE,
-                profile: {
-                    create: {
-                        fullName: roleArg === 'ADMIN' ? 'System ' + roleArg : 'Test ' + roleArg,
-                        language: 'en'
-                    }
-                }
-            },
-        });
-
-        if (roleArg === 'ORGANIZER') {
-            await prisma.organizerProfile.upsert({
-                where: { userId: user.id },
-                update: { status: OrganizerStatus.APPROVED },
-                create: {
-                    userId: user.id,
-                    organizationName: 'Demo Organization',
-                    status: OrganizerStatus.APPROVED,
-                    contactEmail: 'demo@org.com',
-                    contactPhone: phoneNumber,
-                    city: 'Addis Ababa',
-                    payoutDetails: 'CBE 1000123456789'
-                }
-            });
-        }
-
-        res.json({
-            success: true,
-            message: `User ${phoneNumber} is now an active ${roleArg}.`,
-            user: { id: user.id, phone: user.phoneNumber, role: user.role }
-        });
-
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-router.get("/seed-categories", async (req, res) => {
-    try {
-        const existingCats = await prisma.mainCategory.count();
-        if (existingCats > 0) {
-            return res.json({ success: true, message: "Categories already exist.", count: existingCats });
-        }
-
-        const categoriesData = [
-            {
-                name: "Music", slug: "music", subCategories: [
-                    { name: "Concert", slug: "concert" },
-                    { name: "Festival", slug: "festival" },
-                    { name: "DJ/Club", slug: "dj-club" }
-                ]
-            },
-            {
-                name: "Sports", slug: "sports", subCategories: [
-                    { name: "Football", slug: "football" },
-                    { name: "Running", slug: "running" },
-                    { name: "Basketball", slug: "basketball" }
-                ]
-            },
-            {
-                name: "Business", slug: "business", subCategories: [
-                    { name: "Conference", slug: "conference" },
-                    { name: "Networking", slug: "networking" },
-                    { name: "Workshop", slug: "workshop" }
-                ]
-            },
-            {
-                name: "Arts & Culture", slug: "arts-culture", subCategories: [
-                    { name: "Theater", slug: "theater" },
-                    { name: "Comedy", slug: "comedy" },
-                    { name: "Exhibition", slug: "exhibition" }
-                ]
-            }
-        ];
-
-        let createdCount = 0;
-        for (const cat of categoriesData) {
-            await prisma.mainCategory.create({
-                data: {
-                    name: cat.name,
-                    slug: cat.slug,
-                    subCategories: {
-                        create: cat.subCategories
-                    }
-                }
-            });
-            createdCount++;
-        }
-
-        res.json({
-            success: true,
-            message: `Successfully seeded ${createdCount} main categories with their sub-categories.`
-        });
-
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
+// End of test routes
 
 export default router;
