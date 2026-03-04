@@ -1,6 +1,12 @@
 {
   "dependencies": {
-    "nodemailer": "^7.0.12"
+    "express": "^5.2.1",
+    "cors": "^2.8.5",
+    "@prisma/client": "6.1.0",
+    "nodemailer": "^7.0.12",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/nodemailer": "^7.0.4",
@@ -12,7 +18,7 @@
   "description": "ET-Ticket Platform",
   "scripts": {
     "build": "node build-all.js",
-    "postinstall": "cd services/api && npm install && npx prisma generate",
+    "postinstall": "cd services/api && npm install && npx prisma generate --schema=./prisma/schema.prisma && npx prisma generate --schema=./prisma/schema.prisma --output=../../node_modules/@prisma/client",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
