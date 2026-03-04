@@ -8,6 +8,10 @@ const serverDir = path.join(rootDir, 'services', 'api');
 // Removed local publicDir reference since we use rootDistDir now
 
 function runCommand(command, cwd) {
+    if (process.env.VERCEL && command.includes('npm install')) {
+        console.log(`Skipping: ${command} in ${cwd} (Vercel Build)`);
+        return;
+    }
     console.log(`Running: ${command} in ${cwd}`);
     execSync(command, { cwd, stdio: 'inherit', env: { ...process.env, CI: 'false' } });
 }
