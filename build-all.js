@@ -115,18 +115,35 @@ app.get('/api/debug-orchestrator', (req, res) => {
 
 // 1. Load Backend API
 try {
-    // We expect dist/vercel-entry.js (CommonJS)
-    const backendApp = require('./services/api/dist/vercel-entry');
-    // Ensure the backend app is handled correctly by express
+    const fs = require('fs');
+    const path = require('path');
+    let backendRelativePath = './services/api/dist/vercel-entry';
+    
+    // Robust Path Check
+    const directPath = path.join(__dirname, 'services/api/dist/vercel-entry.js');
+    const nestedPath = path.join(__dirname, 'services/api/dist/src/vercel-entry.js');
+    
+    if (!fs.existsSync(directPath) && fs.existsSync(nestedPath)) {
+        backendRelativePath = './services/api/dist/src/vercel-entry';
+    }
+
+    const backendApp = require(backendRelativePath);
     app.use(backendApp);
-    console.log("✅ Backend App loaded and mounted");
+    console.log("✅ Backend App loaded and mounted from:", backendRelativePath);
 } catch (error) {
     console.error("❌ Backend Load Error:", error);
-    // Express 5: Need (.*) instead of * for wildcards
+    const fs = require('fs');
     app.all('/api/(.*)', (req, res) => {
         res.status(500).json({
             error: "Backend failed to load in orchestrator",
             message: error.message,
+            help: "Check if the build output actually exists in the paths checked.",
+            paths_checked: {
+                direct: path.join(__dirname, 'services/api/dist/vercel-entry.js'),
+                nested: path.join(__dirname, 'services/api/dist/src/vercel-entry.js'),
+                direct_exists: fs.existsSync(path.join(__dirname, 'services/api/dist/vercel-entry.js')),
+                nested_exists: fs.existsSync(path.join(__dirname, 'services/api/dist/src/vercel-entry.js'))
+            },
             stack: error.stack
         });
     });
