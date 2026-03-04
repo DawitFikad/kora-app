@@ -18,7 +18,10 @@
     "express-rate-limit": "^8.2.1",
     "node-cron": "^4.2.1",
     "pino": "^9.0.0",
-    "pino-pretty": "^11.0.0"
+    "pino-pretty": "^11.0.0",
+    "@prisma/adapter-pg": "6.1.0",
+    "@prisma/extension-accelerate": "^3.0.1",
+    "@sendgrid/mail": "^8.0.0"
   },
   "devDependencies": {
     "@types/nodemailer": "^7.0.4",
