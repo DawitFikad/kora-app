@@ -78,14 +78,14 @@ try {
         }
     }
 
-    // Use the node-based call which is more reliable on serverless
-    // On local, we call npx prisma generate directly in the server folder
+    // Always run from root on Vercel to ensure it hit the main node_modules
+    // where @prisma/client is installed.
     const prismaCmd = process.env.VERCEL
-        ? `node ../../node_modules/prisma/build/index.js generate --schema=prisma/schema.prisma`
-        : 'npx prisma generate --schema=prisma/schema.prisma';
+        ? 'node node_modules/prisma/build/index.js generate --schema=services/api/prisma/schema.prisma'
+        : 'npx prisma generate --schema=services/api/prisma/schema.prisma';
 
-    console.log(`Executing: ${prismaCmd} in ${serverDir}`);
-    runCommand(prismaCmd, serverDir);
+    console.log(`Executing: ${prismaCmd} in ${rootDir}`);
+    runCommand(prismaCmd, rootDir);
 
     console.log('Compiling TypeScript...');
     runCommand('npm run build', serverDir);
