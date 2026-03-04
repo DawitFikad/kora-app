@@ -55,44 +55,73 @@ try {
 
     // 4. Build Backend (API)
     console.log('--- Building Backend (API) ---');
+    // Ensure root node_modules has prisma for the generate command
+    runCommand('npm install prisma @prisma/client', rootDir);
+
+    console.log('--- Generating Prisma Client (Root) ---');
+    // Force generation into root node_modules so orchestrator sees it
+    runCommand('npx prisma generate --schema=services/api/prisma/schema.prisma', rootDir);
+
     runCommand('npm install', serverDir);
-
-    console.log('--- Generating Prisma Client ---');
-    runCommand('npx prisma generate', serverDir);
-
     runCommand('npm run build', serverDir);
 
     // 5. Create Root Entry Point for Vercel
-    // This satisfies Vercel's "No entrypoint found" check and acts as an orchestrator.
     const rootEntryFile = path.join(rootDir, 'index.js');
-    const entryContent = `
-const express = require('express');
+    const entryContent = `const express = require('express');
 const path = require('path');
 
-// 1. Load the Backend App
-let app;
+const app = express();
+
+// Diagnostics Route
+app.get('/api/debug-orchestrator', (req, res) => {
+    try {
+        const fs = require('fs');
+        res.json({
+            status: 'Orchestrator is alive',
+            timestamp: new Date().toISOString(),
+            rootDir: __dirname,
+            backendBuilt: fs.existsSync(path.join(__dirname, 'services/api/dist/vercel-entry.js')),
+            distFound: fs.existsSync(path.join(__dirname, 'dist/index.html')),
+            env: {
+                VERCEL: process.env.VERCEL,
+                NODE_ENV: process.env.NODE_ENV
+            }
+        });
+    } catch (e) {
+        res.status(500).json({ error: "Diagnostics failed", message: e.message });
+    }
+});
+
+// 1. Load Backend API
 try {
-    app = require('./services/api/dist/vercel-entry');
-    console.log("✅ Backend App loaded into Root Entrypoint");
+    const backendApp = require('./services/api/dist/vercel-entry');
+    // Ensure the backend app is handled correctly by express
+    app.use(backendApp);
+    console.log("✅ Backend App loaded and mounted");
 } catch (error) {
-    console.error("❌ Failed to load backend:", error);
-    app = express();
-    app.all('/api/*', (req, res) => res.status(503).json({ error: "Backend not built", details: error.message }));
+    console.error("❌ Backend Load Error:", error);
+    app.all('/api/*', (req, res) => {
+        res.status(500).json({
+            error: "Backend failed to load in orchestrator",
+            message: error.message,
+            stack: error.stack
+        });
+    });
 }
 
-// 2. Serve Static Frontend Files
-// We use the 'dist' directory created in step 3
+// 2. Serve Static Frontend
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // 3. Handle SPA Routing for Frontend
 app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    // If it starts with /api but reached here, it's a 404 for the API
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: "API route not found" });
     }
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-module.exports = app;
-`;
+module.exports = app;`;
     fs.writeFileSync(rootEntryFile, entryContent);
     console.log('Created Vercel Entrypoint at /index.js');
 
