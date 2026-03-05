@@ -3,10 +3,16 @@
     "name": "et-ticket-platform",
     "buildCommand": "node build-all.js",
     "installCommand": "npm install",
+    "functions": {
+        "index.js": {
+            "runtime": "vercel-node@latest",
+            "includeFiles": ".static/**, .backend/**"
+        }
+    },
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/api/index.js"
+            "destination": "/index.js"
         }
     ],
     "headers": [

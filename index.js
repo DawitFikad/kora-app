@@ -1,5 +1,5 @@
 /**
- * ET-Ticket Platform v3.12.8-FINAL
+ * ET-Ticket Platform v3.12.9-ULTIMATE
  * Deployment ID: ${Date.now()}
  */
 const express = require('express');
@@ -25,23 +25,20 @@ app.use((req, res, next) => {
 app.get('/api/health-check-v3', (req, res) => {
     res.json({
         status: 'healthy',
-        version: '3.12.8-final',
-        timestamp: new Date().toISOString(),
-        build_id: '${Date.now()}'
+        version: '3.12.9-ultimate',
+        timestamp: new Date().toISOString()
     });
 });
 
-// Mount Backend Logic
+// Mount Backend
 try {
     if (fs.existsSync(backendPath)) {
         const bundle = require(backendPath);
         const backendApp = bundle.default || bundle;
         if (typeof backendApp === 'function') {
             app.use(backendApp);
-            console.log('✅ Backend Logic Mounted');
+            console.log('✅ Backend Mounted');
         }
-    } else {
-        console.error('❌ Backend bundle missing at: ' + backendPath);
     }
 } catch (err) {
     console.error('🔥 Backend Load Error:', err.message);
@@ -59,7 +56,7 @@ app.get('*', (req, res) => {
     if (fs.existsSync(idx)) {
         res.sendFile(idx);
     } else {
-        res.status(404).json({ error: 'UI build missing', check: staticPath });
+        res.status(404).json({ error: 'UI build missing' });
     }
 });
 
