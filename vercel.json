@@ -2,12 +2,6 @@
     "version": 2,
     "buildCommand": "node build-all.js",
     "installCommand": "npm install",
-    "functions": {
-        "api/index.js": {
-            "maxDuration": 30,
-            "memory": 1024
-        }
-    },
     "rewrites": [
         {
             "source": "/api/(.*)",

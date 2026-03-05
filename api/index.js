@@ -1,62 +1,43 @@
 /**
  * ET-Ticket Platform v3.12.0
  * Vercel Serverless Function - Primary Entry Point
- * Located in /api/ so Vercel automatically treats it as a serverless function.
+ * 
+ * api/dist/ is populated by build-all.js (copied from services/api/dist/)
+ * All external requires resolve to ROOT node_modules - Vercel traces correctly.
  */
 
 const path = require('path');
 const fs = require('fs');
 
-// Try both possible dist locations
-const DIST_PATHS = [
-    path.join(__dirname, '../services/api/dist/vercel-entry.js'),
-    path.join(__dirname, '../services/api/dist/src/vercel-entry.js'),
-];
-
 let handler;
 
-for (const distPath of DIST_PATHS) {
-    if (fs.existsSync(distPath)) {
-        try {
-            handler = require(distPath);
-            console.log('✅ [api/index.js] Backend loaded from:', distPath);
-            break;
-        } catch (err) {
-            console.error('❌ [api/index.js] Failed to load from:', distPath, err.message);
-        }
+try {
+    // dist/ is in the same directory as this file (api/dist/vercel-entry.js)
+    const entryPath = path.join(__dirname, 'dist', 'vercel-entry.js');
+
+    if (!fs.existsSync(entryPath)) {
+        throw new Error(`dist/vercel-entry.js not found at: ${entryPath}. Build may have failed.`);
     }
-}
 
-if (!handler) {
-    // No dist available - create a minimal fallback
-    const express = require('express');
-    const fallback = express();
+    handler = require('./dist/vercel-entry');
+    console.log('✅ [api/index.js v3.12.0] Backend loaded successfully');
 
-    // Probe which dist files exist for diagnostics
-    const distProbe = DIST_PATHS.map(p => ({ path: p, exists: fs.existsSync(p) }));
+} catch (err) {
+    console.error('❌ [api/index.js] Startup error:', err.message);
 
-    fallback.get('/api/health-check-v3', (_req, res) => {
-        res.json({
-            status: 'degraded',
+    // Ultra-safe fallback - uses only built-in Node.js modules
+    handler = (req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.statusCode = 503;
+        res.end(JSON.stringify({
+            error: 'Backend failed to initialize',
             version: '3.12.0',
-            error: 'Backend dist not found',
-            probe: distProbe,
-            tip: 'Ensure build-all.js ran successfully. Check Vercel build logs.',
+            message: err.message,
+            path: req.url,
+            tip: 'Check Vercel build logs. Ensure build-all.js ran successfully.',
             timestamp: new Date().toISOString()
-        });
-    });
-
-    fallback.all('(.*)', (_req, res) => {
-        res.status(503).json({
-            error: 'API backend not compiled',
-            version: '3.12.0',
-            probe: distProbe,
-            tip: 'Run "node build-all.js" and redeploy, or check Vercel build logs.',
-        });
-    });
-
-    handler = fallback;
-    console.error('❌ [api/index.js] FATAL: No backend dist found. Using fallback.');
+        }));
+    };
 }
 
 module.exports = handler;
