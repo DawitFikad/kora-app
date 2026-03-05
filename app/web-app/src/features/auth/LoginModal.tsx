@@ -113,9 +113,23 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
             setStep('otp');
         } catch (err: any) {
             console.error('[LoginModal] OTP Request Error:', err);
-            // 🔹 DEBUGGING: Show exact error
-            const msg = err.error || err.message || JSON.stringify(err);
-            setError(`Error: ${msg}`);
+
+            // Extract the most helpful error message possible
+            let message = 'An unexpected error occurred';
+
+            if (err.response?.data?.error) {
+                message = err.response.data.error;
+            } else if (err.error) {
+                message = err.error;
+            } else if (err.message) {
+                message = err.message;
+            } else if (typeof err === 'object') {
+                message = JSON.stringify(err);
+            } else {
+                message = String(err);
+            }
+
+            setError(message);
         } finally {
             setIsLoading(false);
         }

@@ -5,6 +5,7 @@ const path = require('path');
 const rootDir = __dirname;
 const clientDir = path.join(rootDir, 'app', 'web-app');
 const serverDir = path.join(rootDir, 'services', 'api');
+const apiDir = path.join(rootDir, 'api');
 
 function runCommand(command, cwd) {
     console.log(`\n▶ ${command}`);
@@ -20,7 +21,7 @@ function section(title) {
 try {
     // ── 0. CLEANUP ───────────────────────────────────────────────
     section('0. CLEANUP');
-    const foldersToClear = ['.backend', 'api', 'dist', 'public', 'out'];
+    const foldersToClear = ['.backend', 'dist', 'public', 'api', 'serverless', 'out'];
     foldersToClear.forEach(folder => {
         const fullPath = path.join(rootDir, folder);
         if (fs.existsSync(fullPath)) {
@@ -28,6 +29,11 @@ try {
             fs.rmSync(fullPath, { recursive: true, force: true });
         }
     });
+
+    // Explicitly delete root index.js if it exists
+    if (fs.existsSync(path.join(rootDir, 'index.js'))) {
+        fs.unlinkSync(path.join(rootDir, 'index.js'));
+    }
 
     // ── 1. FRONTEND BUILD ────────────────────────────────────────
     section('1/3  Frontend Build');
@@ -37,16 +43,17 @@ try {
     runCommand('npm run build', clientDir);
 
     const clientDistDir = path.join(clientDir, 'dist');
-    const targetPublicDir = path.join(rootDir, 'public');
+    const targetDistDir = path.join(rootDir, 'dist');
 
     if (!fs.existsSync(clientDistDir)) {
         console.error('❌ Frontend build failed: dist missing');
         process.exit(1);
     }
 
-    fs.mkdirSync(targetPublicDir, { recursive: true });
-    fs.cpSync(clientDistDir, targetPublicDir, { recursive: true });
-    console.log('✅ Frontend assets moved to /public');
+    // Move to /dist (Vercel's preferred output folder)
+    fs.mkdirSync(targetDistDir, { recursive: true });
+    fs.cpSync(clientDistDir, targetDistDir, { recursive: true });
+    console.log('✅ Frontend built to /dist');
 
     // ── 2. BACKEND BUILD ─────────────────────────────────────────
     section('2/3  Backend Build');
@@ -54,13 +61,14 @@ try {
     runCommand('npx prisma generate', serverDir);
     runCommand('npm run build', serverDir);
 
+    // Prepare a hidden bundle folder for the serverless function to load
     const serverDistSrc = path.join(serverDir, 'dist');
-    const targetBackendDir = path.join(rootDir, '.backend');
+    const bundleDir = path.join(apiDir, 'bundle');
 
-    fs.mkdirSync(targetBackendDir, { recursive: true });
-    fs.cpSync(serverDistSrc, targetBackendDir, { recursive: true });
+    fs.mkdirSync(bundleDir, { recursive: true });
+    fs.cpSync(serverDistSrc, bundleDir, { recursive: true });
 
-    // Copy prisma query engine
+    // Copy prisma query engine to root node_modules for serverless tracing
     const prismaNode = path.join(serverDir, 'node_modules', '.prisma');
     if (fs.existsSync(prismaNode)) {
         const destPrisma = path.join(rootDir, 'node_modules', '.prisma');
@@ -68,14 +76,14 @@ try {
         fs.mkdirSync(path.dirname(destPrisma), { recursive: true });
         fs.cpSync(prismaNode, destPrisma, { recursive: true });
     }
-    console.log('✅ Backend bundle prepared at /.backend');
+    console.log('✅ Backend bundle prepared at api/bundle');
 
-    // ── 3. WRITE ULTIMATE ORCHESTRATOR ───────────────────────────
-    section('3/3  Writing Ultimate Orchestrator');
+    // ── 3. WRITE API ENTRYPOINT ──────────────────────────────────
+    section('3/3  Writing API Entrypoint');
 
-    const entryContent = `/**
- * ET-Ticket Platform v3.12.3 - Ultimate Orchestrator
- * Fixes: CORS, default exports, Path stripping, Detailed error reporting.
+    // This file handles /api/*
+    const apiIndexContent = `/**
+ * ET-Ticket Platform v3.12.4 - API Proxy
  */
 const express = require('express');
 const path    = require('path');
@@ -83,83 +91,43 @@ const fs      = require('fs');
 
 const app = express();
 
-// 1. Global CORS & Logging
+// Global CORS & Log
 app.use((req, res, next) => {
-    console.log(\`[\${new Date().toISOString()}] \${req.method} \${req.url}\`);
+    console.log(\`[\${new Date().toISOString()}] API-REQ: \${req.method} \${req.url}\`);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
 });
 
-// 2. Health Check (Immediate)
-app.get('/api/health-check-v3', (req, res) => {
-    res.status(200).json({
-        status: 'healthy',
-        version: '3.12.3',
-        orchestrator: 'universal-v3-ultimate',
-        timestamp: new Date().toISOString(),
-        request: {
-            url: req.url,
-            path: req.path,
-            method: req.method
-        }
-    });
-});
-
-// 3. Mount Backend Logic
+// Mounting the actual backend logic
 try {
-    const backendEntry = path.join(__dirname, '.backend', 'vercel-entry.js');
-    if (fs.existsSync(backendEntry)) {
-        const bundle = require(backendEntry);
+    const bundlePath = path.join(__dirname, 'bundle', 'vercel-entry.js');
+    if (fs.existsSync(bundlePath)) {
+        const bundle = require(bundlePath);
         const backendApp = bundle.default || bundle;
         
-        if (typeof backendApp === 'function') {
-            // Mount the backend app. 
-            // Since this app will handle requests at /api/*, we mount it at root /
-            // It will see the full path (e.g. /api/auth/...) and match its own routes.
-            app.use(backendApp);
-            console.log('✅ Backend bundle loaded and mounted');
-        } else {
-            console.error('❌ Backend bundle exported something other than a function:', typeof backendApp);
-        }
+        // Use the backend app directly.
+        // It expects paths starting with /api (from app.ts)
+        app.use(backendApp);
     } else {
-        console.error('❌ Backend entry missing at:', backendEntry);
+        app.get('/health', (req, res) => res.json({ status: "error", message: "Bundle missing" }));
     }
 } catch (err) {
-    console.error('❌ MONOLITH LOAD FAIL:', err.message);
-    console.error(err.stack);
+    console.error('Backend Load Error:', err);
+    app.use((req, res) => res.status(500).json({ error: "Backend crash", message: err.message }));
 }
-
-// 4. Final Fallback for API (404 JSON)
-app.use('/api', (req, res) => {
-    res.status(404).json({
-        error: 'API Endpoint Not Found',
-        path: req.url,
-        version: '3.12.3'
-    });
-});
-
-// 5. Global Error Handler for Orchestrator
-app.use((err, req, res, next) => {
-    console.error('🔥 Orchestrator Error:', err);
-    res.status(500).json({
-        error: 'Orchestrator Internal Error',
-        message: err.message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
-});
 
 module.exports = app;
 `;
 
-    fs.writeFileSync(path.join(rootDir, 'index.js'), entryContent);
-    console.log('✅ index.js written to root');
+    fs.writeFileSync(path.join(apiDir, 'index.js'), apiIndexContent);
+    console.log('✅ api/index.js written');
 
     section('🏁  BUILD SUCCESS');
 
 } catch (err) {
-    console.error('\n❌ BUILD FAILURE:', err.message);
+    console.error('\n❌ BUILD FAILED:', err.message);
     process.exit(1);
 }
