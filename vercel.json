@@ -1,12 +1,12 @@
 {
     "version": 2,
-    "name": "et-ticket-platform-v3",
+    "name": "et-ticket-platform",
     "buildCommand": "node build-all.js",
     "installCommand": "npm install",
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/index.js"
+            "destination": "/api/index.js"
         }
     ],
     "headers": [

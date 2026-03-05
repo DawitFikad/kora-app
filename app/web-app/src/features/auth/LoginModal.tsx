@@ -118,14 +118,18 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
             let message = 'An unexpected error occurred';
 
             if (err.response?.data?.error) {
-                message = err.response.data.error;
+                message = typeof err.response.data.error === 'string'
+                    ? err.response.data.error
+                    : JSON.stringify(err.response.data.error);
             } else if (err.error) {
-                message = err.error;
+                if (typeof err.error === 'string') message = err.error;
+                else if (err.error.message) message = err.error.message;
+                else message = JSON.stringify(err.error);
             } else if (err.message) {
                 message = err.message;
             } else if (typeof err === 'object') {
                 message = JSON.stringify(err);
-            } else {
+            } else if (err) {
                 message = String(err);
             }
 
@@ -251,7 +255,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         {step === 'otp' && <ShieldCheck size={32} color="var(--primary)" />}
                     </div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
-                        {step === 'phone' && (mode === 'register' ? t('auth.applyTitle') : t('auth.welcomeTitle'))}
+                        {step === 'phone' && (mode === 'register' ? t('auth.applyTitle') : t('auth.welcomeTitle'))} [v3.12.6 Master]
                         {step === 'otp' && t('auth.verifyTitle')}
                     </h2>
                     <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '0.98rem' }}>
