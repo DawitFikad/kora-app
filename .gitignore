@@ -44,3 +44,8 @@ yarn-error.log*
 /api/dist
 
 /api/.backend
+
+# Generated Vercel assets
+/public/
+/api/.backend/
+/api/node_modules/
