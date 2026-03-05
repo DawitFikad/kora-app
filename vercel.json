@@ -5,17 +5,13 @@
     "installCommand": "npm install",
     "rewrites": [
         {
-            "source": "/api/(.*)",
-            "destination": "/api/index.js"
-        },
-        {
-            "source": "/((?!api/).*)",
-            "destination": "/index.html"
+            "source": "/(.*)",
+            "destination": "/index.js"
         }
     ],
     "headers": [
         {
-            "source": "/api/(.*)",
+            "source": "/(.*)",
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
