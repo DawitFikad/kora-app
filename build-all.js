@@ -5,6 +5,7 @@ const path = require('path');
 const rootDir = __dirname;
 const clientDir = path.join(rootDir, 'app', 'web-app');
 const serverDir = path.join(rootDir, 'services', 'api');
+const targetDir = path.join(rootDir, 'dist'); // The absolute output directory
 
 function runCommand(command, cwd) {
     console.log(`\n▶ ${command}`);
@@ -18,9 +19,9 @@ function section(title) {
 }
 
 try {
-    // ── 0. TOTAL CLEANUP ─────────────────────────────────────────
+    // ── 0. CLEANUP ───────────────────────────────────────────────
     section('0. CLEANUP');
-    const foldersToClear = ['.backend', '.static', 'api', 'dist', 'public', 'out', 'assets'];
+    const foldersToClear = ['dist', '.backend', '.static', 'api', 'public', 'out'];
     foldersToClear.forEach(folder => {
         const fullPath = path.join(rootDir, folder);
         if (fs.existsSync(fullPath)) {
@@ -29,14 +30,8 @@ try {
         }
     });
 
-    // Crucial: Remove static files from root that hijack Vercel routing
-    ['index.html', 'vite.svg', 'favicon.ico', 'index.js'].forEach(file => {
-        const fullPath = path.join(rootDir, file);
-        if (fs.existsSync(fullPath)) {
-            console.log(`Removing root file ${file}...`);
-            fs.unlinkSync(fullPath);
-        }
-    });
+    // Create fresh dist
+    fs.mkdirSync(targetDir, { recursive: true });
 
     // ── 1. FRONTEND BUILD ────────────────────────────────────────
     section('1/3  Frontend Build');
@@ -46,7 +41,7 @@ try {
     runCommand('npm run build', clientDir);
 
     const clientDistDir = path.join(clientDir, 'dist');
-    const targetStaticDir = path.join(rootDir, '.static');
+    const targetStaticDir = path.join(targetDir, '.static');
 
     if (!fs.existsSync(clientDistDir)) {
         console.error('❌ Frontend build failed');
@@ -55,7 +50,7 @@ try {
 
     fs.mkdirSync(targetStaticDir, { recursive: true });
     fs.cpSync(clientDistDir, targetStaticDir, { recursive: true });
-    console.log('✅ Frontend assets moved to /.static');
+    console.log('✅ Frontend assets moved to dist/.static');
 
     // ── 2. BACKEND BUILD ─────────────────────────────────────────
     section('2/3  Backend Build');
@@ -64,103 +59,100 @@ try {
     runCommand('npm run build', serverDir);
 
     const serverDistSrc = path.join(serverDir, 'dist');
-    const targetBackendDir = path.join(rootDir, '.backend');
+    const targetBackendDir = path.join(targetDir, '.backend');
 
     fs.mkdirSync(targetBackendDir, { recursive: true });
     fs.cpSync(serverDistSrc, targetBackendDir, { recursive: true });
 
-    // Copy prisma to root for runtime
+    // Copy prisma to root of output for runtime tracing
     const prismaNode = path.join(serverDir, 'node_modules', '.prisma');
     if (fs.existsSync(prismaNode)) {
-        const destPrisma = path.join(rootDir, 'node_modules', '.prisma');
+        const destPrisma = path.join(targetDir, 'node_modules', '.prisma');
         if (fs.existsSync(destPrisma)) fs.rmSync(destPrisma, { recursive: true });
         fs.mkdirSync(path.dirname(destPrisma), { recursive: true });
         fs.cpSync(prismaNode, destPrisma, { recursive: true });
     }
-    console.log('✅ Backend bundle prepared at /.backend');
+    console.log('✅ Backend bundle prepared at dist/.backend');
 
-    // ── 3. WRITE API ENTRYPOINT (api/index.js) ───────────────────
-    section('3/3  Writing API Entrypoint');
+    // ── 3. WRITE CONSOLIDATED ORCHESTRATOR ───────────────────────
+    section('3/3  Writing Consolidated Orchestrator (dist/index.js)');
 
-    const apiDir = path.join(rootDir, 'api');
-    fs.mkdirSync(apiDir, { recursive: true });
-
-    const indexContent = `/**
- * ET-Ticket Platform v3.12.6 - MASTER SERVER
- * Location: /api/index.js
+    const entryContent = `/**
+ * ET-Ticket Platform v3.12.7 - CONSOLIDATED MONOLITH
+ * This file serves both UI and API from inside the /dist folder.
  */
 const express = require('express');
 const path    = require('path');
 const fs      = require('fs');
 
 const app = express();
-const staticPath = path.join(__dirname, '..', '.static');
-const backendPath = path.join(__dirname, '..', '.backend', 'vercel-entry.js');
+const staticPath = path.join(__dirname, '.static');
+const backendPath = path.join(__dirname, '.backend', 'vercel-entry.js');
 
-// 1. Diagnostics & CORS
+// Global CORS & Logger
 app.use((req, res, next) => {
-    // Log every request to Vercel logs
     console.log(\`[\${new Date().toISOString()}] \${req.method} \${req.url}\`);
-    
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-    
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
 });
 
-// 2. Health Check
+// Health check
 app.get('/api/health-check-v3', (req, res) => {
     res.json({
         status: 'healthy',
-        version: '3.12.6-master',
-        timestamp: new Date().toISOString(),
-        env: {
-            db: !!process.env.DATABASE_URL,
-            chapa: !!process.env.CHAPA_SECRET_KEY
-        }
+        version: '3.12.7-consolidated',
+        timestamp: new Date().toISOString()
     });
 });
 
-// 3. Mount Backend Logic
+// Mount Backend
 try {
     if (fs.existsSync(backendPath)) {
         const bundle = require(backendPath);
         const backendApp = bundle.default || bundle;
         if (typeof backendApp === 'function') {
             app.use(backendApp);
-            console.log('✅ Backend Mounted');
+            console.log('✅ Backend mounted');
         }
-    } else {
-        console.error('❌ Backend bundle missing at ' + backendPath);
     }
 } catch (err) {
-    console.error('🔥 Backend Load Error:', err.message);
+    console.error('🔥 Backend load error:', err.message);
 }
 
-// 4. Serve Static Files
+// Serve Static Files
 app.use(express.static(staticPath));
 
-// 5. Catch-all for SPA
+// SPA Fallback
 app.get('*', (req, res) => {
     if (req.url.startsWith('/api/')) {
         return res.status(404).json({ error: 'API route not found', path: req.url });
     }
-    
-    const indexPath = path.join(staticPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
+    const idx = path.join(staticPath, 'index.html');
+    if (fs.existsSync(idx)) {
+        res.sendFile(idx);
     } else {
-        res.status(404).send('Build inconsistent. Please redeploy.');
+        res.status(404).send('Build inconsistent.');
     }
 });
 
 module.exports = app;
 `;
 
-    fs.writeFileSync(path.join(apiDir, 'index.js'), indexContent);
-    console.log('✅ api/index.js written');
+    fs.writeFileSync(path.join(targetDir, 'index.js'), entryContent);
+    console.log('✅ dist/index.js written');
+
+    // Also write a dummy package.json in dist to make it a self-contained node app if needed
+    fs.writeFileSync(path.join(targetDir, 'package.json'), JSON.stringify({
+        name: "et-ticket-output",
+        version: "3.12.7",
+        private: true,
+        dependencies: {
+            "express": "^4.21.2"
+        }
+    }, null, 2));
 
     section('🏁  BUILD SUCCESSFUL');
 
