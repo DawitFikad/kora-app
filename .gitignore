@@ -49,3 +49,5 @@ yarn-error.log*
 /public/
 /api/.backend/
 /api/node_modules/
+
+/.backend/
