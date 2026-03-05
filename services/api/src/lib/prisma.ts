@@ -39,15 +39,24 @@ declare global {
     var prisma: PrismaClient | undefined;
 }
 
-const prisma = global.prisma || new PrismaClient({
-    datasources: {
+const prismaOptions: any = {
+    // Log queries in dev, warnings/errors in prod
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error', 'warn'],
+};
+
+// Only override datasources if we have a computed URL
+if (databaseUrl) {
+    prismaOptions.datasources = {
         db: {
             url: databaseUrl
         }
-    },
-    // Log queries in dev, warnings/errors in prod
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error', 'warn'],
-});
+    };
+} else {
+    // Fallback or let Prisma read from process.env if available elsewhere
+    console.warn("⚠️ [Prisma] No valid DATABASE_URL found. Prisma Client initialized without explicit URL.");
+}
+
+const prisma = global.prisma || new PrismaClient(prismaOptions);
 
 if (process.env.NODE_ENV !== 'production') {
     global.prisma = prisma;

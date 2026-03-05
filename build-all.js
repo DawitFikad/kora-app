@@ -5,166 +5,115 @@ const path = require('path');
 const rootDir = __dirname;
 const clientDir = path.join(rootDir, 'app', 'web-app');
 const serverDir = path.join(rootDir, 'services', 'api');
-// Removed local publicDir reference since we use rootDistDir now
 
 function runCommand(command, cwd) {
-    if (process.env.VERCEL && command.includes('npm install') && (cwd === rootDir || cwd === '.')) {
-        console.log(`Skipping: ${command} in root (Vercel Build)`);
-        return;
-    }
-    console.log(`Running: ${command} in ${cwd}`);
+    console.log(`\n▶ Running: ${command}`);
+    console.log(`  In: ${cwd}`);
     execSync(command, { cwd, stdio: 'inherit', env: { ...process.env, CI: 'false' } });
 }
 
-try {
-    // 1. Install Root Dependencies (already done by Vercel, but safe to ensure)
-    // console.log('Installing root dependencies...');
-    // runCommand('npm install', rootDir);
+function section(title) {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`  ${title}`);
+    console.log('='.repeat(60));
+}
 
-    // 2. Build Frontend
-    console.log('--- Building Frontend (Web App) ---');
+try {
+    // ── 1. BUILD FRONTEND ──────────────────────────────────────────
+    section('1/3  Building Frontend (React/Vite)');
     runCommand('npm install', clientDir);
     runCommand('npm run build', clientDir);
 
-    // 3. Move Frontend Build to Public (for Vercel Static Serving)
-    // Vercel project settings might expect 'dist' or 'public'.
-    // We will ensure 'dist' (in root) is populated as that matches the error message.
-
-    // Define dist directories
+    // Copy frontend dist → root dist/ (for static serving)
     const rootDistDir = path.join(rootDir, 'dist');
     const clientDistDir = path.join(clientDir, 'dist');
 
-    console.log('--- Deployment: Moving Frontend Build to /dist ---');
-
-    // Clean root dist
-    if (fs.existsSync(rootDistDir)) {
-        console.log('Cleaning existing root dist directory...');
-        fs.rmSync(rootDistDir, { recursive: true, force: true });
-    }
-    fs.mkdirSync(rootDistDir);
-
-    if (fs.existsSync(clientDistDir)) {
-        console.log('Copying build artifacts to dist/ ...');
-        // Use cpSync (Node 16.7+)
-        fs.cpSync(clientDistDir, rootDistDir, { recursive: true });
-        console.log('Frontend build moved to dist/');
-    } else {
-        console.error('Frontend build failed: client dist directory not found!');
+    if (!fs.existsSync(clientDistDir)) {
+        console.error('❌ Frontend build output not found at:', clientDistDir);
         process.exit(1);
     }
 
-    // 4. Build Backend (API)
-    console.log('--- Building Backend (API) ---');
+    if (fs.existsSync(rootDistDir)) {
+        fs.rmSync(rootDistDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(rootDistDir, { recursive: true });
+    fs.cpSync(clientDistDir, rootDistDir, { recursive: true });
+    console.log('✅ Frontend build copied to /dist');
 
-    // FIRST: Install API dependencies so Prisma CLI has all it needs
-    console.log('Installing API dependencies...');
+    // ── 2. BUILD BACKEND ───────────────────────────────────────────
+    section('2/3  Building Backend (Node/Express/TypeScript)');
+
+    // Install API dependencies (triggers postinstall → prisma generate)
     runCommand('npm install', serverDir);
 
-    // Root prisma generation logic removed -- we rely on nested generation.
+    // Explicitly run prisma generate in case postinstall was skipped
+    console.log('\n▶ Running prisma generate...');
+    try {
+        runCommand('npx prisma generate', serverDir);
+    } catch (e) {
+        console.warn('⚠️ prisma generate failed (non-fatal if already done):', e.message);
+    }
 
-
-    // 4. Prisma Generation
-    // We rely on the nested 'npm install' -> 'postinstall' -> 'prisma generate'
-    // which happens inside services/api.
-    console.log('--- Verifying Nested Prisma Client Generation ---');
-    runCommand('npm run postinstall', serverDir);
-
-
-    console.log('Compiling TypeScript...');
+    // Compile TypeScript → dist/
     runCommand('npm run build', serverDir);
 
-    // 5. Create Root Entry Point for Vercel
-    const rootEntryFile = path.join(rootDir, 'index.js');
-    const entryContent = `const express = require('express');
-const path = require('path');
-const fs = require('fs');
+    // Verify output
+    const distEntry = path.join(serverDir, 'dist', 'vercel-entry.js');
+    if (fs.existsSync(distEntry)) {
+        console.log('✅ Backend compiled: services/api/dist/vercel-entry.js');
+    } else {
+        console.error('❌ Backend compile output NOT found:', distEntry);
+        process.exit(1);
+    }
+
+    // ── 3. GENERATE ROOT ORCHESTRATOR (fallback for non-API routes)  
+    section('3/3  Writing root index.js (static file fallback)');
+
+    const rootIndexContent = `/**
+ * ET-Ticket Platform v3.12.0
+ * Root entry point - serves static frontend files 
+ * API requests are handled by api/index.js (Vercel native function)
+ */
+const express = require('express');
+const path    = require('path');
+const fs      = require('fs');
 
 const app = express();
 
-// Diagnostic Info
-const VERSION = '3.12.0';
-
-// 1. Diagnostics Route
-app.get('/api/debug-orchestrator', (req, res) => {
-    try {
-        const buildDirDirect = path.join(__dirname, 'services/api/dist/vercel-entry.js');
-        const buildDirNested = path.join(__dirname, 'services/api/dist/src/vercel-entry.js');
-        
-        res.json({
-            status: 'success',
-            service: 'orchestrator',
-            version: VERSION,
-            timestamp: new Date().toISOString(),
-            diagnostics: {
-                rootDir: __dirname,
-                backendBuildDirect: fs.existsSync(buildDirDirect),
-                backendBuildNested: fs.existsSync(buildDirNested),
-                frontendDist: fs.existsSync(path.join(__dirname, 'dist/index.html')),
-            },
-            env: {
-                VERCEL: process.env.VERCEL || 'false',
-                NODE_ENV: process.env.NODE_ENV || 'development'
-            }
-        });
-    } catch (e) {
-        res.status(500).json({ error: "Diagnostics failed", message: e.message });
-    }
+// Health check (redundant safety net)
+app.get('/api/health-check-v3', (_req, res) => {
+    res.json({ status: 'healthy', version: '3.12.0', service: 'root-fallback' });
 });
 
-// 2. Load Backend API
-try {
-    let backendRelativePath = './services/api/dist/vercel-entry';
-    const directPath = path.join(__dirname, 'services/api/dist/vercel-entry.js');
-    const nestedPath = path.join(__dirname, 'services/api/dist/src/vercel-entry.js');
-    
-    if (!fs.existsSync(directPath) && fs.existsSync(nestedPath)) {
-        console.log("ℹ️ Using nested backend path: /dist/src/vercel-entry");
-        backendRelativePath = './services/api/dist/src/vercel-entry';
-    } else if (!fs.existsSync(directPath)) {
-        console.error("❌ Backend entry point NOT FOUND in /dist or /dist/src");
-    }
-
-    const backendApp = require(backendRelativePath);
-    // Express 5 requires (.*) for wildcards, so we mount the backend app
-    app.use(backendApp);
-    console.log("✅ Backend App mounted successfully from:", backendRelativePath);
-} catch (error) {
-    console.error("❌ Backend Load Error:", error);
-    // Graceful failure for API requests
-    app.all('/api/(.*)', (req, res) => {
-        res.status(503).json({
-            error: "Backend unavailable",
-            message: error.message,
-            tip: "Check build logs to ensure 'services/api' compiled without errors.",
-            version: VERSION
-        });
-    });
-}
-
-// 3. Serve Static Frontend
+// Serve static frontend assets
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// 4. Handle SPA Routing for Frontend
-// Express 5: Need (.*) instead of * for wildcards
+// SPA catch-all
 app.get('(.*)', (req, res) => {
-    // If it starts with /api but reached here, it's a 404 for the API
     if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: "API route not found", path: req.path });
+        return res.status(404).json({ error: 'API route not found', path: req.path });
     }
-    
-    const indexPath = path.join(__dirname, 'dist', 'index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
+    const index = path.join(__dirname, 'dist', 'index.html');
+    if (fs.existsSync(index)) {
+        res.sendFile(index);
     } else {
-        res.status(404).send('Frontend build not found. Please run build script.');
+        res.status(404).send('Frontend not built. Run: node build-all.js');
     }
 });
 
-module.exports = app;`;
-    fs.writeFileSync(rootEntryFile, entryContent);
-    console.log('Created Vercel Entrypoint at /index.js');
+module.exports = app;
+`;
+
+    fs.writeFileSync(path.join(rootDir, 'index.js'), rootIndexContent);
+    console.log('✅ root index.js written');
+
+    section('✅  BUILD COMPLETE');
+    console.log('  Frontend → /dist');
+    console.log('  Backend  → /services/api/dist');
+    console.log('  Function → /api/index.js');
+    console.log('  Fallback → /index.js');
 
 } catch (error) {
-    console.error('Build script failed:', error);
+    console.error('\n❌ BUILD FAILED:', error.message);
     process.exit(1);
 }

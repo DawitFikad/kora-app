@@ -1,57 +1,46 @@
 // api/index.ts - Vercel Serverless Entry Point
-// Updated: 2026-02-05 11:30 AM
-// This exports the Express app for Vercel's zero-config deployment
+// Updated: 2026-03-05
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import app from "../src/app";
+import { EmailService } from "../src/services/email.service";
 
-let handler: any;
-
+// Initialize critical services
 try {
-    console.log("🔍 Loading app module...");
-    const app = require("../src/app").default;
-
-    console.log("🔍 Loading EmailService...");
-    const { EmailService } = require("../src/services/email.service");
-
     console.log("🔍 Initializing EmailService...");
     EmailService.initialize();
+} catch (e) {
+    console.warn("⚠️ EmailService initialization warning:", e);
+}
 
-    console.log("✅ All loaded successfully");
-
-    // WRAPPER to handle version check before Express
-    handler = (req: any, res: any) => {
-        // Broad check for 'version' in URL
+// Export the handler function
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    try {
+        // Broad check for 'version' in URL for diagnostics
         if (req.url && req.url.includes('version')) {
             return res.status(200).json({
-                status: "Direct Index Check v3.12.0",
+                status: "Direct Index Check v3.12.1",
                 received_url: req.url,
-                original_url: req.originalUrl,
+                original_url: (req as any).originalUrl,
                 headers_host: req.headers.host,
                 timestamp: new Date().toISOString(),
                 env_check: {
                     chapa: !!process.env.CHAPA_SECRET_KEY,
-                    db: !!process.env.DATABASE_URL
+                    db: !!process.env.DATABASE_URL,
+                    node_env: process.env.NODE_ENV
                 }
             });
         }
+
+        // Forward to Express app
         return app(req, res);
-    };
-} catch (error: any) {
-    console.error("❌ CRITICAL ERROR IN api/index.ts:", error);
-
-    // Create emergency fallback handler
-    const express = require("express");
-    const fallback = express();
-
-    fallback.use((req: any, res: any) => {
-        res.status(500).json({
-            error: "Serverless Function Initialization Failed",
+    } catch (error: any) {
+        console.error("❌ CRITICAL ERROR IN api/index.ts handler:", error);
+        return res.status(500).json({
+            error: "Serverless Function Execution Failed",
             message: error?.message || String(error),
             stack: error?.stack,
-            phase: "api/index.ts loading"
+            phase: "handler execution"
         });
-    });
-
-    handler = fallback;
+    }
 }
 
-// Export for Vercel
-export default handler;
