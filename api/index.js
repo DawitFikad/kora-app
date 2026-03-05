@@ -1,14 +1,15 @@
 /**
- * ET-Ticket Platform v3.12.8 - Vercel Serverless Function
- * This file is EXPLICITLY in /api to ensure Vercel executes it as a Lambda.
+ * ET-Ticket Platform v3.12.8-FINAL
+ * Deployment ID: ${Date.now()}
  */
 const express = require('express');
 const path    = require('path');
 const fs      = require('fs');
 
 const app = express();
-const staticPath = path.join(__dirname, '..', '.static');
-const backendPath = path.join(__dirname, '..', '.backend', 'vercel-entry.js');
+
+const staticPath = path.join(__dirname, '.static');
+const backendPath = path.join(__dirname, '.backend', 'vercel-entry.js');
 
 // Global CORS & Logger
 app.use((req, res, next) => {
@@ -24,8 +25,9 @@ app.use((req, res, next) => {
 app.get('/api/health-check-v3', (req, res) => {
     res.json({
         status: 'healthy',
-        version: '3.12.8-lambda',
-        timestamp: new Date().toISOString()
+        version: '3.12.8-final',
+        timestamp: new Date().toISOString(),
+        build_id: '${Date.now()}'
     });
 });
 
@@ -36,15 +38,16 @@ try {
         const backendApp = bundle.default || bundle;
         if (typeof backendApp === 'function') {
             app.use(backendApp);
-            console.log('✅ Backend logic mounted');
+            console.log('✅ Backend Logic Mounted');
         }
+    } else {
+        console.error('❌ Backend bundle missing at: ' + backendPath);
     }
 } catch (err) {
-    console.error('🔥 Lambda initialization error:', err.message);
+    console.error('🔥 Backend Load Error:', err.message);
 }
 
 // Serve Static Files
-// Note: We use absolute paths relative to __dirname which is /api
 app.use(express.static(staticPath));
 
 // SPA Fallback
@@ -56,7 +59,7 @@ app.get('*', (req, res) => {
     if (fs.existsSync(idx)) {
         res.sendFile(idx);
     } else {
-        res.status(404).send('Static build missing. Check .static folder.');
+        res.status(404).json({ error: 'UI build missing', check: staticPath });
     }
 });
 

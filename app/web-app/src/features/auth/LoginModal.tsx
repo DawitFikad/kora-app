@@ -255,7 +255,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         {step === 'otp' && <ShieldCheck size={32} color="var(--primary)" />}
                     </div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
-                        {step === 'phone' && (mode === 'register' ? t('auth.applyTitle') : t('auth.welcomeTitle'))} [v3.12.6 Master]
+                        {step === 'phone' && (mode === 'register' ? t('auth.applyTitle') : t('auth.welcomeTitle'))} [v3.12.8-FINAL]
                         {step === 'otp' && t('auth.verifyTitle')}
                     </h2>
                     <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '0.98rem' }}>
