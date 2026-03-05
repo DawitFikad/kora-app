@@ -102,7 +102,7 @@ app.get('/api/health-check-v3', (_req, res) => {
 
 app.use(express.static(path.join(__dirname, 'dist')));
 
-app.get('*', (req, res) => {
+app.get('/{*path}', (req, res) => {
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'API route not found', path: req.path });
     }

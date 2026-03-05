@@ -42,7 +42,7 @@ try {
     console.error("Stack:", error.stack);
 
     // Fallback: extend baseApp with error reporting
-    baseApp.all("*", (req: any, res: any) => {
+    baseApp.all("/{*path}", (req: any, res: any) => {
         // Still serve health check (already registered above)
         res.status(500).json({
             error: "Server Startup Failed",
