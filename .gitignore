@@ -42,3 +42,5 @@ yarn-error.log*
 /app/web-app/node_modules
 # Generated API function dist
 /api/dist
+
+/api/.backend

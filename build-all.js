@@ -20,17 +20,17 @@ function section(title) {
 
 try {
     // ── 1. FRONTEND ──────────────────────────────────────────────
-    section('1/3  Frontend (React / Vite)');
+    section('1/4  Frontend (React / Vite)');
 
     // Create production env for frontend build to ensure relative /api
     const envProdPath = path.join(clientDir, '.env.production');
     fs.writeFileSync(envProdPath, 'VITE_API_BASE_URL=/api\n');
-    console.log('✅ Created .env.production with VITE_API_BASE_URL=/api');
+    console.log('✅ Created .env.production');
 
     runCommand('npm install', clientDir);
     runCommand('npm run build', clientDir);
 
-    const rootPublicDir = path.join(rootDir, 'public'); // Use 'public' for Vercel static
+    const rootDistDir = path.join(rootDir, 'dist');
     const clientDistDir = path.join(clientDir, 'dist');
 
     if (!fs.existsSync(clientDistDir)) {
@@ -38,13 +38,13 @@ try {
         process.exit(1);
     }
 
-    if (fs.existsSync(rootPublicDir)) fs.rmSync(rootPublicDir, { recursive: true, force: true });
-    fs.mkdirSync(rootPublicDir, { recursive: true });
-    fs.cpSync(clientDistDir, rootPublicDir, { recursive: true });
-    console.log('✅ Frontend built and copied to /public');
+    if (fs.existsSync(rootDistDir)) fs.rmSync(rootDistDir, { recursive: true, force: true });
+    fs.mkdirSync(rootDistDir, { recursive: true });
+    fs.cpSync(clientDistDir, rootDistDir, { recursive: true });
+    console.log('✅ Frontend built and copied to /dist');
 
     // ── 2. BACKEND ───────────────────────────────────────────────
-    section('2/3  Backend (TypeScript compile)');
+    section('2/4  Backend (TypeScript compile)');
     runCommand('npm install', serverDir);
 
     console.log('\n▶ prisma generate');
@@ -52,22 +52,59 @@ try {
 
     runCommand('npm run build', serverDir);
 
-    const serverDist = path.join(serverDir, 'dist', 'vercel-entry.js');
-    if (!fs.existsSync(serverDist)) {
-        console.error('❌ Backend dist missing:', serverDist);
+    const serverDistSrc = path.join(serverDir, 'dist');
+    if (!fs.existsSync(path.join(serverDistSrc, 'vercel-entry.js'))) {
+        console.error('❌ Backend dist missing vercel-entry.js');
         process.exit(1);
     }
-    console.log('✅ Backend compiled to services/api/dist');
 
     // ── 3. PREPARE API FUNCTION ──────────────────────────────────
-    section('3/3  Prepare Vercel API Function');
-    const apiDistDest = path.join(apiDir, 'dist');
-    const apiDistSrc = path.join(serverDir, 'dist');
+    section('3/4  Prepare Vercel API Function');
+
+    // Hidden dot-folder so Vercel doesn't try to build it as a function
+    const apiDistDest = path.join(apiDir, '.backend');
 
     if (fs.existsSync(apiDistDest)) fs.rmSync(apiDistDest, { recursive: true, force: true });
     fs.mkdirSync(apiDistDest, { recursive: true });
-    fs.cpSync(apiDistSrc, apiDistDest, { recursive: true });
-    console.log('✅ api/dist populated for Vercel tracing');
+    fs.cpSync(serverDistSrc, apiDistDest, { recursive: true });
+    console.log('✅ api/.backend populated');
+
+    // ── 4. WRITE ROOT ENTRYPOINT ─────────────────────────────────
+    section('4/4  Writing Root Entrypoint');
+
+    const rootIndexContent = `/**
+ * ET-Ticket Platform v3.12.0 - Root Orchestrator
+ */
+const express = require('express');
+const path    = require('path');
+const fs      = require('fs');
+const app = express();
+
+const distPath = path.join(__dirname, 'dist');
+
+// 1. Serve static files FIRST
+app.use(express.static(distPath));
+
+// 2. Health check
+app.get('/api/health-check-v3', (_req, res) => {
+    res.json({ status: 'ok', version: '3.12.0', mode: 'proxy-fallback' });
+});
+
+// 3. SPA Catch-all
+app.get('/:path*', (req, res) => {
+    const idx = path.join(distPath, 'index.html');
+    if (fs.existsSync(idx)) {
+        res.sendFile(idx);
+    } else {
+        res.status(404).send('Frontend files not found in /dist. Path: ' + req.path);
+    }
+});
+
+module.exports = app;
+`;
+
+    fs.writeFileSync(path.join(rootDir, 'index.js'), rootIndexContent);
+    console.log('✅ root index.js written');
 
     section('🏁  BUILD COMPLETE');
 
