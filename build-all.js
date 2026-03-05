@@ -5,11 +5,10 @@ const path = require('path');
 const rootDir = __dirname;
 const clientDir = path.join(rootDir, 'app', 'web-app');
 const serverDir = path.join(rootDir, 'services', 'api');
-const targetDir = path.join(rootDir, 'dist'); // The absolute output directory
 
 function runCommand(command, cwd) {
     console.log(`\n▶ ${command}`);
-    execSync(command, { cwd, stdio: 'inherit', env: { ...process.env, CI: 'false' } });
+    execSync(command, { cwd, stdio: 'inherit', env: { ...process.env, CI: 'true' } });
 }
 
 function section(title) {
@@ -21,7 +20,7 @@ function section(title) {
 try {
     // ── 0. CLEANUP ───────────────────────────────────────────────
     section('0. CLEANUP');
-    const foldersToClear = ['dist', '.backend', '.static', 'api', 'public', 'out'];
+    const foldersToClear = ['dist', '.backend', '.static', 'api', 'public', 'out', 'assets'];
     foldersToClear.forEach(folder => {
         const fullPath = path.join(rootDir, folder);
         if (fs.existsSync(fullPath)) {
@@ -29,9 +28,6 @@ try {
             fs.rmSync(fullPath, { recursive: true, force: true });
         }
     });
-
-    // Create fresh dist
-    fs.mkdirSync(targetDir, { recursive: true });
 
     // ── 1. FRONTEND BUILD ────────────────────────────────────────
     section('1/3  Frontend Build');
@@ -41,7 +37,7 @@ try {
     runCommand('npm run build', clientDir);
 
     const clientDistDir = path.join(clientDir, 'dist');
-    const targetStaticDir = path.join(targetDir, '.static');
+    const targetStaticDir = path.join(rootDir, '.static');
 
     if (!fs.existsSync(clientDistDir)) {
         console.error('❌ Frontend build failed');
@@ -50,7 +46,7 @@ try {
 
     fs.mkdirSync(targetStaticDir, { recursive: true });
     fs.cpSync(clientDistDir, targetStaticDir, { recursive: true });
-    console.log('✅ Frontend assets moved to dist/.static');
+    console.log('✅ Frontend assets moved to /.static');
 
     // ── 2. BACKEND BUILD ─────────────────────────────────────────
     section('2/3  Backend Build');
@@ -59,35 +55,38 @@ try {
     runCommand('npm run build', serverDir);
 
     const serverDistSrc = path.join(serverDir, 'dist');
-    const targetBackendDir = path.join(targetDir, '.backend');
+    const targetBackendDir = path.join(rootDir, '.backend');
 
     fs.mkdirSync(targetBackendDir, { recursive: true });
     fs.cpSync(serverDistSrc, targetBackendDir, { recursive: true });
 
-    // Copy prisma to root of output for runtime tracing
+    // Copy prisma to root for runtime
     const prismaNode = path.join(serverDir, 'node_modules', '.prisma');
     if (fs.existsSync(prismaNode)) {
-        const destPrisma = path.join(targetDir, 'node_modules', '.prisma');
+        const destPrisma = path.join(rootDir, 'node_modules', '.prisma');
         if (fs.existsSync(destPrisma)) fs.rmSync(destPrisma, { recursive: true });
         fs.mkdirSync(path.dirname(destPrisma), { recursive: true });
         fs.cpSync(prismaNode, destPrisma, { recursive: true });
     }
-    console.log('✅ Backend bundle prepared at dist/.backend');
+    console.log('✅ Backend bundle prepared at /.backend');
 
-    // ── 3. WRITE CONSOLIDATED ORCHESTRATOR ───────────────────────
-    section('3/3  Writing Consolidated Orchestrator (dist/index.js)');
+    // ── 3. WRITE VERCEL FUNCTION (api/index.js) ──────────────────
+    section('3/3  Writing Vercel Function (api/index.js)');
+
+    const apiDir = path.join(rootDir, 'api');
+    fs.mkdirSync(apiDir, { recursive: true });
 
     const entryContent = `/**
- * ET-Ticket Platform v3.12.7 - CONSOLIDATED MONOLITH
- * This file serves both UI and API from inside the /dist folder.
+ * ET-Ticket Platform v3.12.8 - Vercel Serverless Function
+ * This file is EXPLICITLY in /api to ensure Vercel executes it as a Lambda.
  */
 const express = require('express');
 const path    = require('path');
 const fs      = require('fs');
 
 const app = express();
-const staticPath = path.join(__dirname, '.static');
-const backendPath = path.join(__dirname, '.backend', 'vercel-entry.js');
+const staticPath = path.join(__dirname, '..', '.static');
+const backendPath = path.join(__dirname, '..', '.backend', 'vercel-entry.js');
 
 // Global CORS & Logger
 app.use((req, res, next) => {
@@ -103,26 +102,27 @@ app.use((req, res, next) => {
 app.get('/api/health-check-v3', (req, res) => {
     res.json({
         status: 'healthy',
-        version: '3.12.7-consolidated',
+        version: '3.12.8-lambda',
         timestamp: new Date().toISOString()
     });
 });
 
-// Mount Backend
+// Mount Backend Logic
 try {
     if (fs.existsSync(backendPath)) {
         const bundle = require(backendPath);
         const backendApp = bundle.default || bundle;
         if (typeof backendApp === 'function') {
             app.use(backendApp);
-            console.log('✅ Backend mounted');
+            console.log('✅ Backend logic mounted');
         }
     }
 } catch (err) {
-    console.error('🔥 Backend load error:', err.message);
+    console.error('🔥 Lambda initialization error:', err.message);
 }
 
 // Serve Static Files
+// Note: We use absolute paths relative to __dirname which is /api
 app.use(express.static(staticPath));
 
 // SPA Fallback
@@ -134,25 +134,15 @@ app.get('*', (req, res) => {
     if (fs.existsSync(idx)) {
         res.sendFile(idx);
     } else {
-        res.status(404).send('Build inconsistent.');
+        res.status(404).send('Static build missing. Check .static folder.');
     }
 });
 
 module.exports = app;
 `;
 
-    fs.writeFileSync(path.join(targetDir, 'index.js'), entryContent);
-    console.log('✅ dist/index.js written');
-
-    // Also write a dummy package.json in dist to make it a self-contained node app if needed
-    fs.writeFileSync(path.join(targetDir, 'package.json'), JSON.stringify({
-        name: "et-ticket-output",
-        version: "3.12.7",
-        private: true,
-        dependencies: {
-            "express": "^4.21.2"
-        }
-    }, null, 2));
+    fs.writeFileSync(path.join(apiDir, 'index.js'), entryContent);
+    console.log('✅ api/index.js written');
 
     section('🏁  BUILD SUCCESSFUL');
 

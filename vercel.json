@@ -3,11 +3,10 @@
     "name": "et-ticket-platform",
     "buildCommand": "node build-all.js",
     "installCommand": "npm install",
-    "outputDirectory": "dist",
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/index.js"
+            "destination": "/api/index.js"
         }
     ],
     "headers": [
