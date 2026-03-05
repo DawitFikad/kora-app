@@ -20,24 +20,31 @@ function section(title) {
 
 try {
     // ── 1. FRONTEND ──────────────────────────────────────────────
-    section('1/4  Frontend (React / Vite)');
+    section('1/3  Frontend (React / Vite)');
+
+    // Create production env for frontend build to ensure relative /api
+    const envProdPath = path.join(clientDir, '.env.production');
+    fs.writeFileSync(envProdPath, 'VITE_API_BASE_URL=/api\n');
+    console.log('✅ Created .env.production with VITE_API_BASE_URL=/api');
+
     runCommand('npm install', clientDir);
     runCommand('npm run build', clientDir);
 
-    const rootDistDir = path.join(rootDir, 'dist');
+    const rootPublicDir = path.join(rootDir, 'public'); // Use 'public' for Vercel static
     const clientDistDir = path.join(clientDir, 'dist');
 
     if (!fs.existsSync(clientDistDir)) {
         console.error('❌ Frontend dist not found:', clientDistDir);
         process.exit(1);
     }
-    if (fs.existsSync(rootDistDir)) fs.rmSync(rootDistDir, { recursive: true, force: true });
-    fs.mkdirSync(rootDistDir, { recursive: true });
-    fs.cpSync(clientDistDir, rootDistDir, { recursive: true });
-    console.log('✅ Frontend built and copied to /dist');
+
+    if (fs.existsSync(rootPublicDir)) fs.rmSync(rootPublicDir, { recursive: true, force: true });
+    fs.mkdirSync(rootPublicDir, { recursive: true });
+    fs.cpSync(clientDistDir, rootPublicDir, { recursive: true });
+    console.log('✅ Frontend built and copied to /public');
 
     // ── 2. BACKEND ───────────────────────────────────────────────
-    section('2/4  Backend (TypeScript compile)');
+    section('2/3  Backend (TypeScript compile)');
     runCommand('npm install', serverDir);
 
     console.log('\n▶ prisma generate');
@@ -53,7 +60,7 @@ try {
     console.log('✅ Backend compiled to services/api/dist');
 
     // ── 3. PREPARE API FUNCTION ──────────────────────────────────
-    section('3/4  Prepare Vercel API Function');
+    section('3/3  Prepare Vercel API Function');
     const apiDistDest = path.join(apiDir, 'dist');
     const apiDistSrc = path.join(serverDir, 'dist');
 
@@ -61,43 +68,6 @@ try {
     fs.mkdirSync(apiDistDest, { recursive: true });
     fs.cpSync(apiDistSrc, apiDistDest, { recursive: true });
     console.log('✅ api/dist populated for Vercel tracing');
-
-    // ── 4. WRITE ORCHESTRATORS ───────────────────────────────────
-    section('4/4  Writing Orchestrators with Express 5 syntax');
-
-    // Root index.js (Serves Frontend)
-    const rootIndexContent = `/**
- * ET-Ticket Platform v3.12.0 - Root Frontend Orchestrator
- */
-const express = require('express');
-const path    = require('path');
-const fs      = require('fs');
-const app = express();
-
-// Serve static assets from 'dist' folder
-const distPath = path.join(__dirname, 'dist');
-app.use(express.static(distPath));
-
-// Health check
-app.get('/api/health-check-v3', (_req, res) => {
-    res.json({ status: 'ok', version: '3.12.0', source: 'frontend-orchestrator' });
-});
-
-// SPA Catch-all: Use Express 5 compatible named wildcard
-app.get('/:path*', (req, res) => {
-    const idx = path.join(distPath, 'index.html');
-    if (fs.existsSync(idx)) {
-        res.sendFile(idx);
-    } else {
-        res.status(404).send('Frontend build not found. Current dir: ' + __dirname);
-    }
-});
-
-module.exports = app;
-`;
-
-    fs.writeFileSync(path.join(rootDir, 'index.js'), rootIndexContent);
-    console.log('✅ Updated root index.js');
 
     section('🏁  BUILD COMPLETE');
 

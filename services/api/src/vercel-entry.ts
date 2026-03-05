@@ -1,11 +1,10 @@
-// vercel-entry.ts - Ultra-defensive Serverless Function Entry Point
+// vercel-entry.ts - v3.12.0 Ultra-defensive Entry Point
+import express, { Request, Response } from "express";
 
-// STEP 1: Create a base Express app IMMEDIATELY so we always have something to respond
-const express = require("express");
 const baseApp = express();
 
-// Add a basic health check BEFORE anything else loads
-baseApp.get("/api/health-check-v3", (_req: any, res: any) => {
+// 1. Pre-register health check (Clean path, no wildcards)
+baseApp.get("/api/health-check-v3", (req: Request, res: Response) => {
     res.json({
         status: "healthy",
         version: "3.12.0",
@@ -18,42 +17,39 @@ baseApp.get("/api/health-check-v3", (_req: any, res: any) => {
 let app: any = baseApp;
 
 try {
-    console.log("🚀 [v3.12.0] Starting Serverless Function...");
+    console.log("🚀 [v3.12.0] Loading Main Application...");
 
-    // Initialize email service (non-fatal)
+    // Optional services
     try {
+        // Use dynamic import to handle potential load errors
         const { EmailService } = require("./services/email.service");
         EmailService.initialize();
-    } catch (emailErr: any) {
-        console.warn("⚠️ EmailService init failed (non-fatal):", emailErr.message);
-    }
+    } catch (e) { }
 
-    // Load the main Express app
-    const mainApp = require("./app").default;
-
-    if (mainApp && typeof mainApp === "function") {
-        app = mainApp;
-        console.log("✅ App loaded successfully");
-    } else {
-        console.error("❌ App loaded but is not a function, using base app");
+    // Load actual app
+    // We use require here to allow for the catch blocks to work as intended during runtime
+    const mainAppModule = require("./app").default;
+    if (mainAppModule && typeof mainAppModule === "function") {
+        app = mainAppModule;
+        console.log("✅ Main app loaded");
     }
 } catch (error: any) {
-    console.error("❌ CRITICAL STARTUP ERROR:", error.message);
-    console.error("Stack:", error.stack);
+    console.error("❌ STARTUP ERROR:", error.message);
 
-    // Fallback: extend baseApp with error reporting
-    baseApp.all("/:path*", (req: any, res: any) => {
-        // Still serve health check (already registered above)
-        res.status(500).json({
-            error: "Server Startup Failed",
-            message: error?.message || String(error),
-            version: "3.12.0",
-            path: req.path,
-            tip: "Check Vercel Function Logs for full stack trace."
-        });
-    });
-    app = baseApp;
+    // Final fallback: Use a handler that doesn't use Express routing wildcards
+    app = (req: any, res: any) => {
+        if (req.url === '/api/health-check-v3') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ status: "healthy", version: "3.12.0", note: "fallback-active" }));
+        }
+
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            error: "Server Initialization Failed",
+            message: error?.message || "Unknown error during initialization",
+            tip: "Check build logs for Expression syntax errors (Express 5 compatibility)."
+        }));
+    };
 }
 
-// CommonJS export for Vercel
-module.exports = app;
+export default app;
