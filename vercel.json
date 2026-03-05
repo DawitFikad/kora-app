@@ -3,16 +3,6 @@
     "name": "et-ticket-platform-v3",
     "buildCommand": "node build-all.js",
     "installCommand": "npm install",
-    "functions": {
-        "api/index.js": {
-            "memory": 1024,
-            "maxDuration": 10
-        },
-        "index.js": {
-            "memory": 1024,
-            "maxDuration": 10
-        }
-    },
     "rewrites": [
         {
             "source": "/api/(.*)",
@@ -20,7 +10,7 @@
         },
         {
             "source": "/((?!api/).*)",
-            "destination": "/index.js"
+            "destination": "/index.html"
         }
     ],
     "headers": [

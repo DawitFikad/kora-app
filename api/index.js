@@ -1,6 +1,6 @@
 /**
  * ET-Ticket Platform v3.12.0
- * Vercel Serverless Function
+ * Vercel Serverless Function - API Entry Point
  */
 
 const path = require('path');
@@ -9,26 +9,26 @@ const fs = require('fs');
 let handler;
 
 try {
-    // Hidden backend folder to avoid Vercel Function Discovery conflicts
-    const entryPath = path.join(__dirname, '.backend', 'vercel-entry.js');
+    // Load from the bundle created by build-all.js
+    const entryPath = path.join(__dirname, '../backend-bundle/vercel-entry.js');
 
     if (!fs.existsSync(entryPath)) {
-        throw new Error(`api/.backend/vercel-entry.js not found`);
+        throw new Error(`API bundle not found at ${entryPath}`);
     }
 
-    handler = require('./.backend/vercel-entry');
-    console.log('✅ [api/index.js] Backend loaded');
+    handler = require('../backend-bundle/vercel-entry');
+    console.log('✅ [api/index.js] Backend bundle loaded');
 
 } catch (err) {
-    console.error('❌ [api/index.js] Startup error:', err.message);
+    console.error('❌ [api/index.js] Load error:', err.message);
 
     handler = (req, res) => {
         res.setHeader('Content-Type', 'application/json');
         res.statusCode = 503;
         res.end(JSON.stringify({
-            error: 'Backend Initialize Failed',
+            error: 'API Initialization Failed',
             message: err.message,
-            tip: 'Check Vercel Build logs for "api/.backend" population.'
+            tip: 'Check Vercel Build logs for /backend-bundle population.'
         }));
     };
 }

@@ -19,31 +19,28 @@ function section(title) {
 }
 
 try {
-    // ── 1. FRONTEND ──────────────────────────────────────────────
+    // ── 1. FRONTEND BUILD ────────────────────────────────────────
     section('1/4  Frontend (React / Vite)');
 
-    // Create production env for frontend build to ensure relative /api
-    const envProdPath = path.join(clientDir, '.env.production');
-    fs.writeFileSync(envProdPath, 'VITE_API_BASE_URL=/api\n');
-    console.log('✅ Created .env.production');
+    // Ensure relative API path
+    fs.writeFileSync(path.join(clientDir, '.env.production'), 'VITE_API_BASE_URL=/api\n');
 
     runCommand('npm install', clientDir);
     runCommand('npm run build', clientDir);
 
-    const rootDistDir = path.join(rootDir, 'dist');
     const clientDistDir = path.join(clientDir, 'dist');
 
     if (!fs.existsSync(clientDistDir)) {
-        console.error('❌ Frontend dist not found:', clientDistDir);
+        console.error('❌ Frontend build failed: dist not found');
         process.exit(1);
     }
 
-    if (fs.existsSync(rootDistDir)) fs.rmSync(rootDistDir, { recursive: true, force: true });
-    fs.mkdirSync(rootDistDir, { recursive: true });
-    fs.cpSync(clientDistDir, rootDistDir, { recursive: true });
-    console.log('✅ Frontend built and copied to /dist');
+    // Copy frontend assets to ROOT so Vercel serves them as static files
+    console.log('Copying frontend assets to root...');
+    fs.cpSync(clientDistDir, rootDir, { recursive: true, overwrite: true });
+    console.log('✅ Frontend assets moved to root');
 
-    // ── 2. BACKEND ───────────────────────────────────────────────
+    // ── 2. BACKEND BUILD ─────────────────────────────────────────
     section('2/4  Backend (TypeScript compile)');
     runCommand('npm install', serverDir);
 
@@ -54,57 +51,36 @@ try {
 
     const serverDistSrc = path.join(serverDir, 'dist');
     if (!fs.existsSync(path.join(serverDistSrc, 'vercel-entry.js'))) {
-        console.error('❌ Backend dist missing vercel-entry.js');
+        console.error('❌ Backend build failed: vercel-entry.js not found');
         process.exit(1);
     }
 
-    // ── 3. PREPARE API FUNCTION ──────────────────────────────────
-    section('3/4  Prepare Vercel API Function');
+    // ── 3. PREPARE API BUNDLE ────────────────────────────────────
+    section('3/4  Prepare Vercel API Bundle');
 
-    // Hidden dot-folder so Vercel doesn't try to build it as a function
-    const apiDistDest = path.join(apiDir, '.backend');
+    // Move to root/backend-bundle to avoid /api/ function discovery issues
+    const backendBundle = path.join(rootDir, 'backend-bundle');
 
-    if (fs.existsSync(apiDistDest)) fs.rmSync(apiDistDest, { recursive: true, force: true });
-    fs.mkdirSync(apiDistDest, { recursive: true });
-    fs.cpSync(serverDistSrc, apiDistDest, { recursive: true });
-    console.log('✅ api/.backend populated');
+    if (fs.existsSync(backendBundle)) fs.rmSync(backendBundle, { recursive: true, force: true });
+    fs.mkdirSync(backendBundle, { recursive: true });
+    fs.cpSync(serverDistSrc, backendBundle, { recursive: true });
 
-    // ── 4. WRITE ROOT ENTRYPOINT ─────────────────────────────────
-    section('4/4  Writing Root Entrypoint');
-
-    const rootIndexContent = `/**
- * ET-Ticket Platform v3.12.0 - Root Orchestrator
- */
-const express = require('express');
-const path    = require('path');
-const fs      = require('fs');
-const app = express();
-
-const distPath = path.join(__dirname, 'dist');
-
-// 1. Serve static files FIRST
-app.use(express.static(distPath));
-
-// 2. Health check
-app.get('/api/health-check-v3', (_req, res) => {
-    res.json({ status: 'ok', version: '3.12.0', mode: 'proxy-fallback' });
-});
-
-// 3. SPA Catch-all
-app.get('/:path*', (req, res) => {
-    const idx = path.join(distPath, 'index.html');
-    if (fs.existsSync(idx)) {
-        res.sendFile(idx);
-    } else {
-        res.status(404).send('Frontend files not found in /dist. Path: ' + req.path);
+    // Also copy prisma for the runner
+    const prismaNode = path.join(serverDir, 'node_modules', '.prisma');
+    if (fs.existsSync(prismaNode)) {
+        const destPrisma = path.join(rootDir, 'node_modules', '.prisma');
+        fs.cpSync(prismaNode, destPrisma, { recursive: true });
     }
-});
 
-module.exports = app;
-`;
+    console.log('✅ Backend bundle prepared at /backend-bundle');
 
-    fs.writeFileSync(path.join(rootDir, 'index.js'), rootIndexContent);
-    console.log('✅ root index.js written');
+    // ── 4. CLEANUP ───────────────────────────────────────────────
+    section('4/4  Cleanup');
+    const rootOrchestrator = path.join(rootDir, 'index.js');
+    if (fs.existsSync(rootOrchestrator)) {
+        fs.unlinkSync(rootOrchestrator);
+        console.log('✅ Removed root index.js (Using native static serving)');
+    }
 
     section('🏁  BUILD COMPLETE');
 
