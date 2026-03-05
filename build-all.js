@@ -5,7 +5,7 @@ const path = require('path');
 const rootDir = __dirname;
 const clientDir = path.join(rootDir, 'app', 'web-app');
 const serverDir = path.join(rootDir, 'services', 'api');
-const apiDir = path.join(rootDir, 'api');            // Vercel function dir
+const apiDir = path.join(rootDir, 'api');
 
 function runCommand(command, cwd) {
     console.log(`\n▶ ${command}`);
@@ -34,23 +34,15 @@ try {
     if (fs.existsSync(rootDistDir)) fs.rmSync(rootDistDir, { recursive: true, force: true });
     fs.mkdirSync(rootDistDir, { recursive: true });
     fs.cpSync(clientDistDir, rootDistDir, { recursive: true });
-    console.log('✅ Frontend → /dist');
+    console.log('✅ Frontend built and copied to /dist');
 
     // ── 2. BACKEND ───────────────────────────────────────────────
     section('2/4  Backend (TypeScript compile)');
-
-    // Install API deps (generates Prisma for Linux on Vercel)
     runCommand('npm install', serverDir);
 
-    // Explicit Prisma generate (runs in Linux on Vercel → correct binary)
     console.log('\n▶ prisma generate');
-    try {
-        runCommand('npx prisma generate', serverDir);
-    } catch (e) {
-        console.warn('⚠️  prisma generate non-fatal:', e.message);
-    }
+    runCommand('npx prisma generate', serverDir);
 
-    // Compile TypeScript
     runCommand('npm run build', serverDir);
 
     const serverDist = path.join(serverDir, 'dist', 'vercel-entry.js');
@@ -58,69 +50,56 @@ try {
         console.error('❌ Backend dist missing:', serverDist);
         process.exit(1);
     }
-    console.log('✅ Backend compiled → services/api/dist');
+    console.log('✅ Backend compiled to services/api/dist');
 
-    // ── 3. COPY API DIST → api/dist ──────────────────────────────
-    // This is the KEY step: api/index.js loads ./dist/vercel-entry
-    // which resolves external requires (express, prisma, etc.) through
-    // ROOT node_modules — Vercel's dependency tracer handles this correctly.
-    section('3/4  Copy API dist → api/dist (Vercel tracing fix)');
-
+    // ── 3. PREPARE API FUNCTION ──────────────────────────────────
+    section('3/4  Prepare Vercel API Function');
     const apiDistDest = path.join(apiDir, 'dist');
     const apiDistSrc = path.join(serverDir, 'dist');
 
     if (fs.existsSync(apiDistDest)) fs.rmSync(apiDistDest, { recursive: true, force: true });
     fs.mkdirSync(apiDistDest, { recursive: true });
     fs.cpSync(apiDistSrc, apiDistDest, { recursive: true });
+    console.log('✅ api/dist populated for Vercel tracing');
 
-    // Also copy Prisma client so it's accessible from api/
-    const prismaSrc = path.join(serverDir, 'node_modules', '.prisma');
-    const prismaDest = path.join(rootDir, 'node_modules', '.prisma');
-    if (fs.existsSync(prismaSrc) && !fs.existsSync(prismaDest)) {
-        fs.cpSync(prismaSrc, prismaDest, { recursive: true });
-        console.log('✅ Prisma client copied to root node_modules/.prisma');
-    }
+    // ── 4. WRITE ORCHESTRATORS ───────────────────────────────────
+    section('4/4  Writing Orchestrators with Express 5 syntax');
 
-    console.log('✅ api/dist populated from services/api/dist');
-
-    // ── 4. ROOT FALLBACK index.js ─────────────────────────────────
-    section('4/4  Root index.js (static file fallback)');
-
+    // Root index.js (Serves Frontend)
     const rootIndexContent = `/**
- * ET-Ticket Platform v3.12.0 - Root Fallback
- * Serves static frontend files.
- * API requests are handled by /api/index.js (Vercel native function).
+ * ET-Ticket Platform v3.12.0 - Root Frontend Orchestrator
  */
 const express = require('express');
 const path    = require('path');
 const fs      = require('fs');
 const app = express();
 
+// Serve static assets from 'dist' folder
+const distPath = path.join(__dirname, 'dist');
+app.use(express.static(distPath));
+
+// Health check
 app.get('/api/health-check-v3', (_req, res) => {
-    res.json({ status: 'ok', version: '3.12.0', source: 'root-fallback' });
+    res.json({ status: 'ok', version: '3.12.0', source: 'frontend-orchestrator' });
 });
 
-app.use(express.static(path.join(__dirname, 'dist')));
-
-app.get('/{*path}', (req, res) => {
-    if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: 'API route not found', path: req.path });
+// SPA Catch-all: Use Express 5 compatible named wildcard
+app.get('/:path*', (req, res) => {
+    const idx = path.join(distPath, 'index.html');
+    if (fs.existsSync(idx)) {
+        res.sendFile(idx);
+    } else {
+        res.status(404).send('Frontend build not found. Current dir: ' + __dirname);
     }
-    const idx = path.join(__dirname, 'dist', 'index.html');
-    fs.existsSync(idx)
-        ? res.sendFile(idx)
-        : res.status(404).send('Frontend not built.');
 });
 
 module.exports = app;
 `;
-    fs.writeFileSync(path.join(rootDir, 'index.js'), rootIndexContent);
-    console.log('✅ root index.js written');
 
-    section('✅  BUILD COMPLETE');
-    console.log('  /dist           → Frontend (static)');
-    console.log('  /api/dist       → Backend (Vercel function)');
-    console.log('  /api/index.js   → Vercel serverless handler');
+    fs.writeFileSync(path.join(rootDir, 'index.js'), rootIndexContent);
+    console.log('✅ Updated root index.js');
+
+    section('🏁  BUILD COMPLETE');
 
 } catch (err) {
     console.error('\n❌ BUILD FAILED:', err.message);
