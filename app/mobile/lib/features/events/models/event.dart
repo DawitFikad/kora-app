@@ -20,6 +20,8 @@ class Event {
   final bool? earlyBirdAvailable;
   final bool? preRegistrationAvailable;
   final bool? reminderAvailable;
+  final bool? userPreRegistered;
+  final bool? userReminderSubscribed;
 
   // Policy fields
   final String? refundPolicy;
@@ -58,6 +60,8 @@ class Event {
     this.earlyBirdAvailable,
     this.preRegistrationAvailable,
     this.reminderAvailable,
+    this.userPreRegistered,
+    this.userReminderSubscribed,
     this.refundPolicy,
     this.minAge = 0,
     this.additionalPolicy,
@@ -94,6 +98,8 @@ class Event {
       earlyBirdAvailable: json['earlyBirdAvailable'],
       preRegistrationAvailable: json['preRegistrationAvailable'],
       reminderAvailable: json['reminderAvailable'],
+      userPreRegistered: json['userPreRegistered'],
+      userReminderSubscribed: json['userReminderSubscribed'],
       refundPolicy: json['refundPolicy'],
       minAge: json['minAge'] ?? 0,
       additionalPolicy: json['additionalPolicy'],
@@ -134,6 +140,8 @@ class Event {
       'earlyBirdAvailable': earlyBirdAvailable,
       'preRegistrationAvailable': preRegistrationAvailable,
       'reminderAvailable': reminderAvailable,
+      'userPreRegistered': userPreRegistered,
+      'userReminderSubscribed': userReminderSubscribed,
       'refundPolicy': refundPolicy,
       'minAge': minAge,
       'additionalPolicy': additionalPolicy,

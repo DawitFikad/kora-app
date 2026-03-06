@@ -28,6 +28,8 @@ model User {
   tickets             Ticket[]
   eventLikes          EventLike[]
   eventRatings        EventRating[]
+  preRegistrations    EventPreRegistration[]
+  reminderSubscriptions EventReminderSubscription[]
   profile             UserProfile?
 }
 
@@ -195,6 +197,36 @@ model Event {
   tiers            TicketTier[]
   likes            EventLike[]
   ratings          EventRating[]
+  preRegistrations EventPreRegistration[]
+  reminderSubscriptions EventReminderSubscription[]
+}
+
+model EventPreRegistration {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model EventReminderSubscription {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
 }
 
 model EventLike {

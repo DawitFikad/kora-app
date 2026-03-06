@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { EventStatus, EventType, Role } from "@prisma/client";
+import { EventStatus, EventType, Role, TicketTierType } from "@prisma/client";
 import { EmailService } from "./email.service";
 
 export class EventService {
@@ -145,15 +145,86 @@ export class EventService {
             }
         });
 
+        const { NotificationService } = require("./notification.service");
+        const { NotificationChannel } = require("@prisma/client");
+        const prismaAny = prisma as any;
+
         for (const event of events) {
-            // Check if we already sent reminder (Optimization: Use a flag or Redis)
-            // For now, simple logic: just send
-            await EventService.notifyTicketHolders(
-                event.id,
-                "Event Reminder",
-                `Reminder: ${event.title} is happening tomorrow at ${event.venue}!`
-            );
+            const [ticketUsers, reminderSubscribers] = await Promise.all([
+                prisma.ticket.findMany({
+                    where: { eventId: event.id, status: "VALID" },
+                    select: { userId: true },
+                    distinct: ["userId"],
+                }),
+                prismaAny.eventReminderSubscription.findMany({
+                    where: { eventId: event.id },
+                    select: { userId: true },
+                    distinct: ["userId"],
+                }),
+            ]);
+
+            const userIds = new Set<number>([
+                ...ticketUsers.map((t: { userId: number }) => t.userId),
+                ...reminderSubscribers.map((s: { userId: number }) => s.userId),
+            ]);
+
+            for (const userId of userIds) {
+                await NotificationService.notifyUser(userId, {
+                    title: "Event Reminder",
+                    content: `Reminder: ${event.title} is happening tomorrow at ${event.venue}!`,
+                    channels: [NotificationChannel.SMS],
+                    metadata: { eventId: event.id, type: "EVENT_REMINDER" },
+                });
+            }
         }
+    }
+
+    static async preRegisterForEvent(eventId: number, userId: number) {
+        const prismaAny = prisma as any;
+        const now = new Date();
+        const event = await prisma.event.findUnique({
+            where: { id: eventId },
+            select: { id: true, title: true, dateTime: true, status: true, isPublic: true },
+        });
+
+        if (!event || event.status !== EventStatus.APPROVED || !event.isPublic) {
+            throw new Error("Event not available for pre-registration");
+        }
+
+        if (+new Date(event.dateTime) <= +now) {
+            throw new Error("Cannot pre-register for past events");
+        }
+
+        await prismaAny.eventPreRegistration.createMany({
+            data: [{ eventId, userId }],
+            skipDuplicates: true,
+        });
+
+        return { success: true, eventId, userId };
+    }
+
+    static async subscribeEventReminder(eventId: number, userId: number) {
+        const prismaAny = prisma as any;
+        const now = new Date();
+        const event = await prisma.event.findUnique({
+            where: { id: eventId },
+            select: { id: true, title: true, dateTime: true, status: true, isPublic: true },
+        });
+
+        if (!event || event.status !== EventStatus.APPROVED || !event.isPublic) {
+            throw new Error("Event not available for reminders");
+        }
+
+        if (+new Date(event.dateTime) <= +now) {
+            throw new Error("Cannot subscribe reminder for past events");
+        }
+
+        await prismaAny.eventReminderSubscription.createMany({
+            data: [{ eventId, userId }],
+            skipDuplicates: true,
+        });
+
+        return { success: true, eventId, userId };
     }
 
     // --- Users: Discovery ---
@@ -1029,9 +1100,11 @@ export class EventService {
 
     static async listNewUpcomingExperiences(params: {
         cityId?: number;
+        userId?: number;
         limit?: number;
     }) {
-        const { cityId, limit = 12 } = params;
+        const { cityId, userId, limit = 12 } = params;
+        const prismaAny = prisma as any;
         const now = new Date();
         const upcomingFrom = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
         const next120Days = new Date(now);
@@ -1079,17 +1152,57 @@ export class EventService {
 
         if (!experiences.length) return [];
 
-        const soldCounts = await prisma.ticket.groupBy({
-            by: ['eventId'],
-            where: {
-                eventId: { in: experiences.map((e) => e.id) },
-                status: 'VALID'
-            },
-            _count: { eventId: true }
-        });
+        const [soldCounts, tierSoldCounts, preRegistrationCounts, userPreRegs, userReminderSubs] = await Promise.all([
+            prisma.ticket.groupBy({
+                by: ['eventId'],
+                where: {
+                    eventId: { in: experiences.map((e) => e.id) },
+                    status: 'VALID'
+                },
+                _count: { eventId: true }
+            }),
+            prisma.ticket.groupBy({
+                by: ['tierId'],
+                where: {
+                    eventId: { in: experiences.map((e) => e.id) },
+                    status: 'VALID',
+                },
+                _count: { tierId: true }
+            }),
+            prismaAny.eventPreRegistration.groupBy({
+                by: ['eventId'],
+                where: {
+                    eventId: { in: experiences.map((e) => e.id) },
+                },
+                _count: { eventId: true }
+            }),
+            userId
+                ? prismaAny.eventPreRegistration.findMany({
+                    where: { userId, eventId: { in: experiences.map((e) => e.id) } },
+                    select: { eventId: true },
+                })
+                : Promise.resolve([]),
+            userId
+                ? prismaAny.eventReminderSubscription.findMany({
+                    where: { userId, eventId: { in: experiences.map((e) => e.id) } },
+                    select: { eventId: true },
+                })
+                : Promise.resolve([]),
+        ]);
+
         const soldByEventId = new Map<number, number>(
-            soldCounts.map((row) => [row.eventId, row._count.eventId])
+            soldCounts.map((row: any) => [row.eventId, row._count.eventId])
         );
+        const soldByTierId = new Map<number, number>(
+            tierSoldCounts
+                .filter((row: any) => row.tierId != null)
+                .map((row: any) => [Number(row.tierId), row._count.tierId])
+        );
+        const preRegsByEventId = new Map<number, number>(
+            preRegistrationCounts.map((row: any) => [row.eventId, row._count.eventId])
+        );
+        const userPreRegSet = new Set<number>(userPreRegs.map((row: { eventId: number }) => row.eventId));
+        const userReminderSet = new Set<number>(userReminderSubs.map((row: { eventId: number }) => row.eventId));
 
         return experiences
             .map((event) => {
@@ -1099,9 +1212,18 @@ export class EventService {
                     ? Math.max(capacity - sold, 0)
                     : null;
 
-                const earlyBirdAvailable = event.featured;
-                const preRegistrationAvailable = (event.totalCapacity || 0) > 0;
-                const reminderAvailable = (+new Date(event.dateTime) - now.getTime()) > 3 * 24 * 60 * 60 * 1000;
+                const earlyBirdTier = event.tiers.find((tier: any) => tier.type === TicketTierType.EARLY_BIRD);
+                const earlyBirdSold = earlyBirdTier ? (soldByTierId.get(earlyBirdTier.id) || 0) : 0;
+                const earlyBirdSlotsLeft = earlyBirdTier ? Math.max((earlyBirdTier.capacity || 0) - earlyBirdSold, 0) : 0;
+
+                const preRegCount = preRegsByEventId.get(event.id) || 0;
+                const hasPreRegCapacity = event.totalCapacity == null || preRegCount < event.totalCapacity;
+
+                const earlyBirdAvailable = !!earlyBirdTier && earlyBirdSlotsLeft > 0;
+                const preRegistrationAvailable = hasPreRegCapacity;
+                const reminderAvailable = (+new Date(event.dateTime) - now.getTime()) > 24 * 60 * 60 * 1000;
+                const userPreRegistered = userPreRegSet.has(event.id);
+                const userReminderSubscribed = userReminderSet.has(event.id);
 
                 let score = 0;
                 score += event.featured ? 18 : 0;
@@ -1117,6 +1239,8 @@ export class EventService {
                     earlyBirdAvailable,
                     preRegistrationAvailable,
                     reminderAvailable,
+                    userPreRegistered,
+                    userReminderSubscribed,
                     popularityScore: score,
                 };
             })

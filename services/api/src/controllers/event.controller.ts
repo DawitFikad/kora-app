@@ -52,12 +52,35 @@ export class EventController {
         try {
             const filters = req.query as any;
             const experiences = await EventService.listNewUpcomingExperiences({
+                userId: req.user?.userId as number | undefined,
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
                 limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
             });
             res.json(experiences);
         } catch (error: any) {
             res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async preRegisterEvent(req: Request, res: Response) {
+        try {
+            const eventId = parseInt(String(req.params.id), 10);
+            const userId = req.user!.userId;
+            const result = await EventService.preRegisterForEvent(eventId, userId);
+            res.json(result);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async subscribeEventReminder(req: Request, res: Response) {
+        try {
+            const eventId = parseInt(String(req.params.id), 10);
+            const userId = req.user!.userId;
+            const result = await EventService.subscribeEventReminder(eventId, userId);
+            res.json(result);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
         }
     }
 

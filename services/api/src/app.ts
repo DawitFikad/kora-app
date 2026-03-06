@@ -75,6 +75,40 @@ app.get("/", (req, res) => {
 // Routes
 const router = express.Router();
 
+const hasCronSecret = !!process.env.CRON_SECRET;
+const isAuthorizedCronRequest = (req: express.Request) => {
+  if (!hasCronSecret) return true;
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+  return token === process.env.CRON_SECRET;
+};
+
+router.get("/cron/reminders", async (req, res) => {
+  try {
+    if (!isAuthorizedCronRequest(req)) {
+      return res.status(401).json({ error: "Unauthorized cron request" });
+    }
+
+    await EventService.sendReminders();
+    return res.json({ success: true, message: "Reminders dispatched" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get("/cron/reconcile", async (req, res) => {
+  try {
+    if (!isAuthorizedCronRequest(req)) {
+      return res.status(401).json({ error: "Unauthorized cron request" });
+    }
+
+    await PaymentService.reconcileStuckPayments();
+    return res.json({ success: true, message: "Reconciliation completed" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.use("/auth", authRoutes);
 router.use("/admin", adminRoutes);
 router.use("/profiles", profileRoutes);

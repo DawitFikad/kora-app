@@ -2960,14 +2960,14 @@ class _NewUpcomingExperiencesSection extends StatelessWidget {
   }
 }
 
-class _UpcomingExperienceCard extends StatelessWidget {
+class _UpcomingExperienceCard extends ConsumerWidget {
   final Event event;
   final bool isDark;
 
   const _UpcomingExperienceCard({required this.event, required this.isDark});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final muted = isDark ? Colors.white60 : Colors.black54;
     final desc = '${event.title} ${event.description}'.toLowerCase();
@@ -2985,6 +2985,8 @@ class _UpcomingExperienceCard extends StatelessWidget {
         event.reminderAvailable == true ||
         desc.contains('reminder') ||
         desc.contains('notify');
+    final preRegistered = event.userPreRegistered == true;
+    final reminderSubscribed = event.userReminderSubscribed == true;
 
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
@@ -3046,13 +3048,25 @@ class _UpcomingExperienceCard extends StatelessWidget {
                           const SizedBox(width: 6),
                         if (preReg)
                           _chip(
-                            'Pre-Register',
+                            preRegistered ? 'Registered' : 'Pre-Register',
                             const Color(0xFF0EA5E9),
                             isDark,
+                            onTap: preRegistered
+                                ? null
+                                : () => _handlePreRegister(context, ref),
                           ),
                         if (preReg && reminder) const SizedBox(width: 6),
                         if (reminder)
-                          _chip('Reminder On', const Color(0xFF16A34A), isDark),
+                          _chip(
+                            reminderSubscribed
+                                ? 'Reminder Set'
+                                : 'Set Reminder',
+                            const Color(0xFF16A34A),
+                            isDark,
+                            onTap: reminderSubscribed
+                                ? null
+                                : () => _handleReminderSubscribe(context, ref),
+                          ),
                       ],
                     ),
                   ),
@@ -3076,8 +3090,43 @@ class _UpcomingExperienceCard extends StatelessWidget {
     );
   }
 
-  Widget _chip(String text, Color color, bool isDark) {
-    return Container(
+  Future<void> _handlePreRegister(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(eventServiceProvider).preRegisterEvent(event.id);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pre-registration successful')),
+      );
+      ref.invalidate(newUpcomingExperiencesProvider);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Pre-registration failed: $e')));
+    }
+  }
+
+  Future<void> _handleReminderSubscribe(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      await ref.read(eventServiceProvider).subscribeEventReminder(event.id);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Reminder enabled')));
+      ref.invalidate(newUpcomingExperiencesProvider);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Reminder setup failed: $e')));
+    }
+  }
+
+  Widget _chip(String text, Color color, bool isDark, {VoidCallback? onTap}) {
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(isDark ? 0.22 : 0.12),
@@ -3092,6 +3141,9 @@ class _UpcomingExperienceCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (onTap == null) return chip;
+    return GestureDetector(onTap: onTap, child: chip);
   }
 }
 

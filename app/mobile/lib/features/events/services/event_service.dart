@@ -291,6 +291,30 @@ class EventService {
     }
   }
 
+  Future<void> preRegisterEvent(int eventId) async {
+    try {
+      final response = await _dio.post(
+        '${ApiConstants.events}/$eventId/pre-register',
+      );
+      if (response.statusCode == 200) return;
+      throw Exception('Failed to pre-register for event');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> subscribeEventReminder(int eventId) async {
+    try {
+      final response = await _dio.post(
+        '${ApiConstants.events}/$eventId/reminders/subscribe',
+      );
+      if (response.statusCode == 200) return;
+      throw Exception('Failed to subscribe to event reminder');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<Map<String, List<dynamic>>> getMetadata() async {
     try {
       final response = await _dio.get('${ApiConstants.events}/meta');

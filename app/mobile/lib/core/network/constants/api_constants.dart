@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  static const String _webLocalBaseUrl = 'http://127.0.0.1:4000/api';
-  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:4000/api';
-  static const String _defaultLocalBaseUrl = 'http://127.0.0.1:4000/api';
+  static const String _webLocalBaseUrl = 'http://127.0.0.1:4001/api';
+  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:4001/api';
+  static const String _defaultLocalBaseUrl = 'http://127.0.0.1:4001/api';
 
   // Optional override, example:
-  // flutter run --dart-define=API_BASE_URL=http://192.168.1.20:4000/api
+  // flutter run --dart-define=API_BASE_URL=http://192.168.1.20:4001/api
   static String get baseUrl {
     const envBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
     if (envBaseUrl.isNotEmpty) return envBaseUrl;

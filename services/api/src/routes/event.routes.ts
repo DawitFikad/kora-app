@@ -21,6 +21,8 @@ router.get("/last-minute-today", optionalAuthenticate, EventController.getLastMi
 router.get("/offers-deals", optionalAuthenticate, EventController.getOffersDeals);
 router.get("/new-upcoming-experiences", optionalAuthenticate, EventController.getNewUpcomingExperiences);
 router.get("/recommended-movies", optionalAuthenticate, EventController.getRecommendedMovies);
+router.post("/:id/pre-register", authenticate, EventController.preRegisterEvent);
+router.post("/:id/reminders/subscribe", authenticate, EventController.subscribeEventReminder);
 router.get("/:id/engagement", optionalAuthenticate, EventController.getEventEngagement);
 router.post("/:id/like", authenticate, EventController.toggleLikeEvent);
 router.post("/:id/rate", authenticate, EventController.rateEvent);
