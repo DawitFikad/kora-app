@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { EventStatus, EventType, Role } from "@prisma/client";
+import { EmailService } from "./email.service";
 
 export class EventService {
     // --- Organizers: Event Management ---
@@ -1181,6 +1182,152 @@ export class EventService {
             })
             .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
+    }
+
+    static async getEventEngagement(eventId: number, userId?: number) {
+        const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+        if (!event) throw new Error("Event not found");
+
+        const [likesCount, ratingsAgg, userLike, userRating] = await Promise.all([
+            prisma.eventLike.count({ where: { eventId } }),
+            prisma.eventRating.aggregate({
+                where: { eventId },
+                _avg: { rating: true },
+                _count: { rating: true },
+            }),
+            userId ? prisma.eventLike.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
+            userId ? prisma.eventRating.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
+        ]);
+
+        return {
+            likesCount,
+            averageRating: ratingsAgg._avg.rating ? Number(ratingsAgg._avg.rating.toFixed(2)) : 0,
+            ratingsCount: ratingsAgg._count.rating,
+            userLiked: !!userLike,
+            userRating: userRating?.rating ?? null,
+            userComment: userRating?.comment ?? null,
+        };
+    }
+
+    static async toggleLikeEvent(eventId: number, userId: number) {
+        const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+        if (!event) throw new Error("Event not found");
+
+        const existing = await prisma.eventLike.findUnique({
+            where: { userId_eventId: { userId, eventId } }
+        });
+
+        if (existing) {
+            await prisma.eventLike.delete({ where: { id: existing.id } });
+        } else {
+            await prisma.eventLike.create({ data: { userId, eventId } });
+        }
+
+        const likesCount = await prisma.eventLike.count({ where: { eventId } });
+
+        return {
+            liked: !existing,
+            likesCount,
+        };
+    }
+
+    static async rateEvent(params: {
+        eventId: number;
+        userId: number;
+        rating: number;
+        comment?: string;
+    }) {
+        const { eventId, userId, rating, comment } = params;
+
+        if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+            throw new Error("Rating must be between 1 and 5");
+        }
+
+        const event = await prisma.event.findUnique({
+            where: { id: eventId },
+            select: {
+                id: true,
+                title: true,
+                dateTime: true,
+                venue: true,
+            }
+        });
+        if (!event) throw new Error("Event not found");
+
+        const [upsertedRating] = await prisma.$transaction([
+            prisma.eventRating.upsert({
+                where: { userId_eventId: { userId, eventId } },
+                update: {
+                    rating,
+                    comment: comment || null,
+                },
+                create: {
+                    userId,
+                    eventId,
+                    rating,
+                    comment: comment || null,
+                }
+            }),
+        ]);
+
+        const agg = await prisma.eventRating.aggregate({
+            where: { eventId },
+            _avg: { rating: true },
+            _count: { rating: true },
+        });
+
+        const avgRating = agg._avg.rating ? Number(agg._avg.rating.toFixed(2)) : 0;
+        const ratingsCount = agg._count.rating;
+
+        await prisma.event.update({
+            where: { id: eventId },
+            data: {
+                rating: ratingsCount > 0 ? avgRating.toFixed(2) : null,
+            }
+        });
+
+        // Thank-you email is best effort and should never fail rating flow.
+        try {
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    email: true,
+                    profile: { select: { fullName: true } },
+                }
+            });
+
+            if (user?.email) {
+                const fullName = user.profile?.fullName || "there";
+                const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
+                const when = new Date(event.dateTime).toLocaleString();
+
+                const subject = `Thank you for rating ${event.title}`;
+                const html = `
+                    <h2 style="margin-bottom:12px;">Thanks for your rating, ${fullName}!</h2>
+                    <p style="margin:0 0 10px 0;">Your feedback helps the ET-Ticket community.</p>
+                    <p style="margin:0 0 10px 0;"><strong>Event:</strong> ${event.title}</p>
+                    <p style="margin:0 0 10px 0;"><strong>Your Rating:</strong> ${stars} (${rating}/5)</p>
+                    <p style="margin:0 0 10px 0;"><strong>When:</strong> ${when}</p>
+                    <p style="margin:0;"><strong>Venue:</strong> ${event.venue}</p>
+                `;
+
+                await EmailService.sendEmail(
+                    user.email,
+                    subject,
+                    `Thank you for rating ${event.title}. You rated it ${rating}/5.`,
+                    html
+                );
+            }
+        } catch (e) {
+            console.error("Failed to send thank-you rating email:", e);
+        }
+
+        return {
+            rating: upsertedRating.rating,
+            comment: upsertedRating.comment,
+            averageRating: avgRating,
+            ratingsCount,
+        };
     }
 
     static async getEventDetails(id: number) {

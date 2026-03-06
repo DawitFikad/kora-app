@@ -114,13 +114,14 @@ final offersDealsProvider = FutureProvider.autoDispose<List<Event>>((
   return service.getOffersDeals(cityId: city?.id, limit: 10);
 });
 
-final newUpcomingExperiencesProvider =
-    FutureProvider.autoDispose<List<Event>>((ref) async {
-      ref.watch(authTokenProvider);
-      final service = ref.watch(eventServiceProvider);
-      final city = ref.watch(selectedCityProvider);
-      return service.getNewUpcomingExperiences(cityId: city?.id, limit: 10);
-    });
+final newUpcomingExperiencesProvider = FutureProvider.autoDispose<List<Event>>((
+  ref,
+) async {
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  final city = ref.watch(selectedCityProvider);
+  return service.getNewUpcomingExperiences(cityId: city?.id, limit: 10);
+});
 
 final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
   final service = ref.watch(eventServiceProvider);
@@ -2944,10 +2945,8 @@ class _NewUpcomingExperiencesSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: events.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, i) => _UpcomingExperienceCard(
-              event: events[i],
-              isDark: isDark,
-            ),
+            itemBuilder: (context, i) =>
+                _UpcomingExperienceCard(event: events[i], isDark: isDark),
           ),
         ),
       ],
@@ -2967,14 +2966,17 @@ class _UpcomingExperienceCard extends StatelessWidget {
     final muted = isDark ? Colors.white60 : Colors.black54;
     final desc = '${event.title} ${event.description}'.toLowerCase();
 
-    final earlyBird = event.earlyBirdAvailable == true ||
+    final earlyBird =
+        event.earlyBirdAvailable == true ||
         desc.contains('early bird') ||
         desc.contains('early-bird');
-    final preReg = event.preRegistrationAvailable == true ||
+    final preReg =
+        event.preRegistrationAvailable == true ||
         desc.contains('pre-registration') ||
         desc.contains('pre registration') ||
         desc.contains('register now');
-    final reminder = event.reminderAvailable == true ||
+    final reminder =
+        event.reminderAvailable == true ||
         desc.contains('reminder') ||
         desc.contains('notify');
 
@@ -3037,7 +3039,11 @@ class _UpcomingExperienceCard extends StatelessWidget {
                         if (earlyBird && (preReg || reminder))
                           const SizedBox(width: 6),
                         if (preReg)
-                          _chip('Pre-Register', const Color(0xFF0EA5E9), isDark),
+                          _chip(
+                            'Pre-Register',
+                            const Color(0xFF0EA5E9),
+                            isDark,
+                          ),
                         if (preReg && reminder) const SizedBox(width: 6),
                         if (reminder)
                           _chip('Reminder On', const Color(0xFF16A34A), isDark),

@@ -26,6 +26,8 @@ model User {
   refreshTokens       RefreshToken[]
   savedPaymentMethods SavedPaymentMethod[]
   tickets             Ticket[]
+  eventLikes          EventLike[]
+  eventRatings        EventRating[]
   profile             UserProfile?
 }
 
@@ -191,6 +193,37 @@ model Event {
   promoCodes       PromoCode[]
   tickets          Ticket[]
   tiers            TicketTier[]
+  likes            EventLike[]
+  ratings          EventRating[]
+}
+
+model EventLike {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  eventId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+}
+
+model EventRating {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  eventId   Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([eventId])
 }
 
 model PromoCode {

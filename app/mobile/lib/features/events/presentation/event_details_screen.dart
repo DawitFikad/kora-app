@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/events/models/event.dart';
+import 'package:mobile/features/events/models/event_engagement.dart';
 import 'package:mobile/features/events/models/ticket_tier.dart';
 import 'package:mobile/features/booking/presentation/checkout_screen.dart';
 import 'package:mobile/features/events/services/event_service.dart';
@@ -25,6 +26,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   // Store quantities by TicketTier ID
   final Map<int, int> _ticketQuantities = {};
   bool _initialized = false;
+  bool _likeSubmitting = false;
+  bool _ratingSubmitting = false;
 
   void _initializeQuantities(Event event) {
     if (_initialized) return;
@@ -46,6 +49,185 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     return _ticketQuantities.values.fold(0, (a, b) => a + b);
   }
 
+  bool _isAuthenticated() {
+    return ref.read(localStorageProvider).authToken != null;
+  }
+
+  Future<void> _toggleLike() async {
+    if (!_isAuthenticated()) {
+      if (!mounted) return;
+      context.push('/login');
+      return;
+    }
+
+    if (_likeSubmitting) return;
+    setState(() => _likeSubmitting = true);
+    try {
+      await ref.read(eventServiceProvider).toggleLikeEvent(widget.eventId);
+      ref.invalidate(eventEngagementProvider(widget.eventId));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ErrorMessageHandler.getReadableError(e))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _likeSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _showRatingSheet(
+    Event event,
+    EventEngagement? engagement,
+  ) async {
+    if (!_isAuthenticated()) {
+      if (!mounted) return;
+      context.push('/login');
+      return;
+    }
+
+    if (_ratingSubmitting) return;
+
+    final commentController = TextEditingController(
+      text: engagement?.userComment ?? '',
+    );
+    int selectedRating = engagement?.userRating ?? 0;
+
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+        final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+        final mutedColor = isDark ? Colors.white60 : Colors.black54;
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Rate this event',
+                    style: GoogleFonts.poppins(
+                      color: textColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    event.title,
+                    style: GoogleFonts.poppins(color: mutedColor, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: List.generate(5, (index) {
+                      final value = index + 1;
+                      final filled = selectedRating >= value;
+                      return IconButton(
+                        onPressed: () =>
+                            setSheetState(() => selectedRating = value),
+                        icon: Icon(
+                          filled
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: filled ? const Color(0xFFFFB020) : mutedColor,
+                          size: 34,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Optional comment',
+                      hintStyle: TextStyle(color: mutedColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: selectedRating == 0
+                          ? null
+                          : () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Submit Rating'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (submitted != true || selectedRating == 0) {
+      commentController.dispose();
+      return;
+    }
+
+    setState(() => _ratingSubmitting = true);
+    try {
+      await ref
+          .read(eventServiceProvider)
+          .rateEvent(
+            widget.eventId,
+            rating: selectedRating,
+            comment: commentController.text.trim().isEmpty
+                ? null
+                : commentController.text.trim(),
+          );
+      ref.invalidate(eventEngagementProvider(widget.eventId));
+      ref.invalidate(eventDetailsProvider(widget.eventId));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thanks for rating this event.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ErrorMessageHandler.getReadableError(e))),
+      );
+    } finally {
+      commentController.dispose();
+      if (mounted) {
+        setState(() => _ratingSubmitting = false);
+      }
+    }
+  }
+
   void _onCheckout(Event event) async {
     // 0. Check Auth
     final isAuthenticated = ref.read(localStorageProvider).authToken != null;
@@ -55,7 +237,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     }
 
     // 1. Filter selected tiers
-    final selectedEntries = _ticketQuantities.entries.where((e) => e.value > 0).toList();
+    final selectedEntries = _ticketQuantities.entries
+        .where((e) => e.value > 0)
+        .toList();
 
     if (selectedEntries.isEmpty) return;
 
@@ -89,20 +273,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       final result = await Navigator.push<List<String>>(
         context,
         MaterialPageRoute(
-          builder: (context) => SeatSelectionScreen(
-            eventId: event.id,
-            tierId: tier.id,
-          ),
+          builder: (context) =>
+              SeatSelectionScreen(eventId: event.id, tierId: tier.id),
         ),
       );
 
       if (result == null || result.isEmpty) return; // Cancelled
       selectedSeats = result;
-      
+
       // Update quantity to match selected seats if mismatch occurs
       if (selectedSeats.length != entry.value) {
-         // This shouldn't normally happen if SeatSelection enforces quanity, 
-         // but we'll use the seat count as the final source of truth.
+        // This shouldn't normally happen if SeatSelection enforces quanity,
+        // but we'll use the seat count as the final source of truth.
       }
     }
 
@@ -149,7 +331,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     color: Colors.black.withOpacity(0.2),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -161,7 +343,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       color: const Color(0xFF8B5CF6).withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.people_alt_outlined, color: Color(0xFF8B5CF6), size: 28),
+                    child: const Icon(
+                      Icons.people_alt_outlined,
+                      color: Color(0xFF8B5CF6),
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -177,7 +363,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   Text(
                     'organizer_purchase.subtitle'.tr(),
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(fontSize: 12, color: mutedColor, height: 1.4),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: mutedColor,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -188,7 +378,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF8B5CF6),
                             side: const BorderSide(color: Color(0xFF8B5CF6)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: Text('organizer_purchase.cancel'.tr()),
@@ -201,7 +393,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8B5CF6),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: Text('organizer_purchase.confirm'.tr()),
@@ -216,7 +410,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         );
       },
       transitionBuilder: (context, animation, _, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+        );
         return FadeTransition(
           opacity: animation,
           child: ScaleTransition(scale: curved, child: child),
@@ -230,17 +427,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
+    final engagementAsync = ref.watch(eventEngagementProvider(widget.eventId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedTextColor = isDark ? Colors.white54 : Colors.black54;
     final bodyTextColor = isDark ? Colors.white70 : Colors.black87;
-    final backgroundColor = isDark ? const Color(0xFF0F0D15) : const Color(0xFFF8F7FA);
+    final backgroundColor = isDark
+        ? const Color(0xFF0F0D15)
+        : const Color(0xFFF8F7FA);
 
     return eventAsync.when(
       data: (event) {
         _initializeQuantities(event);
         final eventDate = DateTime.parse(event.dateTime);
-        final sortedTiers = List<TicketTier>.from(event.tiers)..sort((a, b) => a.price.compareTo(b.price));
+        final sortedTiers = List<TicketTier>.from(event.tiers)
+          ..sort((a, b) => a.price.compareTo(b.price));
 
         return Scaffold(
           backgroundColor: backgroundColor,
@@ -274,7 +475,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         color: Color(0xFF8B5CF6),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.verified, color: Colors.white, size: 12),
+                      child: const Icon(
+                        Icons.verified,
+                        color: Colors.white,
+                        size: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -292,9 +497,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               IconButton(
                 icon: Icon(Icons.share, color: textColor),
                 onPressed: () {
-                  final dateText = DateFormat('E, MMM d • h:mm a').format(eventDate);
+                  final dateText = DateFormat(
+                    'E, MMM d • h:mm a',
+                  ).format(eventDate);
                   final deepLink = "etticket://event/${event.id}";
-                  final message = "${event.title}\n${event.venue}\n$dateText\n$deepLink";
+                  final message =
+                      "${event.title}\n${event.venue}\n$dateText\n$deepLink";
                   Share.share(message, subject: event.title);
                 },
               ),
@@ -303,7 +511,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           body: Stack(
             children: [
               ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 children: [
                   Text(
                     "Event Details",
@@ -314,9 +525,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // New Structured Info Section
                   _buildEventInfoSection(event, eventDate),
+                  const SizedBox(height: 32),
+
+                  _buildEngagementSection(event, engagementAsync),
                   const SizedBox(height: 32),
 
                   // About Section
@@ -337,18 +551,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       height: 1.6,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Seat Map Card (Conditional)
                   if (event.hasSeatMap) ...[
                     _buildSeatMapCard(),
                     const SizedBox(height: 32),
                   ],
-                  
+
                   // Availability Status & Trust Signals
                   _buildTrustSignals(event, sortedTiers),
-                  
+
                   const SizedBox(height: 40),
 
                   Text(
@@ -360,57 +574,71 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   if (sortedTiers.isEmpty)
-                    Center(child: Text("No tickets available", style: TextStyle(color: mutedTextColor))),
+                    Center(
+                      child: Text(
+                        "No tickets available",
+                        style: TextStyle(color: mutedTextColor),
+                      ),
+                    ),
 
                   // Ticket Tiers
                   ...sortedTiers.map((tier) {
                     final isSoldOut = tier.sold >= tier.capacity;
                     final quantity = _ticketQuantities[tier.id] ?? 0;
-                    
+
                     return _TicketTierTile(
                       title: tier.name,
                       desc: "Includes access to event",
                       price: tier.price,
-                      badge: isSoldOut ? "SOLD OUT" : (tier.capacity - tier.sold < 20 ? "Running Low" : null),
-                      badgeColor: isSoldOut ? Colors.red.withOpacity(0.1) : const Color(0xFFFF9F0A).withOpacity(0.1),
-                      badgeTextColor: isSoldOut ? Colors.red : const Color(0xFFFF9F0A),
+                      badge: isSoldOut
+                          ? "SOLD OUT"
+                          : (tier.capacity - tier.sold < 20
+                                ? "Running Low"
+                                : null),
+                      badgeColor: isSoldOut
+                          ? Colors.red.withOpacity(0.1)
+                          : const Color(0xFFFF9F0A).withOpacity(0.1),
+                      badgeTextColor: isSoldOut
+                          ? Colors.red
+                          : const Color(0xFFFF9F0A),
                       isSoldOut: isSoldOut,
                       quantity: quantity,
-                      onChanged: (val) => setState(() => _ticketQuantities[tier.id] = val),
-                     );
+                      onChanged: (val) =>
+                          setState(() => _ticketQuantities[tier.id] = val),
+                    );
                   }),
 
-                  
-                  
                   const SizedBox(height: 24),
-                  
+
                   // Event Policies - Real Data
-                  if (event.refundPolicy != null && event.refundPolicy!.isNotEmpty)
+                  if (event.refundPolicy != null &&
+                      event.refundPolicy!.isNotEmpty)
                     _buildExpandableSection(
                       "Refund Policy",
                       event.refundPolicy!,
                     ),
-                  
-                  if (event.additionalPolicy != null && event.additionalPolicy!.isNotEmpty)
+
+                  if (event.additionalPolicy != null &&
+                      event.additionalPolicy!.isNotEmpty)
                     _buildExpandableSection(
                       "Event Policies",
                       event.additionalPolicy!,
                     ),
-                  
+
                   // Age Restrictions - Real Data
                   _buildExpandableSection(
                     "Age Restrictions",
-                    event.minAge > 0 
+                    event.minAge > 0
                         ? "This event is restricted to attendees aged ${event.minAge} years and above. Valid ID may be required at entry."
                         : "This event is open to all ages. Minors may attend without age restrictions.",
                   ),
-                  
+
                   const SizedBox(height: 120), // Spacer for bottom bar
                 ],
               ),
-              
+
               // Bottom Checkout Bar
               _buildBottomBar(event),
             ],
@@ -419,7 +647,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       },
       loading: () => const Scaffold(
         backgroundColor: Color(0xFF0F0D15),
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+        ),
       ),
       error: (err, stack) => Scaffold(
         backgroundColor: backgroundColor,
@@ -439,10 +669,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => ref.refresh(eventDetailsProvider(widget.eventId)),
+                onPressed: () =>
+                    ref.refresh(eventDetailsProvider(widget.eventId)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: Text("common.retry".tr()),
               ),
@@ -482,7 +715,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   bottom: 12,
                   right: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(10),
@@ -491,7 +727,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       children: const [
                         Icon(Icons.view_in_ar, color: Colors.white, size: 14),
                         SizedBox(width: 6),
-                        Text("Interactive", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text(
+                          "Interactive",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -530,10 +773,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                   ),
-                  child: const Text("View Map", style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "View Map",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -556,10 +807,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       totalAvailable += (tier.capacity - tier.sold);
       totalCapacity += tier.capacity;
     }
-    
-    final availabilityPercent = totalCapacity > 0 ? (totalAvailable / totalCapacity * 100) : 0;
-    final isLowAvailability = availabilityPercent < 20 && availabilityPercent > 0;
-    
+
+    final availabilityPercent = totalCapacity > 0
+        ? (totalAvailable / totalCapacity * 100)
+        : 0;
+    final isLowAvailability =
+        availabilityPercent < 20 && availabilityPercent > 0;
+
     return Column(
       children: [
         // Organizer Verification
@@ -578,7 +832,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   color: const Color(0xFF8B5CF6).withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.verified_user, color: Color(0xFF8B5CF6), size: 20),
+                child: const Icon(
+                  Icons.verified_user,
+                  color: Color(0xFF8B5CF6),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -596,7 +854,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 16),
+                        const Icon(
+                          Icons.check_circle,
+                          color: Color(0xFF8B5CF6),
+                          size: 16,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -613,9 +875,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Quick Info Row
         Row(
           children: [
@@ -632,7 +894,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.shield_outlined, color: Color(0xFF10B981), size: 16),
+                        const Icon(
+                          Icons.shield_outlined,
+                          color: Color(0xFF10B981),
+                          size: 16,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           "event_details.refund_policy".tr(),
@@ -642,10 +908,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      event.refundPolicy != null && event.refundPolicy!.isNotEmpty
-                          ? (event.refundPolicy!.length > 30 
-                              ? '${event.refundPolicy!.substring(0, 30)}...'
-                              : event.refundPolicy!)
+                      event.refundPolicy != null &&
+                              event.refundPolicy!.isNotEmpty
+                          ? (event.refundPolicy!.length > 30
+                                ? '${event.refundPolicy!.substring(0, 30)}...'
+                                : event.refundPolicy!)
                           : "See policy details",
                       style: GoogleFonts.poppins(
                         color: textColor,
@@ -659,20 +926,22 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 12),
-            
+
             // Ticket Availability
             Expanded(
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: isLowAvailability 
+                  color: isLowAvailability
                       ? const Color(0xFFFF9F0A).withOpacity(0.1)
                       : cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: isLowAvailability 
-                      ? Border.all(color: const Color(0xFFFF9F0A).withOpacity(0.3))
+                  border: isLowAvailability
+                      ? Border.all(
+                          color: const Color(0xFFFF9F0A).withOpacity(0.3),
+                        )
                       : null,
                 ),
                 child: Column(
@@ -681,15 +950,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     Row(
                       children: [
                         Icon(
-                          isLowAvailability ? Icons.warning_amber : Icons.confirmation_number_outlined,
-                          color: isLowAvailability ? const Color(0xFFFF9F0A) : const Color(0xFF8B5CF6),
+                          isLowAvailability
+                              ? Icons.warning_amber
+                              : Icons.confirmation_number_outlined,
+                          color: isLowAvailability
+                              ? const Color(0xFFFF9F0A)
+                              : const Color(0xFF8B5CF6),
                           size: 16,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           "event_details.availability".tr(),
                           style: TextStyle(
-                            color: isLowAvailability ? const Color(0xFFFF9F0A) : mutedColor,
+                            color: isLowAvailability
+                                ? const Color(0xFFFF9F0A)
+                                : mutedColor,
                             fontSize: 11,
                           ),
                         ),
@@ -697,9 +972,15 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isLowAvailability ? "event_details.few_left".tr() : "event_details.tickets_available".tr(args: [totalAvailable.toString()]),
+                      isLowAvailability
+                          ? "event_details.few_left".tr()
+                          : "event_details.tickets_available".tr(
+                              args: [totalAvailable.toString()],
+                            ),
                       style: GoogleFonts.poppins(
-                        color: isLowAvailability ? const Color(0xFFFF9F0A) : textColor,
+                        color: isLowAvailability
+                            ? const Color(0xFFFF9F0A)
+                            : textColor,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -711,6 +992,155 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildEngagementSection(
+    Event event,
+    AsyncValue<EventEngagement> engagementAsync,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white60 : Colors.black54;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: engagementAsync.when(
+        data: (engagement) {
+          final avg = engagement.averageRating.toStringAsFixed(1);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Community Feedback',
+                    style: GoogleFonts.poppins(
+                      color: textColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_likeSubmitting || _ratingSubmitting)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    Icons.favorite_rounded,
+                    color: engagement.userLiked ? Colors.red : mutedColor,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${engagement.likesCount} likes',
+                    style: GoogleFonts.poppins(color: textColor, fontSize: 13),
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xFFFFB020),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$avg (${engagement.ratingsCount} ratings)',
+                    style: GoogleFonts.poppins(color: textColor, fontSize: 13),
+                  ),
+                ],
+              ),
+              if (engagement.userRating != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Your rating: ${engagement.userRating}/5',
+                  style: GoogleFonts.poppins(color: mutedColor, fontSize: 12),
+                ),
+              ],
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _likeSubmitting ? null : _toggleLike,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: engagement.userLiked
+                            ? Colors.red
+                            : textColor,
+                        side: BorderSide(
+                          color: engagement.userLiked
+                              ? Colors.red.withOpacity(0.4)
+                              : mutedColor.withOpacity(0.3),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: Icon(
+                        engagement.userLiked
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_outline_rounded,
+                      ),
+                      label: Text(engagement.userLiked ? 'Liked' : 'Like'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _ratingSubmitting
+                          ? null
+                          : () => _showRatingSheet(event, engagement),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.star_rounded),
+                      label: Text(
+                        engagement.userRating == null
+                            ? 'Rate'
+                            : 'Update Rating',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (_, __) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Could not load likes and ratings.',
+                style: GoogleFonts.poppins(color: mutedColor, fontSize: 13),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () =>
+                    ref.invalidate(eventEngagementProvider(widget.eventId)),
+                child: const Text('Retry'),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -731,12 +1161,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         child: ExpansionTile(
           title: Text(
             title,
-            style: GoogleFonts.poppins(color: textColor, fontSize: 16, fontWeight: FontWeight.w500),
+            style: GoogleFonts.poppins(
+              color: textColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           trailing: Icon(Icons.keyboard_arrow_down, color: mutedColor),
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 16, bottom: 16, right: 16, top: 8),
+              padding: const EdgeInsets.only(
+                left: 16,
+                bottom: 16,
+                right: 16,
+                top: 8,
+              ),
               child: Text(
                 content,
                 style: GoogleFonts.poppins(
@@ -760,13 +1199,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final mutedColor = isDark ? Colors.white54 : Colors.black54;
     final barColor = isDark ? const Color(0xFF15131C) : Colors.white;
     final borderColor = isDark ? Colors.white10 : Colors.black12;
-    
+
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
       child: Container(
-        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 20),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          20,
+          24,
+          MediaQuery.of(context).padding.bottom + 20,
+        ),
         decoration: BoxDecoration(
           color: barColor,
           border: Border(top: BorderSide(color: borderColor)),
@@ -784,7 +1228,15 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("TOTAL", style: TextStyle(color: mutedColor, fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                Text(
+                  "TOTAL",
+                  style: TextStyle(
+                    color: mutedColor,
+                    fontSize: 10,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 RichText(
                   text: TextSpan(
@@ -815,15 +1267,22 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 onPressed: count > 0 ? () => _onCheckout(event) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
-                  disabledBackgroundColor: isDark ? Colors.white10 : Colors.black12,
+                  disabledBackgroundColor: isDark
+                      ? Colors.white10
+                      : Colors.black12,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
                   "event_details.checkout".tr(),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -872,7 +1331,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             DateFormat('h:mm a').format(date),
             const Color(0xFFFF9F0A),
           ),
-          if (event.isMovie || (event.category != null && event.category!.name == 'Movies')) ...[
+          if (event.isMovie ||
+              (event.category != null && event.category!.name == 'Movies')) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Divider(color: dividerColor),
@@ -889,7 +1349,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String value, Color iconColor) {
+  Widget _buildInfoTile(
+    IconData icon,
+    String label,
+    String value,
+    Color iconColor,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white54 : Colors.black54;
@@ -911,10 +1376,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             children: [
               Text(
                 label,
-                style: GoogleFonts.poppins(
-                  color: mutedColor,
-                  fontSize: 12,
-                ),
+                style: GoogleFonts.poppins(color: mutedColor, fontSize: 12),
               ),
               const SizedBox(height: 2),
               Text(
@@ -932,7 +1394,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     );
   }
 }
-
 
 class _TicketTierTile extends StatelessWidget {
   final String title;
@@ -998,7 +1459,10 @@ class _TicketTierTile extends StatelessWidget {
                           ),
                           if (badge != null)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: badgeColor,
                                 borderRadius: BorderRadius.circular(6),
@@ -1026,20 +1490,24 @@ class _TicketTierTile extends StatelessWidget {
                   ),
                 ),
                 if (!isSoldOut)
-                  _QuantitySelector(
-                    quantity: quantity,
-                    onChanged: onChanged,
-                  )
+                  _QuantitySelector(quantity: quantity, onChanged: onChanged)
                 else
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: soldOutBg,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       "event_details.sold_out".tr(),
-                      style: TextStyle(color: mutedColor, fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: mutedColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
               ],
@@ -1091,7 +1559,11 @@ class _QuantitySelector extends StatelessWidget {
             child: Text(
               "$quantity",
               textAlign: TextAlign.center,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
           ),
           _buildButton(
@@ -1105,19 +1577,27 @@ class _QuantitySelector extends StatelessWidget {
     );
   }
 
-  Widget _buildButton({required IconData icon, VoidCallback? onTap, bool isPrimary = false, required bool isDark}) {
-    final baseBg = isPrimary ? const Color(0xFF8B5CF6) : (isDark ? Colors.white10 : Colors.black12);
-    final baseIcon = isPrimary ? Colors.white : (isDark ? Colors.white : const Color(0xFF1A1823));
-    final iconColor = onTap == null ? (isDark ? Colors.white38 : Colors.black38) : baseIcon;
+  Widget _buildButton({
+    required IconData icon,
+    VoidCallback? onTap,
+    bool isPrimary = false,
+    required bool isDark,
+  }) {
+    final baseBg = isPrimary
+        ? const Color(0xFF8B5CF6)
+        : (isDark ? Colors.white10 : Colors.black12);
+    final baseIcon = isPrimary
+        ? Colors.white
+        : (isDark ? Colors.white : const Color(0xFF1A1823));
+    final iconColor = onTap == null
+        ? (isDark ? Colors.white38 : Colors.black38)
+        : baseIcon;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: baseBg,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: baseBg, shape: BoxShape.circle),
         child: Icon(icon, color: iconColor, size: 20),
       ),
     );

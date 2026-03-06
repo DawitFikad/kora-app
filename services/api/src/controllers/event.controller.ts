@@ -6,6 +6,48 @@ import { ProfileService } from "../services/profile.service";
 export class EventController {
     // --- Public Discovery ---
 
+    static async getEventEngagement(req: Request, res: Response) {
+        try {
+            const eventId = parseInt(String(req.params.id), 10);
+            const userId = req.user?.userId as number | undefined;
+            const summary = await EventService.getEventEngagement(eventId, userId);
+            res.json(summary);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async toggleLikeEvent(req: Request, res: Response) {
+        try {
+            const eventId = parseInt(String(req.params.id), 10);
+            const userId = req.user!.userId;
+            const result = await EventService.toggleLikeEvent(eventId, userId);
+            res.json(result);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async rateEvent(req: Request, res: Response) {
+        try {
+            const eventId = parseInt(String(req.params.id), 10);
+            const userId = req.user!.userId;
+            const rating = parseInt(String(req.body?.rating), 10);
+            const comment = typeof req.body?.comment === 'string' ? req.body.comment.trim() : undefined;
+
+            const result = await EventService.rateEvent({
+                eventId,
+                userId,
+                rating,
+                comment,
+            });
+
+            res.json(result);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
     static async getNewUpcomingExperiences(req: Request, res: Response) {
         try {
             const filters = req.query as any;

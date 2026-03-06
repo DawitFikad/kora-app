@@ -4,6 +4,7 @@ import 'package:mobile/core/providers.dart';
 import 'package:mobile/features/events/models/event.dart';
 import 'package:mobile/features/events/models/category.dart';
 import 'package:mobile/features/events/models/city.dart';
+import 'package:mobile/features/events/models/event_engagement.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/events/models/homepage_banner.dart';
 
@@ -23,6 +24,16 @@ final eventDetailsProvider = FutureProvider.family<Event, int>((ref, id) async {
   ref.watch(authTokenProvider);
   final service = ref.watch(eventServiceProvider);
   return service.getEventById(id);
+});
+
+final eventEngagementProvider = FutureProvider.family<EventEngagement, int>((
+  ref,
+  id,
+) async {
+  // Watch storage so engagement reflects current user actions
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  return service.getEventEngagement(id);
 });
 
 final bannersProvider = FutureProvider<List<HomepageBanner>>((ref) async {
@@ -319,6 +330,49 @@ class EventService {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  Future<EventEngagement> getEventEngagement(int eventId) async {
+    try {
+      final response = await _dio.get(
+        '${ApiConstants.events}/$eventId/engagement',
+      );
+      if (response.statusCode == 200) {
+        return EventEngagement.fromJson(response.data as Map<String, dynamic>);
+      }
+      throw Exception('Failed to load event engagement');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> toggleLikeEvent(int eventId) async {
+    try {
+      final response = await _dio.post('${ApiConstants.events}/$eventId/like');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to toggle like');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> rateEvent(
+    int eventId, {
+    required int rating,
+    String? comment,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '${ApiConstants.events}/$eventId/rate',
+        data: {'rating': rating, 'comment': comment},
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to submit rating');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
     }
   }
 }
