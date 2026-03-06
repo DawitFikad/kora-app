@@ -54,13 +54,17 @@ class EventService {
     bool? featured,
   }) async {
     final queryParams = <String, dynamic>{};
-    if (categoryId != null && categoryId != 0) queryParams['categoryId'] = categoryId;
+    if (categoryId != null && categoryId != 0)
+      queryParams['categoryId'] = categoryId;
     if (cityId != null) queryParams['cityId'] = cityId;
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
     if (featured != null) queryParams['featured'] = featured;
 
     try {
-      final response = await _dio.get(ApiConstants.events, queryParameters: queryParams);
+      final response = await _dio.get(
+        ApiConstants.events,
+        queryParameters: queryParams,
+      );
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((json) => Event.fromJson(json)).toList();
@@ -76,13 +80,14 @@ class EventService {
     int? cityId,
     int limit = 12,
   }) async {
-    final queryParams = <String, dynamic>{
-      'limit': limit,
-    };
+    final queryParams = <String, dynamic>{'limit': limit};
     if (cityId != null && cityId != 0) queryParams['cityId'] = cityId;
 
     try {
-      final response = await _dio.get(ApiConstants.recommendedMovies, queryParameters: queryParams);
+      final response = await _dio.get(
+        ApiConstants.recommendedMovies,
+        queryParameters: queryParams,
+      );
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((json) => Event.fromJson(json)).toList();
@@ -98,8 +103,12 @@ class EventService {
       final response = await _dio.get('${ApiConstants.events}/meta');
       if (response.statusCode == 200) {
         return {
-          'categories': (response.data['categories'] as List).map((e) => Category.fromJson(e)).toList(),
-          'cities': (response.data['cities'] as List).map((e) => City.fromJson(e)).toList(),
+          'categories': (response.data['categories'] as List)
+              .map((e) => Category.fromJson(e))
+              .toList(),
+          'cities': (response.data['cities'] as List)
+              .map((e) => City.fromJson(e))
+              .toList(),
         };
       }
       return {'categories': [], 'cities': []};

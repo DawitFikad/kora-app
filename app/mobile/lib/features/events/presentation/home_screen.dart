@@ -4,7 +4,7 @@ import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ui' as ui; 
+import 'dart:ui' as ui;
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:mobile/features/events/services/event_service.dart';
 import 'package:mobile/features/events/models/event.dart';
@@ -30,43 +30,41 @@ final filteredEventsProvider = FutureProvider<List<Event>>((ref) async {
   final service = ref.watch(eventServiceProvider);
   final category = ref.watch(selectedCategoryProvider);
   final city = ref.watch(selectedCityProvider);
-  
-  return service.getEvents(
-    categoryId: category?.id,
-    cityId: city?.id,
-  );
+
+  return service.getEvents(categoryId: category?.id, cityId: city?.id);
 });
 
-final recommendedMoviesProvider = FutureProvider.autoDispose<List<Event>>((ref) async {
+final recommendedMoviesProvider = FutureProvider.autoDispose<List<Event>>((
+  ref,
+) async {
   ref.watch(authTokenProvider);
   final service = ref.watch(eventServiceProvider);
   final city = ref.watch(selectedCityProvider);
   return service.getRecommendedMovies(cityId: city?.id, limit: 12);
 });
 
-
 final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
   final service = ref.watch(eventServiceProvider);
-  
+
   // 1. Fetch super admin created banners
-  final adminBanners = await ref.watch(bannersProvider.future); // Assuming bannersProvider exists
-  
+  final adminBanners = await ref.watch(
+    bannersProvider.future,
+  ); // Assuming bannersProvider exists
+
   // 2. Fetch featured events
   final featuredEvents = await service.getEvents(featured: true);
-  
+
   // Combine all items for the carousel
   final List<dynamic> combined = [...adminBanners, ...featuredEvents];
-  
+
   // 3. Fallback if empty
   if (combined.isEmpty) {
     final allEvents = await service.getEvents();
     return allEvents.take(5).toList();
   }
-  
+
   return combined;
 });
-
-
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -93,18 +91,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedIndex = ref.watch(homeIndexProvider);
-    
+
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
+      backgroundColor: isDark
+          ? const Color(0xFF15131C)
+          : const Color(0xFFF8F7FA),
       body: _pages[selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1A1823) : Colors.white,
           boxShadow: [
-            BoxShadow(
-              blurRadius: 20,
-              color: Colors.black.withOpacity(.1),
-            )
+            BoxShadow(blurRadius: 20, color: Colors.black.withOpacity(.1)),
           ],
         ),
         child: SafeArea(
@@ -122,12 +119,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               color: isDark ? Colors.white54 : Colors.black54,
               tabs: [
                 GButton(icon: Icons.home_rounded, text: 'home.nav_home'.tr()),
-                GButton(icon: Icons.favorite_rounded, text: 'home.nav_favorites'.tr()),
-                GButton(icon: Icons.local_activity, text: 'home.nav_tickets'.tr()),
-                GButton(icon: Icons.person_rounded, text: 'home.nav_profile'.tr()),
+                GButton(
+                  icon: Icons.favorite_rounded,
+                  text: 'home.nav_favorites'.tr(),
+                ),
+                GButton(
+                  icon: Icons.local_activity,
+                  text: 'home.nav_tickets'.tr(),
+                ),
+                GButton(
+                  icon: Icons.person_rounded,
+                  text: 'home.nav_profile'.tr(),
+                ),
               ],
               selectedIndex: selectedIndex,
-              onTabChange: (index) => ref.read(homeIndexProvider.notifier).state = index,
+              onTabChange: (index) =>
+                  ref.read(homeIndexProvider.notifier).state = index,
             ),
           ),
         ),
@@ -152,209 +159,264 @@ class _HomeBody extends ConsumerWidget {
         children: [
           // Offline Banner
           const OfflineBanner(),
-          
+
           // Main Content
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async => ref.refresh(filteredEventsProvider),
               child: CustomScrollView(
                 slivers: [
-             SliverPadding(
-               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-               sliver: SliverList(
-                 delegate: SliverChildListDelegate([
-                    _buildHeader(context, ref, textColor, mutedColor),
-                    const SizedBox(height: 24),
-                    _buildSearchBar(context, isDark ? const Color(0xFF232030) : Colors.white, mutedColor),
-                    const SizedBox(height: 24),
-                    const _FeaturedBanners(),
-                    const SizedBox(height: 24),
-                    _buildCategories(ref, isDark),
-
-                    const SizedBox(height: 32),
-                    RichText(
-                      text: TextSpan(
-                        style: GoogleFonts.poppins(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          height: 1.2,
-                          color: textColor,
-                        ),
-                        children: [
-                          TextSpan(text: 'home.pulse_prefix'.tr()),
-                          TextSpan(
-                            text: 'home.pulse_suffix'.tr(),
-                            style: TextStyle(
-                              color: const Color(0xFF8B5CF6),
-                              shadows: [
-                                Shadow(
-                                  color: const Color(0xFF8B5CF6).withOpacity(0.4),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 24,
                     ),
-                    const SizedBox(height: 24),
-                 ]),
-               ),
-             ),
-             
-             // Content or Loading
-             eventsAsync.when(
-               data: (events) {
-                 if (events.isEmpty) {
-                   return SliverToBoxAdapter(
-                     child: _buildEmptyState(context, ref, textColor, mutedColor),
-                   );
-                 }
-                 
-                 return SliverList(
-                   delegate: SliverChildBuilderDelegate(
-                     (context, index) {
-                        // First item could be Featured if we want, but simpler to just list trending for now similar to design
-                        // Or we can separate sections again.
-                        // Let's keep the Featured Carousel + Vertical list pattern
-                        if (index == 0) {
-                          // Featured Section (Horizontal)
-                          final featured = events.take(3).toList();
-                          final recommended = events.take(4).toList();
-                          if (featured.isEmpty) return const SizedBox.shrink();
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        _buildHeader(context, ref, textColor, mutedColor),
+                        const SizedBox(height: 24),
+                        _buildSearchBar(
+                          context,
+                          isDark ? const Color(0xFF232030) : Colors.white,
+                          mutedColor,
+                        ),
+                        const SizedBox(height: 24),
+                        const _FeaturedBanners(),
+                        const SizedBox(height: 24),
+                        _buildCategories(ref, isDark),
 
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 32),
+                        RichText(
+                          text: TextSpan(
+                            style: GoogleFonts.poppins(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                              color: textColor,
+                            ),
                             children: [
-                              SizedBox(
-                                height: 380,
-                                child: ListView.separated(
-                                  physics: const BouncingScrollPhysics(),
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: featured.length,
-                                  separatorBuilder: (_, __) => const SizedBox(width: 16),
-                                  itemBuilder: (context, i) => _FeaturedCard(event: featured[i]),
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-                              recommendedMoviesAsync.when(
-                                data: (movies) => _MovieSection(
-                                  movies: movies,
-                                  isDark: isDark,
-                                  textColor: textColor,
-                                ),
-                                loading: () => const SizedBox.shrink(),
-                                error: (_, __) => const SizedBox.shrink(),
-                              ),
-                              if (recommended.isNotEmpty) ...[
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                                  child: Text(
-                                    'home.recommended'.tr(),
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                ...recommended.map(
-                                  (event) => Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                    child: _VerticalEventCard(event: event, isDark: isDark),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                              ],
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'home.all_events'.tr(),
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: textColor,
-                                      ),
+                              TextSpan(text: 'home.pulse_prefix'.tr()),
+                              TextSpan(
+                                text: 'home.pulse_suffix'.tr(),
+                                style: TextStyle(
+                                  color: const Color(0xFF8B5CF6),
+                                  shadows: [
+                                    Shadow(
+                                      color: const Color(
+                                        0xFF8B5CF6,
+                                      ).withOpacity(0.4),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 16),
                             ],
-                          );
-                        }
-                        
-                        // Vertical List items (minus the featured ones to avoid dupes? or just all)
-                        // For simplicity, showing all as vertical list below header
-                        final event = events[index - 1]; // Offset by 1 for the header
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                          child: _TrendingCard(event: event, isDark: isDark),
-                        );
-                     },
-                     childCount: events.length + 1, // +1 for the featured header section logic
-                   ),
-                 );
-               },
-                loading: () => SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildSkeletonCard(isDark),
-                      childCount: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ]),
                     ),
                   ),
-                ),
-                error: (e, s) => SliverToBoxAdapter(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40),
-                            child: Text(
-                              ErrorMessageHandler.getReadableError(e),
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(color: textColor.withOpacity(0.7)),
-                            ),
+
+                  // Content or Loading
+                  eventsAsync.when(
+                    data: (events) {
+                      if (events.isEmpty) {
+                        return SliverToBoxAdapter(
+                          child: _buildEmptyState(
+                            context,
+                            ref,
+                            textColor,
+                            mutedColor,
                           ),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: () => ref.refresh(filteredEventsProvider),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8B5CF6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: Text("common.retry".tr()),
+                        );
+                      }
+
+                      return SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            // First item could be Featured if we want, but simpler to just list trending for now similar to design
+                            // Or we can separate sections again.
+                            // Let's keep the Featured Carousel + Vertical list pattern
+                            if (index == 0) {
+                              // Featured Section (Horizontal)
+                              final featured = events.take(3).toList();
+                              final recommended = events.take(4).toList();
+                              if (featured.isEmpty)
+                                return const SizedBox.shrink();
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    height: 380,
+                                    child: ListView.separated(
+                                      physics: const BouncingScrollPhysics(),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                      ),
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: featured.length,
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(width: 16),
+                                      itemBuilder: (context, i) =>
+                                          _FeaturedCard(event: featured[i]),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
+                                  recommendedMoviesAsync.when(
+                                    data: (movies) => _MovieSection(
+                                      movies: movies,
+                                      isDark: isDark,
+                                      textColor: textColor,
+                                    ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                                  if (recommended.isNotEmpty) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                      ),
+                                      child: Text(
+                                        'home.recommended'.tr(),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ...recommended.map(
+                                      (event) => Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 8,
+                                        ),
+                                        child: _VerticalEventCard(
+                                          event: event,
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                  ],
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'home.all_events'.tr(),
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                              );
+                            }
+
+                            // Vertical List items (minus the featured ones to avoid dupes? or just all)
+                            // For simplicity, showing all as vertical list below header
+                            final event =
+                                events[index - 1]; // Offset by 1 for the header
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 8,
+                              ),
+                              child: _TrendingCard(
+                                event: event,
+                                isDark: isDark,
+                              ),
+                            );
+                          },
+                          childCount:
+                              events.length +
+                              1, // +1 for the featured header section logic
+                        ),
+                      );
+                    },
+                    loading: () => SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _buildSkeletonCard(isDark),
+                          childCount: 3,
+                        ),
+                      ),
+                    ),
+                    error: (e, s) => SliverToBoxAdapter(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.wifi_off_rounded,
+                                size: 64,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 16),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 40,
+                                ),
+                                child: Text(
+                                  ErrorMessageHandler.getReadableError(e),
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    color: textColor.withOpacity(0.7),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: () =>
+                                    ref.refresh(filteredEventsProvider),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF8B5CF6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text("common.retry".tr()),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-             ),
-             
-                const SliverToBoxAdapter(child: SizedBox(height: 80)),
-              ],
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, Color textColor, Color mutedColor) {
+  Widget _buildHeader(
+    BuildContext context,
+    WidgetRef ref,
+    Color textColor,
+    Color mutedColor,
+  ) {
     final citiesAsync = ref.watch(citiesProvider);
     final selectedCity = ref.watch(selectedCityProvider);
     final allCities = City(id: 0, name: "home.all_cities".tr());
@@ -385,26 +447,38 @@ class _HomeBody extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("home.location".tr(), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(
+                  "home.location".tr(),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
                 PopupMenuButton<City>(
-                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1D192B) : Colors.white,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1D192B)
+                      : Colors.white,
                   onSelected: (city) {
-                    ref.read(selectedCityProvider.notifier).state = city.id == 0 ? null : city;
+                    ref.read(selectedCityProvider.notifier).state = city.id == 0
+                        ? null
+                        : city;
                   },
                   itemBuilder: (context) {
                     return citiesAsync.when(
                       data: (cities) => [
                         PopupMenuItem<City>(
-                           value: allCities,
-                           child: Text("home.all_cities".tr()),
+                          value: allCities,
+                          child: Text("home.all_cities".tr()),
                         ),
-                        ...cities.map((c) => PopupMenuItem<City>(
-                          value: c,
-                          child: Text(c.name, style: TextStyle(color: textColor)),
-                        ))
+                        ...cities.map(
+                          (c) => PopupMenuItem<City>(
+                            value: c,
+                            child: Text(
+                              c.name,
+                              style: TextStyle(color: textColor),
+                            ),
+                          ),
+                        ),
                       ],
                       loading: () => [],
-                      error: (_,__) => [],
+                      error: (_, __) => [],
                     );
                   },
                   child: Row(
@@ -417,7 +491,11 @@ class _HomeBody extends ConsumerWidget {
                           fontSize: 14,
                         ),
                       ),
-                      const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 18),
+                      const Icon(
+                        Icons.keyboard_arrow_down,
+                        color: Colors.grey,
+                        size: 18,
+                      ),
                     ],
                   ),
                 ),
@@ -436,24 +514,34 @@ class _HomeBody extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF232030) : Colors.white,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF232030)
+                      : Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(color: textColor.withOpacity(0.1)),
-                  boxShadow: Theme.of(context).brightness == Brightness.dark ? null : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
+                  boxShadow: Theme.of(context).brightness == Brightness.dark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                 ),
-                child: Icon(Icons.notifications_none, color: textColor, size: 24),
+                child: Icon(
+                  Icons.notifications_none,
+                  color: textColor,
+                  size: 24,
+                ),
               ),
               Consumer(
                 builder: (context, ref, _) {
-                  final unreadCount = ref.watch(unreadNotificationsCountProvider);
+                  final unreadCount = ref.watch(
+                    unreadNotificationsCountProvider,
+                  );
                   if (unreadCount == 0) return const SizedBox.shrink();
-                  
+
                   return Positioned(
                     top: -2,
                     right: -2,
@@ -487,7 +575,11 @@ class _HomeBody extends ConsumerWidget {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context, Color cardColor, Color mutedColor) {
+  Widget _buildSearchBar(
+    BuildContext context,
+    Color cardColor,
+    Color mutedColor,
+  ) {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -505,10 +597,7 @@ class _HomeBody extends ConsumerWidget {
           children: [
             Icon(Icons.search, color: mutedColor),
             const SizedBox(width: 12),
-            Text(
-              "home.search".tr(),
-              style: TextStyle(color: mutedColor),
-            ),
+            Text("home.search".tr(), style: TextStyle(color: mutedColor)),
           ],
         ),
       ),
@@ -523,43 +612,62 @@ class _HomeBody extends ConsumerWidget {
       height: 38,
       child: categoriesAsync.when(
         data: (categories) {
-           final allCategories = [Category(id: 0, name: "home.all_categories".tr()), ...categories];
-           return ListView.separated(
+          final allCategories = [
+            Category(id: 0, name: "home.all_categories".tr()),
+            ...categories,
+          ];
+          return ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: allCategories.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final category = allCategories[index];
               // Check if selected (if null, 'All' (id 0) is default UI wise, but logically null)
-              final isSelected = selectedCategory?.id == category.id || (selectedCategory == null && category.id == 0);
-              
+              final isSelected =
+                  selectedCategory?.id == category.id ||
+                  (selectedCategory == null && category.id == 0);
+
               return GestureDetector(
                 onTap: () {
-                   ref.read(selectedCategoryProvider.notifier).state = category.id == 0 ? null : category;
+                  ref.read(selectedCategoryProvider.notifier).state =
+                      category.id == 0 ? null : category;
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    gradient: isSelected 
-                        ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)])
+                    gradient: isSelected
+                        ? const LinearGradient(
+                            colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                          )
                         : null,
-                    color: isSelected ? null : (isDark ? const Color(0xFF2E2B3A) : Colors.grey[200]),
+                    color: isSelected
+                        ? null
+                        : (isDark ? const Color(0xFF2E2B3A) : Colors.grey[200]),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: isSelected ? [
-                      BoxShadow(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ] : null,
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Center(
                     child: Text(
                       category.name,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? Colors.white70 : Colors.black87),
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
                         fontSize: 13,
                       ),
                     ),
@@ -569,16 +677,21 @@ class _HomeBody extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: LinearProgressIndicator()), 
-        error: (_,__) => const SizedBox.shrink()
+        loading: () => const Center(child: LinearProgressIndicator()),
+        error: (_, __) => const SizedBox.shrink(),
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, WidgetRef ref, Color textColor, Color mutedColor) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    WidgetRef ref,
+    Color textColor,
+    Color mutedColor,
+  ) {
     final selectedCity = ref.watch(selectedCityProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48.0),
@@ -614,11 +727,7 @@ class _HomeBody extends ConsumerWidget {
               selectedCity != null || selectedCategory != null
                   ? "home.clear_filters".tr()
                   : "home.no_events_suggestion".tr(),
-              style: TextStyle(
-                fontSize: 14,
-                color: mutedColor,
-                height: 1.5,
-              ),
+              style: TextStyle(fontSize: 14, color: mutedColor, height: 1.5),
               textAlign: TextAlign.center,
             ),
             if (selectedCity != null || selectedCategory != null) ...[
@@ -633,8 +742,13 @@ class _HomeBody extends ConsumerWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF8B5CF6),
                   side: const BorderSide(color: Color(0xFF8B5CF6)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
@@ -708,7 +822,10 @@ class _FeaturedCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isFavorited = ref.watch(localStorageProvider).favorites.contains(event.id.toString());
+    final isFavorited = ref
+        .watch(localStorageProvider)
+        .favorites
+        .contains(event.id.toString());
 
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
@@ -745,11 +862,17 @@ class _FeaturedCard extends ConsumerWidget {
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     color: Colors.white.withOpacity(0.1),
                     child: Text(
                       _formatDate(event.dateTime),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -759,7 +882,9 @@ class _FeaturedCard extends ConsumerWidget {
               top: 20,
               left: 20,
               child: GestureDetector(
-                onTap: () => ref.read(localStorageProvider).toggleFavorite(event.id.toString()),
+                onTap: () => ref
+                    .read(localStorageProvider)
+                    .toggleFavorite(event.id.toString()),
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -784,23 +909,47 @@ class _FeaturedCard extends ConsumerWidget {
                   Text(
                     event.title,
                     maxLines: 2,
-                    style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Live • Music", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                      Expanded(
+                        child: Text(
+                          "Live • Music",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF8B5CF6).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.5)),
+                          border: Border.all(
+                            color: const Color(0xFF8B5CF6).withOpacity(0.5),
+                          ),
                         ),
                         child: Text(
-                          "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB", 
-                          style: const TextStyle(color: Color(0xFFD8B4FE), fontWeight: FontWeight.bold, fontSize: 12),
+                          "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB",
+                          style: const TextStyle(
+                            color: Color(0xFFD8B4FE),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -814,7 +963,8 @@ class _FeaturedCard extends ConsumerWidget {
     );
   }
 
-  String _formatDate(String date) => DateFormat('MMM d').format(DateTime.parse(date));
+  String _formatDate(String date) =>
+      DateFormat('MMM d').format(DateTime.parse(date));
 }
 
 class _MovieSection extends StatelessWidget {
@@ -822,7 +972,11 @@ class _MovieSection extends StatelessWidget {
   final bool isDark;
   final Color textColor;
 
-  const _MovieSection({required this.movies, required this.isDark, required this.textColor});
+  const _MovieSection({
+    required this.movies,
+    required this.isDark,
+    required this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -836,14 +990,19 @@ class _MovieSection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Recommended Movies',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
+              Expanded(
+                child: Text(
+                  'Recommended Movies',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -865,7 +1024,7 @@ class _MovieSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: 240, 
+          height: 240,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
@@ -905,7 +1064,7 @@ class _MovieCard extends StatelessWidget {
                       color: Colors.black.withOpacity(0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -922,14 +1081,21 @@ class _MovieCard extends StatelessWidget {
                         top: 8,
                         left: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.7),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             movie.rating!,
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -965,7 +1131,9 @@ class _MovieCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 11,
-                color: isDark ? const Color(0xFFD8B4FE) : const Color(0xFF7C3AED),
+                color: isDark
+                    ? const Color(0xFFD8B4FE)
+                    : const Color(0xFF7C3AED),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1013,7 +1181,10 @@ class _TrendingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isFavorited = ref.watch(localStorageProvider).favorites.contains(event.id.toString());
+    final isFavorited = ref
+        .watch(localStorageProvider)
+        .favorites
+        .contains(event.id.toString());
 
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
@@ -1041,35 +1212,77 @@ class _TrendingCard extends ConsumerWidget {
                 children: [
                   Text(
                     "TODAY • ${DateFormat('h:mm a').format(DateTime.parse(event.dateTime))}",
-                    style: const TextStyle(color: Color(0xFF8B5CF6), fontSize: 12, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Color(0xFF8B5CF6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     event.title,
                     maxLines: 1,
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black),
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                      const Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 4),
-                      Text(event.venue, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      Expanded(
+                        child: Text(
+                          event.venue,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            Text(
-              "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB", 
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
-            ),
             const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => ref.read(localStorageProvider).toggleFavorite(event.id.toString()),
-              child: Icon(
-                isFavorited ? Icons.favorite : Icons.favorite_border,
-                color: isFavorited ? const Color(0xFF8B5CF6) : Colors.grey,
-                size: 20,
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                SizedBox(
+                  width: 64,
+                  child: Text(
+                    "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () => ref
+                      .read(localStorageProvider)
+                      .toggleFavorite(event.id.toString()),
+                  child: Icon(
+                    isFavorited ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorited ? const Color(0xFF8B5CF6) : Colors.grey,
+                    size: 20,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1086,7 +1299,10 @@ class _VerticalEventCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isFavorited = ref.watch(localStorageProvider).favorites.contains(event.id.toString());
+    final isFavorited = ref
+        .watch(localStorageProvider)
+        .favorites
+        .contains(event.id.toString());
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
 
@@ -1101,7 +1317,9 @@ class _VerticalEventCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(18),
+              ),
               child: AppImage(
                 imageUrl: event.coverImage,
                 width: double.infinity,
@@ -1131,10 +1349,14 @@ class _VerticalEventCard extends ConsumerWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => ref.read(localStorageProvider).toggleFavorite(event.id.toString()),
+                        onTap: () => ref
+                            .read(localStorageProvider)
+                            .toggleFavorite(event.id.toString()),
                         child: Icon(
                           isFavorited ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorited ? const Color(0xFF8B5CF6) : mutedColor,
+                          color: isFavorited
+                              ? const Color(0xFF8B5CF6)
+                              : mutedColor,
                           size: 20,
                         ),
                       ),
@@ -1142,13 +1364,23 @@ class _VerticalEventCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    DateFormat('EEE, MMM d • h:mm a').format(DateTime.parse(event.dateTime)),
-                    style: TextStyle(color: const Color(0xFF8B5CF6), fontSize: 12, fontWeight: FontWeight.w600),
+                    DateFormat(
+                      'EEE, MMM d • h:mm a',
+                    ).format(DateTime.parse(event.dateTime)),
+                    style: TextStyle(
+                      color: const Color(0xFF8B5CF6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                      const Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -1220,7 +1452,8 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                   PageView.builder(
                     controller: _pageController,
                     itemCount: items.length,
-                    onPageChanged: (index) => setState(() => _currentPage = index),
+                    onPageChanged: (index) =>
+                        setState(() => _currentPage = index),
                     itemBuilder: (context, index) {
                       final item = items[index];
                       if (item is Event) {
@@ -1240,7 +1473,9 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                         child: _BannerNavButton(
                           icon: Icons.chevron_left,
                           onTap: () {
-                            final prev = (_currentPage - 1) < 0 ? items.length - 1 : _currentPage - 1;
+                            final prev = (_currentPage - 1) < 0
+                                ? items.length - 1
+                                : _currentPage - 1;
                             _pageController.animateToPage(
                               prev,
                               duration: const Duration(milliseconds: 300),
@@ -1258,7 +1493,9 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                         child: _BannerNavButton(
                           icon: Icons.chevron_right,
                           onTap: () {
-                            final next = (_currentPage + 1) >= items.length ? 0 : _currentPage + 1;
+                            final next = (_currentPage + 1) >= items.length
+                                ? 0
+                                : _currentPage + 1;
                             _pageController.animateToPage(
                               next,
                               duration: const Duration(milliseconds: 300),
@@ -1283,8 +1520,8 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                   height: 6,
                   width: _currentPage == index ? 24 : 6,
                   decoration: BoxDecoration(
-                    color: _currentPage == index 
-                        ? const Color(0xFF8B5CF6) 
+                    color: _currentPage == index
+                        ? const Color(0xFF8B5CF6)
                         : (isDark ? Colors.white24 : Colors.black12),
                     borderRadius: BorderRadius.circular(3),
                   ),
@@ -1323,21 +1560,18 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                 width: double.infinity,
                 placeholder: 'https://picsum.photos/800/400',
               ),
-              
+
               // Gradient Overlay
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.8),
-                    ],
+                    colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
                   ),
                 ),
               ),
-              
+
               // Content
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -1354,7 +1588,10 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF8B5CF6),
                                   borderRadius: BorderRadius.circular(6),
@@ -1381,7 +1618,11 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(Icons.location_on, color: Colors.white70, size: 12),
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: Colors.white70,
+                                    size: 12,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     event.venue,
@@ -1396,7 +1637,10 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(12),
@@ -1432,9 +1676,9 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
     return GestureDetector(
       onTap: () {
         if (banner.linkUrl != null && banner.linkUrl!.startsWith('/')) {
-           context.push(banner.linkUrl!);
+          context.push(banner.linkUrl!);
         } else if (banner.linkUrl != null) {
-           // Handle external link with url_launcher if needed
+          // Handle external link with url_launcher if needed
         }
       },
       child: Container(
@@ -1454,10 +1698,7 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.7),
-                    ],
+                    colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
                   ),
                 ),
               ),
@@ -1527,4 +1768,3 @@ class _BannerNavButton extends StatelessWidget {
     );
   }
 }
-

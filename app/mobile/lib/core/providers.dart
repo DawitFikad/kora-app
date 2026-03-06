@@ -45,6 +45,24 @@ final dioProvider = Provider<Dio>((ref) {
         return handler.next(options);
       },
       onError: (error, handler) async {
+        final isConnectionError =
+            error.type == DioExceptionType.connectionError;
+        final isGet = error.requestOptions.method.toUpperCase() == 'GET';
+        final alreadyRetried = error.requestOptions.extra['retried'] == true;
+
+        if (isConnectionError && isGet && !alreadyRetried) {
+          final retryOptions = error.requestOptions;
+          retryOptions.extra = {...retryOptions.extra, 'retried': true};
+
+          try {
+            await Future<void>.delayed(const Duration(milliseconds: 350));
+            final retryResponse = await dio.fetch<dynamic>(retryOptions);
+            return handler.resolve(retryResponse);
+          } catch (_) {
+            // Fall through to normal error handling
+          }
+        }
+
         final statusCode = error.response?.statusCode;
         if (statusCode == 401) {
           await storage.clearAuth();
