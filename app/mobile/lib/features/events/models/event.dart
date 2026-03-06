@@ -10,18 +10,20 @@ class Event {
   final String dateTime;
   final String? coverImage;
   final bool featured;
-  
+  final int? totalCapacity;
+  final int? ticketsAvailable;
+
   // Policy fields
   final String? refundPolicy;
   final int minAge;
   final String? additionalPolicy;
   final bool hasSeatMap;
-  
+
   // Relations
   final List<TicketTier> tiers;
   final Category? category;
   final City? city;
-  
+
   // Movie Metadata
   final bool isMovie;
   final String? director;
@@ -38,6 +40,8 @@ class Event {
     required this.dateTime,
     this.coverImage,
     this.featured = false,
+    this.totalCapacity,
+    this.ticketsAvailable,
     this.refundPolicy,
     this.minAge = 0,
     this.additionalPolicy,
@@ -53,11 +57,10 @@ class Event {
     this.trailerUrl,
   });
 
-
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json['id'] is int 
-          ? json['id'] 
+      id: json['id'] is int
+          ? json['id']
           : (int.tryParse(json['id']?.toString() ?? '') ?? 0),
       title: json['title'] ?? 'Untitled',
       description: json['description'] ?? '',
@@ -65,14 +68,20 @@ class Event {
       dateTime: json['dateTime'] ?? DateTime.now().toIso8601String(),
       coverImage: json['coverImage'],
       featured: json['featured'] ?? false,
+      totalCapacity: json['totalCapacity'],
+      ticketsAvailable: json['ticketsAvailable'],
       refundPolicy: json['refundPolicy'],
       minAge: json['minAge'] ?? 0,
       additionalPolicy: json['additionalPolicy'],
       hasSeatMap: json['hasSeatMap'] ?? false,
-      tiers: (json['tiers'] as List<dynamic>?)
-          ?.map((e) => TicketTier.fromJson(e))
-          .toList() ?? [],
-      category: json['category'] != null ? Category.fromJson(json['category']) : null,
+      tiers:
+          (json['tiers'] as List<dynamic>?)
+              ?.map((e) => TicketTier.fromJson(e))
+              .toList() ??
+          [],
+      category: json['category'] != null
+          ? Category.fromJson(json['category'])
+          : null,
       city: json['city'] != null ? City.fromJson(json['city']) : null,
       isMovie: json['isMovie'] ?? false,
       director: json['director'],
@@ -91,6 +100,8 @@ class Event {
       'dateTime': dateTime,
       'coverImage': coverImage,
       'featured': featured,
+      'totalCapacity': totalCapacity,
+      'ticketsAvailable': ticketsAvailable,
       'refundPolicy': refundPolicy,
       'minAge': minAge,
       'additionalPolicy': additionalPolicy,
@@ -107,4 +118,3 @@ class Event {
     };
   }
 }
-

@@ -43,6 +43,15 @@ final recommendedMoviesProvider = FutureProvider.autoDispose<List<Event>>((
   return service.getRecommendedMovies(cityId: city?.id, limit: 12);
 });
 
+final bestEventsThisWeekProvider = FutureProvider.autoDispose<List<Event>>((
+  ref,
+) async {
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  final city = ref.watch(selectedCityProvider);
+  return service.getBestEventsThisWeek(cityId: city?.id, limit: 10);
+});
+
 final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
   final service = ref.watch(eventServiceProvider);
 
@@ -150,6 +159,7 @@ class _HomeBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final eventsAsync = ref.watch(filteredEventsProvider);
     final recommendedMoviesAsync = ref.watch(recommendedMoviesProvider);
+    final bestEventsWeekAsync = ref.watch(bestEventsThisWeekProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
@@ -268,6 +278,16 @@ class _HomeBody extends ConsumerWidget {
                                   recommendedMoviesAsync.when(
                                     data: (movies) => _MovieSection(
                                       movies: movies,
+                                      isDark: isDark,
+                                      textColor: textColor,
+                                    ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  bestEventsWeekAsync.when(
+                                    data: (events) => _BestEventsWeekSection(
+                                      events: events,
                                       isDark: isDark,
                                       textColor: textColor,
                                     ),
@@ -1171,6 +1191,200 @@ class _MovieCard extends StatelessWidget {
     final parsed = DateTime.tryParse(dateTime);
     if (parsed == null) return 'Date TBA';
     return DateFormat('MMM d, h:mm a').format(parsed);
+  }
+}
+
+class _BestEventsWeekSection extends StatelessWidget {
+  final List<Event> events;
+  final bool isDark;
+  final Color textColor;
+
+  const _BestEventsWeekSection({
+    required this.events,
+    required this.isDark,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Best Events This Week',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'TRENDING',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF10B981),
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 170,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            scrollDirection: Axis.horizontal,
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) =>
+                _BestEventsWeekCard(event: events[i], isDark: isDark),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BestEventsWeekCard extends StatelessWidget {
+  final Event event;
+  final bool isDark;
+
+  const _BestEventsWeekCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final cardColor = isDark ? const Color(0xFF1F1C2A) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final muted = isDark ? Colors.white60 : Colors.black54;
+    final categoryName = event.category?.name ?? 'Event';
+    final cityName = event.city?.name ?? 'City';
+
+    String availabilityText;
+    if (event.ticketsAvailable == null) {
+      availabilityText = 'Open availability';
+    } else if (event.ticketsAvailable == 0) {
+      availabilityText = 'Sold out';
+    } else {
+      availabilityText = '${event.ticketsAvailable} tickets left';
+    }
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        width: 280,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFEAE8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: AppImage(
+                imageUrl: event.coverImage,
+                width: 80,
+                height: 130,
+                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/300/400',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    DateFormat(
+                      'EEE, MMM d • h:mm a',
+                    ).format(DateTime.parse(event.dateTime)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: muted),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _badge(categoryName, const Color(0xFF8B5CF6), isDark),
+                      _badge(cityName, const Color(0xFF0EA5E9), isDark),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    availabilityText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: event.ticketsAvailable == 0
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFF10B981),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _badge(String label, Color color, bool isDark) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 120),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
   }
 }
 

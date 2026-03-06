@@ -311,6 +311,100 @@ export class EventService {
         return ranked;
     }
 
+    static async listBestEventsThisWeek(params: {
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { cityId, limit = 12 } = params;
+        const now = new Date();
+        const next7Days = new Date(now);
+        next7Days.setDate(now.getDate() + 7);
+        next7Days.setHours(23, 59, 59, 999);
+
+        const targetCategorySlugs = ['music', 'comedy', 'workshops-classes', 'cultural'];
+        const targetCategories = await prisma.mainCategory.findMany({
+            where: { slug: { in: targetCategorySlugs } },
+            select: { id: true }
+        });
+        const categoryIds = targetCategories.map((c) => c.id);
+
+        const weeklyEvents = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                dateTime: { gte: now, lte: next7Days },
+                cityId: cityId || undefined,
+                OR: [
+                    categoryIds.length ? { categoryId: { in: categoryIds } } : undefined,
+                    { title: { contains: 'concert', mode: 'insensitive' } },
+                    { title: { contains: 'comedy', mode: 'insensitive' } },
+                    { title: { contains: 'festival', mode: 'insensitive' } },
+                    { title: { contains: 'workshop', mode: 'insensitive' } },
+                    { description: { contains: 'concert', mode: 'insensitive' } },
+                    { description: { contains: 'comedy', mode: 'insensitive' } },
+                    { description: { contains: 'festival', mode: 'insensitive' } },
+                    { description: { contains: 'workshop', mode: 'insensitive' } }
+                ].filter(Boolean) as any
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { dateTime: 'asc' }
+            ],
+            take: 80
+        });
+
+        if (!weeklyEvents.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: weeklyEvents.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        const ranked = weeklyEvents
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+
+                let score = 0;
+                score += event.featured ? 25 : 0;
+                score += Math.min(sold, 40);
+
+                const title = event.title.toLowerCase();
+                const desc = (event.description || '').toLowerCase();
+                if (title.includes('concert') || desc.includes('concert')) score += 8;
+                if (title.includes('comedy') || desc.includes('comedy')) score += 8;
+                if (title.includes('festival') || desc.includes('festival')) score += 8;
+                if (title.includes('workshop') || desc.includes('workshop')) score += 8;
+
+                return {
+                    ...event,
+                    popularityScore: score,
+                    ticketsAvailable
+                };
+            })
+            .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
+            .slice(0, limit);
+
+        return ranked;
+    }
+
     static async getEventDetails(id: number) {
         const event = await prisma.event.findUnique({
             where: { id },

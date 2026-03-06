@@ -98,6 +98,28 @@ class EventService {
     }
   }
 
+  Future<List<Event>> getBestEventsThisWeek({
+    int? cityId,
+    int limit = 10,
+  }) async {
+    final queryParams = <String, dynamic>{'limit': limit};
+    if (cityId != null && cityId != 0) queryParams['cityId'] = cityId;
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.bestEventsThisWeek,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Event.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load best events this week');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<Map<String, List<dynamic>>> getMetadata() async {
     try {
       final response = await _dio.get('${ApiConstants.events}/meta');
