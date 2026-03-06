@@ -1,4 +1,6 @@
+import 'package:device_preview/device_preview.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,13 +14,16 @@ void main() async {
   final localStorage = await LocalStorage.init();
 
   runApp(
-    EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('am')],
-      path: 'assets/translations',
-      fallbackLocale: const Locale('en'),
-      child: ProviderScope(
-        overrides: [localStorageProvider.overrideWith((ref) => localStorage)],
-        child: const EtTicketApp(),
+    DevicePreview(
+      enabled: !kReleaseMode,
+      builder: (context) => EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('am')],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('en'),
+        child: ProviderScope(
+          overrides: [localStorageProvider.overrideWith((ref) => localStorage)],
+          child: const EtTicketApp(),
+        ),
       ),
     ),
   );
@@ -36,7 +41,8 @@ class EtTicketApp extends ConsumerWidget {
       title: 'EtTicket',
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
-      locale: context.locale,
+      locale: DevicePreview.locale(context) ?? context.locale,
+      builder: DevicePreview.appBuilder,
       routerConfig: router,
       themeMode: themeMode,
       theme: AppTheme.lightTheme,

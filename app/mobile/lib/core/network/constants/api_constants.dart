@@ -1,6 +1,10 @@
 class ApiConstants {
-  static const String baseUrl = 'https://et-ticket-api-v2.vercel.app/api';
-  
+  // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
+  // static const String baseUrl = 'http://10.0.2.2:4000/api';
+
+  // For Web or iOS Simulator
+  static const String baseUrl = 'http://localhost:4000/api';
+
   static const String authOtpRequest = '$baseUrl/auth/otp/request';
   static const String authOtpVerify = '$baseUrl/auth/otp/verify';
   static const String events = '$baseUrl/events';
@@ -25,4 +29,3 @@ class ApiConstants {
   static const String bookingLockSeats = '$baseUrl/booking/lock-seats';
   static const String bookingReleaseSeats = '$baseUrl/booking/release-seats';
 }
-
