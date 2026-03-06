@@ -120,6 +120,24 @@ class EventService {
     }
   }
 
+  Future<List<Event>> getTrendingNow({int limit = 10}) async {
+    final queryParams = <String, dynamic>{'limit': limit};
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.trendingNow,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Event.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load trending events');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<Map<String, List<dynamic>>> getMetadata() async {
     try {
       final response = await _dio.get('${ApiConstants.events}/meta');

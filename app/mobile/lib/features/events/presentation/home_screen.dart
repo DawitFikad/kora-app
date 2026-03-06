@@ -52,6 +52,14 @@ final bestEventsThisWeekProvider = FutureProvider.autoDispose<List<Event>>((
   return service.getBestEventsThisWeek(cityId: city?.id, limit: 10);
 });
 
+final trendingNowProvider = FutureProvider.autoDispose<List<Event>>((
+  ref,
+) async {
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  return service.getTrendingNow(limit: 10);
+});
+
 final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
   final service = ref.watch(eventServiceProvider);
 
@@ -160,6 +168,7 @@ class _HomeBody extends ConsumerWidget {
     final eventsAsync = ref.watch(filteredEventsProvider);
     final recommendedMoviesAsync = ref.watch(recommendedMoviesProvider);
     final bestEventsWeekAsync = ref.watch(bestEventsThisWeekProvider);
+    final trendingNowAsync = ref.watch(trendingNowProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
@@ -287,6 +296,16 @@ class _HomeBody extends ConsumerWidget {
                                   const SizedBox(height: 24),
                                   bestEventsWeekAsync.when(
                                     data: (events) => _BestEventsWeekSection(
+                                      events: events,
+                                      isDark: isDark,
+                                      textColor: textColor,
+                                    ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  trendingNowAsync.when(
+                                    data: (events) => _TrendingNowSection(
                                       events: events,
                                       isDark: isDark,
                                       textColor: textColor,
@@ -1382,6 +1401,223 @@ class _BestEventsWeekCard extends StatelessWidget {
           fontSize: 10,
           fontWeight: FontWeight.w600,
           color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendingNowSection extends StatelessWidget {
+  final List<Event> events;
+  final bool isDark;
+  final Color textColor;
+
+  const _TrendingNowSection({
+    required this.events,
+    required this.isDark,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Trending Now',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'HOT & POPULAR',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFEF4444),
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 180,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              return _TrendingNowCard(event: events[index], isDark: isDark);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TrendingNowCard extends StatelessWidget {
+  final Event event;
+  final bool isDark;
+
+  const _TrendingNowCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final cardColor = isDark ? const Color(0xFF1F1C2A) : Colors.white;
+    final actionLabel = _isLivestream(event) ? 'Watch Livestream' : 'Book Now';
+    final actionColor = _isLivestream(event)
+        ? const Color(0xFF2563EB)
+        : const Color(0xFF16A34A);
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        width: 310,
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFEAE8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(14),
+              ),
+              child: AppImage(
+                imageUrl: event.coverImage,
+                width: 110,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/400/500',
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat(
+                        'EEE, MMM d • h:mm a',
+                      ).format(DateTime.parse(event.dateTime)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _chip(
+                          event.city?.name ?? 'Ethiopia',
+                          const Color(0xFF0EA5E9),
+                          isDark,
+                        ),
+                        _chip(
+                          event.category?.name ?? 'Event',
+                          const Color(0xFF8B5CF6),
+                          isDark,
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: actionColor.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        actionLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: actionColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool _isLivestream(Event event) {
+    final text = '${event.title} ${event.description}'.toLowerCase();
+    return text.contains('livestream') ||
+        text.contains('live stream') ||
+        text.contains('virtual') ||
+        text.contains('online');
+  }
+
+  Widget _chip(String text, Color color, bool isDark) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 110),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

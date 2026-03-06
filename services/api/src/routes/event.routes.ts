@@ -12,6 +12,7 @@ router.get("/meta", EventController.getMetadata);
 // Public Discovery (Optional Auth)
 router.get("/", optionalAuthenticate, EventController.getAllEvents);
 router.get("/best-this-week", optionalAuthenticate, EventController.getBestThisWeek);
+router.get("/trending-now", optionalAuthenticate, EventController.getTrendingNow);
 router.get("/recommended-movies", optionalAuthenticate, EventController.getRecommendedMovies);
 router.get("/:id", optionalAuthenticate, EventController.getEvent);
 

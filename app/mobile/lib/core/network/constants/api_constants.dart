@@ -9,6 +9,7 @@ class ApiConstants {
   static const String authOtpVerify = '$baseUrl/auth/otp/verify';
   static const String events = '$baseUrl/events';
   static const String bestEventsThisWeek = '$baseUrl/events/best-this-week';
+  static const String trendingNow = '$baseUrl/events/trending-now';
   static const String recommendedMovies = '$baseUrl/events/recommended-movies';
   static const String myTickets = '$baseUrl/tickets/me';
   static const String bookTicket = '$baseUrl/tickets/reserve';

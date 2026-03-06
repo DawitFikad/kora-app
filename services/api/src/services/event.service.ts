@@ -405,6 +405,99 @@ export class EventService {
         return ranked;
     }
 
+    static async listTrendingNow(params: {
+        limit?: number;
+    }) {
+        const { limit = 12 } = params;
+        const now = new Date();
+        const next30Days = new Date(now);
+        next30Days.setDate(now.getDate() + 30);
+        next30Days.setHours(23, 59, 59, 999);
+
+        const trendingEvents = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                dateTime: { gte: now, lte: next30Days },
+                OR: [
+                    { featured: true },
+                    { title: { contains: 'tiktok', mode: 'insensitive' } },
+                    { title: { contains: 'leza', mode: 'insensitive' } },
+                    { title: { contains: 'influencer', mode: 'insensitive' } },
+                    { title: { contains: 'awards', mode: 'insensitive' } },
+                    { title: { contains: 'concert', mode: 'insensitive' } },
+                    { title: { contains: 'meetup', mode: 'insensitive' } },
+                    { title: { contains: 'livestream', mode: 'insensitive' } },
+                    { description: { contains: 'viral', mode: 'insensitive' } },
+                    { description: { contains: 'hot', mode: 'insensitive' } },
+                    { description: { contains: 'trending', mode: 'insensitive' } },
+                    { description: { contains: 'popular', mode: 'insensitive' } },
+                ]
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { createdAt: 'desc' }
+            ],
+            take: 100
+        });
+
+        if (!trendingEvents.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: trendingEvents.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        const ranked = trendingEvents
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+
+                const title = event.title.toLowerCase();
+                const desc = (event.description || '').toLowerCase();
+                let score = 0;
+
+                score += event.featured ? 25 : 0;
+                score += Math.min(sold, 50);
+
+                if (title.includes('tiktok') || desc.includes('tiktok')) score += 14;
+                if (title.includes('leza') || desc.includes('leza')) score += 14;
+                if (title.includes('influencer') || desc.includes('influencer')) score += 12;
+                if (title.includes('awards') || desc.includes('awards')) score += 10;
+                if (title.includes('concert') || desc.includes('concert')) score += 10;
+                if (title.includes('livestream') || desc.includes('livestream')) score += 9;
+                if (title.includes('viral') || desc.includes('viral')) score += 8;
+                if (title.includes('trending') || desc.includes('trending')) score += 8;
+
+                return {
+                    ...event,
+                    popularityScore: score,
+                    ticketsAvailable,
+                };
+            })
+            .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
+            .slice(0, limit);
+
+        return ranked;
+    }
+
     static async getEventDetails(id: number) {
         const event = await prisma.event.findUnique({
             where: { id },
