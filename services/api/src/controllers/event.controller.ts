@@ -6,6 +6,19 @@ import { ProfileService } from "../services/profile.service";
 export class EventController {
     // --- Public Discovery ---
 
+    static async getNewUpcomingExperiences(req: Request, res: Response) {
+        try {
+            const filters = req.query as any;
+            const experiences = await EventService.listNewUpcomingExperiences({
+                cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
+                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+            });
+            res.json(experiences);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     static async getLastMinuteTodayEvents(req: Request, res: Response) {
         try {
             const filters = req.query as any;

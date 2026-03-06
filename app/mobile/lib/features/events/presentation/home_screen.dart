@@ -114,6 +114,14 @@ final offersDealsProvider = FutureProvider.autoDispose<List<Event>>((
   return service.getOffersDeals(cityId: city?.id, limit: 10);
 });
 
+final newUpcomingExperiencesProvider =
+    FutureProvider.autoDispose<List<Event>>((ref) async {
+      ref.watch(authTokenProvider);
+      final service = ref.watch(eventServiceProvider);
+      final city = ref.watch(selectedCityProvider);
+      return service.getNewUpcomingExperiences(cityId: city?.id, limit: 10);
+    });
+
 final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
   final service = ref.watch(eventServiceProvider);
 
@@ -229,6 +237,9 @@ class _HomeBody extends ConsumerWidget {
     final citySpotlightAsync = ref.watch(citySpotlightProvider);
     final lastMinuteTodayAsync = ref.watch(lastMinuteTodayProvider);
     final offersDealsAsync = ref.watch(offersDealsProvider);
+    final newUpcomingExperiencesAsync = ref.watch(
+      newUpcomingExperiencesProvider,
+    );
     final selectedCity = ref.watch(selectedCityProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
@@ -433,6 +444,17 @@ class _HomeBody extends ConsumerWidget {
                                       isDark: isDark,
                                       textColor: textColor,
                                     ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  newUpcomingExperiencesAsync.when(
+                                    data: (events) =>
+                                        _NewUpcomingExperiencesSection(
+                                          events: events,
+                                          isDark: isDark,
+                                          textColor: textColor,
+                                        ),
                                     loading: () => const SizedBox.shrink(),
                                     error: (_, __) => const SizedBox.shrink(),
                                   ),
@@ -2856,6 +2878,205 @@ class _OfferDealCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewUpcomingExperiencesSection extends StatelessWidget {
+  final List<Event> events;
+  final bool isDark;
+  final Color textColor;
+
+  const _NewUpcomingExperiencesSection({
+    required this.events,
+    required this.isDark,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'New & Upcoming Experiences',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'EARLY ACCESS',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF8B5CF6),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 188,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) => _UpcomingExperienceCard(
+              event: events[i],
+              isDark: isDark,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UpcomingExperienceCard extends StatelessWidget {
+  final Event event;
+  final bool isDark;
+
+  const _UpcomingExperienceCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final muted = isDark ? Colors.white60 : Colors.black54;
+    final desc = '${event.title} ${event.description}'.toLowerCase();
+
+    final earlyBird = event.earlyBirdAvailable == true ||
+        desc.contains('early bird') ||
+        desc.contains('early-bird');
+    final preReg = event.preRegistrationAvailable == true ||
+        desc.contains('pre-registration') ||
+        desc.contains('pre registration') ||
+        desc.contains('register now');
+    final reminder = event.reminderAvailable == true ||
+        desc.contains('reminder') ||
+        desc.contains('notify');
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        width: 312,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F1C2A) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFEAE8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: AppImage(
+                imageUrl: event.coverImage,
+                width: 92,
+                height: 164,
+                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/360/520',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    DateFormat(
+                      'MMM d • h:mm a',
+                    ).format(DateTime.parse(event.dateTime)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: muted),
+                  ),
+                  const SizedBox(height: 7),
+                  SizedBox(
+                    height: 24,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        if (earlyBird)
+                          _chip('Early Bird', const Color(0xFF8B5CF6), isDark),
+                        if (earlyBird && (preReg || reminder))
+                          const SizedBox(width: 6),
+                        if (preReg)
+                          _chip('Pre-Register', const Color(0xFF0EA5E9), isDark),
+                        if (preReg && reminder) const SizedBox(width: 6),
+                        if (reminder)
+                          _chip('Reminder On', const Color(0xFF16A34A), isDark),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    event.category?.name ?? 'Experience',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String text, Color color, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

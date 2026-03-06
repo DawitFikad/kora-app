@@ -19,6 +19,7 @@ router.get("/workshops-short-courses", optionalAuthenticate, EventController.get
 router.get("/city-spotlight", optionalAuthenticate, EventController.getCitySpotlight);
 router.get("/last-minute-today", optionalAuthenticate, EventController.getLastMinuteTodayEvents);
 router.get("/offers-deals", optionalAuthenticate, EventController.getOffersDeals);
+router.get("/new-upcoming-experiences", optionalAuthenticate, EventController.getNewUpcomingExperiences);
 router.get("/recommended-movies", optionalAuthenticate, EventController.getRecommendedMovies);
 router.get("/:id", optionalAuthenticate, EventController.getEvent);
 

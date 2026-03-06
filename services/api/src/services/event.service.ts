@@ -1071,6 +1071,118 @@ export class EventService {
             .slice(0, limit);
     }
 
+    static async listNewUpcomingExperiences(params: {
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { cityId, limit = 12 } = params;
+        const now = new Date();
+        const upcomingFrom = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+        const next120Days = new Date(now);
+        next120Days.setDate(now.getDate() + 120);
+        next120Days.setHours(23, 59, 59, 999);
+
+        const focusCategorySlugs = [
+            'music',
+            'cultural',
+            'workshops-classes',
+            'awards-recognition',
+            'film-tv-awards',
+            'music-arts-awards',
+        ];
+
+        const categories = await prisma.mainCategory.findMany({
+            where: { slug: { in: focusCategorySlugs } },
+            select: { id: true }
+        });
+        const categoryIds = categories.map((c) => c.id);
+
+        const experiences = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                cityId: cityId || undefined,
+                dateTime: { gte: upcomingFrom, lte: next120Days },
+                OR: [
+                    categoryIds.length ? { categoryId: { in: categoryIds } } : undefined,
+                    { title: { contains: 'festival', mode: 'insensitive' } },
+                    { title: { contains: 'concert', mode: 'insensitive' } },
+                    { title: { contains: 'workshop', mode: 'insensitive' } },
+                    { title: { contains: 'award', mode: 'insensitive' } },
+                    { description: { contains: 'early bird', mode: 'insensitive' } },
+                    { description: { contains: 'pre-registration', mode: 'insensitive' } },
+                    { description: { contains: 'reminder', mode: 'insensitive' } },
+                ].filter(Boolean) as any
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { dateTime: 'asc' }
+            ],
+            take: 140
+        });
+
+        if (!experiences.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: experiences.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        return experiences
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+
+                const text = `${event.title} ${event.description || ''}`.toLowerCase();
+                const earlyBirdAvailable = text.includes('early bird') || text.includes('early-bird') || event.featured;
+                const preRegistrationAvailable =
+                    text.includes('pre-registration') ||
+                    text.includes('pre registration') ||
+                    text.includes('pre-register') ||
+                    text.includes('register now');
+                const reminderAvailable =
+                    text.includes('reminder') ||
+                    text.includes('notify') ||
+                    text.includes('notification') ||
+                    (+new Date(event.dateTime) - now.getTime()) > 3 * 24 * 60 * 60 * 1000;
+
+                let score = 0;
+                score += event.featured ? 18 : 0;
+                score += earlyBirdAvailable ? 12 : 0;
+                score += preRegistrationAvailable ? 10 : 0;
+                score += reminderAvailable ? 8 : 0;
+                score += Math.min(sold, 20);
+
+                return {
+                    ...event,
+                    ticketsAvailable,
+                    earlyBirdAvailable,
+                    preRegistrationAvailable,
+                    reminderAvailable,
+                    popularityScore: score,
+                };
+            })
+            .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
+            .slice(0, limit);
+    }
+
     static async getEventDetails(id: number) {
         const event = await prisma.event.findUnique({
             where: { id },
