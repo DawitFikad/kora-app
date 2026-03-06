@@ -12,6 +12,11 @@ class Event {
   final bool featured;
   final int? totalCapacity;
   final int? ticketsAvailable;
+  final bool? isExplorationPick;
+  final String? personalizedTag;
+  final bool? livestreamAvailable;
+  final bool? nomineesInfoAvailable;
+  final bool? winnersInfoAvailable;
 
   // Policy fields
   final String? refundPolicy;
@@ -42,6 +47,11 @@ class Event {
     this.featured = false,
     this.totalCapacity,
     this.ticketsAvailable,
+    this.isExplorationPick,
+    this.personalizedTag,
+    this.livestreamAvailable,
+    this.nomineesInfoAvailable,
+    this.winnersInfoAvailable,
     this.refundPolicy,
     this.minAge = 0,
     this.additionalPolicy,
@@ -70,6 +80,11 @@ class Event {
       featured: json['featured'] ?? false,
       totalCapacity: json['totalCapacity'],
       ticketsAvailable: json['ticketsAvailable'],
+      isExplorationPick: json['isExplorationPick'],
+      personalizedTag: json['personalizedTag'],
+      livestreamAvailable: json['livestreamAvailable'],
+      nomineesInfoAvailable: json['nomineesInfoAvailable'],
+      winnersInfoAvailable: json['winnersInfoAvailable'],
       refundPolicy: json['refundPolicy'],
       minAge: json['minAge'] ?? 0,
       additionalPolicy: json['additionalPolicy'],
@@ -102,6 +117,11 @@ class Event {
       'featured': featured,
       'totalCapacity': totalCapacity,
       'ticketsAvailable': ticketsAvailable,
+      'isExplorationPick': isExplorationPick,
+      'personalizedTag': personalizedTag,
+      'livestreamAvailable': livestreamAvailable,
+      'nomineesInfoAvailable': nomineesInfoAvailable,
+      'winnersInfoAvailable': winnersInfoAvailable,
       'refundPolicy': refundPolicy,
       'minAge': minAge,
       'additionalPolicy': additionalPolicy,

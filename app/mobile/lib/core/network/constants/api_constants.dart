@@ -1,34 +1,52 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
-  // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
-  // static const String baseUrl = 'http://10.0.2.2:4000/api';
+  static const String _webLocalBaseUrl = 'http://127.0.0.1:4000/api';
+  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:4000/api';
+  static const String _defaultLocalBaseUrl = 'http://127.0.0.1:4000/api';
 
-  // For Web or iOS Simulator
-  static const String baseUrl = 'http://localhost:4000/api';
+  // Optional override, example:
+  // flutter run --dart-define=API_BASE_URL=http://192.168.1.20:4000/api
+  static String get baseUrl {
+    const envBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (envBaseUrl.isNotEmpty) return envBaseUrl;
 
-  static const String authOtpRequest = '$baseUrl/auth/otp/request';
-  static const String authOtpVerify = '$baseUrl/auth/otp/verify';
-  static const String events = '$baseUrl/events';
-  static const String bestEventsThisWeek = '$baseUrl/events/best-this-week';
-  static const String trendingNow = '$baseUrl/events/trending-now';
-  static const String recommendedMovies = '$baseUrl/events/recommended-movies';
-  static const String myTickets = '$baseUrl/tickets/me';
-  static const String bookTicket = '$baseUrl/tickets/reserve';
-  static const String initPayment = '$baseUrl/payments/initialize';
-  static const String notifications = '$baseUrl/notifications';
-  static const String profile = '$baseUrl/profiles/me';
-  static const String organizerProfile = '$baseUrl/profiles/organizer';
-  static const String paymentMethods = '$baseUrl/profiles/payment-methods';
-  static const String banners = '$baseUrl/content/banners';
-  static const String validateScan = '$baseUrl/validate/scan';
-  static const String validateGateList = '$baseUrl/validate/gate-list';
-  static const String validateSync = '$baseUrl/validate/sync';
-  static const String staff = '$baseUrl/staff';
-  static const String staffInvite = '$baseUrl/staff/invite';
-  static const String staffAccept = '$baseUrl/staff/accept';
-  static const String bookingCalculate = '$baseUrl/booking/calculate-price';
-  static const String bookingReserve = '$baseUrl/booking/reserve';
-  static const String bookingSeats = '$baseUrl/booking/events';
-  static const String bookingValidatePromo = '$baseUrl/booking/validate-promo';
-  static const String bookingLockSeats = '$baseUrl/booking/lock-seats';
-  static const String bookingReleaseSeats = '$baseUrl/booking/release-seats';
+    if (kIsWeb) return _webLocalBaseUrl;
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return _androidEmulatorBaseUrl;
+      default:
+        return _defaultLocalBaseUrl;
+    }
+  }
+
+  static String get authOtpRequest => '$baseUrl/auth/otp/request';
+  static String get authOtpVerify => '$baseUrl/auth/otp/verify';
+  static String get events => '$baseUrl/events';
+  static String get bestEventsThisWeek => '$baseUrl/events/best-this-week';
+  static String get trendingNow => '$baseUrl/events/trending-now';
+  static String get personalizedPicks => '$baseUrl/events/personalized-picks';
+  static String get upcomingAwards => '$baseUrl/events/upcoming-awards';
+  static String get recommendedMovies => '$baseUrl/events/recommended-movies';
+  static String get myTickets => '$baseUrl/tickets/me';
+  static String get bookTicket => '$baseUrl/tickets/reserve';
+  static String get initPayment => '$baseUrl/payments/initialize';
+  static String get notifications => '$baseUrl/notifications';
+  static String get profile => '$baseUrl/profiles/me';
+  static String get organizerProfile => '$baseUrl/profiles/organizer';
+  static String get paymentMethods => '$baseUrl/profiles/payment-methods';
+  static String get banners => '$baseUrl/content/banners';
+  static String get validateScan => '$baseUrl/validate/scan';
+  static String get validateGateList => '$baseUrl/validate/gate-list';
+  static String get validateSync => '$baseUrl/validate/sync';
+  static String get staff => '$baseUrl/staff';
+  static String get staffInvite => '$baseUrl/staff/invite';
+  static String get staffAccept => '$baseUrl/staff/accept';
+  static String get bookingCalculate => '$baseUrl/booking/calculate-price';
+  static String get bookingReserve => '$baseUrl/booking/reserve';
+  static String get bookingSeats => '$baseUrl/booking/events';
+  static String get bookingValidatePromo => '$baseUrl/booking/validate-promo';
+  static String get bookingLockSeats => '$baseUrl/booking/lock-seats';
+  static String get bookingReleaseSeats => '$baseUrl/booking/release-seats';
 }

@@ -138,6 +138,47 @@ class EventService {
     }
   }
 
+  Future<List<Event>> getPersonalizedPicks({
+    int? cityId,
+    int limit = 12,
+  }) async {
+    final queryParams = <String, dynamic>{'limit': limit};
+    if (cityId != null && cityId != 0) queryParams['cityId'] = cityId;
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.personalizedPicks,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Event.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load personalized picks');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<List<Event>> getUpcomingAwards({int? cityId, int limit = 12}) async {
+    final queryParams = <String, dynamic>{'limit': limit};
+    if (cityId != null && cityId != 0) queryParams['cityId'] = cityId;
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.upcomingAwards,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Event.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load upcoming awards');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<Map<String, List<dynamic>>> getMetadata() async {
     try {
       final response = await _dio.get('${ApiConstants.events}/meta');

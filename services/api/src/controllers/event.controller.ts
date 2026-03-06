@@ -6,6 +6,33 @@ import { ProfileService } from "../services/profile.service";
 export class EventController {
     // --- Public Discovery ---
 
+    static async getPersonalizedPicks(req: Request, res: Response) {
+        try {
+            const filters = req.query as any;
+            const picks = await EventService.listPersonalizedPicks({
+                userId: req.user?.userId as number | undefined,
+                cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
+                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+            });
+            res.json(picks);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async getUpcomingAwards(req: Request, res: Response) {
+        try {
+            const filters = req.query as any;
+            const awards = await EventService.listUpcomingAwards({
+                cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
+                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+            });
+            res.json(awards);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     static async getTrendingNow(req: Request, res: Response) {
         try {
             const filters = req.query as any;

@@ -13,6 +13,8 @@ router.get("/meta", EventController.getMetadata);
 router.get("/", optionalAuthenticate, EventController.getAllEvents);
 router.get("/best-this-week", optionalAuthenticate, EventController.getBestThisWeek);
 router.get("/trending-now", optionalAuthenticate, EventController.getTrendingNow);
+router.get("/personalized-picks", optionalAuthenticate, EventController.getPersonalizedPicks);
+router.get("/upcoming-awards", optionalAuthenticate, EventController.getUpcomingAwards);
 router.get("/recommended-movies", optionalAuthenticate, EventController.getRecommendedMovies);
 router.get("/:id", optionalAuthenticate, EventController.getEvent);
 

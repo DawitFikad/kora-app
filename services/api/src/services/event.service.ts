@@ -498,6 +498,220 @@ export class EventService {
         return ranked;
     }
 
+    static async listPersonalizedPicks(params: {
+        userId?: number;
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { userId, cityId, limit = 12 } = params;
+        const now = new Date();
+        const next45Days = new Date(now);
+        next45Days.setDate(now.getDate() + 45);
+        next45Days.setHours(23, 59, 59, 999);
+
+        const preferredSlugs = ['music', 'comedy', 'movies', 'workshops-classes', 'tours-travel'];
+        const preferredCategories = await prisma.mainCategory.findMany({
+            where: { slug: { in: preferredSlugs } },
+            select: { id: true, slug: true }
+        });
+
+        const bookingHistory = userId
+            ? await prisma.ticket.findMany({
+                where: { userId },
+                select: {
+                    event: {
+                        select: { id: true, categoryId: true, cityId: true }
+                    }
+                }
+            })
+            : [];
+
+        const preferredCategoryCount = bookingHistory.reduce<Record<number, number>>((acc, t) => {
+            const cid = t.event?.categoryId;
+            if (typeof cid === 'number') acc[cid] = (acc[cid] || 0) + 1;
+            return acc;
+        }, {});
+
+        const preferredCityId = cityId || Number(
+            Object.entries(
+                bookingHistory.reduce<Record<number, number>>((acc, t) => {
+                    const c = t.event?.cityId;
+                    if (typeof c === 'number') acc[c] = (acc[c] || 0) + 1;
+                    return acc;
+                }, {})
+            ).sort((a, b) => b[1] - a[1])[0]?.[0]
+        ) || undefined;
+
+        const preferredCategoryIds = new Set<number>([
+            ...preferredCategories.map((c) => c.id),
+            ...Object.keys(preferredCategoryCount).map((k) => Number(k))
+        ]);
+
+        const events = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                dateTime: { gte: now, lte: next45Days },
+                cityId: preferredCityId || undefined,
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { dateTime: 'asc' }
+            ],
+            take: 120
+        });
+
+        if (!events.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: events.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        const ranked = events
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+
+                const isPreferredCategory = preferredCategoryIds.has(event.categoryId);
+                const isExplorationPick = !isPreferredCategory;
+
+                let score = 0;
+                score += event.featured ? 16 : 0;
+                score += Math.min(sold, 25);
+                if (isPreferredCategory) score += 28;
+                if (preferredCityId && event.cityId === preferredCityId) score += 10;
+                if (event.isMovie) score += 8;
+
+                return {
+                    ...event,
+                    ticketsAvailable,
+                    isExplorationPick,
+                    personalizedTag: isPreferredCategory ? 'Based on your interests' : 'Explore something new',
+                    popularityScore: score,
+                };
+            })
+            .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime));
+
+        // Ensure at least some exploration items are present
+        const preferred = ranked.filter((e) => !e.isExplorationPick).slice(0, Math.ceil(limit * 0.7));
+        const explore = ranked.filter((e) => e.isExplorationPick).slice(0, Math.max(1, limit - preferred.length));
+        return [...preferred, ...explore].slice(0, limit);
+    }
+
+    static async listUpcomingAwards(params: {
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { cityId, limit = 12 } = params;
+        const now = new Date();
+        const next90Days = new Date(now);
+        next90Days.setDate(now.getDate() + 90);
+        next90Days.setHours(23, 59, 59, 999);
+
+        const awardCategorySlugs = [
+            'awards-recognition',
+            'film-tv-awards',
+            'music-arts-awards',
+            'social-media-digital-awards',
+            'sports-recognition-awards',
+            'business-innovation-awards',
+        ];
+
+        const awardCategories = await prisma.mainCategory.findMany({
+            where: { slug: { in: awardCategorySlugs } },
+            select: { id: true }
+        });
+        const awardCategoryIds = awardCategories.map((c) => c.id);
+
+        const awards = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                dateTime: { gte: now, lte: next90Days },
+                cityId: cityId || undefined,
+                OR: [
+                    awardCategoryIds.length ? { categoryId: { in: awardCategoryIds } } : undefined,
+                    { title: { contains: 'award', mode: 'insensitive' } },
+                    { title: { contains: 'nominee', mode: 'insensitive' } },
+                    { title: { contains: 'winner', mode: 'insensitive' } },
+                    { title: { contains: 'livestream', mode: 'insensitive' } },
+                    { description: { contains: 'award', mode: 'insensitive' } },
+                    { description: { contains: 'nominee', mode: 'insensitive' } },
+                    { description: { contains: 'winner', mode: 'insensitive' } },
+                    { description: { contains: 'livestream', mode: 'insensitive' } },
+                ].filter(Boolean) as any
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { dateTime: 'asc' }
+            ],
+            take: 120
+        });
+
+        if (!awards.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: awards.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        return awards
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+
+                const text = `${event.title} ${event.description || ''}`.toLowerCase();
+                const livestreamAvailable = text.includes('livestream') || text.includes('live stream') || text.includes('virtual') || text.includes('online');
+                const nomineesInfoAvailable = text.includes('nominee') || text.includes('shortlist') || text.includes('finalist');
+                const winnersInfoAvailable = text.includes('winner') || text.includes('winners') || text.includes('results');
+
+                return {
+                    ...event,
+                    ticketsAvailable,
+                    livestreamAvailable,
+                    nomineesInfoAvailable,
+                    winnersInfoAvailable,
+                };
+            })
+            .sort((a, b) => +new Date(a.dateTime) - +new Date(b.dateTime))
+            .slice(0, limit);
+    }
+
     static async getEventDetails(id: number) {
         const event = await prisma.event.findUnique({
             where: { id },

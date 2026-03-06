@@ -60,6 +60,24 @@ final trendingNowProvider = FutureProvider.autoDispose<List<Event>>((
   return service.getTrendingNow(limit: 10);
 });
 
+final personalizedPicksProvider = FutureProvider.autoDispose<List<Event>>((
+  ref,
+) async {
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  final city = ref.watch(selectedCityProvider);
+  return service.getPersonalizedPicks(cityId: city?.id, limit: 10);
+});
+
+final upcomingAwardsProvider = FutureProvider.autoDispose<List<Event>>((
+  ref,
+) async {
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  final city = ref.watch(selectedCityProvider);
+  return service.getUpcomingAwards(cityId: city?.id, limit: 10);
+});
+
 final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
   final service = ref.watch(eventServiceProvider);
 
@@ -169,6 +187,8 @@ class _HomeBody extends ConsumerWidget {
     final recommendedMoviesAsync = ref.watch(recommendedMoviesProvider);
     final bestEventsWeekAsync = ref.watch(bestEventsThisWeekProvider);
     final trendingNowAsync = ref.watch(trendingNowProvider);
+    final personalizedPicksAsync = ref.watch(personalizedPicksProvider);
+    final upcomingAwardsAsync = ref.watch(upcomingAwardsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
@@ -306,6 +326,26 @@ class _HomeBody extends ConsumerWidget {
                                   const SizedBox(height: 24),
                                   trendingNowAsync.when(
                                     data: (events) => _TrendingNowSection(
+                                      events: events,
+                                      isDark: isDark,
+                                      textColor: textColor,
+                                    ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  personalizedPicksAsync.when(
+                                    data: (events) => _PersonalizedPicksSection(
+                                      events: events,
+                                      isDark: isDark,
+                                      textColor: textColor,
+                                    ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  upcomingAwardsAsync.when(
+                                    data: (events) => _UpcomingAwardsSection(
                                       events: events,
                                       isDark: isDark,
                                       textColor: textColor,
@@ -1617,6 +1657,365 @@ class _TrendingNowCard extends StatelessWidget {
         style: TextStyle(
           color: color,
           fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _PersonalizedPicksSection extends StatelessWidget {
+  final List<Event> events;
+  final bool isDark;
+  final Color textColor;
+
+  const _PersonalizedPicksSection({
+    required this.events,
+    required this.isDark,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Recommended for You',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'PERSONALIZED',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFF59E0B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 170,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) =>
+                _PersonalizedPickCard(event: events[i], isDark: isDark),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PersonalizedPickCard extends StatelessWidget {
+  final Event event;
+  final bool isDark;
+
+  const _PersonalizedPickCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final muted = isDark ? Colors.white60 : Colors.black54;
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        width: 290,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F1C2A) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFEAE8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: AppImage(
+                imageUrl: event.coverImage,
+                width: 88,
+                height: 136,
+                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/320/480',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    event.personalizedTag ?? 'Based on your interests',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: event.isExplorationPick == true
+                          ? const Color(0xFF0EA5E9)
+                          : const Color(0xFF10B981),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${event.category?.name ?? 'Event'} • ${event.city?.name ?? 'Ethiopia'}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: muted, fontSize: 11),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          (event.isExplorationPick == true
+                                  ? const Color(0xFF0EA5E9)
+                                  : const Color(0xFF10B981))
+                              .withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      event.isExplorationPick == true ? 'Explore' : 'Top Match',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: event.isExplorationPick == true
+                            ? const Color(0xFF0EA5E9)
+                            : const Color(0xFF10B981),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UpcomingAwardsSection extends StatelessWidget {
+  final List<Event> events;
+  final bool isDark;
+  final Color textColor;
+
+  const _UpcomingAwardsSection({
+    required this.events,
+    required this.isDark,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Upcoming Awards & Recognitions',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF9333EA).withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'AWARDS HUB',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF9333EA),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 190,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) =>
+                _UpcomingAwardCard(event: events[i], isDark: isDark),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UpcomingAwardCard extends StatelessWidget {
+  final Event event;
+  final bool isDark;
+
+  const _UpcomingAwardCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final muted = isDark ? Colors.white60 : Colors.black54;
+    final availability = event.ticketsAvailable == null
+        ? 'Open availability'
+        : event.ticketsAvailable == 0
+        ? 'Sold out'
+        : '${event.ticketsAvailable} tickets left';
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        width: 320,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F1C2A) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFEAE8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: AppImage(
+                imageUrl: event.coverImage,
+                width: 90,
+                height: 150,
+                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/340/500',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${event.category?.name ?? 'Awards'} • ${event.city?.name ?? 'Ethiopia'}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: muted),
+                  ),
+                  const SizedBox(height: 7),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      if (event.livestreamAvailable == true)
+                        _pill('Livestream', const Color(0xFF2563EB), isDark),
+                      if (event.nomineesInfoAvailable == true)
+                        _pill('Nominees', const Color(0xFFF59E0B), isDark),
+                      if (event.winnersInfoAvailable == true)
+                        _pill('Winners', const Color(0xFF10B981), isDark),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    availability,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: event.ticketsAvailable == 0
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFF10B981),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pill(String label, Color color, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
           fontWeight: FontWeight.w700,
         ),
       ),
