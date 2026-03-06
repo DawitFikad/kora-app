@@ -6,6 +6,32 @@ import { ProfileService } from "../services/profile.service";
 export class EventController {
     // --- Public Discovery ---
 
+    static async getWorkshopsShortCourses(req: Request, res: Response) {
+        try {
+            const filters = req.query as any;
+            const workshops = await EventService.listWorkshopsShortCourses({
+                cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
+                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+            });
+            res.json(workshops);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async getCitySpotlight(req: Request, res: Response) {
+        try {
+            const filters = req.query as any;
+            const events = await EventService.listCitySpotlight({
+                cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
+                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+            });
+            res.json(events);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     static async getPersonalizedPicks(req: Request, res: Response) {
         try {
             const filters = req.query as any;

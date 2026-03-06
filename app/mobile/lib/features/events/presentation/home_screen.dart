@@ -78,6 +78,24 @@ final upcomingAwardsProvider = FutureProvider.autoDispose<List<Event>>((
   return service.getUpcomingAwards(cityId: city?.id, limit: 10);
 });
 
+final workshopsShortCoursesProvider = FutureProvider.autoDispose<List<Event>>((
+  ref,
+) async {
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  final city = ref.watch(selectedCityProvider);
+  return service.getWorkshopsShortCourses(cityId: city?.id, limit: 10);
+});
+
+final citySpotlightProvider = FutureProvider.autoDispose<List<Event>>((
+  ref,
+) async {
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  final city = ref.watch(selectedCityProvider);
+  return service.getCitySpotlight(cityId: city?.id, limit: 10);
+});
+
 final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
   final service = ref.watch(eventServiceProvider);
 
@@ -189,6 +207,9 @@ class _HomeBody extends ConsumerWidget {
     final trendingNowAsync = ref.watch(trendingNowProvider);
     final personalizedPicksAsync = ref.watch(personalizedPicksProvider);
     final upcomingAwardsAsync = ref.watch(upcomingAwardsProvider);
+    final workshopsAsync = ref.watch(workshopsShortCoursesProvider);
+    final citySpotlightAsync = ref.watch(citySpotlightProvider);
+    final selectedCity = ref.watch(selectedCityProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
@@ -349,6 +370,28 @@ class _HomeBody extends ConsumerWidget {
                                       events: events,
                                       isDark: isDark,
                                       textColor: textColor,
+                                    ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  workshopsAsync.when(
+                                    data: (events) =>
+                                        _WorkshopsShortCoursesSection(
+                                          events: events,
+                                          isDark: isDark,
+                                          textColor: textColor,
+                                        ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  citySpotlightAsync.when(
+                                    data: (events) => _CitySpotlightSection(
+                                      events: events,
+                                      isDark: isDark,
+                                      textColor: textColor,
+                                      selectedCityName: selectedCity?.name,
                                     ),
                                     loading: () => const SizedBox.shrink(),
                                     error: (_, __) => const SizedBox.shrink(),
@@ -2013,6 +2056,419 @@ class _UpcomingAwardCard extends StatelessWidget {
       ),
       child: Text(
         label,
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkshopsShortCoursesSection extends StatelessWidget {
+  final List<Event> events;
+  final bool isDark;
+  final Color textColor;
+
+  const _WorkshopsShortCoursesSection({
+    required this.events,
+    required this.isDark,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Workshops & Short Courses',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0EA5E9).withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'TRENDING SKILLS',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0EA5E9),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 198,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) =>
+                _WorkshopCourseCard(event: events[i], isDark: isDark),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WorkshopCourseCard extends StatelessWidget {
+  final Event event;
+  final bool isDark;
+
+  const _WorkshopCourseCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final muted = isDark ? Colors.white60 : Colors.black54;
+    final date = DateTime.parse(event.dateTime);
+    final seats = event.ticketsAvailable;
+    final hasLimitedSeats = seats != null && seats > 0 && seats <= 30;
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        width: 320,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F1C2A) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFEAE8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: AppImage(
+                imageUrl: event.coverImage,
+                width: 92,
+                height: 148,
+                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/340/520',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Starts ${DateFormat('MMM d').format(date)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF2563EB),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    event.category?.name ?? 'Workshop',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: muted, fontSize: 11),
+                  ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 24,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _pill('Video Editing', const Color(0xFF7C3AED), isDark),
+                        const SizedBox(width: 6),
+                        _pill('Cooking', const Color(0xFFEA580C), isDark),
+                        const SizedBox(width: 6),
+                        _pill(
+                          'Digital Marketing',
+                          const Color(0xFF0891B2),
+                          isDark,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          (hasLimitedSeats
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFF10B981))
+                              .withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      seats == null
+                          ? 'Open seats'
+                          : seats == 0
+                          ? 'Sold out'
+                          : hasLimitedSeats
+                          ? 'Limited seats: $seats'
+                          : '$seats seats left',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: hasLimitedSeats
+                            ? const Color(0xFFEF4444)
+                            : const Color(0xFF10B981),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pill(String label, Color color, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _CitySpotlightSection extends StatelessWidget {
+  final List<Event> events;
+  final bool isDark;
+  final Color textColor;
+  final String? selectedCityName;
+
+  const _CitySpotlightSection({
+    required this.events,
+    required this.isDark,
+    required this.textColor,
+    this.selectedCityName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return const SizedBox.shrink();
+    final cityName =
+        selectedCityName ?? events.first.city?.name ?? 'Addis Ababa';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Featured in $cityName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16A34A).withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'CITY SPOTLIGHT',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF16A34A),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 178,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) =>
+                _CitySpotlightCard(event: events[i], isDark: isDark),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CitySpotlightCard extends StatelessWidget {
+  final Event event;
+  final bool isDark;
+
+  const _CitySpotlightCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final muted = isDark ? Colors.white60 : Colors.black54;
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}'),
+      child: Container(
+        width: 300,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F1C2A) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFEAE8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(14),
+              ),
+              child: AppImage(
+                imageUrl: event.coverImage,
+                width: 106,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: 'https://picsum.photos/360/500',
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat(
+                        'EEE, MMM d • h:mm a',
+                      ).format(DateTime.parse(event.dateTime)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: muted),
+                    ),
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _pill(
+                          event.city?.name ?? 'City',
+                          const Color(0xFF0EA5E9),
+                          isDark,
+                        ),
+                        _pill(
+                          event.category?.name ?? 'Event',
+                          const Color(0xFF8B5CF6),
+                          isDark,
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Text(
+                      event.venue,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pill(String label, Color color, bool isDark) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 116),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 10,
           color: color,

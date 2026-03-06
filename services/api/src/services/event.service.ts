@@ -712,6 +712,203 @@ export class EventService {
             .slice(0, limit);
     }
 
+    static async listWorkshopsShortCourses(params: {
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { cityId, limit = 12 } = params;
+        const now = new Date();
+        const next60Days = new Date(now);
+        next60Days.setDate(now.getDate() + 60);
+        next60Days.setHours(23, 59, 59, 999);
+
+        const workshopSlugs = ['workshops-classes', 'education-learning'];
+        const keywordNeedles = [
+            'video editing',
+            'cooking',
+            'digital marketing',
+            'creative art',
+            'creative arts',
+            'short course',
+            'workshop',
+        ];
+
+        const workshopCategories = await prisma.mainCategory.findMany({
+            where: { slug: { in: workshopSlugs } },
+            select: { id: true }
+        });
+        const workshopCategoryIds = workshopCategories.map((c) => c.id);
+
+        const workshops = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                dateTime: { gte: now, lte: next60Days },
+                cityId: cityId || undefined,
+                OR: [
+                    workshopCategoryIds.length ? { categoryId: { in: workshopCategoryIds } } : undefined,
+                    ...keywordNeedles.map((needle) => ({ title: { contains: needle, mode: 'insensitive' as const } })),
+                    ...keywordNeedles.map((needle) => ({ description: { contains: needle, mode: 'insensitive' as const } })),
+                ].filter(Boolean) as any
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { dateTime: 'asc' }
+            ],
+            take: 120
+        });
+
+        if (!workshops.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: workshops.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        return workshops
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+
+                const text = `${event.title} ${event.description || ''}`.toLowerCase();
+                let score = 0;
+                score += event.featured ? 18 : 0;
+                score += Math.min(sold, 20);
+                if (text.includes('video editing')) score += 12;
+                if (text.includes('cooking')) score += 12;
+                if (text.includes('digital marketing')) score += 12;
+                if (text.includes('creative art') || text.includes('creative arts')) score += 10;
+                if (text.includes('short course')) score += 8;
+                if (ticketsAvailable != null && ticketsAvailable > 0 && ticketsAvailable <= 30) score += 8;
+
+                return {
+                    ...event,
+                    ticketsAvailable,
+                    popularityScore: score,
+                };
+            })
+            .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
+            .slice(0, limit);
+    }
+
+    static async listCitySpotlight(params: {
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { cityId, limit = 12 } = params;
+        const now = new Date();
+        const next45Days = new Date(now);
+        next45Days.setDate(now.getDate() + 45);
+        next45Days.setHours(23, 59, 59, 999);
+
+        const spotlightCategorySlugs = ['music', 'cultural', 'workshops-classes', 'nightlife'];
+        const spotlightCategories = await prisma.mainCategory.findMany({
+            where: { slug: { in: spotlightCategorySlugs } },
+            select: { id: true }
+        });
+        const spotlightCategoryIds = spotlightCategories.map((c) => c.id);
+
+        let resolvedCityId = cityId;
+        if (!resolvedCityId) {
+            const priorityCities = ['addis-ababa', 'bahir-dar', 'hawassa', 'mekelle'];
+            for (const slug of priorityCities) {
+                const city = await prisma.city.findFirst({ where: { slug }, select: { id: true } });
+                if (!city) continue;
+                const count = await prisma.event.count({
+                    where: {
+                        status: EventStatus.APPROVED,
+                        isPublic: true,
+                        cityId: city.id,
+                        dateTime: { gte: now, lte: next45Days }
+                    }
+                });
+                if (count > 0) {
+                    resolvedCityId = city.id;
+                    break;
+                }
+            }
+        }
+
+        const spotlight = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                cityId: resolvedCityId || undefined,
+                dateTime: { gte: now, lte: next45Days },
+                OR: [
+                    spotlightCategoryIds.length ? { categoryId: { in: spotlightCategoryIds } } : undefined,
+                    { title: { contains: 'concert', mode: 'insensitive' } },
+                    { title: { contains: 'festival', mode: 'insensitive' } },
+                    { title: { contains: 'workshop', mode: 'insensitive' } },
+                    { title: { contains: 'night', mode: 'insensitive' } },
+                    { description: { contains: 'concert', mode: 'insensitive' } },
+                    { description: { contains: 'festival', mode: 'insensitive' } },
+                    { description: { contains: 'workshop', mode: 'insensitive' } },
+                    { description: { contains: 'nightlife', mode: 'insensitive' } },
+                ].filter(Boolean) as any
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { dateTime: 'asc' }
+            ],
+            take: 120
+        });
+
+        if (!spotlight.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: spotlight.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        return spotlight
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+                return {
+                    ...event,
+                    ticketsAvailable,
+                    popularityScore: (event.featured ? 18 : 0) + Math.min(sold, 30),
+                };
+            })
+            .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
+            .slice(0, limit);
+    }
+
     static async getEventDetails(id: number) {
         const event = await prisma.event.findUnique({
             where: { id },

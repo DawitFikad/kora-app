@@ -15,6 +15,8 @@ router.get("/best-this-week", optionalAuthenticate, EventController.getBestThisW
 router.get("/trending-now", optionalAuthenticate, EventController.getTrendingNow);
 router.get("/personalized-picks", optionalAuthenticate, EventController.getPersonalizedPicks);
 router.get("/upcoming-awards", optionalAuthenticate, EventController.getUpcomingAwards);
+router.get("/workshops-short-courses", optionalAuthenticate, EventController.getWorkshopsShortCourses);
+router.get("/city-spotlight", optionalAuthenticate, EventController.getCitySpotlight);
 router.get("/recommended-movies", optionalAuthenticate, EventController.getRecommendedMovies);
 router.get("/:id", optionalAuthenticate, EventController.getEvent);
 

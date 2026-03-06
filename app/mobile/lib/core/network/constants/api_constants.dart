@@ -28,6 +28,9 @@ class ApiConstants {
   static String get trendingNow => '$baseUrl/events/trending-now';
   static String get personalizedPicks => '$baseUrl/events/personalized-picks';
   static String get upcomingAwards => '$baseUrl/events/upcoming-awards';
+  static String get workshopsShortCourses =>
+      '$baseUrl/events/workshops-short-courses';
+  static String get citySpotlight => '$baseUrl/events/city-spotlight';
   static String get recommendedMovies => '$baseUrl/events/recommended-movies';
   static String get myTickets => '$baseUrl/tickets/me';
   static String get bookTicket => '$baseUrl/tickets/reserve';

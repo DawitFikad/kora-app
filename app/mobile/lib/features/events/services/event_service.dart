@@ -179,6 +179,47 @@ class EventService {
     }
   }
 
+  Future<List<Event>> getWorkshopsShortCourses({
+    int? cityId,
+    int limit = 10,
+  }) async {
+    final queryParams = <String, dynamic>{'limit': limit};
+    if (cityId != null && cityId != 0) queryParams['cityId'] = cityId;
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.workshopsShortCourses,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Event.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load workshops and short courses');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<List<Event>> getCitySpotlight({int? cityId, int limit = 10}) async {
+    final queryParams = <String, dynamic>{'limit': limit};
+    if (cityId != null && cityId != 0) queryParams['cityId'] = cityId;
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.citySpotlight,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Event.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load city spotlight');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<Map<String, List<dynamic>>> getMetadata() async {
     try {
       final response = await _dio.get('${ApiConstants.events}/meta');
