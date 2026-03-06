@@ -243,15 +243,6 @@ export class EventService {
             }
         }
 
-        const keywordFilter = {
-            OR: [
-                { title: { contains: 'premiere', mode: 'insensitive' as const } },
-                { title: { contains: 'festival', mode: 'insensitive' as const } },
-                { description: { contains: 'premiere', mode: 'insensitive' as const } },
-                { description: { contains: 'festival', mode: 'insensitive' as const } }
-            ]
-        };
-
         const whereBase: any = {
             status: EventStatus.APPROVED,
             isPublic: true,
@@ -259,7 +250,6 @@ export class EventService {
             OR: [
                 { isMovie: true },
                 movieCategory ? { categoryId: movieCategory.id } : undefined,
-                keywordFilter
             ].filter(Boolean)
         };
 
@@ -294,11 +284,6 @@ export class EventService {
                 if (event.rating) score += 15;
                 if (preferredCityId && event.cityId === preferredCityId) score += 25;
                 if (preferredMovieCategoryIds.has(event.categoryId)) score += 20;
-
-                const lowerTitle = event.title.toLowerCase();
-                const lowerDesc = (event.description || '').toLowerCase();
-                if (lowerTitle.includes('premiere') || lowerDesc.includes('premiere')) score += 10;
-                if (lowerTitle.includes('festival') || lowerDesc.includes('festival')) score += 10;
 
                 const daysAway = (new Date(event.dateTime).getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
                 if (daysAway <= 14) score += 8; // prioritize near-term new releases
@@ -335,17 +320,6 @@ export class EventService {
                 isPublic: true,
                 dateTime: { gte: now, lte: next7Days },
                 cityId: cityId || undefined,
-                OR: [
-                    categoryIds.length ? { categoryId: { in: categoryIds } } : undefined,
-                    { title: { contains: 'concert', mode: 'insensitive' } },
-                    { title: { contains: 'comedy', mode: 'insensitive' } },
-                    { title: { contains: 'festival', mode: 'insensitive' } },
-                    { title: { contains: 'workshop', mode: 'insensitive' } },
-                    { description: { contains: 'concert', mode: 'insensitive' } },
-                    { description: { contains: 'comedy', mode: 'insensitive' } },
-                    { description: { contains: 'festival', mode: 'insensitive' } },
-                    { description: { contains: 'workshop', mode: 'insensitive' } }
-                ].filter(Boolean) as any
             },
             include: {
                 category: true,
@@ -386,13 +360,7 @@ export class EventService {
                 let score = 0;
                 score += event.featured ? 25 : 0;
                 score += Math.min(sold, 40);
-
-                const title = event.title.toLowerCase();
-                const desc = (event.description || '').toLowerCase();
-                if (title.includes('concert') || desc.includes('concert')) score += 8;
-                if (title.includes('comedy') || desc.includes('comedy')) score += 8;
-                if (title.includes('festival') || desc.includes('festival')) score += 8;
-                if (title.includes('workshop') || desc.includes('workshop')) score += 8;
+                if (categoryIds.includes(event.categoryId)) score += 12;
 
                 return {
                     ...event,
@@ -420,20 +388,6 @@ export class EventService {
                 status: EventStatus.APPROVED,
                 isPublic: true,
                 dateTime: { gte: now, lte: next30Days },
-                OR: [
-                    { featured: true },
-                    { title: { contains: 'tiktok', mode: 'insensitive' } },
-                    { title: { contains: 'leza', mode: 'insensitive' } },
-                    { title: { contains: 'influencer', mode: 'insensitive' } },
-                    { title: { contains: 'awards', mode: 'insensitive' } },
-                    { title: { contains: 'concert', mode: 'insensitive' } },
-                    { title: { contains: 'meetup', mode: 'insensitive' } },
-                    { title: { contains: 'livestream', mode: 'insensitive' } },
-                    { description: { contains: 'viral', mode: 'insensitive' } },
-                    { description: { contains: 'hot', mode: 'insensitive' } },
-                    { description: { contains: 'trending', mode: 'insensitive' } },
-                    { description: { contains: 'popular', mode: 'insensitive' } },
-                ]
             },
             include: {
                 category: true,
@@ -451,10 +405,12 @@ export class EventService {
 
         if (!trendingEvents.length) return [];
 
+        const eventIds = trendingEvents.map((e) => e.id);
+
         const soldCounts = await prisma.ticket.groupBy({
             by: ['eventId'],
             where: {
-                eventId: { in: trendingEvents.map((e) => e.id) },
+                eventId: { in: eventIds },
                 status: 'VALID'
             },
             _count: { eventId: true }
@@ -463,34 +419,55 @@ export class EventService {
             soldCounts.map((row) => [row.eventId, row._count.eventId])
         );
 
+        const likeCounts = await prisma.eventLike.groupBy({
+            by: ['eventId'],
+            where: { eventId: { in: eventIds } },
+            _count: { eventId: true },
+        });
+        const likesByEventId = new Map<number, number>(
+            likeCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        const ratingAgg = await prisma.eventRating.groupBy({
+            by: ['eventId'],
+            where: { eventId: { in: eventIds } },
+            _avg: { rating: true },
+            _count: { rating: true },
+        });
+        const ratingsByEventId = new Map<number, { avg: number; count: number }>(
+            ratingAgg.map((row) => [
+                row.eventId,
+                {
+                    avg: row._avg.rating ? Number(row._avg.rating) : 0,
+                    count: row._count.rating,
+                },
+            ])
+        );
+
         const ranked = trendingEvents
             .map((event) => {
                 const sold = soldByEventId.get(event.id) || 0;
+                const likes = likesByEventId.get(event.id) || 0;
+                const rating = ratingsByEventId.get(event.id) || { avg: 0, count: 0 };
                 const capacity = event.totalCapacity || 0;
                 const ticketsAvailable = event.totalCapacity != null
                     ? Math.max(capacity - sold, 0)
                     : null;
 
-                const title = event.title.toLowerCase();
-                const desc = (event.description || '').toLowerCase();
                 let score = 0;
-
                 score += event.featured ? 25 : 0;
                 score += Math.min(sold, 50);
-
-                if (title.includes('tiktok') || desc.includes('tiktok')) score += 14;
-                if (title.includes('leza') || desc.includes('leza')) score += 14;
-                if (title.includes('influencer') || desc.includes('influencer')) score += 12;
-                if (title.includes('awards') || desc.includes('awards')) score += 10;
-                if (title.includes('concert') || desc.includes('concert')) score += 10;
-                if (title.includes('livestream') || desc.includes('livestream')) score += 9;
-                if (title.includes('viral') || desc.includes('viral')) score += 8;
-                if (title.includes('trending') || desc.includes('trending')) score += 8;
+                score += Math.min(likes * 2, 30);
+                score += Math.min(rating.count, 25);
+                score += Math.round(rating.avg * 3);
 
                 return {
                     ...event,
                     popularityScore: score,
                     ticketsAvailable,
+                    likesCount: likes,
+                    averageRating: Number(rating.avg.toFixed(2)),
+                    ratingsCount: rating.count,
                 };
             })
             .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
@@ -648,17 +625,7 @@ export class EventService {
                 isPublic: true,
                 dateTime: { gte: now, lte: next90Days },
                 cityId: cityId || undefined,
-                OR: [
-                    awardCategoryIds.length ? { categoryId: { in: awardCategoryIds } } : undefined,
-                    { title: { contains: 'award', mode: 'insensitive' } },
-                    { title: { contains: 'nominee', mode: 'insensitive' } },
-                    { title: { contains: 'winner', mode: 'insensitive' } },
-                    { title: { contains: 'livestream', mode: 'insensitive' } },
-                    { description: { contains: 'award', mode: 'insensitive' } },
-                    { description: { contains: 'nominee', mode: 'insensitive' } },
-                    { description: { contains: 'winner', mode: 'insensitive' } },
-                    { description: { contains: 'livestream', mode: 'insensitive' } },
-                ].filter(Boolean) as any
+                categoryId: awardCategoryIds.length ? { in: awardCategoryIds } : undefined,
             },
             include: {
                 category: true,
@@ -696,17 +663,9 @@ export class EventService {
                     ? Math.max(capacity - sold, 0)
                     : null;
 
-                const text = `${event.title} ${event.description || ''}`.toLowerCase();
-                const livestreamAvailable = text.includes('livestream') || text.includes('live stream') || text.includes('virtual') || text.includes('online');
-                const nomineesInfoAvailable = text.includes('nominee') || text.includes('shortlist') || text.includes('finalist');
-                const winnersInfoAvailable = text.includes('winner') || text.includes('winners') || text.includes('results');
-
                 return {
                     ...event,
                     ticketsAvailable,
-                    livestreamAvailable,
-                    nomineesInfoAvailable,
-                    winnersInfoAvailable,
                 };
             })
             .sort((a, b) => +new Date(a.dateTime) - +new Date(b.dateTime))
@@ -724,15 +683,6 @@ export class EventService {
         next60Days.setHours(23, 59, 59, 999);
 
         const workshopSlugs = ['workshops-classes', 'education-learning'];
-        const keywordNeedles = [
-            'video editing',
-            'cooking',
-            'digital marketing',
-            'creative art',
-            'creative arts',
-            'short course',
-            'workshop',
-        ];
 
         const workshopCategories = await prisma.mainCategory.findMany({
             where: { slug: { in: workshopSlugs } },
@@ -746,11 +696,7 @@ export class EventService {
                 isPublic: true,
                 dateTime: { gte: now, lte: next60Days },
                 cityId: cityId || undefined,
-                OR: [
-                    workshopCategoryIds.length ? { categoryId: { in: workshopCategoryIds } } : undefined,
-                    ...keywordNeedles.map((needle) => ({ title: { contains: needle, mode: 'insensitive' as const } })),
-                    ...keywordNeedles.map((needle) => ({ description: { contains: needle, mode: 'insensitive' as const } })),
-                ].filter(Boolean) as any
+                categoryId: workshopCategoryIds.length ? { in: workshopCategoryIds } : undefined,
             },
             include: {
                 category: true,
@@ -792,11 +738,7 @@ export class EventService {
                 let score = 0;
                 score += event.featured ? 18 : 0;
                 score += Math.min(sold, 20);
-                if (text.includes('video editing')) score += 12;
-                if (text.includes('cooking')) score += 12;
-                if (text.includes('digital marketing')) score += 12;
-                if (text.includes('creative art') || text.includes('creative arts')) score += 10;
-                if (text.includes('short course')) score += 8;
+                if (workshopCategoryIds.includes(event.categoryId)) score += 16;
                 if (ticketsAvailable != null && ticketsAvailable > 0 && ticketsAvailable <= 30) score += 8;
 
                 return {
@@ -853,17 +795,6 @@ export class EventService {
                 isPublic: true,
                 cityId: resolvedCityId || undefined,
                 dateTime: { gte: now, lte: next45Days },
-                OR: [
-                    spotlightCategoryIds.length ? { categoryId: { in: spotlightCategoryIds } } : undefined,
-                    { title: { contains: 'concert', mode: 'insensitive' } },
-                    { title: { contains: 'festival', mode: 'insensitive' } },
-                    { title: { contains: 'workshop', mode: 'insensitive' } },
-                    { title: { contains: 'night', mode: 'insensitive' } },
-                    { description: { contains: 'concert', mode: 'insensitive' } },
-                    { description: { contains: 'festival', mode: 'insensitive' } },
-                    { description: { contains: 'workshop', mode: 'insensitive' } },
-                    { description: { contains: 'nightlife', mode: 'insensitive' } },
-                ].filter(Boolean) as any
             },
             include: {
                 category: true,
@@ -903,7 +834,7 @@ export class EventService {
                 return {
                     ...event,
                     ticketsAvailable,
-                    popularityScore: (event.featured ? 18 : 0) + Math.min(sold, 30),
+                    popularityScore: (event.featured ? 18 : 0) + (spotlightCategoryIds.includes(event.categoryId) ? 10 : 0) + Math.min(sold, 30),
                 };
             })
             .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
@@ -987,25 +918,39 @@ export class EventService {
         next60Days.setDate(now.getDate() + 60);
         next60Days.setHours(23, 59, 59, 999);
 
+        const activePromos = await prisma.promoCode.findMany({
+            where: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+            },
+            select: {
+                eventId: true,
+                type: true,
+                discount: true,
+                codeType: true,
+            },
+        });
+
+        if (!activePromos.length) return [];
+
+        const promoByEventId = new Map<number, { type: string; discount: number; codeType: string }>();
+        for (const promo of activePromos) {
+            if (!promoByEventId.has(promo.eventId)) {
+                promoByEventId.set(promo.eventId, {
+                    type: promo.type,
+                    discount: Number(promo.discount || 0),
+                    codeType: promo.codeType || 'STANDARD',
+                });
+            }
+        }
+
         const deals = await prisma.event.findMany({
             where: {
                 status: EventStatus.APPROVED,
                 isPublic: true,
                 cityId: cityId || undefined,
                 dateTime: { gte: now, lte: next60Days },
-                OR: [
-                    { title: { contains: 'discount', mode: 'insensitive' } },
-                    { title: { contains: 'deal', mode: 'insensitive' } },
-                    { title: { contains: 'bundle', mode: 'insensitive' } },
-                    { title: { contains: 'offer', mode: 'insensitive' } },
-                    { title: { contains: 'promo', mode: 'insensitive' } },
-                    { description: { contains: 'discount', mode: 'insensitive' } },
-                    { description: { contains: 'deal', mode: 'insensitive' } },
-                    { description: { contains: 'bundle', mode: 'insensitive' } },
-                    { description: { contains: 'offer', mode: 'insensitive' } },
-                    { description: { contains: 'limited time', mode: 'insensitive' } },
-                    { description: { contains: 'partner', mode: 'insensitive' } },
-                ]
+                id: { in: Array.from(promoByEventId.keys()) },
             },
             include: {
                 category: true,
@@ -1043,20 +988,30 @@ export class EventService {
                     ? Math.max(capacity - sold, 0)
                     : null;
 
-                const text = `${event.title} ${event.description || ''}`.toLowerCase();
-                const hasBundle = text.includes('bundle');
-                const hasPartner = text.includes('partner') || text.includes('exclusive');
-                const hasLimitedTime = text.includes('limited time') || text.includes('today') || text.includes('24h');
+                const promo = promoByEventId.get(event.id);
+                const hasBundle = promo?.codeType?.toUpperCase() === 'INFLUENCER';
+                const hasPartner = promo?.codeType?.toUpperCase() === 'REFERRAL';
+                const hasLimitedTime = event.dateTime.getTime() - now.getTime() <= (7 * 24 * 60 * 60 * 1000);
 
                 let dealTag = 'Special Offer';
-                if (hasBundle) dealTag = 'Bundle Deal';
-                else if (hasPartner) dealTag = 'Partner Exclusive';
-                else if (hasLimitedTime) dealTag = 'Limited Time';
+                if (promo?.discount) {
+                    const discountLabel = promo.type === 'PERCENTAGE'
+                        ? `${promo.discount}% OFF`
+                        : `${promo.discount} ETB OFF`;
+                    dealTag = discountLabel;
+                } else if (hasBundle) {
+                    dealTag = 'Bundle Deal';
+                } else if (hasPartner) {
+                    dealTag = 'Partner Exclusive';
+                } else if (hasLimitedTime) {
+                    dealTag = 'Limited Time';
+                }
 
                 let dealScore = event.featured ? 18 : 0;
                 dealScore += hasBundle ? 12 : 0;
                 dealScore += hasPartner ? 12 : 0;
                 dealScore += hasLimitedTime ? 10 : 0;
+                dealScore += Math.min(sold, 20);
 
                 return {
                     ...event,
@@ -1082,6 +1037,8 @@ export class EventService {
         const next120Days = new Date(now);
         next120Days.setDate(now.getDate() + 120);
         next120Days.setHours(23, 59, 59, 999);
+        const createdSince = new Date(now);
+        createdSince.setDate(now.getDate() - 45);
 
         const focusCategorySlugs = [
             'music',
@@ -1104,16 +1061,7 @@ export class EventService {
                 isPublic: true,
                 cityId: cityId || undefined,
                 dateTime: { gte: upcomingFrom, lte: next120Days },
-                OR: [
-                    categoryIds.length ? { categoryId: { in: categoryIds } } : undefined,
-                    { title: { contains: 'festival', mode: 'insensitive' } },
-                    { title: { contains: 'concert', mode: 'insensitive' } },
-                    { title: { contains: 'workshop', mode: 'insensitive' } },
-                    { title: { contains: 'award', mode: 'insensitive' } },
-                    { description: { contains: 'early bird', mode: 'insensitive' } },
-                    { description: { contains: 'pre-registration', mode: 'insensitive' } },
-                    { description: { contains: 'reminder', mode: 'insensitive' } },
-                ].filter(Boolean) as any
+                createdAt: { gte: createdSince },
             },
             include: {
                 category: true,
@@ -1151,18 +1099,9 @@ export class EventService {
                     ? Math.max(capacity - sold, 0)
                     : null;
 
-                const text = `${event.title} ${event.description || ''}`.toLowerCase();
-                const earlyBirdAvailable = text.includes('early bird') || text.includes('early-bird') || event.featured;
-                const preRegistrationAvailable =
-                    text.includes('pre-registration') ||
-                    text.includes('pre registration') ||
-                    text.includes('pre-register') ||
-                    text.includes('register now');
-                const reminderAvailable =
-                    text.includes('reminder') ||
-                    text.includes('notify') ||
-                    text.includes('notification') ||
-                    (+new Date(event.dateTime) - now.getTime()) > 3 * 24 * 60 * 60 * 1000;
+                const earlyBirdAvailable = event.featured;
+                const preRegistrationAvailable = (event.totalCapacity || 0) > 0;
+                const reminderAvailable = (+new Date(event.dateTime) - now.getTime()) > 3 * 24 * 60 * 60 * 1000;
 
                 let score = 0;
                 score += event.featured ? 18 : 0;
@@ -1170,6 +1109,7 @@ export class EventService {
                 score += preRegistrationAvailable ? 10 : 0;
                 score += reminderAvailable ? 8 : 0;
                 score += Math.min(sold, 20);
+                if (categoryIds.includes(event.categoryId)) score += 10;
 
                 return {
                     ...event,
