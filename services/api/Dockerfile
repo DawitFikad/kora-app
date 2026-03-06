@@ -1,19 +1,19 @@
-FROM node:18-bullseye-slim
+FROM node:20-bullseye-slim
 
 # Install build deps and libvips for sharp
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3 \
-    pkg-config \
-    libvips-dev \
+  build-essential \
+  python3 \
+  pkg-config \
+  libvips-dev \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
 # Install dependencies first (cached layer)
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+RUN npm install --no-audit --no-fund
 
 # Copy source
 COPY . .

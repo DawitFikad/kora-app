@@ -25,6 +25,7 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: "postgresql://postgres:2123@db:5432/Et-ticket-db?schema=public"
+      DIRECT_URL: "postgresql://postgres:2123@db:5432/Et-ticket-db?schema=public"
       REDIS_URL: "redis://redis:6379"
       API_URL: "http://10.0.2.2:4000"
       # Enable polling for file watchers inside Docker (fixes missed change events on Windows)
@@ -41,7 +42,7 @@ services:
     depends_on:
       - db
       - redis
-    command: ["npm", "run", "dev"]
+    command: [ "npm", "run", "dev" ]
 
   web:
     image: node:20-bullseye

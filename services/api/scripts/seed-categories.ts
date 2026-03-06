@@ -262,49 +262,55 @@ async function seed() {
     // Wipe all existing categories (subcategories first to avoid FK constraint)
     console.log('🗑️  Clearing existing categories...');
     try {
-        await prisma.category.deleteMany({ where: { parentId: { not: null } } });
-        await prisma.category.deleteMany({});
+        // Delete subcategories first because they depend on main categories
+        await prisma.subCategory.deleteMany({});
+        await prisma.mainCategory.deleteMany({});
         console.log('✅ Cleared.\n');
     } catch (e) {
         console.log('⚠️  Note: Could not clear some categories, likely due to relations. Proceeding with creation/updates...');
+        console.error(e);
     }
 
     let totalMain = 0;
     let totalSub = 0;
 
     for (const category of CATEGORY_TREE) {
-        const mainCategory = await prisma.category.create({
-            data: {
-                name: category.name,
-                slug: category.slug,
-            },
+        // Create MainCategory
+        // check if exists first to avoid unique constraint errors if not purely cleared
+        let mainCategory = await prisma.mainCategory.findUnique({
+            where: { slug: category.slug }
         });
-        totalMain++;
-        console.log(`Created main category: ${mainCategory.name}`);
+
+        if (!mainCategory) {
+            mainCategory = await prisma.mainCategory.create({
+                data: {
+                    name: category.name,
+                    slug: category.slug,
+                },
+            });
+            totalMain++;
+            console.log(`Created main category: ${mainCategory.name}`);
+        } else {
+            console.log(`Skipped existing main category: ${mainCategory.name}`);
+        }
 
         if (category.subcategories && category.subcategories.length > 0) {
             for (const sub of category.subcategories) {
-                const subCategory = await prisma.category.create({
-                    data: {
-                        name: sub.name,
-                        slug: sub.slug,
-                        parentId: mainCategory.id,
-                    },
+                // Check if sub exists
+                const existingSub = await prisma.subCategory.findUnique({
+                    where: { slug: sub.slug }
                 });
-                totalSub++;
-                console.log(`  - Sub-category: ${subCategory.name}`);
 
-                if ((sub as any).subcategories && (sub as any).subcategories.length > 0) {
-                    for (const subSub of (sub as any).subcategories) {
-                        await prisma.category.create({
-                            data: {
-                                name: subSub.name,
-                                slug: subSub.slug,
-                                parentId: subCategory.id,
-                            },
-                        });
-                        console.log(`    - Sub-sub-category: ${subSub.name}`);
-                    }
+                if (!existingSub) {
+                    const subCategory = await prisma.subCategory.create({
+                        data: {
+                            name: sub.name,
+                            slug: sub.slug,
+                            mainCategoryId: mainCategory.id,
+                        },
+                    });
+                    totalSub++;
+                    console.log(`  - Sub-category: ${subCategory.name}`);
                 }
             }
         }

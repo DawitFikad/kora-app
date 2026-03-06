@@ -53,7 +53,8 @@ async function main() {
                 status: OrganizerStatus.APPROVED,
                 contactEmail: 'demo@org.com',
                 contactPhone: phoneNumber,
-                address: '123 Demo St'
+                city: 'Addis Ababa',
+                payoutDetails: 'Bank Transfer'
             }
         });
         console.log(`SUCCESS: User ${phoneNumber} is now an APPROVED ORGANIZER.`);
