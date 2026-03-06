@@ -190,6 +190,127 @@ export class EventService {
         });
     }
 
+    static async listRecommendedMovies(params: {
+        userId?: number;
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { userId, cityId, limit = 12 } = params;
+        const now = new Date();
+
+        const movieCategory = await prisma.mainCategory.findFirst({
+            where: { slug: 'movies' },
+            select: { id: true }
+        });
+
+        const bookingHistory = userId
+            ? await prisma.ticket.findMany({
+                where: { userId },
+                select: {
+                    event: {
+                        select: {
+                            id: true,
+                            categoryId: true,
+                            cityId: true,
+                            isMovie: true,
+                            category: { select: { slug: true, name: true } }
+                        }
+                    }
+                }
+            })
+            : [];
+
+        const preferredCityFromHistory = bookingHistory
+            .map((t) => t.event?.cityId)
+            .filter((id): id is number => typeof id === 'number')
+            .reduce<Record<number, number>>((acc, id) => {
+                acc[id] = (acc[id] || 0) + 1;
+                return acc;
+            }, {});
+
+        const preferredCityId = cityId || Number(
+            Object.entries(preferredCityFromHistory)
+                .sort((a, b) => b[1] - a[1])[0]?.[0]
+        ) || undefined;
+
+        const preferredMovieCategoryIds = new Set<number>();
+        for (const ticket of bookingHistory) {
+            const e = ticket.event;
+            if (!e) continue;
+            if (e.isMovie || e.category?.slug === 'movies' || e.category?.name?.toLowerCase() === 'movies') {
+                preferredMovieCategoryIds.add(e.categoryId);
+            }
+        }
+
+        const keywordFilter = {
+            OR: [
+                { title: { contains: 'premiere', mode: 'insensitive' as const } },
+                { title: { contains: 'festival', mode: 'insensitive' as const } },
+                { description: { contains: 'premiere', mode: 'insensitive' as const } },
+                { description: { contains: 'festival', mode: 'insensitive' as const } }
+            ]
+        };
+
+        const whereBase: any = {
+            status: EventStatus.APPROVED,
+            isPublic: true,
+            dateTime: { gte: now },
+            OR: [
+                { isMovie: true },
+                movieCategory ? { categoryId: movieCategory.id } : undefined,
+                keywordFilter
+            ].filter(Boolean)
+        };
+
+        if (preferredCityId) {
+            whereBase.cityId = preferredCityId;
+        }
+
+        const upcomingMovies = await prisma.event.findMany({
+            where: whereBase,
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: {
+                    select: { organizationName: true }
+                }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { dateTime: 'asc' },
+                { createdAt: 'desc' }
+            ],
+            take: 50
+        });
+
+        const ranked = upcomingMovies
+            .map((event) => {
+                let score = 0;
+
+                if (event.featured) score += 20;
+                if (event.rating) score += 15;
+                if (preferredCityId && event.cityId === preferredCityId) score += 25;
+                if (preferredMovieCategoryIds.has(event.categoryId)) score += 20;
+
+                const lowerTitle = event.title.toLowerCase();
+                const lowerDesc = (event.description || '').toLowerCase();
+                if (lowerTitle.includes('premiere') || lowerDesc.includes('premiere')) score += 10;
+                if (lowerTitle.includes('festival') || lowerDesc.includes('festival')) score += 10;
+
+                const daysAway = (new Date(event.dateTime).getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+                if (daysAway <= 14) score += 8; // prioritize near-term new releases
+
+                return { event, score };
+            })
+            .sort((a, b) => b.score - a.score)
+            .slice(0, limit)
+            .map((x) => x.event);
+
+        return ranked;
+    }
+
     static async getEventDetails(id: number) {
         const event = await prisma.event.findUnique({
             where: { id },

@@ -37,6 +37,13 @@ final filteredEventsProvider = FutureProvider<List<Event>>((ref) async {
   );
 });
 
+final recommendedMoviesProvider = FutureProvider.autoDispose<List<Event>>((ref) async {
+  ref.watch(authTokenProvider);
+  final service = ref.watch(eventServiceProvider);
+  final city = ref.watch(selectedCityProvider);
+  return service.getRecommendedMovies(cityId: city?.id, limit: 12);
+});
+
 
 final homeCarouselProvider = FutureProvider<List<dynamic>>((ref) async {
   final service = ref.watch(eventServiceProvider);
@@ -135,6 +142,7 @@ class _HomeBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventsAsync = ref.watch(filteredEventsProvider);
+    final recommendedMoviesAsync = ref.watch(recommendedMoviesProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
@@ -231,10 +239,14 @@ class _HomeBody extends ConsumerWidget {
                                 ),
                               ),
                               const SizedBox(height: 32),
-                              _MovieSection(
-                                movies: events.where((e) => e.isMovie || e.category?.name == 'Movies').toList(),
-                                isDark: isDark,
-                                textColor: textColor,
+                              recommendedMoviesAsync.when(
+                                data: (movies) => _MovieSection(
+                                  movies: movies,
+                                  isDark: isDark,
+                                  textColor: textColor,
+                                ),
+                                loading: () => const SizedBox.shrink(),
+                                error: (_, __) => const SizedBox.shrink(),
                               ),
                               if (recommended.isNotEmpty) ...[
                                 Padding(
@@ -825,7 +837,7 @@ class _MovieSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Now Showing',
+                'Recommended Movies',
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -839,7 +851,7 @@ class _MovieSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'CINEMA',
+                  'PERSONALIZED',
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -946,10 +958,51 @@ class _MovieCard extends StatelessWidget {
                 color: isDark ? Colors.white54 : Colors.black54,
               ),
             ),
+            const SizedBox(height: 2),
+            Text(
+              _formatDateTime(movie.dateTime),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark ? const Color(0xFFD8B4FE) : const Color(0xFF7C3AED),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 28,
+              child: ElevatedButton(
+                onPressed: () => context.push('/event/${movie.id}'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  elevation: 0,
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'Ticket',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatDateTime(String dateTime) {
+    final parsed = DateTime.tryParse(dateTime);
+    if (parsed == null) return 'Date TBA';
+    return DateFormat('MMM d, h:mm a').format(parsed);
   }
 }
 

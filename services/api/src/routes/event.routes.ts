@@ -11,6 +11,7 @@ router.get("/meta", EventController.getMetadata);
 
 // Public Discovery (Optional Auth)
 router.get("/", optionalAuthenticate, EventController.getAllEvents);
+router.get("/recommended-movies", optionalAuthenticate, EventController.getRecommendedMovies);
 router.get("/:id", optionalAuthenticate, EventController.getEvent);
 
 // Organizer Management
