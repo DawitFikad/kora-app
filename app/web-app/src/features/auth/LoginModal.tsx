@@ -193,7 +193,8 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                 }
             } else {
                 // Regular login mode
-                if (!verifyRes.hasOrganizerProfile && verifyRes.user.role !== 'ADMIN') {
+                const role = String(verifyRes?.user?.role || '').toUpperCase();
+                if (!verifyRes?.hasOrganizerProfile && role !== 'ADMIN') {
                     setError(t('auth.noAccountError'));
                     return;
                 }
