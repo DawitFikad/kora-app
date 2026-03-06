@@ -31,6 +31,8 @@ class ApiConstants {
   static String get workshopsShortCourses =>
       '$baseUrl/events/workshops-short-courses';
   static String get citySpotlight => '$baseUrl/events/city-spotlight';
+  static String get lastMinuteToday => '$baseUrl/events/last-minute-today';
+  static String get offersDeals => '$baseUrl/events/offers-deals';
   static String get recommendedMovies => '$baseUrl/events/recommended-movies';
   static String get myTickets => '$baseUrl/tickets/me';
   static String get bookTicket => '$baseUrl/tickets/reserve';

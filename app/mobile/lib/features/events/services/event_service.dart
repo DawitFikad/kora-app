@@ -220,6 +220,44 @@ class EventService {
     }
   }
 
+  Future<List<Event>> getLastMinuteToday({int? cityId, int limit = 10}) async {
+    final queryParams = <String, dynamic>{'limit': limit};
+    if (cityId != null && cityId != 0) queryParams['cityId'] = cityId;
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.lastMinuteToday,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Event.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load last-minute events');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<List<Event>> getOffersDeals({int? cityId, int limit = 10}) async {
+    final queryParams = <String, dynamic>{'limit': limit};
+    if (cityId != null && cityId != 0) queryParams['cityId'] = cityId;
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.offersDeals,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Event.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load offers and deals');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<Map<String, List<dynamic>>> getMetadata() async {
     try {
       final response = await _dio.get('${ApiConstants.events}/meta');

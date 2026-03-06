@@ -909,6 +909,168 @@ export class EventService {
             .slice(0, limit);
     }
 
+    static async listLastMinuteTodayEvents(params: {
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { cityId, limit = 12 } = params;
+        const now = new Date();
+        const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+        const events = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                cityId: cityId || undefined,
+                dateTime: { gte: now, lte: next24Hours },
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { dateTime: 'asc' }
+            ],
+            take: 120
+        });
+
+        if (!events.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: events.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        return events
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+                const hoursLeft = Math.max(0, Math.round((+new Date(event.dateTime) - now.getTime()) / (60 * 60 * 1000)));
+
+                let urgencyScore = event.featured ? 20 : 0;
+                urgencyScore += Math.max(0, 24 - hoursLeft);
+                if (ticketsAvailable != null && ticketsAvailable > 0 && ticketsAvailable <= 50) urgencyScore += 10;
+
+                return {
+                    ...event,
+                    ticketsAvailable,
+                    hoursLeft,
+                    urgencyScore,
+                };
+            })
+            .sort((a, b) => b.urgencyScore - a.urgencyScore || +new Date(a.dateTime) - +new Date(b.dateTime))
+            .slice(0, limit);
+    }
+
+    static async listOffersDeals(params: {
+        cityId?: number;
+        limit?: number;
+    }) {
+        const { cityId, limit = 12 } = params;
+        const now = new Date();
+        const next60Days = new Date(now);
+        next60Days.setDate(now.getDate() + 60);
+        next60Days.setHours(23, 59, 59, 999);
+
+        const deals = await prisma.event.findMany({
+            where: {
+                status: EventStatus.APPROVED,
+                isPublic: true,
+                cityId: cityId || undefined,
+                dateTime: { gte: now, lte: next60Days },
+                OR: [
+                    { title: { contains: 'discount', mode: 'insensitive' } },
+                    { title: { contains: 'deal', mode: 'insensitive' } },
+                    { title: { contains: 'bundle', mode: 'insensitive' } },
+                    { title: { contains: 'offer', mode: 'insensitive' } },
+                    { title: { contains: 'promo', mode: 'insensitive' } },
+                    { description: { contains: 'discount', mode: 'insensitive' } },
+                    { description: { contains: 'deal', mode: 'insensitive' } },
+                    { description: { contains: 'bundle', mode: 'insensitive' } },
+                    { description: { contains: 'offer', mode: 'insensitive' } },
+                    { description: { contains: 'limited time', mode: 'insensitive' } },
+                    { description: { contains: 'partner', mode: 'insensitive' } },
+                ]
+            },
+            include: {
+                category: true,
+                subCategory: true,
+                city: true,
+                tiers: true,
+                organizer: { select: { organizationName: true } }
+            },
+            orderBy: [
+                { featured: 'desc' },
+                { createdAt: 'desc' }
+            ],
+            take: 120
+        });
+
+        if (!deals.length) return [];
+
+        const soldCounts = await prisma.ticket.groupBy({
+            by: ['eventId'],
+            where: {
+                eventId: { in: deals.map((e) => e.id) },
+                status: 'VALID'
+            },
+            _count: { eventId: true }
+        });
+        const soldByEventId = new Map<number, number>(
+            soldCounts.map((row) => [row.eventId, row._count.eventId])
+        );
+
+        return deals
+            .map((event) => {
+                const sold = soldByEventId.get(event.id) || 0;
+                const capacity = event.totalCapacity || 0;
+                const ticketsAvailable = event.totalCapacity != null
+                    ? Math.max(capacity - sold, 0)
+                    : null;
+
+                const text = `${event.title} ${event.description || ''}`.toLowerCase();
+                const hasBundle = text.includes('bundle');
+                const hasPartner = text.includes('partner') || text.includes('exclusive');
+                const hasLimitedTime = text.includes('limited time') || text.includes('today') || text.includes('24h');
+
+                let dealTag = 'Special Offer';
+                if (hasBundle) dealTag = 'Bundle Deal';
+                else if (hasPartner) dealTag = 'Partner Exclusive';
+                else if (hasLimitedTime) dealTag = 'Limited Time';
+
+                let dealScore = event.featured ? 18 : 0;
+                dealScore += hasBundle ? 12 : 0;
+                dealScore += hasPartner ? 12 : 0;
+                dealScore += hasLimitedTime ? 10 : 0;
+
+                return {
+                    ...event,
+                    ticketsAvailable,
+                    dealTag,
+                    hasBundle,
+                    hasPartner,
+                    hasLimitedTime,
+                    dealScore,
+                };
+            })
+            .sort((a, b) => b.dealScore - a.dealScore || +new Date(a.dateTime) - +new Date(b.dateTime))
+            .slice(0, limit);
+    }
+
     static async getEventDetails(id: number) {
         const event = await prisma.event.findUnique({
             where: { id },
