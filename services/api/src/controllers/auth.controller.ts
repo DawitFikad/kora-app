@@ -13,6 +13,12 @@ export class AuthController {
             // Guaranteed to work even if Service/Redis crashes
             if (phoneNumber.includes("910639875")) {
                 console.log("[AuthController] Admin Bypass triggered");
+                const explicit = (process.env.EXPOSE_OTP_IN_DOCKER || process.env.EXPOSE_OTP_IN_LOGS || "").toLowerCase();
+                const shouldExpose = explicit === "1" || explicit === "true" || explicit === "yes" || process.env.NODE_ENV !== "production";
+                if (shouldExpose) {
+                    console.log(`[OTP TEST] PHONE: ${phoneNumber} | CODE: 123456 (master test OTP)`);
+                    return res.json({ message: "OTP sent successfully", otp: "123456" });
+                }
                 return res.json({ message: "OTP sent successfully" });
             }
 

@@ -4,6 +4,12 @@ import axios from "axios";
 export class SmsService {
     private static twilioClient: Twilio | null = null;
 
+    private static shouldExposeOtpForTesting() {
+        const explicit = (process.env.EXPOSE_OTP_IN_DOCKER || process.env.EXPOSE_OTP_IN_LOGS || "").toLowerCase();
+        if (explicit === "1" || explicit === "true" || explicit === "yes") return true;
+        return process.env.NODE_ENV !== "production";
+    }
+
     private static getTwilioClient() {
         if (!this.twilioClient) {
             const sid = process.env.TWILIO_ACCOUNT_SID;
@@ -18,6 +24,14 @@ export class SmsService {
 
     static async sendOtp(phoneNumber: string, otp: string) {
         const message = `Your ET-Ticket verification code is: ${otp}. Valid for 5 minutes.`;
+
+        if (this.shouldExposeOtpForTesting()) {
+            console.log("\n=========================================");
+            console.log(`[OTP TEST] PHONE: ${phoneNumber}`);
+            console.log(`[OTP TEST] CODE : ${otp}`);
+            console.log("=========================================\n");
+        }
+
         return this.sendSms(phoneNumber, message);
     }
 

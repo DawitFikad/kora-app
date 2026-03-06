@@ -28,6 +28,7 @@ export const env = {
         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://10.0.2.2:4000'),
     jwtSecret: clean(process.env.JWT_SECRET),
     redisUrl: clean(process.env.REDIS_URL),
+
     teleBirrMerchantAppId: clean(process.env.TELEBIRR_MERCHANT_APP_ID),
     teleBirrFabricAppId: clean(process.env.TELEBIRR_FABRIC_APP_ID),
     teleBirrShortCode: clean(process.env.TELEBIRR_SHORT_CODE),
@@ -35,6 +36,7 @@ export const env = {
     teleBirrPrivateKey: clean(process.env.TELEBIRR_PRIVATE_KEY),
     teleBirrApiUrl: clean(process.env.TELEBIRR_API_URL) || 'https://app.ethiotelebirr.et:9091',
     teleBirrTestMode: clean(process.env.TELEBIRR_TEST_MODE),
+
     cbeBirrKey: clean(process.env.CBE_BIRR_API_KEY),
     amoleKey: clean(process.env.AMOLE_API_KEY),
     chapaSecretKey: clean(process.env.CHAPA_SECRET_KEY),

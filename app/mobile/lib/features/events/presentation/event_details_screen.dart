@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:mobile/features/profile/services/profile_service.dart';
 import 'seat_selection_screen.dart';
+import 'ticket_selection_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mobile/core/utils/error_handler.dart';
 
@@ -255,12 +256,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       // If profile fails, continue without blocking
     }
 
-    // 2. Enforce single tier selection for MVP (due to API limitation)
+    // 2. API currently books one tier per reservation, let user choose if multiple are selected
     if (selectedEntries.length > 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("event_details.single_tier_only".tr())),
-      );
-      return;
+      final picked = await _chooseTierForCheckout(event, selectedEntries);
+      if (picked == null) return;
+      selectedEntries
+        ..clear()
+        ..add(picked);
     }
 
     final entry = selectedEntries.first;
@@ -302,6 +304,95 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           selectedSeats: selectedSeats,
         ),
       ),
+    );
+  }
+
+  Future<void> _openTicketSelection(Event event, List<TicketTier> tiers) async {
+    final updated = await Navigator.push<Map<int, int>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TicketSelectionScreen(
+          event: event,
+          tiers: tiers,
+          initialQuantities: Map<int, int>.from(_ticketQuantities),
+        ),
+      ),
+    );
+
+    if (updated == null || !mounted) return;
+
+    setState(() {
+      for (final tier in tiers) {
+        _ticketQuantities[tier.id] = updated[tier.id] ?? 0;
+      }
+    });
+  }
+
+  Future<MapEntry<int, int>?> _chooseTierForCheckout(
+    Event event,
+    List<MapEntry<int, int>> selectedEntries,
+  ) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+    final mutedColor = isDark ? Colors.white60 : Colors.black54;
+
+    return showModalBottomSheet<MapEntry<int, int>>(
+      context: context,
+      backgroundColor: cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Choose Ticket Type for Checkout',
+                  style: GoogleFonts.poppins(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'You selected multiple ticket types. Complete checkout one type at a time.',
+                  style: GoogleFonts.poppins(color: mutedColor, fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                ...selectedEntries.map((entry) {
+                  final tier = event.tiers.firstWhere((t) => t.id == entry.key);
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      tier.name,
+                      style: GoogleFonts.poppins(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${entry.value} x ${tier.price.toStringAsFixed(2)} ETB',
+                      style: GoogleFonts.poppins(
+                        color: mutedColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.pop(context, entry),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -565,52 +656,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
                   const SizedBox(height: 40),
 
-                  Text(
-                    "Select Ticket Type",
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
+                  _buildTicketSelectionEntry(
+                    event,
+                    sortedTiers,
+                    textColor,
+                    mutedTextColor,
                   ),
-                  const SizedBox(height: 16),
 
-                  if (sortedTiers.isEmpty)
-                    Center(
-                      child: Text(
-                        "No tickets available",
-                        style: TextStyle(color: mutedTextColor),
-                      ),
-                    ),
-
-                  // Ticket Tiers
-                  ...sortedTiers.map((tier) {
-                    final isSoldOut = tier.sold >= tier.capacity;
-                    final quantity = _ticketQuantities[tier.id] ?? 0;
-
-                    return _TicketTierTile(
-                      title: tier.name,
-                      desc: "Includes access to event",
-                      price: tier.price,
-                      badge: isSoldOut
-                          ? "SOLD OUT"
-                          : (tier.capacity - tier.sold < 20
-                                ? "Running Low"
-                                : null),
-                      badgeColor: isSoldOut
-                          ? Colors.red.withOpacity(0.1)
-                          : const Color(0xFFFF9F0A).withOpacity(0.1),
-                      badgeTextColor: isSoldOut
-                          ? Colors.red
-                          : const Color(0xFFFF9F0A),
-                      isSoldOut: isSoldOut,
-                      quantity: quantity,
-                      onChanged: (val) =>
-                          setState(() => _ticketQuantities[tier.id] = val),
-                    );
-                  }),
-
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
                   // Event Policies - Real Data
                   if (event.refundPolicy != null &&
@@ -640,7 +693,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               ),
 
               // Bottom Checkout Bar
-              _buildBottomBar(event),
+              _buildBottomBar(event, sortedTiers),
             ],
           ),
         );
@@ -1191,7 +1244,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     );
   }
 
-  Widget _buildBottomBar(Event event) {
+  Widget _buildBottomBar(Event event, List<TicketTier> tiers) {
     final total = _calculateTotal(event);
     final count = _totalTickets();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1264,12 +1317,15 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             const SizedBox(width: 24),
             Expanded(
               child: ElevatedButton(
-                onPressed: count > 0 ? () => _onCheckout(event) : null,
+                onPressed: () {
+                  if (count == 0) {
+                    _openTicketSelection(event, tiers);
+                    return;
+                  }
+                  _onCheckout(event);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
-                  disabledBackgroundColor: isDark
-                      ? Colors.white10
-                      : Colors.black12,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   shape: RoundedRectangleBorder(
@@ -1278,7 +1334,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   elevation: 0,
                 ),
                 child: Text(
-                  "event_details.checkout".tr(),
+                  count > 0 ? "event_details.checkout".tr() : "Select Tickets",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -1288,6 +1344,85 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTicketSelectionEntry(
+    Event event,
+    List<TicketTier> tiers,
+    Color textColor,
+    Color mutedColor,
+  ) {
+    final selected = tiers
+        .where((tier) => (_ticketQuantities[tier.id] ?? 0) > 0)
+        .toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1D192B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Ticket Type & Quantity',
+                  style: GoogleFonts.poppins(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _openTicketSelection(event, tiers),
+                child: const Text('Select'),
+              ),
+            ],
+          ),
+          if (selected.isEmpty)
+            Text(
+              'No tickets selected yet. Tap Select to choose ticket types.',
+              style: GoogleFonts.poppins(color: mutedColor, fontSize: 12),
+            )
+          else
+            ...selected.map((tier) {
+              final qty = _ticketQuantities[tier.id] ?? 0;
+              final lineTotal = qty * tier.price;
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${tier.name} x$qty',
+                        style: GoogleFonts.poppins(
+                          color: textColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${lineTotal.toStringAsFixed(2)} ETB',
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFF8B5CF6),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
       ),
     );
   }

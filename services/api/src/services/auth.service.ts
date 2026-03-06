@@ -11,6 +11,12 @@ const getRefreshTokenSecret = () => process.env.JWT_REFRESH_SECRET || "default_r
 // I'll stick to one secret or I should update env. Let's use env if available.
 
 export class AuthService {
+    private static shouldExposeOtpForTesting() {
+        const explicit = (process.env.EXPOSE_OTP_IN_DOCKER || process.env.EXPOSE_OTP_IN_LOGS || "").toLowerCase();
+        if (explicit === "1" || explicit === "true" || explicit === "yes") return true;
+        return process.env.NODE_ENV !== "production";
+    }
+
     private static normalizeEthiopianPhone(input: string) {
         const trimmed = (input || '').trim();
         if (!trimmed) return '';
@@ -52,6 +58,10 @@ export class AuthService {
         const testNumbers = ["910639875", "911111111", "922222222"];
         if (testNumbers.some(num => cleanPhone.includes(num))) {
             console.log(`[AuthService] Test/Admin number detected (${cleanPhone}). Skipping OTP generation/Redis.`);
+            if (this.shouldExposeOtpForTesting()) {
+                console.log(`[OTP TEST] PHONE: ${cleanPhone} | CODE: 123456 (master test OTP)`);
+                return { message: "OTP sent successfully", otp: "123456" };
+            }
             return { message: "OTP sent successfully" };
         }
 
@@ -59,6 +69,10 @@ export class AuthService {
 
         // Send real SMS (or fallback to console based on env)
         await SmsService.sendOtp(cleanPhone, otp);
+
+        if (this.shouldExposeOtpForTesting()) {
+            return { message: "OTP sent successfully", otp };
+        }
 
         return { message: "OTP sent successfully" };
     }
