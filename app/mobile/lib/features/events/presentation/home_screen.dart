@@ -171,6 +171,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedIndex = ref.watch(homeIndexProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final compactNav = screenWidth < 370;
 
     return Scaffold(
       backgroundColor: isDark
@@ -186,14 +188,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: compactNav ? 10.0 : 15.0,
+              vertical: 8,
+            ),
             child: GNav(
               rippleColor: Colors.grey[300]!,
               hoverColor: Colors.grey[100]!,
-              gap: 8,
+              gap: compactNav ? 6 : 8,
               activeColor: const Color(0xFF8B5CF6),
-              iconSize: 24,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              iconSize: compactNav ? 23 : 24,
+              padding: EdgeInsets.symmetric(
+                horizontal: compactNav ? 16 : 20,
+                vertical: compactNav ? 11 : 12,
+              ),
               duration: const Duration(milliseconds: 400),
               tabBackgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
               color: isDark ? Colors.white54 : Colors.black54,
@@ -272,8 +280,6 @@ class _HomeBody extends ConsumerWidget {
                           isDark ? const Color(0xFF232030) : Colors.white,
                           mutedColor,
                         ),
-                        const SizedBox(height: 24),
-                        const _FeaturedBanners(),
                         const SizedBox(height: 24),
                         _buildCategories(ref, isDark),
 
