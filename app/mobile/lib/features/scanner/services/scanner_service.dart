@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mobile/core/network/constants/api_constants.dart';
+import 'package:crypto/crypto.dart';
 import '../../../core/providers.dart';
 import 'scanner_database.dart';
 import 'dart:convert';
@@ -55,6 +56,10 @@ class ScannerResponse {
 class ScannerService {
   final Dio _dio;
   final ScannerDatabase _db;
+  static const String _offlineQrSecret = String.fromEnvironment(
+    'SCANNER_QR_SECRET',
+    defaultValue: '',
+  );
 
   ScannerService(this._dio, this._db);
 
@@ -93,18 +98,33 @@ class ScannerService {
 
   Future<ScannerResponse> _validateOffline(String qrPayload) async {
     try {
-      // Basic JWT decoding (Offline)
-      // Note: We'd ideally check the signature here too if we have the shared secret,
-      // but for MVP we check if the ID exists in our local gate_list.
       final parts = qrPayload.split('.');
-      if (parts.length < 2) throw Exception("Invalid Ticket Format");
+      if (parts.length != 3) throw Exception('Invalid Ticket Format');
+
+      if (_offlineQrSecret.isNotEmpty && !_verifyJwtHs256(qrPayload)) {
+        return ScannerResponse(
+          success: false,
+          message: 'Invalid QR signature. Sync required.',
+          offline: true,
+          fraudDetected: true,
+        );
+      }
 
       final payloadStr = utf8.decode(
         base64Url.decode(base64Url.normalize(parts[1])),
       );
       final payload = jsonDecode(payloadStr);
-      final String ticketId = payload['tid'];
-      final int eventId = payload['eid'];
+      final ticketId = payload['tid']?.toString();
+      final eventId = (payload['eid'] as num?)?.toInt();
+
+      if (ticketId == null || ticketId.isEmpty || eventId == null) {
+        return ScannerResponse(
+          success: false,
+          message: 'Invalid QR payload data.',
+          offline: true,
+          fraudDetected: true,
+        );
+      }
 
       final localTicket = await _db.getTicketById(ticketId);
 
@@ -142,6 +162,37 @@ class ScannerService {
         offline: true,
       );
     }
+  }
+
+  bool _verifyJwtHs256(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+
+      final unsignedToken = '${parts[0]}.${parts[1]}';
+      final digest = Hmac(
+        sha256,
+        utf8.encode(_offlineQrSecret),
+      ).convert(utf8.encode(unsignedToken));
+
+      final expectedSig = _base64UrlNoPadding(digest.bytes);
+      return _constantTimeEquals(expectedSig, parts[2]);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _base64UrlNoPadding(List<int> bytes) {
+    return base64UrlEncode(bytes).replaceAll('=', '');
+  }
+
+  bool _constantTimeEquals(String a, String b) {
+    if (a.length != b.length) return false;
+    var diff = 0;
+    for (var i = 0; i < a.length; i++) {
+      diff |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    }
+    return diff == 0;
   }
 
   Future<void> downloadGateList(int eventId) async {

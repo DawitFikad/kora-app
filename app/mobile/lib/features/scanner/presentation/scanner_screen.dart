@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/services.dart';
 import '../services/scanner_service.dart';
 
 class ScannerScreen extends ConsumerStatefulWidget {
@@ -40,6 +41,39 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     });
   }
 
+  bool _isDuplicateOrFraud(ScannerResponse result) {
+    if (result.fraudDetected) return true;
+
+    final normalized = result.message.toLowerCase();
+    return normalized.contains('duplicate') ||
+        normalized.contains('fraud') ||
+        normalized.contains('already used') ||
+        normalized.contains('invalid qr signature');
+  }
+
+  Future<void> _triggerScanFeedbackForResult(ScannerResponse result) async {
+    if (result.success) {
+      // Success: strong hit followed by light confirmation tap.
+      await HapticFeedback.heavyImpact();
+      await Future.delayed(const Duration(milliseconds: 70));
+      await HapticFeedback.selectionClick();
+      return;
+    }
+
+    if (_isDuplicateOrFraud(result)) {
+      // Fraud/duplicate: warning pulse pattern.
+      await HapticFeedback.vibrate();
+      await Future.delayed(const Duration(milliseconds: 90));
+      await HapticFeedback.heavyImpact();
+      await Future.delayed(const Duration(milliseconds: 90));
+      await HapticFeedback.heavyImpact();
+      return;
+    }
+
+    // Other failures: single medium impact.
+    await HapticFeedback.mediumImpact();
+  }
+
   void _onDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
 
@@ -66,10 +100,11 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
 
       if (_isBulkMode) {
         // Show temporary result and increment counter
+        await _triggerScanFeedbackForResult(result);
         setState(() {
-           _lastResult = result;
-           if (result.success) _sessionScanCount++;
-           _isProcessing = false;
+          _lastResult = result;
+          if (result.success) _sessionScanCount++;
+          _isProcessing = false;
         });
 
         // Vibrate or Beep would be good here effectively via result flash
@@ -80,16 +115,25 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           }
         });
       } else {
+        await _triggerScanFeedbackForResult(result);
         _showResultSheet(result);
       }
     } catch (e) {
       if (!mounted) return;
       if (_isBulkMode) {
-         setState(() {
-           _lastResult = ScannerResponse(success: false, message: 'System Error');
-           _isProcessing = false;
-         });
+        final errorResult = ScannerResponse(
+          success: false,
+          message: 'System Error',
+        );
+        await _triggerScanFeedbackForResult(errorResult);
+        setState(() {
+          _lastResult = errorResult;
+          _isProcessing = false;
+        });
       } else {
+        await _triggerScanFeedbackForResult(
+          ScannerResponse(success: false, message: 'System Error'),
+        );
         _showErrorSheet('An unexpected error occurred: $e');
       }
     } finally {
@@ -113,8 +157,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           color: const Color(0xFF15131C),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           border: Border.all(
-            color: result.success 
-                ? const Color(0xFF10B981).withOpacity(0.3) 
+            color: result.success
+                ? const Color(0xFF10B981).withOpacity(0.3)
                 : const Color(0xFFEF4444).withOpacity(0.3),
             width: 1,
           ),
@@ -126,13 +170,21 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: (result.success ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withOpacity(0.1),
+                color:
+                    (result.success
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFEF4444))
+                        .withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                result.success ? Icons.check_circle_outline : Icons.error_outline,
+                result.success
+                    ? Icons.check_circle_outline
+                    : Icons.error_outline,
                 size: 48,
-                color: result.success ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                color: result.success
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFEF4444),
               ),
             ),
             const SizedBox(height: 24),
@@ -141,7 +193,9 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
-                color: result.success ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                color: result.success
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFEF4444),
                 letterSpacing: 1.2,
               ),
             ),
@@ -149,10 +203,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             Text(
               result.message,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+              style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
             ),
             if (result.success && result.ticket != null) ...[
               const SizedBox(height: 24),
@@ -171,14 +222,21 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                   controller.start();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: result.success ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                  backgroundColor: result.success
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFEF4444),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
                   'NEXT ATTENDEE',
-                  style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 16),
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -198,8 +256,18 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white38, fontSize: 14)),
-          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white38, fontSize: 14),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
@@ -211,17 +279,13 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          MobileScanner(
-            controller: controller,
-            onDetect: _onDetect,
-          ),
-          
+          MobileScanner(controller: controller, onDetect: _onDetect),
+
           // Overlay
           _buildScannerOverlay(),
-          
+
           // Bulk Mode Feedback Overlay
-          if (_isBulkMode && _lastResult != null)
-            _buildBulkFeedbackOverlay(),
+          if (_isBulkMode && _lastResult != null) _buildBulkFeedbackOverlay(),
 
           // Session Stats
           if (_isBulkMode)
@@ -243,18 +307,21 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                 IconButton(
                   onPressed: () => context.pop(),
                   icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black26,
-                  ),
+                  style: IconButton.styleFrom(backgroundColor: Colors.black26),
                 ),
-                
+
                 // Bulk Mode Toggle
                 GestureDetector(
                   onTap: () => setState(() => _isBulkMode = !_isBulkMode),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: _isBulkMode ? const Color(0xFF8B5CF6) : Colors.black45,
+                      color: _isBulkMode
+                          ? const Color(0xFF8B5CF6)
+                          : Colors.black45,
                       borderRadius: BorderRadius.circular(100),
                       border: Border.all(
                         color: _isBulkMode ? Colors.white24 : Colors.white12,
@@ -302,7 +369,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
               ],
             ),
           ),
-          
+
           if (_isProcessing && !_isBulkMode)
             Container(
               color: Colors.black54,
@@ -329,14 +396,16 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: (success ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withOpacity(0.9),
+              color:
+                  (success ? const Color(0xFF10B981) : const Color(0xFFEF4444))
+                      .withOpacity(0.9),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
-                )
+                ),
               ],
             ),
             child: Row(
@@ -362,7 +431,10 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                       ),
                       Text(
                         _lastResult!.message,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -391,11 +463,20 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             children: [
               const Text(
                 'SESSION TOTAL',
-                style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
               ),
               Text(
                 '$_sessionScanCount Attendees',
-                style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -419,9 +500,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           child: Stack(
             children: [
               Container(
-                decoration: const BoxDecoration(
-                  color: Colors.transparent,
-                ),
+                decoration: const BoxDecoration(color: Colors.transparent),
               ),
               Center(
                 child: Container(
@@ -450,7 +529,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                 _buildCorner(0, 1),
                 _buildCorner(1, 0),
                 _buildCorner(1, 1),
-                
+
                 // Animated Scanning Line
                 const ScanningLine(),
               ],
@@ -487,16 +566,32 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         height: 40,
         decoration: BoxDecoration(
           border: Border(
-            top: top == 0 ? const BorderSide(color: Color(0xFF8B5CF6), width: 6) : BorderSide.none,
-            bottom: top == 1 ? const BorderSide(color: Color(0xFF8B5CF6), width: 6) : BorderSide.none,
-            left: left == 0 ? const BorderSide(color: Color(0xFF8B5CF6), width: 6) : BorderSide.none,
-            right: left == 1 ? const BorderSide(color: Color(0xFF8B5CF6), width: 6) : BorderSide.none,
+            top: top == 0
+                ? const BorderSide(color: Color(0xFF8B5CF6), width: 6)
+                : BorderSide.none,
+            bottom: top == 1
+                ? const BorderSide(color: Color(0xFF8B5CF6), width: 6)
+                : BorderSide.none,
+            left: left == 0
+                ? const BorderSide(color: Color(0xFF8B5CF6), width: 6)
+                : BorderSide.none,
+            right: left == 1
+                ? const BorderSide(color: Color(0xFF8B5CF6), width: 6)
+                : BorderSide.none,
           ),
           borderRadius: BorderRadius.only(
-            topLeft: top == 0 && left == 0 ? const Radius.circular(20) : Radius.zero,
-            topRight: top == 0 && left == 1 ? const Radius.circular(20) : Radius.zero,
-            bottomLeft: top == 1 && left == 0 ? const Radius.circular(20) : Radius.zero,
-            bottomRight: top == 1 && left == 1 ? const Radius.circular(20) : Radius.zero,
+            topLeft: top == 0 && left == 0
+                ? const Radius.circular(20)
+                : Radius.zero,
+            topRight: top == 0 && left == 1
+                ? const Radius.circular(20)
+                : Radius.zero,
+            bottomLeft: top == 1 && left == 0
+                ? const Radius.circular(20)
+                : Radius.zero,
+            bottomRight: top == 1 && left == 1
+                ? const Radius.circular(20)
+                : Radius.zero,
           ),
         ),
       ),
@@ -511,7 +606,8 @@ class ScanningLine extends StatefulWidget {
   State<ScanningLine> createState() => _ScanningLineState();
 }
 
-class _ScanningLineState extends State<ScanningLine> with SingleTickerProviderStateMixin {
+class _ScanningLineState extends State<ScanningLine>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -522,7 +618,7 @@ class _ScanningLineState extends State<ScanningLine> with SingleTickerProviderSt
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat(reverse: true);
-    
+
     _animation = Tween<double>(begin: 40, end: 240).animate(_controller);
   }
 
