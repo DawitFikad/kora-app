@@ -77,6 +77,8 @@ export class NotificationService {
                 channel: NotificationChannel.PUSH,
                 recipient: "APP",
                 title: "Add your email for backup updates",
+                message:
+                    "Add an email in your profile to receive ticket confirmations, receipts, and backup event updates.",
                 content:
                     "Add an email in your profile to receive ticket confirmations, receipts, and backup event updates.",
                 status: "DELIVERED",
@@ -170,6 +172,7 @@ export class NotificationService {
                     channel,
                     recipient,
                     title: options.title,
+                    message: options.content,
                     content: options.content,
                     status,
                     providerRef,
@@ -188,6 +191,7 @@ export class NotificationService {
                     channel: NotificationChannel.PUSH,
                     recipient: "APP",
                     title: options.title,
+                    message: options.content,
                     content: options.content,
                     status: "DELIVERED",
                     metadata: metadataPayload,

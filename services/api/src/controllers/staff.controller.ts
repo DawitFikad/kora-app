@@ -22,7 +22,7 @@ export class StaffController {
      */
     static async inviteManual(req: Request, res: Response) {
         try {
-            const { phoneNumber, role } = req.body;
+            const { phoneNumber, role, eventId } = req.body;
             // Get organizer profile for current user
             const organizer = await prisma.organizerProfile.findUnique({
                 where: { userId: (req as any).user.userId }
@@ -30,7 +30,12 @@ export class StaffController {
 
             if (!organizer) return res.status(403).json({ error: "Only organizers can invite staff." });
 
-            const invitation = await StaffService.inviteStaff(organizer.id, phoneNumber, role);
+            const invitation = await StaffService.inviteStaff(
+                organizer.id,
+                phoneNumber,
+                role,
+                eventId ? Number(eventId) : undefined
+            );
             res.json(invitation);
         } catch (error: any) {
             res.status(400).json({ error: error.message });

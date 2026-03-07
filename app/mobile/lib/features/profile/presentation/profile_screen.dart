@@ -9,9 +9,13 @@ import '../../auth/services/auth_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:mobile/core/utils/error_handler.dart';
 import 'package:mobile/core/utils/avatar_image_provider.dart';
+import '../../../../core/providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  static const String _emailPromptSnoozeKey =
+      'profile_email_prompt_last_snoozed_at';
 
   void _showAcceptInviteDialog(BuildContext context, WidgetRef ref) {
     final codeController = TextEditingController();
@@ -142,6 +146,11 @@ class ProfileScreen extends ConsumerWidget {
 
     final profileAsync = ref.watch(userProfileProvider);
     final inviteStatusAsync = ref.watch(staffInviteAvailableProvider);
+    final storage = ref.watch(localStorageProvider);
+    final lastSnoozedAt = storage.getField<int>(_emailPromptSnoozeKey) ?? 0;
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    final isEmailPromptDue =
+        DateTime.now().millisecondsSinceEpoch - lastSnoozedAt > oneWeekMs;
 
     return Scaffold(
       backgroundColor: isDark
@@ -218,7 +227,8 @@ class ProfileScreen extends ConsumerWidget {
                           fontSize: 14,
                         ),
                       ),
-                      if ((profile.email ?? '').trim().isEmpty) ...[
+                      if ((profile.email ?? '').trim().isEmpty &&
+                          isEmailPromptDue) ...[
                         const SizedBox(height: 14),
                         Container(
                           width: double.infinity,
@@ -247,6 +257,20 @@ class ProfileScreen extends ConsumerWidget {
                                     color: textColor,
                                   ),
                                 ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.close,
+                                  size: 18,
+                                  color: Color(0xFF8B5CF6),
+                                ),
+                                onPressed: () {
+                                  storage.setField(
+                                    _emailPromptSnoozeKey,
+                                    DateTime.now().millisecondsSinceEpoch,
+                                  );
+                                },
+                                tooltip: 'Remind me later',
                               ),
                               TextButton(
                                 onPressed: () => Navigator.of(context).push(

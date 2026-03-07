@@ -18,7 +18,11 @@ export class NotificationController {
                 orderBy: { createdAt: 'desc' },
                 take: 100
             });
-            res.json({ success: true, data: notifications });
+            const payload = notifications.map((n) => ({
+                ...n,
+                message: (n as any).message ?? n.content,
+            }));
+            res.json({ success: true, data: payload });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
         }

@@ -74,12 +74,16 @@ export class EventService {
 
         const oldStatus = event.status;
         const reReview = event.status === EventStatus.APPROVED;
+        const requestedStatus = data.status as EventStatus | undefined;
+        const isCancelling = requestedStatus === EventStatus.CANCELLED && oldStatus !== EventStatus.CANCELLED;
 
         const updatedEvent = await prisma.event.update({
             where: { id },
             data: {
                 ...data,
-                status: reReview ? EventStatus.PENDING : event.status
+                status: isCancelling
+                    ? EventStatus.CANCELLED
+                    : (reReview ? EventStatus.PENDING : (requestedStatus ?? event.status))
             }
         });
 
@@ -88,14 +92,14 @@ export class EventService {
         // But if organizer explicitly CANCELS (if we allowed that transition via update), we should notify.
 
         // Check if critical info changed while it was APPROVED or if event was CANCELLED
-        if (oldStatus === EventStatus.APPROVED || data.status === EventStatus.CANCELLED) {
+        if (oldStatus === EventStatus.APPROVED || isCancelling) {
             const dateChanged = data.dateTime && new Date(data.dateTime).getTime() !== new Date(event.dateTime).getTime();
             const venueChanged = data.venue && data.venue !== event.venue;
             const detailsChanged =
                 (typeof data.title === "string" && data.title !== event.title) ||
                 (typeof data.description === "string" && data.description !== event.description) ||
                 (typeof data.additionalPolicy === "string" && data.additionalPolicy !== event.additionalPolicy);
-            const cancelled = data.status === EventStatus.CANCELLED && oldStatus !== EventStatus.CANCELLED;
+            const cancelled = isCancelling;
 
             if (cancelled) {
                 const { TicketStatus } = await import("@prisma/client");
@@ -237,13 +241,35 @@ export class EventService {
 
         const users = await prisma.user.findMany({
             where: { status: "ACTIVE" as any },
-            select: { id: true },
+            select: {
+                id: true,
+                profile: {
+                    select: {
+                        location: true,
+                        interests: true,
+                    }
+                }
+            },
             take: 500,
             orderBy: { id: "asc" },
         });
 
         for (const user of users) {
-            const picks = await EventService.listPersonalizedPicks({ userId: user.id, limit: 1 });
+            let cityIdFromProfile: number | undefined;
+            const location = user.profile?.location?.trim();
+            if (location) {
+                const city = await prisma.city.findFirst({
+                    where: { name: { contains: location, mode: "insensitive" } },
+                    select: { id: true },
+                });
+                cityIdFromProfile = city?.id;
+            }
+
+            const picks = await EventService.listPersonalizedPicks({
+                userId: user.id,
+                cityId: cityIdFromProfile,
+                limit: 1,
+            });
             const suggestion = picks[0];
             if (!suggestion) continue;
 
@@ -258,6 +284,7 @@ export class EventService {
                     eventId: suggestion.id,
                     cityId: suggestion.cityId,
                     categoryId: suggestion.categoryId,
+                    interests: user.profile?.interests || [],
                 },
             });
         }
@@ -294,9 +321,19 @@ export class EventService {
         cityId: number;
         categoryId: number;
         organizerId: number;
+        city?: { name?: string | null } | null;
+        category?: { name?: string | null; slug?: string | null } | null;
     }) {
         const { NotificationService } = require("./notification.service");
         const { NotificationChannel } = require("@prisma/client");
+
+        const cityName = event.city?.name?.trim();
+        const categoryTokens = [
+            event.category?.slug,
+            event.category?.name,
+        ]
+            .filter((v): v is string => !!v)
+            .map((v) => v.toLowerCase());
 
         const matchingTickets = await prisma.ticket.findMany({
             where: {
@@ -310,7 +347,25 @@ export class EventService {
             take: 600,
         });
 
-        const candidateUserIds = new Set<number>(matchingTickets.map((row) => row.userId));
+        const orFilters: any[] = [];
+        if (cityName) {
+            orFilters.push({ location: { contains: cityName, mode: "insensitive" } });
+        }
+        if (categoryTokens.length > 0) {
+            orFilters.push({ interests: { hasSome: categoryTokens } });
+        }
+
+        const matchingProfiles = orFilters.length
+            ? await prisma.userProfile.findMany({
+                where: { OR: orFilters },
+                select: { userId: true },
+            })
+            : [];
+
+        const candidateUserIds = new Set<number>([
+            ...matchingTickets.map((row) => row.userId),
+            ...matchingProfiles.map((row) => row.userId),
+        ]);
 
         for (const userId of candidateUserIds) {
             await NotificationService.notifyUser(userId, {
@@ -324,6 +379,8 @@ export class EventService {
                     eventId: event.id,
                     cityId: event.cityId,
                     categoryId: event.categoryId,
+                    cityName,
+                    category: event.category?.name || event.category?.slug,
                 },
             });
         }
@@ -714,6 +771,29 @@ export class EventService {
             select: { id: true, slug: true }
         });
 
+        const userProfile = userId
+            ? await prisma.userProfile.findUnique({
+                where: { userId },
+                select: { location: true, interests: true },
+            })
+            : null;
+
+        const profileInterests = (userProfile?.interests || [])
+            .map((v) => v.trim().toLowerCase())
+            .filter(Boolean);
+
+        const profileInterestCategories = profileInterests.length
+            ? await prisma.mainCategory.findMany({
+                where: {
+                    OR: [
+                        { slug: { in: profileInterests } },
+                        { name: { in: profileInterests } },
+                    ],
+                },
+                select: { id: true },
+            })
+            : [];
+
         const bookingHistory = userId
             ? await prisma.ticket.findMany({
                 where: { userId },
@@ -731,7 +811,16 @@ export class EventService {
             return acc;
         }, {});
 
-        const preferredCityId = cityId || Number(
+        let profileCityId: number | undefined;
+        if (!cityId && userProfile?.location) {
+            const matchedCity = await prisma.city.findFirst({
+                where: { name: { contains: userProfile.location, mode: "insensitive" } },
+                select: { id: true },
+            });
+            profileCityId = matchedCity?.id;
+        }
+
+        const preferredCityId = cityId || profileCityId || Number(
             Object.entries(
                 bookingHistory.reduce<Record<number, number>>((acc, t) => {
                     const c = t.event?.cityId;
@@ -743,7 +832,8 @@ export class EventService {
 
         const preferredCategoryIds = new Set<number>([
             ...preferredCategories.map((c) => c.id),
-            ...Object.keys(preferredCategoryCount).map((k) => Number(k))
+            ...Object.keys(preferredCategoryCount).map((k) => Number(k)),
+            ...profileInterestCategories.map((c) => c.id),
         ]);
 
         const events = await prisma.event.findMany({

@@ -117,6 +117,16 @@ export class AdminController {
                 await prisma.event.update({ where: { id: eventId }, data: { status: 'CANCELLED' as any } });
             }
 
+            // Notify all ticket holders immediately on admin-approved cancellation.
+            const { EventService } = await import('../services/event.service');
+            await EventService.notifyTicketHolders(eventId, {
+                title: 'Event Cancelled',
+                content: `${event.title} has been cancelled. Please check the app for refund details.`,
+                channels: ['PUSH', 'SMS', 'EMAIL'],
+                type: 'EVENT_CANCELLED',
+                referenceId: eventId,
+            });
+
             await prisma.notificationLog.update({
                 where: { id: logId },
                 data: {

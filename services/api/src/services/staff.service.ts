@@ -45,7 +45,12 @@ export class StaffService {
     /**
      * Creates an invitation for a staff member.
      */
-    static async inviteStaff(organizerId: number, phoneNumber: string, role: StaffRole = StaffRole.SCANNER) {
+    static async inviteStaff(
+        organizerId: number,
+        phoneNumber: string,
+        role: StaffRole = StaffRole.SCANNER,
+        eventId?: number
+    ) {
         // Check if staff already exists
         const existingStaff = await prisma.organizerStaff.findFirst({
             where: {
@@ -75,9 +80,18 @@ export class StaffService {
             select: { organizationName: true },
         });
         const organizerName = organizer?.organizationName || `Organizer ${organizerId}`;
+        const event = eventId
+            ? await prisma.event.findFirst({
+                where: { id: eventId, organizerId },
+                select: { id: true, title: true },
+            })
+            : null;
+        const eventName = event?.title || null;
 
         // Send SMS to the invited staff member
-        const message = `You have been invited to join the staff team for ${organizerName} as ${role}. Use code: ${inviteCode}. Expires in 24 hours.`;
+        const message = eventName
+            ? `You have been invited to join the staff team for ${eventName} as ${role}. Use code: ${inviteCode}. Expires in 24 hours.`
+            : `You have been invited to join the staff team for ${organizerName} as ${role}. Use code: ${inviteCode}. Expires in 24 hours.`;
         await SmsService.sendSms(phoneNumber, message);
 
         // If the invited phone already belongs to a registered user, also notify in-app and email.
@@ -89,12 +103,16 @@ export class StaffService {
         if (invitedUser) {
             await NotificationService.notifyUser(invitedUser.id, {
                 title: "Staff Team Invitation",
-                content: `You have been invited to join the staff team for ${organizerName} as ${role}. Open the app to accept or decline.`,
+                content: eventName
+                    ? `You have been invited to join the staff team for ${eventName} as ${role}. Open the app to accept or decline.`
+                    : `You have been invited to join the staff team for ${organizerName} as ${role}. Open the app to accept or decline.`,
                 channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
                 type: "STAFF_INVITATION",
                 referenceId: invitation.id,
                 metadata: {
                     invitationId: invitation.id,
+                    eventId: event?.id,
+                    eventName,
                     role,
                     organizerId,
                     inviteCode,

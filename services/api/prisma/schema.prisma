@@ -528,6 +528,7 @@ model NotificationLog {
   channel     NotificationChannel
   recipient   String
   title       String?
+  message     String?
   content     String
   status      String
   providerRef String?
