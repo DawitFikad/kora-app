@@ -1256,33 +1256,133 @@ export class EventService {
     }
 
     static async getEventEngagement(eventId: number, userId?: number) {
-        const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+        const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true, rating: true } });
         if (!event) throw new Error("Event not found");
 
-        const [likesCount, ratingsAgg, userLike, userRating] = await Promise.all([
-            prismaEngagement.eventLike.count({ where: { eventId } }),
-            prismaEngagement.eventRating.aggregate({
-                where: { eventId },
-                _avg: { rating: true },
-                _count: { rating: true },
-            }),
-            userId ? prismaEngagement.eventLike.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
-            userId ? prismaEngagement.eventRating.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
-        ]);
+        const hasDelegates = !!(prismaEngagement as any).eventLike && !!(prismaEngagement as any).eventRating;
 
-        return {
-            likesCount,
-            averageRating: ratingsAgg._avg.rating ? Number(ratingsAgg._avg.rating.toFixed(2)) : 0,
-            ratingsCount: ratingsAgg._count.rating,
-            userLiked: !!userLike,
-            userRating: userRating?.rating ?? null,
-            userComment: userRating?.comment ?? null,
-        };
+        try {
+            if (!hasDelegates) throw new Error("engagement delegates unavailable");
+
+            const [likesCount, ratingsAgg, userLike, userRating] = await Promise.all([
+                prismaEngagement.eventLike.count({ where: { eventId } }),
+                prismaEngagement.eventRating.aggregate({
+                    where: { eventId },
+                    _avg: { rating: true },
+                    _count: { rating: true },
+                }),
+                userId ? prismaEngagement.eventLike.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
+                userId ? prismaEngagement.eventRating.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
+            ]);
+
+            return {
+                likesCount,
+                averageRating: ratingsAgg._avg.rating ? Number(ratingsAgg._avg.rating.toFixed(2)) : 0,
+                ratingsCount: ratingsAgg._count.rating,
+                userLiked: !!userLike,
+                userRating: userRating?.rating ?? null,
+                userComment: userRating?.comment ?? null,
+            };
+        } catch {
+            try {
+                const [likesRows, ratingsRows, userLikeRows, userRatingRows] = await Promise.all([
+                    prisma.$queryRawUnsafe<Array<{ count: number | string }>>(
+                        'SELECT COUNT(*)::int AS count FROM "EventLike" WHERE "eventId" = $1',
+                        eventId
+                    ),
+                    prisma.$queryRawUnsafe<Array<{ averageRating: number | string | null; ratingsCount: number | string }>>(
+                        'SELECT COALESCE(AVG("rating"), 0) AS "averageRating", COUNT(*)::int AS "ratingsCount" FROM "EventRating" WHERE "eventId" = $1',
+                        eventId
+                    ),
+                    userId
+                        ? prisma.$queryRawUnsafe<Array<{ id: number }>>(
+                            'SELECT id FROM "EventLike" WHERE "userId" = $1 AND "eventId" = $2 LIMIT 1',
+                            userId,
+                            eventId
+                        )
+                        : Promise.resolve([]),
+                    userId
+                        ? prisma.$queryRawUnsafe<Array<{ rating: number; comment: string | null }>>(
+                            'SELECT "rating", "comment" FROM "EventRating" WHERE "userId" = $1 AND "eventId" = $2 LIMIT 1',
+                            userId,
+                            eventId
+                        )
+                        : Promise.resolve([]),
+                ]);
+
+                const likesCount = Number(likesRows[0]?.count ?? 0);
+                const ratingsCount = Number(ratingsRows[0]?.ratingsCount ?? 0);
+                const avgFromRatings = Number(ratingsRows[0]?.averageRating ?? 0);
+                const fallbackRating = Number(event.rating ?? 0);
+
+                return {
+                    likesCount,
+                    averageRating: ratingsCount > 0
+                        ? (Number.isFinite(avgFromRatings) ? Number(avgFromRatings.toFixed(2)) : 0)
+                        : (Number.isFinite(fallbackRating) ? fallbackRating : 0),
+                    ratingsCount,
+                    userLiked: userLikeRows.length > 0,
+                    userRating: userRatingRows[0]?.rating ?? null,
+                    userComment: userRatingRows[0]?.comment ?? null,
+                };
+            } catch {
+                const fallbackRating = Number(event.rating ?? 0);
+                return {
+                    likesCount: 0,
+                    averageRating: Number.isFinite(fallbackRating) ? fallbackRating : 0,
+                    ratingsCount: 0,
+                    userLiked: false,
+                    userRating: null,
+                    userComment: null,
+                };
+            }
+        }
     }
 
     static async toggleLikeEvent(eventId: number, userId: number) {
         const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
         if (!event) throw new Error("Event not found");
+
+        const hasDelegates = !!(prismaEngagement as any).eventLike;
+
+        if (!hasDelegates) {
+            try {
+                const existingRows = await prisma.$queryRawUnsafe<Array<{ id: number }>>(
+                    'SELECT id FROM "EventLike" WHERE "userId" = $1 AND "eventId" = $2 LIMIT 1',
+                    userId,
+                    eventId
+                );
+
+                const existingId = existingRows[0]?.id;
+                if (existingId) {
+                    await prisma.$executeRawUnsafe(
+                        'DELETE FROM "EventLike" WHERE id = $1',
+                        existingId
+                    );
+                } else {
+                    await prisma.$executeRawUnsafe(
+                        'INSERT INTO "EventLike" ("userId", "eventId", "createdAt") VALUES ($1, $2, NOW()) ON CONFLICT ("userId", "eventId") DO NOTHING',
+                        userId,
+                        eventId
+                    );
+                }
+
+                const countRows = await prisma.$queryRawUnsafe<Array<{ count: number | string }>>(
+                    'SELECT COUNT(*)::int AS count FROM "EventLike" WHERE "eventId" = $1',
+                    eventId
+                );
+
+                return {
+                    liked: !existingId,
+                    likesCount: Number(countRows[0]?.count ?? 0),
+                };
+            } catch {
+                return {
+                    liked: false,
+                    likesCount: 0,
+                };
+            }
+        }
 
         const existing = await prismaEngagement.eventLike.findUnique({
             where: { userId_eventId: { userId, eventId } }
@@ -1321,9 +1421,52 @@ export class EventService {
                 title: true,
                 dateTime: true,
                 venue: true,
+                rating: true,
             }
         });
         if (!event) throw new Error("Event not found");
+
+        const hasDelegates = !!(prismaEngagement as any).eventRating;
+
+        if (!hasDelegates) {
+            try {
+                await prisma.$executeRawUnsafe(
+                    'INSERT INTO "EventRating" ("userId", "eventId", "rating", "comment", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, NOW(), NOW()) ON CONFLICT ("userId", "eventId") DO UPDATE SET "rating" = EXCLUDED."rating", "comment" = EXCLUDED."comment", "updatedAt" = NOW()',
+                    userId,
+                    eventId,
+                    rating,
+                    comment || null
+                );
+
+                const aggRows = await prisma.$queryRawUnsafe<Array<{ averageRating: number | string | null; ratingsCount: number | string }>>(
+                    'SELECT COALESCE(AVG("rating"), 0) AS "averageRating", COUNT(*)::int AS "ratingsCount" FROM "EventRating" WHERE "eventId" = $1',
+                    eventId
+                );
+
+                const avgRating = Number(aggRows[0]?.averageRating ?? 0);
+                const ratingsCount = Number(aggRows[0]?.ratingsCount ?? 0);
+
+                await prisma.event.update({
+                    where: { id: eventId },
+                    data: {
+                        rating: ratingsCount > 0 && Number.isFinite(avgRating) ? avgRating.toFixed(2) : null,
+                    }
+                });
+
+                return {
+                    userRating: { rating, comment: comment || null },
+                    averageRating: ratingsCount > 0 && Number.isFinite(avgRating) ? Number(avgRating.toFixed(2)) : 0,
+                    ratingsCount,
+                };
+            } catch {
+                const fallbackRating = Number(event.rating ?? 0);
+                return {
+                    userRating: null,
+                    averageRating: Number.isFinite(fallbackRating) ? fallbackRating : 0,
+                    ratingsCount: 0,
+                };
+            }
+        }
 
         const [upsertedRating] = await prisma.$transaction([
             prismaEngagement.eventRating.upsert({

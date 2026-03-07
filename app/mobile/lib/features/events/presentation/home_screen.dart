@@ -1108,6 +1108,40 @@ class _FeaturedCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Row(
+                    children: [
+                      const Icon(
+                        Icons.favorite_rounded,
+                        color: Color(0xFFF43F5E),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${event.likesCount}',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.85),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFFFB020),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${event.averageRating.toStringAsFixed(1)} (${event.ratingsCount})',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.85),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(

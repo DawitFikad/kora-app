@@ -41,6 +41,9 @@ class Event {
   final int? duration;
   final String? rating;
   final String? trailerUrl;
+  final int likesCount;
+  final double averageRating;
+  final int ratingsCount;
 
   Event({
     required this.id,
@@ -75,6 +78,9 @@ class Event {
     this.duration,
     this.rating,
     this.trailerUrl,
+    this.likesCount = 0,
+    this.averageRating = 0,
+    this.ratingsCount = 0,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -119,6 +125,11 @@ class Event {
       duration: json['duration'],
       rating: json['rating'],
       trailerUrl: json['trailerUrl'],
+      likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
+      averageRating:
+          (json['averageRating'] as num?)?.toDouble() ??
+          (double.tryParse(json['rating']?.toString() ?? '') ?? 0),
+      ratingsCount: (json['ratingsCount'] as num?)?.toInt() ?? 0,
     );
   }
   Map<String, dynamic> toJson() {
@@ -155,6 +166,9 @@ class Event {
       'duration': duration,
       'rating': rating,
       'trailerUrl': trailerUrl,
+      'likesCount': likesCount,
+      'averageRating': averageRating,
+      'ratingsCount': ratingsCount,
     };
   }
 }

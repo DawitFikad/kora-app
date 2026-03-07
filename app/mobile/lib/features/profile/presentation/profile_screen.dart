@@ -19,27 +19,42 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF232030),
-        title: Text('profile.join_staff'.tr(), style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          'profile.join_staff'.tr(),
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: TextField(
           controller: codeController,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             hintText: 'profile.enter_invite_code'.tr(),
             hintStyle: const TextStyle(color: Colors.white38),
-            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            enabledBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white24),
+            ),
           ),
           keyboardType: TextInputType.number,
           maxLength: 6,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('profile.cancel'.tr())),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('profile.cancel'.tr()),
+          ),
           ElevatedButton(
             onPressed: () async {
               try {
-                await ref.read(scannerServiceProvider).acceptInvitation(codeController.text);
+                await ref
+                    .read(scannerServiceProvider)
+                    .acceptInvitation(codeController.text);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile.join_success'.tr())));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('profile.join_success'.tr())),
+                  );
                   ref.invalidate(userProfileProvider);
                 }
               } catch (e) {
@@ -74,7 +89,10 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(width: 12),
             Text(
               "profile.logout".tr(),
-              style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -85,7 +103,10 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("common.cancel".tr(), style: const TextStyle(color: Colors.grey)),
+            child: Text(
+              "common.cancel".tr(),
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -95,12 +116,17 @@ class ProfileScreen extends ConsumerWidget {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             child: Text(
               "profile.logout".tr(),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -113,20 +139,31 @@ class ProfileScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final cardColor = isDark ? const Color(0xFF232030) : Colors.white;
-    
+
     final profileAsync = ref.watch(userProfileProvider);
+    final inviteStatusAsync = ref.watch(staffInviteAvailableProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
+      backgroundColor: isDark
+          ? const Color(0xFF15131C)
+          : const Color(0xFFF8F7FA),
       appBar: AppBar(
-        title: Text('profile.title'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: textColor)),
+        title: Text(
+          'profile.title'.tr(),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             icon: Icon(Icons.edit_outlined, color: textColor),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+              MaterialPageRoute(
+                builder: (context) => const EditProfileScreen(),
+              ),
             ),
           ),
         ],
@@ -145,14 +182,23 @@ class ProfileScreen extends ConsumerWidget {
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+                          border: Border.all(
+                            color: const Color(0xFF8B5CF6),
+                            width: 2,
+                          ),
                         ),
                         child: CircleAvatar(
                           radius: 50,
                           backgroundColor: Colors.grey[800],
-                          backgroundImage: avatarImageProvider(profile.avatarUrl),
-                          child: profile.avatarUrl == null 
-                              ? const Icon(Icons.person, size: 50, color: Colors.white)
+                          backgroundImage: avatarImageProvider(
+                            profile.avatarUrl,
+                          ),
+                          child: profile.avatarUrl == null
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.white,
+                                )
                               : null,
                         ),
                       ),
@@ -179,38 +225,38 @@ class ProfileScreen extends ConsumerWidget {
 
                 // Stats or Bio?
                 if (profile.bio != null && profile.bio!.isNotEmpty) ...[
-                    Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                                Text(
-                                    "profile.bio".tr(),
-                                    style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF8B5CF6),
-                                    ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                    profile.bio!,
-                                    style: TextStyle(color: textColor.withOpacity(0.8)),
-                                ),
-                            ],
-                        ),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(height: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "profile.bio".tr(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          profile.bio!,
+                          style: TextStyle(color: textColor.withOpacity(0.8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
 
                 // --- SHARED MENU ---
                 _buildMenuItem(
-                  context, 
-                  icon: Icons.confirmation_number_outlined, 
+                  context,
+                  icon: Icons.confirmation_number_outlined,
                   title: "profile.my_tickets".tr(),
                   color: cardColor,
                   textColor: textColor,
@@ -218,65 +264,73 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 _buildMenuItem(
-                  context, 
-                  icon: Icons.favorite_border, 
+                  context,
+                  icon: Icons.favorite_border,
                   title: "profile.favorites".tr(),
                   color: cardColor,
                   textColor: textColor,
                   onTap: () => context.push('/favorites'),
                 ),
-                
+
                 // Organizer or Staff showing Scanner
-                if (profile.role == 'ORGANIZER' || profile.role == 'SCANNER') ...[
-                    const SizedBox(height: 16),
-                    _buildMenuItem(
-                      context,
-                      icon: Icons.qr_code_scanner,
-                      title: "profile.scan_tickets".tr(),
-                      color: cardColor,
-                      textColor: textColor,
-                      onTap: () => context.push('/scanner'),
-                    ),
+                if (profile.role == 'ORGANIZER' ||
+                    profile.role == 'SCANNER') ...[
+                  const SizedBox(height: 16),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.qr_code_scanner,
+                    title: "profile.scan_tickets".tr(),
+                    color: cardColor,
+                    textColor: textColor,
+                    onTap: () => context.push('/scanner'),
+                  ),
                 ],
 
                 // Organizer Only Features
                 if (profile.role == 'ORGANIZER') ...[
-                    const SizedBox(height: 16),
-                    _buildMenuItem(
-                      context,
-                      icon: Icons.people_outline,
-                      title: "profile.staff_mgmt".tr(),
-                      color: cardColor,
-                      textColor: textColor,
-                      onTap: () => context.push('/staff-management'),
-                    ),
+                  const SizedBox(height: 16),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.people_outline,
+                    title: "profile.staff_mgmt".tr(),
+                    color: cardColor,
+                    textColor: textColor,
+                    onTap: () => context.push('/staff-management'),
+                  ),
                 ],
 
                 // Invitation Acceptance for regular users
                 if (profile.role == 'USER') ...[
-                   const SizedBox(height: 16),
-                    _buildMenuItem(
-                      context,
-                      icon: Icons.group_add_outlined,
-                      title: "profile.join_staff".tr(),
-                      color: cardColor,
-                      textColor: textColor,
-                      onTap: () => _showAcceptInviteDialog(context, ref),
-                    ),
+                  const SizedBox(height: 16),
+                  inviteStatusAsync.when(
+                    data: (hasPendingInvite) {
+                      if (!hasPendingInvite) return const SizedBox.shrink();
+                      return _buildMenuItem(
+                        context,
+                        icon: Icons.group_add_outlined,
+                        title: "profile.join_staff".tr(),
+                        color: cardColor,
+                        textColor: textColor,
+                        onTap: () => _showAcceptInviteDialog(context, ref),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
                 ],
 
                 const SizedBox(height: 16),
                 _buildMenuItem(
-                  context, 
-                  icon: Icons.settings_outlined, 
+                  context,
+                  icon: Icons.settings_outlined,
                   title: "profile.settings".tr(),
                   color: cardColor,
                   textColor: textColor,
                   onTap: () => context.push('/settings'),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Logout
                 SizedBox(
                   width: double.infinity,
@@ -287,7 +341,9 @@ class ProfileScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: const Color(0xFFFF4B4B).withOpacity(0.2)),
+                        side: BorderSide(
+                          color: const Color(0xFFFF4B4B).withOpacity(0.2),
+                        ),
                       ),
                     ),
                     child: Row(
@@ -296,8 +352,10 @@ class ProfileScreen extends ConsumerWidget {
                         const Icon(Icons.logout, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          "profile.logout".tr(), 
-                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                          "profile.logout".tr(),
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -306,19 +364,27 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
-          loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+          ),
           error: (err, stack) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
+                const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 64,
+                  color: Colors.grey,
+                ),
                 const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: Text(
                     ErrorMessageHandler.getReadableError(err),
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(color: textColor.withOpacity(0.7)),
+                    style: GoogleFonts.poppins(
+                      color: textColor.withOpacity(0.7),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -326,7 +392,9 @@ class ProfileScreen extends ConsumerWidget {
                   onPressed: () => ref.refresh(userProfileProvider),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: Text("common.retry".tr()),
                 ),

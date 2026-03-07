@@ -12,6 +12,20 @@ final scannerServiceProvider = Provider<ScannerService>((ref) {
   return ScannerService(dio, ScannerDatabase());
 });
 
+final staffInviteAvailableProvider = FutureProvider.autoDispose<bool>((
+  ref,
+) async {
+  final token = ref.watch(authTokenProvider);
+  if (token == null) return false;
+
+  final service = ref.watch(scannerServiceProvider);
+  try {
+    return await service.hasPendingInvitation();
+  } catch (_) {
+    return false;
+  }
+});
+
 class ScannerResponse {
   final bool success;
   final String message;
@@ -198,6 +212,19 @@ class ScannerService {
       await _dio.post(ApiConstants.staffAccept, data: {'inviteCode': code});
     } catch (e) {
       throw Exception('Failed to accept invitation: $e');
+    }
+  }
+
+  Future<bool> hasPendingInvitation() async {
+    try {
+      final response = await _dio.get(ApiConstants.staffInviteStatus);
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return data['hasPendingInvite'] == true;
+      }
+      return false;
+    } catch (e) {
+      throw Exception('Failed to check invitation status: $e');
     }
   }
 

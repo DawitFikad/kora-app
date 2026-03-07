@@ -3,6 +3,20 @@ import { StaffService } from "../services/staff.service";
 import { prisma } from "../lib/prisma";
 
 export class StaffController {
+    static async getMyInviteStatus(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user.userId;
+            const invitation = await StaffService.getPendingInvitationForUser(userId);
+
+            res.json({
+                hasPendingInvite: !!invitation,
+                invitation: invitation || null,
+            });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
     /**
      * Organizer: Invite a staff member.
      */

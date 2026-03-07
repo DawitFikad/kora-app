@@ -365,9 +365,23 @@ class EventService {
       if (response.statusCode == 200) {
         return EventEngagement.fromJson(response.data as Map<String, dynamic>);
       }
-      throw Exception('Failed to load event engagement');
-    } catch (e) {
-      throw Exception('Network error: $e');
+      return const EventEngagement(
+        likesCount: 0,
+        averageRating: 0,
+        ratingsCount: 0,
+        userLiked: false,
+        userRating: null,
+        userComment: null,
+      );
+    } catch (_) {
+      return const EventEngagement(
+        likesCount: 0,
+        averageRating: 0,
+        ratingsCount: 0,
+        userLiked: false,
+        userRating: null,
+        userComment: null,
+      );
     }
   }
 

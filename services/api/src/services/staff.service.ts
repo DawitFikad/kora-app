@@ -5,6 +5,42 @@ import { StaffRole } from "@prisma/client";
 import { SmsService } from "./sms.service";
 
 export class StaffService {
+    static async getPendingInvitationForUser(userId: number) {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { phoneNumber: true }
+        });
+
+        if (!user?.phoneNumber) return null;
+
+        const invitation = await prisma.staffInvitation.findFirst({
+            where: {
+                phoneNumber: user.phoneNumber,
+                isUsed: false,
+                expiresAt: { gt: new Date() }
+            },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                organizer: {
+                    select: {
+                        id: true,
+                        organizationName: true
+                    }
+                }
+            }
+        });
+
+        if (!invitation) return null;
+
+        return {
+            id: invitation.id,
+            organizerId: invitation.organizer.id,
+            organizationName: invitation.organizer.organizationName,
+            role: invitation.role,
+            expiresAt: invitation.expiresAt
+        };
+    }
+
     /**
      * Creates an invitation for a staff member.
      */

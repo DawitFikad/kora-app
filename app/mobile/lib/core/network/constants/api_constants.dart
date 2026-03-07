@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  static const String _webLocalBaseUrl = 'http://127.0.0.1:4001/api';
-  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:4001/api';
-  static const String _defaultLocalBaseUrl = 'http://127.0.0.1:4001/api';
+  static const String _webLocalBaseUrl = 'http://127.0.0.1:4000/api';
+  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:4000/api';
+  static const String _defaultLocalBaseUrl = 'http://127.0.0.1:4000/api';
 
   // Optional override, example:
-  // flutter run --dart-define=API_BASE_URL=http://192.168.1.20:4001/api
+  // flutter run --dart-define=API_BASE_URL=http://192.168.1.20:4000/api
   static String get baseUrl {
     const envBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
     if (envBaseUrl.isNotEmpty) return envBaseUrl;
@@ -50,6 +50,7 @@ class ApiConstants {
   static String get staff => '$baseUrl/staff';
   static String get staffInvite => '$baseUrl/staff/invite';
   static String get staffAccept => '$baseUrl/staff/accept';
+  static String get staffInviteStatus => '$baseUrl/staff/invite-status';
   static String get bookingCalculate => '$baseUrl/booking/calculate-price';
   static String get bookingReserve => '$baseUrl/booking/reserve';
   static String get bookingSeats => '$baseUrl/booking/events';

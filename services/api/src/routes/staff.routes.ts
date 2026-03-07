@@ -9,6 +9,7 @@ router.use(authenticate);
 
 // Public-ish / Logged in users: Accept invite
 router.post("/accept", StaffController.acceptInvite);
+router.get("/invite-status", StaffController.getMyInviteStatus);
 
 // Organizer Only: Manage staff
 router.use(authorize([Role.ORGANIZER]));
