@@ -19,6 +19,8 @@ import 'package:mobile/core/widgets/app_image.dart';
 import 'package:mobile/core/widgets/offline_banner.dart';
 import 'package:mobile/features/events/models/homepage_banner.dart';
 import 'package:mobile/core/utils/error_handler.dart';
+import 'package:mobile/features/profile/services/profile_service.dart';
+import 'package:mobile/core/utils/avatar_image_provider.dart';
 
 final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
 final selectedCityProvider = StateProvider<City?>((ref) => null);
@@ -609,6 +611,12 @@ class _HomeBody extends ConsumerWidget {
     Color mutedColor,
   ) {
     final citiesAsync = ref.watch(citiesProvider);
+    final profileAsync = ref.watch(userProfileProvider);
+    final avatarUrl = profileAsync.maybeWhen(
+      data: (profile) => profile.avatarUrl,
+      orElse: () => null,
+    );
+    final avatarImage = avatarImageProvider(avatarUrl);
     final selectedCity = ref.watch(selectedCityProvider);
     final allCities = City(id: 0, name: "home.all_cities".tr());
 
@@ -627,10 +635,13 @@ class _HomeBody extends ConsumerWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
                 ),
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.grey,
-                  child: Icon(Icons.person, color: Colors.white),
+                  backgroundImage: avatarImage,
+                  child: avatarImage == null
+                      ? const Icon(Icons.person, color: Colors.white)
+                      : null,
                 ),
               ),
             ),
@@ -1209,47 +1220,47 @@ class _FeaturedCard extends ConsumerWidget {
       DateFormat('MMM d').format(DateTime.parse(date));
 }
 
-  Color _eventTitleTagColor(String tag) {
-    final normalized = tag.toLowerCase();
-    if (normalized.contains('award')) return const Color(0xFF9333EA);
-    if (normalized.contains('workshop') || normalized.contains('course')) {
-      return const Color(0xFF0EA5E9);
-    }
-    if (normalized.contains('offer') || normalized.contains('deal')) {
-      return const Color(0xFFF59E0B);
-    }
-    if (normalized.contains('movie') || normalized.contains('film')) {
-      return const Color(0xFF7C3AED);
-    }
-    if (normalized.contains('music') || normalized.contains('concert')) {
-      return const Color(0xFF10B981);
-    }
-    return const Color(0xFF8B5CF6);
+Color _eventTitleTagColor(String tag) {
+  final normalized = tag.toLowerCase();
+  if (normalized.contains('award')) return const Color(0xFF9333EA);
+  if (normalized.contains('workshop') || normalized.contains('course')) {
+    return const Color(0xFF0EA5E9);
   }
+  if (normalized.contains('offer') || normalized.contains('deal')) {
+    return const Color(0xFFF59E0B);
+  }
+  if (normalized.contains('movie') || normalized.contains('film')) {
+    return const Color(0xFF7C3AED);
+  }
+  if (normalized.contains('music') || normalized.contains('concert')) {
+    return const Color(0xFF10B981);
+  }
+  return const Color(0xFF8B5CF6);
+}
 
-  Widget _eventTitleTagChip(String? tag, {bool compact = false}) {
-    if (tag == null || tag.isEmpty) return const SizedBox.shrink();
-    final color = _eventTitleTagColor(tag);
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 7 : 8,
-        vertical: compact ? 2 : 3,
+Widget _eventTitleTagChip(String? tag, {bool compact = false}) {
+  if (tag == null || tag.isEmpty) return const SizedBox.shrink();
+  final color = _eventTitleTagColor(tag);
+  return Container(
+    padding: EdgeInsets.symmetric(
+      horizontal: compact ? 7 : 8,
+      vertical: compact ? 2 : 3,
+    ),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.14),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Text(
+      tag.toUpperCase(),
+      style: TextStyle(
+        fontSize: compact ? 8 : 9,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: 0.3,
       ),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        tag.toUpperCase(),
-        style: TextStyle(
-          fontSize: compact ? 8 : 9,
-          fontWeight: FontWeight.w700,
-          color: color,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 
 class _MovieSection extends StatelessWidget {
   final List<Event> movies;
@@ -2457,14 +2468,12 @@ class _WorkshopCourseCard extends StatelessWidget {
                       scrollDirection: Axis.horizontal,
                       children: topics
                           .take(3)
-                          .map((topic) => Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: _pill(
-                                  topic,
-                                  _topicColor(topic),
-                                  isDark,
-                                ),
-                              ))
+                          .map(
+                            (topic) => Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: _pill(topic, _topicColor(topic), isDark),
+                            ),
+                          )
                           .toList(),
                     ),
                   ),
@@ -3812,7 +3821,10 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                               ),
                               const SizedBox(height: 6),
                               if (event.titleTag != null) ...[
-                                _eventTitleTagChip(event.titleTag, compact: true),
+                                _eventTitleTagChip(
+                                  event.titleTag,
+                                  compact: true,
+                                ),
                                 const SizedBox(height: 4),
                               ],
                               Text(

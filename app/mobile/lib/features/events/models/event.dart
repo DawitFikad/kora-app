@@ -149,20 +149,20 @@ class Event {
       reminderAvailable: json['reminderAvailable'],
       userPreRegistered: json['userPreRegistered'],
       userReminderSubscribed: json['userReminderSubscribed'],
-        movieHighlights:
+      movieHighlights:
           (json['movieHighlights'] as List<dynamic>?)
-            ?.map((item) => item.toString())
-            .toList() ??
+              ?.map((item) => item.toString())
+              .toList() ??
           const [],
-        workshopTopics:
+      workshopTopics:
           (json['workshopTopics'] as List<dynamic>?)
-            ?.map((item) => item.toString())
-            .toList() ??
+              ?.map((item) => item.toString())
+              .toList() ??
           const [],
-        dealTag: json['dealTag']?.toString(),
-        hasBundle: json['hasBundle'] as bool?,
-        hasPartner: json['hasPartner'] as bool?,
-        hasLimitedTime: json['hasLimitedTime'] as bool?,
+      dealTag: json['dealTag']?.toString(),
+      hasBundle: json['hasBundle'] as bool?,
+      hasPartner: json['hasPartner'] as bool?,
+      hasLimitedTime: json['hasLimitedTime'] as bool?,
       refundPolicy: json['refundPolicy'],
       minAge: json['minAge'] ?? 0,
       additionalPolicy: json['additionalPolicy'],
