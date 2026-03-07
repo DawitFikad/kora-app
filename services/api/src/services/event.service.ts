@@ -115,11 +115,11 @@ export class EventService {
                 await EventService.notifyTicketHolders(id, {
                     title: "Event Update",
                     content:
-                    `Important update for ${event.title}: The event ` +
-                    (dateChanged ? `date has been moved to ${new Date(data.dateTime).toDateString()} ` : "") +
-                    (venueChanged ? `venue has changed to ${data.venue}. ` : "") +
-                    (detailsChanged ? "details were updated. " : "") +
-                    "Open the app to view latest information.",
+                        `Important update for ${event.title}: The event ` +
+                        (dateChanged ? `date has been moved to ${new Date(data.dateTime).toDateString()} ` : "") +
+                        (venueChanged ? `venue has changed to ${data.venue}. ` : "") +
+                        (detailsChanged ? "details were updated. " : "") +
+                        "Open the app to view latest information.",
                     channels: ["PUSH", "EMAIL"],
                     type: "EVENT_UPDATE",
                     referenceId: id,

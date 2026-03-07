@@ -57,8 +57,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-    
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+    );
+
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       setState(() {
@@ -91,20 +94,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       };
 
       await ref.read(profileServiceProvider).updateProfile(updatedData);
-      
+
       // Refresh profile data
       ref.invalidate(userProfileProvider);
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('profile.update_success'.tr())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('profile.update_success'.tr())));
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${'common.error'.tr()}: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('${'common.error'.tr()}: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -120,9 +126,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final inputColor = isDark ? const Color(0xFF2E2A3D) : Colors.grey[100];
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
+      backgroundColor: isDark
+          ? const Color(0xFF15131C)
+          : const Color(0xFFF8F7FA),
       appBar: AppBar(
-        title: Text('profile.edit_profile_title'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: textColor)),
+        title: Text(
+          'profile.edit_profile_title'.tr(),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -145,16 +159,31 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+                        border: Border.all(
+                          color: const Color(0xFF8B5CF6),
+                          width: 2,
+                        ),
                       ),
                       child: CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.grey[800],
-                        backgroundImage: _imageFile != null 
+                        backgroundImage: _imageFile != null
                             ? FileImage(_imageFile!) as ImageProvider
-                            : avatarImageProvider(ref.read(userProfileProvider).value?.avatarUrl),
-                        child: (_imageFile == null && ref.read(userProfileProvider).value?.avatarUrl == null)
-                            ? const Icon(Icons.person, size: 60, color: Colors.white)
+                            : avatarImageProvider(
+                                ref.read(userProfileProvider).value?.avatarUrl,
+                              ),
+                        child:
+                            (_imageFile == null &&
+                                ref
+                                        .read(userProfileProvider)
+                                        .value
+                                        ?.avatarUrl ==
+                                    null)
+                            ? const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.white,
+                              )
                             : null,
                       ),
                     ),
@@ -169,7 +198,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             color: Color(0xFF8B5CF6),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
@@ -227,7 +260,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
               Row(
                 children: [
-                   Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -244,10 +277,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               isExpanded: true,
                               dropdownColor: cardColor,
                               items: [
-                                DropdownMenuItem(value: 'en', child: Text('profile.english'.tr())),
-                                DropdownMenuItem(value: 'am', child: Text('profile.amharic'.tr())),
+                                DropdownMenuItem(
+                                  value: 'en',
+                                  child: Text('profile.english'.tr()),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'am',
+                                  child: Text('profile.amharic'.tr()),
+                                ),
                               ],
-                              onChanged: (val) => setState(() => _selectedLanguage = val!),
+                              onChanged: (val) =>
+                                  setState(() => _selectedLanguage = val!),
                             ),
                           ),
                         ),
@@ -269,20 +309,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _selectedGender,
-                              hint: Text("profile.gender_select".tr(), style: TextStyle(color: textColor.withOpacity(0.5))),
+                              hint: Text(
+                                "profile.gender_select".tr(),
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.5),
+                                ),
+                              ),
                               isExpanded: true,
                               dropdownColor: cardColor,
-                              items: {
-                                'Male': 'profile.male'.tr(),
-                                'Female': 'profile.female'.tr(),
-                                'Other': 'profile.other'.tr(),
-                              }.entries.map((entry) {
-                                return DropdownMenuItem<String>(
-                                  value: entry.key,
-                                  child: Text(entry.value, style: TextStyle(color: textColor)),
-                                );
-                              }).toList(),
-                              onChanged: (val) => setState(() => _selectedGender = val),
+                              items:
+                                  {
+                                    'Male': 'profile.male'.tr(),
+                                    'Female': 'profile.female'.tr(),
+                                    'Other': 'profile.other'.tr(),
+                                  }.entries.map((entry) {
+                                    return DropdownMenuItem<String>(
+                                      value: entry.key,
+                                      child: Text(
+                                        entry.value,
+                                        style: TextStyle(color: textColor),
+                                      ),
+                                    );
+                                  }).toList(),
+                              onChanged: (val) =>
+                                  setState(() => _selectedGender = val),
                             ),
                           ),
                         ),
@@ -313,18 +363,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    _selectedBirthDate == null 
-                        ? "profile.select_date".tr() 
+                    _selectedBirthDate == null
+                        ? "profile.select_date".tr()
                         : DateFormat('yyyy-MM-dd').format(_selectedBirthDate!),
                     style: TextStyle(
-                      color: _selectedBirthDate == null 
-                          ? textColor.withOpacity(0.5) 
+                      color: _selectedBirthDate == null
+                          ? textColor.withOpacity(0.5)
                           : textColor,
                     ),
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 40),
 
               SizedBox(
@@ -335,12 +385,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     backgroundColor: const Color(0xFF8B5CF6),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 0,
                   ),
-                  child: _isLoading 
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text("profile.save_changes".tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          "profile.save_changes".tr(),
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -386,7 +451,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }

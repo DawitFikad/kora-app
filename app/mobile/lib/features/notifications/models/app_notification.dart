@@ -40,8 +40,10 @@ class AppNotification {
       type = 'alert';
     } else if (title.contains('Reminder')) {
       type = 'reminder';
-    } else if (title.contains('Booking') || title.contains('Ticket')) type = 'booking';
-    else if (title.contains('Alert')) type = 'alert';
+    } else if (title.contains('Booking') || title.contains('Ticket'))
+      type = 'booking';
+    else if (title.contains('Alert'))
+      type = 'alert';
 
     return AppNotification(
       id: json['id'].toString(),
@@ -53,8 +55,16 @@ class AppNotification {
       timestamp: DateTime.parse(json['createdAt']),
       isRead: json['isRead'] ?? false,
       metadata: metadata,
-      userId: json['userId'] is int ? json['userId'] : (json['userId'] != null ? int.tryParse(json['userId'].toString()) : null),
-      organizerId: json['organizerId'] is int ? json['organizerId'] : (json['organizerId'] != null ? int.tryParse(json['organizerId'].toString()) : null),
+      userId: json['userId'] is int
+          ? json['userId']
+          : (json['userId'] != null
+                ? int.tryParse(json['userId'].toString())
+                : null),
+      organizerId: json['organizerId'] is int
+          ? json['organizerId']
+          : (json['organizerId'] != null
+                ? int.tryParse(json['organizerId'].toString())
+                : null),
     );
   }
 }

@@ -38,13 +38,18 @@ class UserProfile {
       email: json['email'] as String?,
       avatarUrl: profile['avatarUrl'] as String?,
       bio: profile['bio'] as String?,
-        location: profile['location'] as String?,
-        interests: (profile['interests'] as List?)?.map((e) => e.toString()).toList() ?? const [],
-        notificationPreferences: profile['notificationPreferences'] is Map<String, dynamic>
+      location: profile['location'] as String?,
+      interests:
+          (profile['interests'] as List?)?.map((e) => e.toString()).toList() ??
+          const [],
+      notificationPreferences:
+          profile['notificationPreferences'] is Map<String, dynamic>
           ? profile['notificationPreferences'] as Map<String, dynamic>
           : null,
       gender: profile['gender'] as String?,
-      birthDate: profile['birthDate'] != null ? DateTime.tryParse(profile['birthDate'].toString()) : null,
+      birthDate: profile['birthDate'] != null
+          ? DateTime.tryParse(profile['birthDate'].toString())
+          : null,
       language: (profile['language'] ?? 'en').toString(),
       role: (json['role'] ?? 'USER').toString(),
     );
@@ -74,7 +79,8 @@ class UserProfile {
       bio: bio ?? this.bio,
       location: location ?? this.location,
       interests: interests ?? this.interests,
-      notificationPreferences: notificationPreferences ?? this.notificationPreferences,
+      notificationPreferences:
+          notificationPreferences ?? this.notificationPreferences,
       gender: gender ?? this.gender,
       birthDate: birthDate ?? this.birthDate,
       language: language ?? this.language,
