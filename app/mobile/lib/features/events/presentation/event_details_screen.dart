@@ -31,6 +31,46 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   bool _likeSubmitting = false;
   bool _ratingSubmitting = false;
 
+  Color _titleTagColor(String tag) {
+    final normalized = tag.toLowerCase();
+    if (normalized.contains('award')) return const Color(0xFF9333EA);
+    if (normalized.contains('workshop') || normalized.contains('course')) {
+      return const Color(0xFF0EA5E9);
+    }
+    if (normalized.contains('offer') || normalized.contains('deal')) {
+      return const Color(0xFFF59E0B);
+    }
+    if (normalized.contains('movie') || normalized.contains('film')) {
+      return const Color(0xFF7C3AED);
+    }
+    if (normalized.contains('music') || normalized.contains('concert')) {
+      return const Color(0xFF10B981);
+    }
+    return const Color(0xFF8B5CF6);
+  }
+
+  Widget _titleTagChip(String? tag) {
+    if (tag == null || tag.isEmpty) return const SizedBox.shrink();
+    final color = _titleTagColor(tag);
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        tag.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 8,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
   void _initializeQuantities(Event event) {
     if (_initialized) return;
     for (var tier in event.tiers) {
@@ -577,6 +617,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    _titleTagChip(event.titleTag),
                     Flexible(
                       child: Text(
                         event.title,

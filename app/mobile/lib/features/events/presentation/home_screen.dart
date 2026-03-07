@@ -1110,6 +1110,10 @@ class _FeaturedCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (event.titleTag != null) ...[
+                    _eventTitleTagChip(event.titleTag, compact: true),
+                    const SizedBox(height: 6),
+                  ],
                   Text(
                     event.title,
                     maxLines: 2,
@@ -1205,6 +1209,48 @@ class _FeaturedCard extends ConsumerWidget {
       DateFormat('MMM d').format(DateTime.parse(date));
 }
 
+  Color _eventTitleTagColor(String tag) {
+    final normalized = tag.toLowerCase();
+    if (normalized.contains('award')) return const Color(0xFF9333EA);
+    if (normalized.contains('workshop') || normalized.contains('course')) {
+      return const Color(0xFF0EA5E9);
+    }
+    if (normalized.contains('offer') || normalized.contains('deal')) {
+      return const Color(0xFFF59E0B);
+    }
+    if (normalized.contains('movie') || normalized.contains('film')) {
+      return const Color(0xFF7C3AED);
+    }
+    if (normalized.contains('music') || normalized.contains('concert')) {
+      return const Color(0xFF10B981);
+    }
+    return const Color(0xFF8B5CF6);
+  }
+
+  Widget _eventTitleTagChip(String? tag, {bool compact = false}) {
+    if (tag == null || tag.isEmpty) return const SizedBox.shrink();
+    final color = _eventTitleTagColor(tag);
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 8,
+        vertical: compact ? 2 : 3,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        tag.toUpperCase(),
+        style: TextStyle(
+          fontSize: compact ? 8 : 9,
+          fontWeight: FontWeight.w700,
+          color: color,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
 class _MovieSection extends StatelessWidget {
   final List<Event> movies;
   final bool isDark;
@@ -1286,6 +1332,10 @@ class _MovieCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final highlights = movie.movieHighlights.isNotEmpty
+        ? movie.movieHighlights
+        : _fallbackMovieHighlights(movie);
+
     return GestureDetector(
       onTap: () => context.push('/event/${movie.id}'),
       child: SizedBox(
@@ -1352,6 +1402,10 @@ class _MovieCard extends StatelessWidget {
                 color: isDark ? Colors.white : Colors.black,
               ),
             ),
+            if (movie.titleTag != null) ...[
+              const SizedBox(height: 4),
+              _eventTitleTagChip(movie.titleTag, compact: true),
+            ],
             const SizedBox(height: 2),
             Text(
               "${movie.duration ?? 120} min • ${movie.venue}",
@@ -1375,6 +1429,20 @@ class _MovieCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
+            if (highlights.isNotEmpty) ...[
+              const SizedBox(height: 5),
+              SizedBox(
+                height: 20,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: highlights.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 5),
+                  itemBuilder: (context, index) {
+                    return _moviePill(highlights[index]);
+                  },
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
@@ -1409,6 +1477,42 @@ class _MovieCard extends StatelessWidget {
     final parsed = DateTime.tryParse(dateTime);
     if (parsed == null) return 'Date TBA';
     return DateFormat('MMM d, h:mm a').format(parsed);
+  }
+
+  List<String> _fallbackMovieHighlights(Event event) {
+    final text = '${event.title} ${event.description}'.toLowerCase();
+    final labels = <String>[];
+    if (text.contains('premiere')) labels.add('Premiere');
+    if (text.contains('festival')) labels.add('Film Festival');
+    final numericRating = double.tryParse(event.rating ?? '');
+    if (numericRating != null && numericRating >= 4) labels.add('Top Rated');
+    if (labels.isEmpty) labels.add('New Release');
+    return labels.take(2).toList();
+  }
+
+  Widget _moviePill(String label) {
+    final color = switch (label) {
+      'Top Rated' => const Color(0xFFF59E0B),
+      'Premiere' => const Color(0xFF0EA5E9),
+      'Film Festival' => const Color(0xFF16A34A),
+      _ => const Color(0xFF8B5CF6),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
   }
 }
 
@@ -1534,6 +1638,10 @@ class _BestEventsWeekCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (event.titleTag != null) ...[
+                    _eventTitleTagChip(event.titleTag, compact: true),
+                    const SizedBox(height: 5),
+                  ],
                   Text(
                     event.title,
                     maxLines: 2,
@@ -1723,6 +1831,10 @@ class _TrendingNowCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (event.titleTag != null) ...[
+                      _eventTitleTagChip(event.titleTag, compact: true),
+                      const SizedBox(height: 5),
+                    ],
                     Text(
                       event.title,
                       maxLines: 2,
@@ -1794,6 +1906,7 @@ class _TrendingNowCard extends StatelessWidget {
   }
 
   bool _isLivestream(Event event) {
+    if (event.livestreamAvailable == true) return true;
     final text = '${event.title} ${event.description}'.toLowerCase();
     return text.contains('livestream') ||
         text.contains('live stream') ||
@@ -1932,6 +2045,10 @@ class _PersonalizedPickCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (event.titleTag != null) ...[
+                    _eventTitleTagChip(event.titleTag, compact: true),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     event.title,
                     maxLines: 2,
@@ -2111,6 +2228,10 @@ class _UpcomingAwardCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (event.titleTag != null) ...[
+                    _eventTitleTagChip(event.titleTag, compact: true),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     event.title,
                     maxLines: 2,
@@ -2264,6 +2385,9 @@ class _WorkshopCourseCard extends StatelessWidget {
     final date = DateTime.parse(event.dateTime);
     final seats = event.ticketsAvailable;
     final hasLimitedSeats = seats != null && seats > 0 && seats <= 30;
+    final topics = event.workshopTopics.isNotEmpty
+        ? event.workshopTopics
+        : [event.category?.name ?? 'Workshop'];
 
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
@@ -2294,6 +2418,10 @@ class _WorkshopCourseCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (event.titleTag != null) ...[
+                    _eventTitleTagChip(event.titleTag, compact: true),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     event.title,
                     maxLines: 2,
@@ -2327,17 +2455,17 @@ class _WorkshopCourseCard extends StatelessWidget {
                     height: 24,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
-                      children: [
-                        _pill('Video Editing', const Color(0xFF7C3AED), isDark),
-                        const SizedBox(width: 6),
-                        _pill('Cooking', const Color(0xFFEA580C), isDark),
-                        const SizedBox(width: 6),
-                        _pill(
-                          'Digital Marketing',
-                          const Color(0xFF0891B2),
-                          isDark,
-                        ),
-                      ],
+                      children: topics
+                          .take(3)
+                          .map((topic) => Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: _pill(
+                                  topic,
+                                  _topicColor(topic),
+                                  isDark,
+                                ),
+                              ))
+                          .toList(),
                     ),
                   ),
                   const Spacer(),
@@ -2398,6 +2526,23 @@ class _WorkshopCourseCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _topicColor(String topic) {
+    final text = topic.toLowerCase();
+    if (text.contains('video') || text.contains('edit')) {
+      return const Color(0xFF7C3AED);
+    }
+    if (text.contains('cook') || text.contains('culinary')) {
+      return const Color(0xFFEA580C);
+    }
+    if (text.contains('market') || text.contains('seo')) {
+      return const Color(0xFF0891B2);
+    }
+    if (text.contains('photo') || text.contains('design')) {
+      return const Color(0xFF16A34A);
+    }
+    return const Color(0xFF8B5CF6);
   }
 }
 
@@ -2516,6 +2661,10 @@ class _CitySpotlightCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (event.titleTag != null) ...[
+                      _eventTitleTagChip(event.titleTag, compact: true),
+                      const SizedBox(height: 4),
+                    ],
                     Text(
                       event.title,
                       maxLines: 2,
@@ -2712,6 +2861,10 @@ class _LastMinuteEventCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (event.titleTag != null) ...[
+                      _eventTitleTagChip(event.titleTag, compact: true),
+                      const SizedBox(height: 4),
+                    ],
                     Text(
                       event.title,
                       maxLines: 2,
@@ -2841,20 +2994,7 @@ class _OfferDealCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
-    final desc = '${event.title} ${event.description}'.toLowerCase();
-
-    String tag = 'Special Offer';
-    Color tagColor = const Color(0xFFF59E0B);
-    if (desc.contains('bundle')) {
-      tag = 'Bundle Deal';
-      tagColor = const Color(0xFF8B5CF6);
-    } else if (desc.contains('partner') || desc.contains('exclusive')) {
-      tag = 'Partner Exclusive';
-      tagColor = const Color(0xFF0EA5E9);
-    } else if (desc.contains('limited time') || desc.contains('today')) {
-      tag = 'Limited Time';
-      tagColor = const Color(0xFFEF4444);
-    }
+    final (tag, tagColor) = _resolveDealTag(event);
 
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
@@ -2885,6 +3025,10 @@ class _OfferDealCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (event.titleTag != null) ...[
+                    _eventTitleTagChip(event.titleTag, compact: true),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     event.title,
                     maxLines: 2,
@@ -2935,6 +3079,29 @@ class _OfferDealCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  (String, Color) _resolveDealTag(Event event) {
+    if (event.hasBundle == true) {
+      return ('Bundle Deal', const Color(0xFF8B5CF6));
+    }
+    if (event.hasPartner == true) {
+      return ('Partner Exclusive', const Color(0xFF0EA5E9));
+    }
+    if (event.hasLimitedTime == true) {
+      return ('Limited Time', const Color(0xFFEF4444));
+    }
+
+    final backendTag = event.dealTag?.trim();
+    if (backendTag != null && backendTag.isNotEmpty) {
+      final upper = backendTag.toUpperCase();
+      if (upper.contains('% OFF') || upper.contains('ETB OFF')) {
+        return (backendTag, const Color(0xFFF59E0B));
+      }
+      return (backendTag, const Color(0xFFF59E0B));
+    }
+
+    return ('Special Offer', const Color(0xFFF59E0B));
   }
 }
 
@@ -3064,6 +3231,10 @@ class _UpcomingExperienceCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (event.titleTag != null) ...[
+                    _eventTitleTagChip(event.titleTag, compact: true),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     event.title,
                     maxLines: 2,
@@ -3238,6 +3409,10 @@ class _TrendingCard extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (event.titleTag != null) ...[
+                    const SizedBox(height: 4),
+                    _eventTitleTagChip(event.titleTag, compact: true),
+                  ],
                   Text(
                     event.title,
                     maxLines: 1,
@@ -3357,15 +3532,24 @@ class _VerticalEventCard extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text(
-                          event.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (event.titleTag != null) ...[
+                              _eventTitleTagChip(event.titleTag, compact: true),
+                              const SizedBox(height: 4),
+                            ],
+                            Text(
+                              event.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       GestureDetector(
@@ -3627,6 +3811,10 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                                 ),
                               ),
                               const SizedBox(height: 6),
+                              if (event.titleTag != null) ...[
+                                _eventTitleTagChip(event.titleTag, compact: true),
+                                const SizedBox(height: 4),
+                              ],
                               Text(
                                 event.title,
                                 style: GoogleFonts.poppins(

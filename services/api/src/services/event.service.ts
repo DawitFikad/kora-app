@@ -10,6 +10,106 @@ const prismaEngagement = prisma as typeof prisma & {
 };
 
 export class EventService {
+    private static extractMovieHighlights(event: {
+        title: string;
+        description?: string | null;
+        category?: { name?: string | null; slug?: string | null } | null;
+        subCategory?: { name?: string | null; slug?: string | null } | null;
+        rating?: string | null;
+        createdAt: Date;
+    }, now: Date): string[] {
+        const text = [
+            event.title,
+            event.description || '',
+            event.category?.name || '',
+            event.category?.slug || '',
+            event.subCategory?.name || '',
+            event.subCategory?.slug || '',
+        ]
+            .join(' ')
+            .toLowerCase();
+
+        const highlights: string[] = [];
+        const createdDiffDays =
+            (now.getTime() - new Date(event.createdAt).getTime()) /
+            (1000 * 60 * 60 * 24);
+        if (createdDiffDays <= 45) highlights.push('New Release');
+        if (text.includes('premiere')) highlights.push('Premiere');
+        if (text.includes('film festival') || text.includes('festival')) {
+            highlights.push('Film Festival');
+        }
+
+        const numericRating = Number(event.rating || 0);
+        if (!Number.isNaN(numericRating) && numericRating >= 4) {
+            highlights.push('Top Rated');
+        }
+
+        if (!highlights.length) {
+            highlights.push('Featured Pick');
+        }
+
+        return highlights.slice(0, 3);
+    }
+
+    private static extractWorkshopTopics(event: {
+        title: string;
+        description?: string | null;
+        category?: { name?: string | null } | null;
+        subCategory?: { name?: string | null } | null;
+    }): string[] {
+        const text = [
+            event.title,
+            event.description || '',
+            event.category?.name || '',
+            event.subCategory?.name || '',
+        ]
+            .join(' ')
+            .toLowerCase();
+
+        const topicMap: Array<{ label: string; keywords: string[] }> = [
+            {
+                label: 'Video Editing',
+                keywords: ['video edit', 'editing', 'premiere pro', 'capcut', 'davinci'],
+            },
+            {
+                label: 'Cooking',
+                keywords: ['cook', 'culinary', 'baking', 'chef', 'food'],
+            },
+            {
+                label: 'Digital Marketing',
+                keywords: ['digital marketing', 'seo', 'content marketing', 'ads', 'social media marketing'],
+            },
+            {
+                label: 'Creative Arts',
+                keywords: ['creative', 'art', 'painting', 'drawing', 'craft'],
+            },
+            {
+                label: 'Photography',
+                keywords: ['photo', 'camera', 'photography', 'lightroom'],
+            },
+            {
+                label: 'Design',
+                keywords: ['design', 'ui', 'ux', 'graphic'],
+            },
+        ];
+
+        const topics = topicMap
+            .filter((item) => item.keywords.some((kw) => text.includes(kw)))
+            .map((item) => item.label);
+
+        if (!topics.length) {
+            if (event.subCategory?.name?.trim()) {
+                topics.push(event.subCategory.name.trim());
+            } else if (event.category?.name?.trim()) {
+                topics.push(event.category.name.trim());
+            } else {
+                topics.push('Workshop');
+            }
+        }
+
+        return topics.slice(0, 3);
+    }
+
     // --- Organizers: Event Management ---
 
     static async createEvent(organizerId: number, data: {
@@ -566,11 +666,18 @@ export class EventService {
                 const daysAway = (new Date(event.dateTime).getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
                 if (daysAway <= 14) score += 8; // prioritize near-term new releases
 
-                return { event, score };
+                return {
+                    event,
+                    score,
+                    movieHighlights: EventService.extractMovieHighlights(event, now),
+                };
             })
             .sort((a, b) => b.score - a.score)
             .slice(0, limit)
-            .map((x) => x.event);
+            .map((x) => ({
+                ...x.event,
+                movieHighlights: x.movieHighlights,
+            }));
 
         return ranked;
     }
@@ -1055,6 +1162,7 @@ export class EventService {
                 return {
                     ...event,
                     ticketsAvailable,
+                    workshopTopics: EventService.extractWorkshopTopics(event),
                     popularityScore: score,
                 };
             })
