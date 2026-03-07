@@ -43,6 +43,9 @@ export class ProfileService {
         birthDate?: string;
         language?: string;
         email?: string;
+        location?: string;
+        interests?: string[];
+        notificationPreferences?: Record<string, any>;
     }) {
         const { email, birthDate, ...profileData } = data;
 
@@ -61,7 +64,7 @@ export class ProfileService {
             }
         }
 
-        await prisma.userProfile.update({
+        await (prisma as any).userProfile.update({
             where: { userId },
             data: {
                 ...profileData,

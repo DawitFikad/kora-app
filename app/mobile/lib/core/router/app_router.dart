@@ -12,6 +12,7 @@ import '../../features/scanner/presentation/scanner_screen.dart';
 import '../../features/scanner/presentation/staff_management_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/tickets/presentation/my_tickets_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../storage/local_storage.dart';
 
 class AppRouter {
@@ -96,6 +97,10 @@ class AppRouter {
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: '/scanner',

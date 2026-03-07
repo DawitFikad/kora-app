@@ -50,6 +50,9 @@ model UserProfile {
   userId    Int       @unique
   fullName  String?
   language  String    @default("en")
+  location  String?
+  interests String[]  @default([])
+  notificationPreferences Json?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   avatarUrl String?
@@ -520,6 +523,8 @@ model NotificationLog {
   id          Int                 @id @default(autoincrement())
   userId      Int?
   organizerId Int?
+  type        NotificationType?
+  referenceId String?
   channel     NotificationChannel
   recipient   String
   title       String?
@@ -689,4 +694,16 @@ enum NotificationChannel {
   SMS
   PUSH
   EMAIL
+}
+
+enum NotificationType {
+  TICKET_CONFIRMATION
+  EVENT_REMINDER
+  EVENT_UPDATE
+  NEW_EVENT
+  EVENT_CANCELLED
+  EVENT_RATED_THANKS
+  PERSONALIZED_EVENT
+  EMAIL_REQUEST
+  STAFF_INVITATION
 }

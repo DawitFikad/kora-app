@@ -10,9 +10,13 @@ export class NotificationController {
         try {
             const userId = (req as any).user.userId;
             const notifications = await prisma.notificationLog.findMany({
-                where: { userId },
+                where: {
+                    userId,
+                    channel: "PUSH",
+                    recipient: "APP",
+                },
                 orderBy: { createdAt: 'desc' },
-                take: 50
+                take: 100
             });
             res.json({ success: true, data: notifications });
         } catch (error: any) {

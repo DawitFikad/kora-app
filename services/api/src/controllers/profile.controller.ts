@@ -18,7 +18,18 @@ export class ProfileController {
     static async updateMyProfile(req: Request, res: Response) {
         try {
             const userId = req.user!.userId;
-            const { fullName, avatarUrl, bio, gender, birthDate, language, email } = req.body;
+            const {
+                fullName,
+                avatarUrl,
+                bio,
+                gender,
+                birthDate,
+                language,
+                email,
+                location,
+                interests,
+                notificationPreferences,
+            } = req.body;
             const profile = await ProfileService.updateUserProfile(userId, {
                 fullName,
                 avatarUrl,
@@ -26,7 +37,10 @@ export class ProfileController {
                 gender,
                 birthDate,
                 language,
-                email
+                email,
+                location,
+                interests,
+                notificationPreferences,
             });
             res.json(profile);
         } catch (error: any) {

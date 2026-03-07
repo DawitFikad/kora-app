@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/features/notifications/models/app_notification.dart';
 import 'package:mobile/features/notifications/services/notification_service.dart';
 
@@ -312,6 +313,8 @@ class _NotificationTile extends ConsumerWidget {
             await service.markAsRead(notification.id);
             ref.invalidate(notificationsProvider);
           }
+
+          _openRelatedContent(context);
         },
         borderRadius: BorderRadius.circular(12),
         child: Column(
@@ -378,6 +381,57 @@ class _NotificationTile extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _openRelatedContent(BuildContext context) {
+    final semanticType = notification.notificationType;
+    final eventId = _extractEventId(notification);
+    final actionPath = notification.metadata?['actionPath']?.toString();
+
+    if (actionPath != null && actionPath.isNotEmpty) {
+      if (actionPath.startsWith('/')) {
+        context.go(actionPath);
+        return;
+      }
+    }
+
+    if (semanticType == 'TICKET_CONFIRMATION') {
+      context.go('/my-tickets');
+      return;
+    }
+
+    if (semanticType == 'STAFF_INVITATION') {
+      context.go('/home');
+      return;
+    }
+
+    if (eventId != null) {
+      context.go('/event/$eventId');
+      return;
+    }
+
+    // Fallback for generic updates.
+    context.go('/home');
+  }
+
+  int? _extractEventId(AppNotification notification) {
+    final metadata = notification.metadata;
+    final fromMetadata = metadata?['eventId'];
+    final direct = _toInt(fromMetadata);
+    if (direct != null) return direct;
+
+    final reference = notification.referenceId;
+    if (reference == null || reference.isEmpty) return null;
+
+    // Reminder windows can use composite referenceId like "123-24".
+    final normalized = reference.split('-').first;
+    return _toInt(normalized);
+  }
+
+  int? _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value == null) return null;
+    return int.tryParse(value.toString());
   }
 
   String _formatTimestamp(DateTime dt) {

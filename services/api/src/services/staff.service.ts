@@ -1,8 +1,9 @@
 import { prisma } from "../lib/prisma";
 import crypto from "crypto";
-import { StaffRole } from "@prisma/client";
+import { NotificationChannel, StaffRole } from "@prisma/client";
 
 import { SmsService } from "./sms.service";
+import { NotificationService } from "./notification.service";
 
 export class StaffService {
     static async getPendingInvitationForUser(userId: number) {
@@ -69,9 +70,39 @@ export class StaffService {
             }
         });
 
+        const organizer = await prisma.organizerProfile.findUnique({
+            where: { id: organizerId },
+            select: { organizationName: true },
+        });
+        const organizerName = organizer?.organizationName || `Organizer ${organizerId}`;
+
         // Send SMS to the invited staff member
-        const message = `You have been invited to join the staff team on ET-Ticket. Use code: ${inviteCode} to join. Expires in 24 hours.`;
+        const message = `You have been invited to join the staff team for ${organizerName} as ${role}. Use code: ${inviteCode}. Expires in 24 hours.`;
         await SmsService.sendSms(phoneNumber, message);
+
+        // If the invited phone already belongs to a registered user, also notify in-app and email.
+        const invitedUser = await prisma.user.findUnique({
+            where: { phoneNumber },
+            select: { id: true },
+        });
+
+        if (invitedUser) {
+            await NotificationService.notifyUser(invitedUser.id, {
+                title: "Staff Team Invitation",
+                content: `You have been invited to join the staff team for ${organizerName} as ${role}. Open the app to accept or decline.`,
+                channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+                type: "STAFF_INVITATION",
+                referenceId: invitation.id,
+                metadata: {
+                    invitationId: invitation.id,
+                    role,
+                    organizerId,
+                    inviteCode,
+                    actionPath: "/profile",
+                    actions: ["ACCEPT", "DECLINE"],
+                },
+            });
+        }
 
         console.log(`[STAFF INVITE] Created invite for ${phoneNumber}: ${inviteCode}`);
 

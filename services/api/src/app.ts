@@ -109,6 +109,32 @@ router.get("/cron/reconcile", async (req, res) => {
   }
 });
 
+router.get("/cron/personalized-suggestions", async (req, res) => {
+  try {
+    if (!isAuthorizedCronRequest(req)) {
+      return res.status(401).json({ error: "Unauthorized cron request" });
+    }
+
+    await EventService.sendWeeklyPersonalizedSuggestions();
+    return res.json({ success: true, message: "Weekly personalized suggestions dispatched" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get("/cron/email-prompts", async (req, res) => {
+  try {
+    if (!isAuthorizedCronRequest(req)) {
+      return res.status(401).json({ error: "Unauthorized cron request" });
+    }
+
+    await EventService.notifyMissingEmailUsers();
+    return res.json({ success: true, message: "Email prompts dispatched" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.use("/auth", authRoutes);
 router.use("/admin", adminRoutes);
 router.use("/profiles", profileRoutes);

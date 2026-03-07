@@ -1,8 +1,93 @@
 import { prisma } from "../lib/prisma";
 import { NotificationChannel } from "@prisma/client";
 import { SmsService } from "./sms.service";
+import { EmailService } from "./email.service";
+
+export const NotificationTypes = {
+    TICKET_CONFIRMATION: "TICKET_CONFIRMATION",
+    EVENT_REMINDER: "EVENT_REMINDER",
+    EVENT_UPDATE: "EVENT_UPDATE",
+    NEW_EVENT: "NEW_EVENT",
+    EVENT_CANCELLED: "EVENT_CANCELLED",
+    EVENT_RATED_THANKS: "EVENT_RATED_THANKS",
+    PERSONALIZED_EVENT: "PERSONALIZED_EVENT",
+    EMAIL_REQUEST: "EMAIL_REQUEST",
+    STAFF_INVITATION: "STAFF_INVITATION",
+} as const;
+
+export type NotificationType = typeof NotificationTypes[keyof typeof NotificationTypes];
+
+const CRITICAL_TYPES = new Set<NotificationType>([
+    NotificationTypes.TICKET_CONFIRMATION,
+    NotificationTypes.EVENT_CANCELLED,
+    NotificationTypes.STAFF_INVITATION,
+]);
+
+const DEFAULT_THROTTLE_MINUTES: Partial<Record<NotificationType, number>> = {
+    [NotificationTypes.NEW_EVENT]: 24 * 60,
+    [NotificationTypes.PERSONALIZED_EVENT]: 7 * 24 * 60,
+    [NotificationTypes.EMAIL_REQUEST]: 7 * 24 * 60,
+};
 
 export class NotificationService {
+    private static async shouldThrottleInApp(options: {
+        userId: number;
+        title?: string;
+        type?: NotificationType;
+        dedupeMinutes?: number;
+    }) {
+        const { userId, title, type } = options;
+        const dedupeMinutes =
+            options.dedupeMinutes ?? (type ? DEFAULT_THROTTLE_MINUTES[type] : undefined);
+
+        if (!dedupeMinutes || !type) return false;
+        if (CRITICAL_TYPES.has(type)) return false;
+
+        const createdAfter = new Date(Date.now() - dedupeMinutes * 60 * 1000);
+        const recent = await prisma.notificationLog.findFirst({
+            where: {
+                userId,
+                channel: NotificationChannel.PUSH,
+                recipient: "APP",
+                title,
+                createdAt: { gte: createdAfter },
+            },
+            orderBy: { createdAt: "desc" },
+            select: { id: true },
+        });
+
+        return !!recent;
+    }
+
+    private static async maybePromptEmail(userId: number) {
+        const throttle = await this.shouldThrottleInApp({
+            userId,
+            title: "Add your email for backup updates",
+            type: NotificationTypes.EMAIL_REQUEST,
+            dedupeMinutes: 7 * 24 * 60,
+        });
+
+        if (throttle) return;
+
+        await (prisma as any).notificationLog.create({
+            data: {
+                userId,
+                type: NotificationTypes.EMAIL_REQUEST,
+                referenceId: "profile",
+                channel: NotificationChannel.PUSH,
+                recipient: "APP",
+                title: "Add your email for backup updates",
+                content:
+                    "Add an email in your profile to receive ticket confirmations, receipts, and backup event updates.",
+                status: "DELIVERED",
+                metadata: {
+                    type: NotificationTypes.EMAIL_REQUEST,
+                    referenceId: "profile",
+                },
+            },
+        });
+    }
+
     /**
      * Sends a notification to a specific user.
      */
@@ -10,6 +95,10 @@ export class NotificationService {
         title?: string;
         content: string;
         channels: NotificationChannel[];
+        type?: NotificationType;
+        referenceId?: string | number;
+        inApp?: boolean;
+        dedupeMinutes?: number;
         metadata?: any;
     }) {
         const user = await prisma.user.findUnique({
@@ -19,17 +108,53 @@ export class NotificationService {
 
         if (!user) return;
 
+        const throttled = await this.shouldThrottleInApp({
+            userId,
+            title: options.title,
+            type: options.type,
+            dedupeMinutes: options.dedupeMinutes,
+        });
+        if (throttled) {
+            return [{ channel: NotificationChannel.PUSH, status: "SKIPPED", providerRef: null }];
+        }
+
+        const metadataPayload = {
+            ...(options.metadata || {}),
+            type: options.type,
+            referenceId: options.referenceId?.toString(),
+        };
+
+        const wantsInApp = options.inApp ?? true;
+
         const results = [];
         for (const channel of options.channels) {
             let status = "FAILED";
             let providerRef = null;
+            let recipient = user.phoneNumber;
 
             try {
                 if (channel === NotificationChannel.SMS && user.phoneNumber) {
-                    const smsRes = await SmsService.sendSms(user.phoneNumber, options.content);
+                    await SmsService.sendSms(user.phoneNumber, options.content);
                     status = "SENT";
+                    recipient = user.phoneNumber;
+                } else if (channel === NotificationChannel.EMAIL) {
+                    if (user.email) {
+                        await EmailService.sendEmail(
+                            user.email,
+                            options.title || "ET-Ticket Update",
+                            options.content
+                        );
+                        status = "SENT";
+                        recipient = user.email;
+                    } else {
+                        status = "SKIPPED";
+                        await this.maybePromptEmail(userId);
+                    }
+                } else if (channel === NotificationChannel.PUSH) {
+                    // Push provider integration can be plugged in later; keep in-app delivery log now.
+                    status = "SENT";
+                    recipient = "APP";
                 }
-                // Push & Email placeholders
                 results.push({ channel, status, providerRef });
             } catch (error) {
                 console.error(`Failed to send ${channel} to user ${userId}:`, error);
@@ -37,17 +162,36 @@ export class NotificationService {
             }
 
             // Log the notification
-            await prisma.notificationLog.create({
+            await (prisma as any).notificationLog.create({
                 data: {
                     userId,
+                    type: options.type,
+                    referenceId: options.referenceId?.toString(),
                     channel,
-                    recipient: user.phoneNumber, // Fallback to phone for now
+                    recipient,
                     title: options.title,
                     content: options.content,
                     status,
                     providerRef,
-                    metadata: options.metadata
+                    metadata: metadataPayload
                 }
+            });
+        }
+
+        // Ensure in-app notification exists even when PUSH channel is not requested.
+        if (wantsInApp && !options.channels.includes(NotificationChannel.PUSH)) {
+            await (prisma as any).notificationLog.create({
+                data: {
+                    userId,
+                    type: options.type,
+                    referenceId: options.referenceId?.toString(),
+                    channel: NotificationChannel.PUSH,
+                    recipient: "APP",
+                    title: options.title,
+                    content: options.content,
+                    status: "DELIVERED",
+                    metadata: metadataPayload,
+                },
             });
         }
 

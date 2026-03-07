@@ -20,6 +20,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _bioController;
+  late TextEditingController _locationController;
+  late TextEditingController _interestsController;
   String? _selectedLanguage;
   String? _selectedGender;
   DateTime? _selectedBirthDate;
@@ -34,6 +36,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _nameController = TextEditingController(text: profile?.fullName);
     _emailController = TextEditingController(text: profile?.email);
     _bioController = TextEditingController(text: profile?.bio);
+    _locationController = TextEditingController(text: profile?.location);
+    _interestsController = TextEditingController(
+      text: (profile?.interests ?? const []).join(', '),
+    );
     _selectedGender = profile?.gender;
     _selectedBirthDate = profile?.birthDate;
     _selectedLanguage = profile?.language ?? 'en';
@@ -44,6 +50,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _bioController.dispose();
+    _locationController.dispose();
+    _interestsController.dispose();
     super.dispose();
   }
 
@@ -70,6 +78,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         'fullName': _nameController.text,
         'email': _emailController.text,
         'bio': _bioController.text,
+        'location': _locationController.text,
+        'interests': _interestsController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(),
         'gender': _selectedGender,
         'birthDate': _selectedBirthDate?.toIso8601String(),
         'language': _selectedLanguage,
@@ -190,6 +204,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 backgroundColor: inputColor,
                 textColor: textColor,
                 maxLines: 3,
+              ),
+              const SizedBox(height: 20),
+
+              _buildLabel("Location"),
+              _buildTextField(
+                controller: _locationController,
+                hint: "City or area (for nearby event alerts)",
+                backgroundColor: inputColor,
+                textColor: textColor,
+              ),
+              const SizedBox(height: 20),
+
+              _buildLabel("Interests"),
+              _buildTextField(
+                controller: _interestsController,
+                hint: "music, comedy, workshops",
+                backgroundColor: inputColor,
+                textColor: textColor,
               ),
               const SizedBox(height: 20),
 

@@ -54,6 +54,11 @@ export class EventService {
             }
         });
 
+        // Notify users in matching city/category about newly published event.
+        EventService.notifyMatchingUsersOfNewEvent(event).catch((error) => {
+            console.error("Failed to send new event notifications:", error);
+        });
+
         return event;
     }
 
@@ -86,47 +91,75 @@ export class EventService {
         if (oldStatus === EventStatus.APPROVED || data.status === EventStatus.CANCELLED) {
             const dateChanged = data.dateTime && new Date(data.dateTime).getTime() !== new Date(event.dateTime).getTime();
             const venueChanged = data.venue && data.venue !== event.venue;
+            const detailsChanged =
+                (typeof data.title === "string" && data.title !== event.title) ||
+                (typeof data.description === "string" && data.description !== event.description) ||
+                (typeof data.additionalPolicy === "string" && data.additionalPolicy !== event.additionalPolicy);
             const cancelled = data.status === EventStatus.CANCELLED && oldStatus !== EventStatus.CANCELLED;
 
             if (cancelled) {
                 const { TicketStatus } = await import("@prisma/client");
+                await EventService.notifyTicketHolders(id, {
+                    title: "Event Cancelled",
+                    content: `"${event.title}" has been cancelled. Please check the app for refund details.`,
+                    channels: ["PUSH", "SMS", "EMAIL"],
+                    type: "EVENT_CANCELLED",
+                    referenceId: id,
+                });
+
                 await prisma.ticket.updateMany({
                     where: { eventId: id, status: TicketStatus.VALID },
                     data: { status: TicketStatus.CANCELLED }
                 });
-
-                await EventService.notifyTicketHolders(id, "Event Cancelled",
-                    `We regret to inform you that "${event.title}" has been cancelled. Please check the app for refund details.`
-                );
-            } else if (dateChanged || venueChanged) {
-                await EventService.notifyTicketHolders(id, "Event Update",
+            } else if (dateChanged || venueChanged || detailsChanged) {
+                await EventService.notifyTicketHolders(id, {
+                    title: "Event Update",
+                    content:
                     `Important update for ${event.title}: The event ` +
                     (dateChanged ? `date has been moved to ${new Date(data.dateTime).toDateString()} ` : "") +
-                    (venueChanged ? `venue has changed to ${data.venue}` : "")
-                );
+                    (venueChanged ? `venue has changed to ${data.venue}. ` : "") +
+                    (detailsChanged ? "details were updated. " : "") +
+                    "Open the app to view latest information.",
+                    channels: ["PUSH", "EMAIL"],
+                    type: "EVENT_UPDATE",
+                    referenceId: id,
+                });
             }
         }
 
         return updatedEvent;
     }
 
-    static async notifyTicketHolders(eventId: number, title: string, content: string) {
+    static async notifyTicketHolders(
+        eventId: number,
+        options: {
+            title: string;
+            content: string;
+            channels: Array<"SMS" | "PUSH" | "EMAIL">;
+            type: "EVENT_REMINDER" | "EVENT_UPDATE" | "EVENT_CANCELLED";
+            referenceId?: string | number;
+            dedupeMinutes?: number;
+        }
+    ) {
         try {
             const { NotificationService } = require("./notification.service");
             const { NotificationChannel } = require("@prisma/client");
 
-            // Find all users with valid tickets for this event
+            // Notify all buyers for this event (distinct users), regardless of current ticket status.
             const tickets = await prisma.ticket.findMany({
-                where: { eventId, status: "VALID" },
+                where: { eventId },
                 select: { userId: true },
                 distinct: ['userId']
             });
 
             for (const ticket of tickets) {
                 await NotificationService.notifyUser(ticket.userId, {
-                    title,
-                    content,
-                    channels: [NotificationChannel.SMS] // In real app, prefer Push/Email
+                    title: options.title,
+                    content: options.content,
+                    channels: options.channels.map((c) => NotificationChannel[c]),
+                    type: options.type,
+                    referenceId: options.referenceId ?? eventId,
+                    dedupeMinutes: options.dedupeMinutes,
                 });
             }
         } catch (error) {
@@ -138,15 +171,15 @@ export class EventService {
      * Called by Cron Job every hour
      */
     static async sendReminders() {
-        // Find events starting in the next 24 hours
-        const next24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        // Find events starting in the next 3 days and send reminders at 3d, 24h, and 2h windows.
+        const next72Hours = new Date(Date.now() + 72 * 60 * 60 * 1000);
         const now = new Date();
 
         const events = await prisma.event.findMany({
             where: {
                 dateTime: {
                     gte: now,
-                    lte: next24Hours
+                    lte: next72Hours
                 },
                 status: EventStatus.APPROVED
             }
@@ -155,8 +188,17 @@ export class EventService {
         const { NotificationService } = require("./notification.service");
         const { NotificationChannel } = require("@prisma/client");
         const prismaAny = prisma as any;
+        const windows = [
+            { hours: 72, label: "in 3 days" },
+            { hours: 24, label: "tomorrow" },
+            { hours: 2, label: "in 2 hours" },
+        ];
 
         for (const event of events) {
+            const hoursUntil = (+new Date(event.dateTime) - +now) / (1000 * 60 * 60);
+            const matchedWindow = windows.find((w) => hoursUntil <= w.hours && hoursUntil > w.hours - 1);
+            if (!matchedWindow) continue;
+
             const [ticketUsers, reminderSubscribers] = await Promise.all([
                 prisma.ticket.findMany({
                     where: { eventId: event.id, status: "VALID" },
@@ -178,11 +220,112 @@ export class EventService {
             for (const userId of userIds) {
                 await NotificationService.notifyUser(userId, {
                     title: "Event Reminder",
-                    content: `Reminder: ${event.title} is happening tomorrow at ${event.venue}!`,
-                    channels: [NotificationChannel.SMS],
-                    metadata: { eventId: event.id, type: "EVENT_REMINDER" },
+                    content: `Reminder: ${event.title} starts ${matchedWindow.label} at ${new Date(event.dateTime).toLocaleTimeString()} (${event.venue}).`,
+                    channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+                    type: "EVENT_REMINDER",
+                    referenceId: `${event.id}-${matchedWindow.hours}`,
+                    dedupeMinutes: 180,
+                    metadata: { eventId: event.id, reminderWindowHours: matchedWindow.hours },
                 });
             }
+        }
+    }
+
+    static async sendWeeklyPersonalizedSuggestions() {
+        const { NotificationService } = require("./notification.service");
+        const { NotificationChannel } = require("@prisma/client");
+
+        const users = await prisma.user.findMany({
+            where: { status: "ACTIVE" as any },
+            select: { id: true },
+            take: 500,
+            orderBy: { id: "asc" },
+        });
+
+        for (const user of users) {
+            const picks = await EventService.listPersonalizedPicks({ userId: user.id, limit: 1 });
+            const suggestion = picks[0];
+            if (!suggestion) continue;
+
+            await NotificationService.notifyUser(user.id, {
+                title: "Recommended for You",
+                content: `You may like this event: ${suggestion.title} happening ${new Date(suggestion.dateTime).toLocaleDateString()}.`,
+                channels: [NotificationChannel.PUSH],
+                type: "PERSONALIZED_EVENT",
+                referenceId: suggestion.id,
+                dedupeMinutes: 7 * 24 * 60,
+                metadata: {
+                    eventId: suggestion.id,
+                    cityId: suggestion.cityId,
+                    categoryId: suggestion.categoryId,
+                },
+            });
+        }
+    }
+
+    static async notifyMissingEmailUsers() {
+        const { NotificationService } = require("./notification.service");
+        const { NotificationChannel } = require("@prisma/client");
+
+        const users = await prisma.user.findMany({
+            where: {
+                email: null,
+                status: "ACTIVE" as any,
+            },
+            select: { id: true },
+            take: 500,
+        });
+
+        for (const user of users) {
+            await NotificationService.notifyUser(user.id, {
+                title: "Add your email for backup updates",
+                content: "Add an email in your profile to receive ticket confirmations, reminders, and receipts.",
+                channels: [NotificationChannel.EMAIL],
+                type: "EMAIL_REQUEST",
+                referenceId: "profile",
+                dedupeMinutes: 7 * 24 * 60,
+            });
+        }
+    }
+
+    static async notifyMatchingUsersOfNewEvent(event: {
+        id: number;
+        title: string;
+        cityId: number;
+        categoryId: number;
+        organizerId: number;
+    }) {
+        const { NotificationService } = require("./notification.service");
+        const { NotificationChannel } = require("@prisma/client");
+
+        const matchingTickets = await prisma.ticket.findMany({
+            where: {
+                event: {
+                    cityId: event.cityId,
+                    categoryId: event.categoryId,
+                },
+            },
+            select: { userId: true },
+            distinct: ["userId"],
+            take: 600,
+        });
+
+        const candidateUserIds = new Set<number>(matchingTickets.map((row) => row.userId));
+
+        for (const userId of candidateUserIds) {
+            await NotificationService.notifyUser(userId, {
+                title: "New Event Near You",
+                content: `New event near you: ${event.title} is now available.`,
+                channels: [NotificationChannel.PUSH],
+                type: "NEW_EVENT",
+                referenceId: event.id,
+                dedupeMinutes: 24 * 60,
+                metadata: {
+                    eventId: event.id,
+                    cityId: event.cityId,
+                    categoryId: event.categoryId,
+                },
+            });
         }
     }
 
@@ -1502,6 +1645,8 @@ export class EventService {
 
         // Thank-you email is best effort and should never fail rating flow.
         try {
+            const { NotificationService } = await import("./notification.service");
+            const { NotificationChannel } = await import("@prisma/client");
             const user = await prisma.user.findUnique({
                 where: { id: userId },
                 select: {
@@ -1531,6 +1676,15 @@ export class EventService {
                     `Thank you for rating ${event.title}. You rated it ${rating}/5.`,
                     html
                 );
+            } else {
+                await NotificationService.notifyUser(userId, {
+                    title: "Thanks for your feedback",
+                    content: `Thank you for rating ${event.title}. Your feedback helps improve future events.`,
+                    channels: [NotificationChannel.PUSH],
+                    type: "EVENT_RATED_THANKS",
+                    referenceId: eventId,
+                    dedupeMinutes: 24 * 60,
+                });
             }
         } catch (e) {
             console.error("Failed to send thank-you rating email:", e);

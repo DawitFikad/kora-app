@@ -29,6 +29,11 @@ export class TicketService {
         const metadata = purchase.metadata as any;
         const { eventId, tierId, quantity, seatNumbers, priceBreakdown } = metadata;
 
+        const event = await prisma.event.findUnique({
+            where: { id: eventId },
+            select: { id: true, title: true, dateTime: true, venue: true },
+        });
+
         const ticketsData = [];
         const secret = process.env.JWT_SECRET || "et-ticket-qr-secret";
         const generatedCodes: string[] = [];
@@ -102,20 +107,38 @@ export class TicketService {
             const { NotificationChannel } = require("@prisma/client");
 
             await NotificationService.notifyUser(purchase.userId, {
-                title: "Tickets Issued",
-                content: `Your tickets are ready! Codes: ${generatedCodes.join(', ')}. Use these codes or the QR in app for entry.`,
-                channels: [NotificationChannel.SMS]
+                title: "Ticket Confirmed",
+                content:
+                    `Your ticket for ${event?.title || "your event"} is confirmed. ` +
+                    `Date: ${event ? new Date(event.dateTime).toLocaleString() : "TBA"}. ` +
+                    `Location: ${event?.venue || "TBA"}. Open the app to view your ticket QR code.`,
+                channels: [
+                    NotificationChannel.PUSH,
+                    NotificationChannel.SMS,
+                    NotificationChannel.EMAIL,
+                ],
+                type: "TICKET_CONFIRMATION",
+                referenceId: purchase.id,
+                metadata: {
+                    eventId,
+                    purchaseId: purchase.id,
+                    eventName: event?.title,
+                    eventDateTime: event?.dateTime,
+                    eventVenue: event?.venue,
+                    ticketCodes: generatedCodes,
+                    ticketLink: `/my-tickets?purchaseId=${purchase.id}`,
+                },
             });
 
             // --- ORGANIZER NOTIFICATIONS (Async) ---
             (async () => {
                 try {
-                    const event = await prisma.event.findUnique({
+                    const fullEvent = await prisma.event.findUnique({
                         where: { id: eventId },
                         include: { tiers: true }
                     });
 
-                    if (!event) return;
+                    if (!fullEvent) return;
 
                     // 1. Calculate new totals
                     const ticketsSold = await prisma.ticket.count({
@@ -125,16 +148,16 @@ export class TicketService {
                     // 2. Sales Milestones (10, 50, 100, 500, 1000, etc.)
                     const milestones = [10, 50, 100, 500, 1000, 5000, 10000];
                     if (milestones.includes(ticketsSold) || (ticketsSold > 0 && ticketsSold % 1000 === 0)) {
-                        await NotificationService.notifyOrganizer(event.organizerId, {
+                        await NotificationService.notifyOrganizer(fullEvent.organizerId, {
                             title: "Sales Milestone! 🚀",
-                            content: `Congratulations! You've sold ${ticketsSold} tickets for "${event.title}".`,
+                            content: `Congratulations! You've sold ${ticketsSold} tickets for "${fullEvent.title}".`,
                             channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
                             metadata: { type: 'MILESTONE', count: ticketsSold, eventId }
                         });
                     }
 
                     // 3. Low Inventory Checks
-                    const totalCapacity = event.tiers.reduce((sum, t) => sum + t.capacity, 0);
+                    const totalCapacity = fullEvent.tiers.reduce((sum, t) => sum + t.capacity, 0);
                     const percentSold = ticketsSold / totalCapacity;
 
                     // Alert at 90% (Using a small range to avoid duplicate alerts on every sale past 90%)
@@ -144,18 +167,18 @@ export class TicketService {
                     const previousAndCurrentCross90 = (previousCount / totalCapacity < 0.9) && (percentSold >= 0.9);
 
                     if (previousAndCurrentCross90 && percentSold < 1.0) {
-                        await NotificationService.notifyOrganizer(event.organizerId, {
+                        await NotificationService.notifyOrganizer(fullEvent.organizerId, {
                             title: "Low Ticket Alert ⚠️",
-                            content: `Heads up! "${event.title}" is 90% sold out. Only ${totalCapacity - ticketsSold} tickets remaining.`,
+                            content: `Heads up! "${fullEvent.title}" is 90% sold out. Only ${totalCapacity - ticketsSold} tickets remaining.`,
                             channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
                             metadata: { type: 'INVENTORY_LOW', eventId }
                         });
                     }
 
                     if (percentSold >= 1.0 && (previousCount / totalCapacity) < 1.0) {
-                        await NotificationService.notifyOrganizer(event.organizerId, {
+                        await NotificationService.notifyOrganizer(fullEvent.organizerId, {
                             title: "Event Sold Out! 🎉",
-                            content: `Incredible! "${event.title}" is officially 100% sold out.`,
+                            content: `Incredible! "${fullEvent.title}" is officially 100% sold out.`,
                             channels: [NotificationChannel.PUSH, NotificationChannel.SMS, NotificationChannel.EMAIL],
                             metadata: { type: 'SOLD_OUT', eventId }
                         });
