@@ -218,7 +218,13 @@ export class PaymentService {
         });
 
         if (!purchase) throw new Error("Purchase record not found");
-        if (purchase.status === PaymentStatus.SUCCESS) return purchase;
+        if (purchase.status === PaymentStatus.SUCCESS) {
+            logger.info(
+                { paymentRef, purchaseId: purchase.id, status: purchase.status },
+                "Payment verification replay detected; returning existing success"
+            );
+            return purchase;
+        }
 
         logger.info({ paymentRef, method: purchase.paymentMethod }, "Verifying payment");
 

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PaymentService } from "../services/payment.service";
 import { env } from "../config/env";
+import logger from "../utils/logger";
 
 function getSafeWebReturn(value: unknown): string | null {
     if (typeof value !== "string" || !value.trim()) return null;
@@ -21,6 +22,60 @@ function buildCompletionUrl(base: string, params: Record<string, string | undefi
         }
     }
     return url.toString();
+}
+
+function getRequestBaseUrl(req: Request): string | null {
+    const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)
+        ?.split(',')[0]
+        ?.trim();
+    const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)
+        ?.split(',')[0]
+        ?.trim();
+    const protocol = forwardedProto || req.protocol;
+    const host = forwardedHost || req.get('host');
+
+    if (!host) return null;
+    return `${protocol}://${host}`;
+}
+
+function resolveClientCompletionUrl(requestBaseUrl: string): string {
+    const defaultUrl = `${requestBaseUrl}/api/payments/completion`;
+    const configured = getSafeWebReturn(process.env.CLIENT_URL);
+    if (!configured) return defaultUrl;
+
+    try {
+        const configuredHost = new URL(configured).host.toLowerCase();
+        const requestHost = new URL(requestBaseUrl).host.toLowerCase();
+
+        // Guard against stale local config (common after port changes).
+        if (
+            (configuredHost === 'localhost:4000' || configuredHost === '127.0.0.1:4000') &&
+            configuredHost !== requestHost
+        ) {
+            return defaultUrl;
+        }
+
+        return configured;
+    } catch {
+        return defaultUrl;
+    }
+}
+
+function normalizeWebhookStatus(rawStatus: unknown, isChapa: boolean): "SUCCESS" | "FAILED" | "PENDING" | "UNKNOWN" {
+    if (typeof rawStatus !== "string" || !rawStatus.trim()) return "UNKNOWN";
+    const normalized = rawStatus.trim().toUpperCase();
+
+    if (isChapa) {
+        if (normalized === "SUCCESS") return "SUCCESS";
+        if (normalized === "FAILED" || normalized === "CANCELLED" || normalized === "EXPIRED") return "FAILED";
+        if (normalized === "PENDING") return "PENDING";
+        return "UNKNOWN";
+    }
+
+    if (normalized === "SUCCESS") return "SUCCESS";
+    if (normalized === "FAILED" || normalized === "CANCELLED" || normalized === "EXPIRED") return "FAILED";
+    if (normalized === "PENDING") return "PENDING";
+    return "UNKNOWN";
 }
 
 export class PaymentController {
@@ -97,36 +152,100 @@ export class PaymentController {
         try {
             const body = req.body;
             let paymentRef = "";
-            let status = "";
+            let status: "SUCCESS" | "FAILED" | "PENDING" | "UNKNOWN" = "UNKNOWN";
             let externalRef = "";
 
             // 1. Detection & Signature Verification
-            const chapaSignature = req.headers['chapa-signature'] as string;
+            const chapaSignature = (req.headers['chapa-signature'] || req.headers['x-chapa-signature']) as string | undefined;
+            const isChapaWebhook = !!chapaSignature;
 
-            if (chapaSignature) {
+            if (isChapaWebhook) {
                 // Handle Chapa Webhook using Raw Body for precise Signature verification
                 const payload = (req as any).rawBody || JSON.stringify(body);
                 const isValid = PaymentService.validateChapaWebhook(chapaSignature, payload.toString());
-                if (!isValid) return res.status(401).send("Invalid Signature");
+                if (!isValid) {
+                    logger.warn(
+                        { provider: "CHAPA", eventType: "WEBHOOK", reason: "INVALID_SIGNATURE" },
+                        "Rejected payment webhook"
+                    );
+                    return res.status(401).send("Invalid Signature");
+                }
 
                 paymentRef = body.tx_ref;
-                status = body.status === "success" ? "SUCCESS" : "FAILED";
+                status = normalizeWebhookStatus(body.status, true);
                 externalRef = body.reference;
             } else {
                 // Fallback for Telebirr / Generic
                 paymentRef = body.paymentRef || body.outTradeNo || body.merch_order_id;
-                status = body.status || "SUCCESS";
+                status = normalizeWebhookStatus(body.status, false);
                 externalRef = body.externalRef || body.transactionId;
             }
 
+            logger.info(
+                {
+                    provider: isChapaWebhook ? "CHAPA" : "GENERIC",
+                    eventType: "WEBHOOK_RECEIVED",
+                    paymentRef,
+                    status,
+                    externalRef,
+                },
+                "Payment webhook received"
+            );
+
             // 2. Processing
             if (status === "SUCCESS" && paymentRef) {
-                await PaymentService.verifyPayment(paymentRef, externalRef);
+                try {
+                    const verified = await PaymentService.verifyPayment(paymentRef, externalRef);
+                    logger.info(
+                        {
+                            provider: isChapaWebhook ? "CHAPA" : "GENERIC",
+                            eventType: "WEBHOOK_VERIFIED",
+                            paymentRef,
+                            resultingStatus: verified.status,
+                            purchaseId: verified.id,
+                        },
+                        "Payment webhook processed"
+                    );
+                } catch (error: any) {
+                    if ((error?.message || "").includes("Purchase record not found")) {
+                        logger.warn(
+                            {
+                                provider: isChapaWebhook ? "CHAPA" : "GENERIC",
+                                eventType: "WEBHOOK_SKIPPED",
+                                reason: "UNKNOWN_PAYMENT_REF",
+                                paymentRef,
+                            },
+                            "Payment webhook ignored for unknown reference"
+                        );
+                        return res.status(202).json({ received: true, ignored: "unknown_payment_ref" });
+                    }
+                    throw error;
+                }
+            } else if (status === "UNKNOWN" || !paymentRef) {
+                logger.warn(
+                    {
+                        provider: isChapaWebhook ? "CHAPA" : "GENERIC",
+                        eventType: "WEBHOOK_SKIPPED",
+                        reason: !paymentRef ? "MISSING_PAYMENT_REF" : "UNKNOWN_STATUS",
+                        status,
+                    },
+                    "Payment webhook ignored"
+                );
+            } else {
+                logger.info(
+                    {
+                        provider: isChapaWebhook ? "CHAPA" : "GENERIC",
+                        eventType: "WEBHOOK_NON_SUCCESS",
+                        paymentRef,
+                        status,
+                    },
+                    "Payment webhook acknowledged without verification"
+                );
             }
 
             res.json({ received: true });
         } catch (error: any) {
-            console.error("Webhook Error:", error.message);
+            logger.error({ error: error.message }, "Payment webhook error");
             res.status(500).json({ error: error.message });
         }
     }
@@ -139,8 +258,8 @@ export class PaymentController {
     static async verifyCallback(req: Request, res: Response) {
         try {
             const { ref } = req.query;
-            const defaultUrl = `${env.apiUrl}/api/payments/completion`;
-            const clientUrl = process.env.CLIENT_URL || defaultUrl;
+            const requestBaseUrl = getRequestBaseUrl(req) || env.apiUrl;
+            const clientUrl = resolveClientCompletionUrl(requestBaseUrl);
             const webReturn = getSafeWebReturn(req.query.web_return);
 
             if (!ref) {
@@ -171,8 +290,8 @@ export class PaymentController {
                 }));
             }
         } catch (error: any) {
-            const defaultUrl = `${env.apiUrl}/api/payments/completion`;
-            const clientUrl = process.env.CLIENT_URL || defaultUrl;
+            const requestBaseUrl = getRequestBaseUrl(req) || env.apiUrl;
+            const clientUrl = resolveClientCompletionUrl(requestBaseUrl);
             const webReturn = getSafeWebReturn(req.query.web_return);
             res.redirect(buildCompletionUrl(clientUrl, {
                 status: 'error',
