@@ -2,6 +2,27 @@ import { Request, Response } from "express";
 import { PaymentService } from "../services/payment.service";
 import { env } from "../config/env";
 
+function getSafeWebReturn(value: unknown): string | null {
+    if (typeof value !== "string" || !value.trim()) return null;
+    try {
+        const url = new URL(value.trim());
+        if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+        return url.toString();
+    } catch {
+        return null;
+    }
+}
+
+function buildCompletionUrl(base: string, params: Record<string, string | undefined>): string {
+    const url = new URL(base);
+    for (const [key, value] of Object.entries(params)) {
+        if (value != null && value !== "") {
+            url.searchParams.set(key, value);
+        }
+    }
+    return url.toString();
+}
+
 export class PaymentController {
     /**
      * Starts the payment process for a pending purchase.
@@ -15,7 +36,12 @@ export class PaymentController {
                 return res.status(400).json({ error: "Purchase ID is required" });
             }
 
-            const result = await PaymentService.initializePayment(parseInt(purchaseId));
+            const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
+            const protocol = forwardedProto || req.protocol;
+            const host = req.get('host');
+            const requestBaseUrl = host ? `${protocol}://${host}` : undefined;
+
+            const result = await PaymentService.initializePayment(parseInt(purchaseId), requestBaseUrl);
             res.json(result);
         } catch (error: any) {
             console.error("❌ Payment Initialization Failed:", error);
@@ -115,23 +141,44 @@ export class PaymentController {
             const { ref } = req.query;
             const defaultUrl = `${env.apiUrl}/api/payments/completion`;
             const clientUrl = process.env.CLIENT_URL || defaultUrl;
+            const webReturn = getSafeWebReturn(req.query.web_return);
 
             if (!ref) {
-                res.redirect(`${clientUrl}?status=error&message=Missing+Payment+Reference`);
+                res.redirect(buildCompletionUrl(clientUrl, {
+                    status: 'error',
+                    message: 'Missing Payment Reference',
+                    web_return: webReturn || undefined,
+                }));
                 return;
             }
 
             const result = await PaymentService.verifyPayment(ref as string);
 
             if (result.status === 'SUCCESS') {
-                res.redirect(`${clientUrl}?status=success&ref=${ref}&purchaseId=${result.id}`);
+                res.redirect(buildCompletionUrl(clientUrl, {
+                    status: 'success',
+                    ref: ref as string,
+                    purchaseId: String(result.id),
+                    web_return: webReturn || undefined,
+                }));
             } else {
-                res.redirect(`${clientUrl}?status=failed&ref=${ref}&reason=${encodeURIComponent(result.failureReason || 'Verification failed')}&purchaseId=${result.id}`);
+                res.redirect(buildCompletionUrl(clientUrl, {
+                    status: 'failed',
+                    ref: ref as string,
+                    reason: result.failureReason || 'Verification failed',
+                    purchaseId: String(result.id),
+                    web_return: webReturn || undefined,
+                }));
             }
         } catch (error: any) {
             const defaultUrl = `${env.apiUrl}/api/payments/completion`;
             const clientUrl = process.env.CLIENT_URL || defaultUrl;
-            res.redirect(`${clientUrl}?status=error&message=${encodeURIComponent(error.message)}`);
+            const webReturn = getSafeWebReturn(req.query.web_return);
+            res.redirect(buildCompletionUrl(clientUrl, {
+                status: 'error',
+                message: error.message,
+                web_return: webReturn || undefined,
+            }));
         }
     }
 
@@ -140,6 +187,7 @@ export class PaymentController {
      */
     static async completion(req: Request, res: Response) {
         const { status, message, purchaseId, ref } = req.query;
+        const webReturnBase = getSafeWebReturn(req.query.web_return);
         const isSuccess = status === 'success';
         const color = isSuccess ? '#34a853' : '#ea4335';
         const title = isSuccess ? 'Payment Successful' : 'Payment Failed';
@@ -150,15 +198,40 @@ export class PaymentController {
             ? `etticket://payment/success?purchaseId=${purchaseId}&ref=${ref}`
             : `etticket://payment/failed?reason=${encodeURIComponent(message as string || 'Payment failed')}`;
 
+        const webReturnUrl = (() => {
+            if (!webReturnBase) return null;
+            try {
+                const url = new URL(webReturnBase);
+                url.searchParams.set('paymentStatus', isSuccess ? 'success' : 'failed');
+                if (purchaseId) url.searchParams.set('purchaseId', String(purchaseId));
+                if (ref) url.searchParams.set('ref', String(ref));
+                return url.toString();
+            } catch {
+                return null;
+            }
+        })();
+
         res.send(`
             <html>
                 <head>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>${title}</title>
                     <script>
+                        const deepLink = ${JSON.stringify(deepLink)};
+                        const webReturnUrl = ${JSON.stringify(webReturnUrl)};
+
+                        function goToApp() {
+                            window.location.href = deepLink;
+                            if (webReturnUrl) {
+                                setTimeout(function() {
+                                    window.location.href = webReturnUrl;
+                                }, 1200);
+                            }
+                        }
+
                         // Auto-redirect to app after 2 seconds
                         setTimeout(function() {
-                            window.location.href = '${deepLink}';
+                            goToApp();
                         }, 2000);
                         
                         // Fallback: try to close window after 5 seconds if still open
@@ -175,9 +248,10 @@ export class PaymentController {
                         <h2 style="color: #1a1a1a; margin: 0 0 0.5rem; font-size: 24px; font-weight: 700;">${title}</h2>
                         <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 2rem;">${msg}</p>
                         
-                        <a href="${deepLink}" style="background: ${color}; color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; display: block; width: 100%; text-decoration: none; font-size: 16px; box-sizing: border-box;">
+                        <a href="${deepLink}" onclick="setTimeout(function(){ if (${JSON.stringify(!!webReturnUrl)}) { window.location.href = ${JSON.stringify(webReturnUrl)}; } }, 1200);" style="background: ${color}; color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; display: block; width: 100%; text-decoration: none; font-size: 16px; box-sizing: border-box;">
                            Return to App
                         </a>
+                        ${webReturnUrl ? `<a href="${webReturnUrl}" style="margin-top: 0.75rem; background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; padding: 14px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; display: block; width: 100%; text-decoration: none; font-size: 15px; box-sizing: border-box;">Continue in Browser</a>` : ''}
                         <p style="margin-top: 1rem; color: #999; font-size: 13px;">Redirecting automatically in 2 seconds...</p>
                     </div>
                 </body>

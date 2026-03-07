@@ -155,8 +155,14 @@ export class TelebirrProvider {
         try {
             if (this.isTestMode()) {
                 const prepayId = `TEST_PREPAY_${Date.now()}`;
-                const checkoutUrl = `${this.H5_CHECKOUT_BASE}/payment/web/paygate?test=true&prepay_id=${encodeURIComponent(prepayId)}`;
-                logger.info({ prepayId }, 'Telebirr test mode initialization');
+                const callbackUrl = new URL(params.returnUrl);
+                callbackUrl.searchParams.set('status', 'success');
+                callbackUrl.searchParams.set('method', 'TELEBIRR');
+                callbackUrl.searchParams.set('prepay_id', prepayId);
+                // Keep the purchase reference explicit even if returnUrl already contains ref.
+                callbackUrl.searchParams.set('ref', params.outTradeNo);
+                const checkoutUrl = callbackUrl.toString();
+                logger.info({ prepayId, checkoutUrl }, 'Telebirr test mode initialization');
                 return { checkoutUrl, prepayId };
             }
 

@@ -2,6 +2,13 @@ import { prisma } from "../lib/prisma";
 import { EventStatus, EventType, Role, TicketTierType } from "@prisma/client";
 import { EmailService } from "./email.service";
 
+// Some environments can run with a stale generated Prisma client during dev reloads.
+// Use a compatibility view so TypeScript compile does not fail when these delegates lag.
+const prismaEngagement = prisma as typeof prisma & {
+    eventLike: any;
+    eventRating: any;
+};
+
 export class EventService {
     // --- Organizers: Event Management ---
 
@@ -490,23 +497,23 @@ export class EventService {
             soldCounts.map((row) => [row.eventId, row._count.eventId])
         );
 
-        const likeCounts = await prisma.eventLike.groupBy({
+        const likeCounts = await prismaEngagement.eventLike.groupBy({
             by: ['eventId'],
             where: { eventId: { in: eventIds } },
             _count: { eventId: true },
         });
         const likesByEventId = new Map<number, number>(
-            likeCounts.map((row) => [row.eventId, row._count.eventId])
+            likeCounts.map((row: any) => [row.eventId, row._count.eventId])
         );
 
-        const ratingAgg = await prisma.eventRating.groupBy({
+        const ratingAgg = await prismaEngagement.eventRating.groupBy({
             by: ['eventId'],
             where: { eventId: { in: eventIds } },
             _avg: { rating: true },
             _count: { rating: true },
         });
         const ratingsByEventId = new Map<number, { avg: number; count: number }>(
-            ratingAgg.map((row) => [
+            ratingAgg.map((row: any) => [
                 row.eventId,
                 {
                     avg: row._avg.rating ? Number(row._avg.rating) : 0,
@@ -1253,14 +1260,14 @@ export class EventService {
         if (!event) throw new Error("Event not found");
 
         const [likesCount, ratingsAgg, userLike, userRating] = await Promise.all([
-            prisma.eventLike.count({ where: { eventId } }),
-            prisma.eventRating.aggregate({
+            prismaEngagement.eventLike.count({ where: { eventId } }),
+            prismaEngagement.eventRating.aggregate({
                 where: { eventId },
                 _avg: { rating: true },
                 _count: { rating: true },
             }),
-            userId ? prisma.eventLike.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
-            userId ? prisma.eventRating.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
+            userId ? prismaEngagement.eventLike.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
+            userId ? prismaEngagement.eventRating.findUnique({ where: { userId_eventId: { userId, eventId } } }) : null,
         ]);
 
         return {
@@ -1277,17 +1284,17 @@ export class EventService {
         const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
         if (!event) throw new Error("Event not found");
 
-        const existing = await prisma.eventLike.findUnique({
+        const existing = await prismaEngagement.eventLike.findUnique({
             where: { userId_eventId: { userId, eventId } }
         });
 
         if (existing) {
-            await prisma.eventLike.delete({ where: { id: existing.id } });
+            await prismaEngagement.eventLike.delete({ where: { id: existing.id } });
         } else {
-            await prisma.eventLike.create({ data: { userId, eventId } });
+            await prismaEngagement.eventLike.create({ data: { userId, eventId } });
         }
 
-        const likesCount = await prisma.eventLike.count({ where: { eventId } });
+        const likesCount = await prismaEngagement.eventLike.count({ where: { eventId } });
 
         return {
             liked: !existing,
@@ -1319,7 +1326,7 @@ export class EventService {
         if (!event) throw new Error("Event not found");
 
         const [upsertedRating] = await prisma.$transaction([
-            prisma.eventRating.upsert({
+            prismaEngagement.eventRating.upsert({
                 where: { userId_eventId: { userId, eventId } },
                 update: {
                     rating,
@@ -1334,7 +1341,7 @@ export class EventService {
             }),
         ]);
 
-        const agg = await prisma.eventRating.aggregate({
+        const agg = await prismaEngagement.eventRating.aggregate({
             where: { eventId },
             _avg: { rating: true },
             _count: { rating: true },

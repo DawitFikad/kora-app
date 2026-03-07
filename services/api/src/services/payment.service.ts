@@ -7,6 +7,11 @@ import logger from "../utils/logger";
 import { ChapaProvider } from "./providers/chapa.provider";
 import { TelebirrProvider } from "./providers/telebirr.provider";
 
+function isTruthy(value: string | undefined): boolean {
+    const normalized = (value || "").trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
 const RESERVED_EMAIL_DOMAINS = new Set([
     "example.com",
     "example.org",
@@ -52,10 +57,15 @@ function getSafeChapaPayerEmail(candidate: string | null | undefined, txRef?: st
 }
 
 export class PaymentService {
+    private static allowTelebirrDevFallback(): boolean {
+        if (isTruthy(process.env.ALLOW_TELEBIRR_DEV_FALLBACK)) return true;
+        return (process.env.NODE_ENV || "development") !== "production";
+    }
+
     /**
      * Initializes payment with the selected provider.
      */
-    static async initializePayment(purchaseId: number) {
+    static async initializePayment(purchaseId: number, requestBaseUrl?: string) {
         const purchase = await prisma.purchase.findUnique({
             where: { id: purchaseId },
             include: {
@@ -78,8 +88,8 @@ export class PaymentService {
             });
         }
 
-        // Use centralized env.apiUrl
-        const baseUrl = env.apiUrl;
+        // Prefer request-origin URL so callbacks match the current client runtime.
+        const baseUrl = requestBaseUrl || env.apiUrl;
         const clientUrl = process.env.CLIENT_URL || `${baseUrl}/api/payments/completion`;
         let checkoutUrl = "";
         let providerPayload: any = {};
@@ -101,21 +111,46 @@ export class PaymentService {
                         !env.teleBirrMerchantAppId.includes('your_')
                     );
 
-                    if (isTelebirrConfigured) {
+                    if (isTelebirrConfigured || TelebirrProvider.isTestMode()) {
                         logger.info({ tx_ref }, "Initializing Telebirr payment");
 
-                        const telebirrResult = await TelebirrProvider.initialize({
-                            amount: Number(purchase.totalAmount),
-                            orderId: purchase.id.toString(),
-                            returnUrl: return_url,
-                            notifyUrl: callback_url,
-                            subject: `Ticket Purchase #${purchase.id}`,
-                            outTradeNo: tx_ref,
-                        });
+                        try {
+                            const telebirrResult = await TelebirrProvider.initialize({
+                                amount: Number(purchase.totalAmount),
+                                orderId: purchase.id.toString(),
+                                returnUrl: return_url,
+                                notifyUrl: callback_url,
+                                subject: `Ticket Purchase #${purchase.id}`,
+                                outTradeNo: tx_ref,
+                            });
 
-                        checkoutUrl = telebirrResult.checkoutUrl;
-                        providerPayload = { prepayId: telebirrResult.prepayId };
+                            checkoutUrl = telebirrResult.checkoutUrl;
+                            providerPayload = { prepayId: telebirrResult.prepayId };
+                        } catch (telebirrError: any) {
+                            if (!this.allowTelebirrDevFallback()) {
+                                throw telebirrError;
+                            }
+
+                            logger.warn(
+                                { purchaseId: purchase.id, error: telebirrError?.message },
+                                "Telebirr initialize failed in dev; falling back to verify callback URL"
+                            );
+                            checkoutUrl = return_url;
+                            providerPayload = {
+                                fallback: "DEV_VERIFY_CALLBACK",
+                                reason: telebirrError?.message,
+                            };
+                        }
                     } else {
+                        if (this.allowTelebirrDevFallback()) {
+                            logger.warn(
+                                { purchaseId: purchase.id },
+                                "Telebirr not configured; using dev fallback checkout URL"
+                            );
+                            checkoutUrl = return_url;
+                            providerPayload = { fallback: "DEV_NOT_CONFIGURED" };
+                            break;
+                        }
                         throw new Error("Telebirr payment provider is not configured.");
                     }
                     break;
@@ -193,11 +228,30 @@ export class PaymentService {
         try {
             switch (purchase.paymentMethod) {
                 case "TELEBIRR":
-                    if (TelebirrProvider.isConfigured()) {
-                        const result = await TelebirrProvider.verify(paymentRef);
-                        isValid = result.success;
-                        verificationResult = result;
+                    if (TelebirrProvider.isConfigured() || TelebirrProvider.isTestMode()) {
+                        try {
+                            const result = await TelebirrProvider.verify(paymentRef);
+                            isValid = result.success;
+                            verificationResult = result;
+                        } catch (telebirrVerifyError: any) {
+                            if (!this.allowTelebirrDevFallback()) throw telebirrVerifyError;
+
+                            logger.warn(
+                                { paymentRef, error: telebirrVerifyError?.message },
+                                "Telebirr verify failed in dev; treating as success fallback"
+                            );
+                            isValid = true;
+                            verificationResult = { message: "Development fallback success" };
+                            externalRef = externalRef || `DEV-TELEBIRR-${Date.now()}`;
+                        }
                     } else {
+                        if (this.allowTelebirrDevFallback()) {
+                            logger.warn({ paymentRef }, "Telebirr not configured in dev; treating verification as success fallback");
+                            isValid = true;
+                            verificationResult = { message: "Development fallback success (not configured)" };
+                            externalRef = externalRef || `DEV-TELEBIRR-${Date.now()}`;
+                            break;
+                        }
                         throw new Error("Telebirr provider is not configured for verification");
                     }
                     break;

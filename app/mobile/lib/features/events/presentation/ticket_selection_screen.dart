@@ -87,7 +87,11 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
               tier.capacity,
             );
             final qty = _quantities[tier.id] ?? 0;
-            final maxAllowed = available is int ? available : 0;
+            final availabilityLimit = available is int ? available : 0;
+            final perUserLimit = tier.maxPerUser > 0 ? tier.maxPerUser : 5;
+            final maxAllowed = availabilityLimit < perUserLimit
+                ? availabilityLimit
+                : perUserLimit;
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -135,7 +139,7 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                         )
                       else
                         Text(
-                          '$available left',
+                          '$available left • max $perUserLimit/user',
                           style: GoogleFonts.poppins(
                             color: mutedColor,
                             fontSize: 12,

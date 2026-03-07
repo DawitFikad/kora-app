@@ -4,6 +4,7 @@ class TicketTier {
   final double price;
   final int capacity;
   final int sold;
+  final int maxPerUser;
 
   TicketTier({
     required this.id,
@@ -11,6 +12,7 @@ class TicketTier {
     required this.price,
     required this.capacity,
     required this.sold,
+    this.maxPerUser = 5,
   });
 
   factory TicketTier.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class TicketTier {
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       capacity: json['capacity'] ?? 0,
       sold: json['sold'] ?? 0,
+      maxPerUser: json['maxPerUser'] ?? 5,
     );
   }
   Map<String, dynamic> toJson() {
@@ -29,6 +32,7 @@ class TicketTier {
       'price': price,
       'capacity': capacity,
       'sold': sold,
+      'maxPerUser': maxPerUser,
     };
   }
 }
