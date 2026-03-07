@@ -1017,6 +1017,19 @@ class _FeaturedCard extends ConsumerWidget {
         .watch(localStorageProvider)
         .favorites
         .contains(event.id.toString());
+    final engagementAsync = ref.watch(eventEngagementProvider(event.id));
+    final likesCount = engagementAsync.maybeWhen(
+      data: (engagement) => engagement.likesCount,
+      orElse: () => event.likesCount,
+    );
+    final averageRating = engagementAsync.maybeWhen(
+      data: (engagement) => engagement.averageRating,
+      orElse: () => event.averageRating,
+    );
+    final ratingsCount = engagementAsync.maybeWhen(
+      data: (engagement) => engagement.ratingsCount,
+      orElse: () => event.ratingsCount,
+    );
 
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
@@ -1116,7 +1129,7 @@ class _FeaturedCard extends ConsumerWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${event.likesCount}',
+                        '$likesCount',
                         style: GoogleFonts.poppins(
                           color: Colors.white.withOpacity(0.85),
                           fontSize: 11,
@@ -1131,7 +1144,7 @@ class _FeaturedCard extends ConsumerWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${event.averageRating.toStringAsFixed(1)} (${event.ratingsCount})',
+                        '${averageRating.toStringAsFixed(1)} ($ratingsCount)',
                         style: GoogleFonts.poppins(
                           color: Colors.white.withOpacity(0.85),
                           fontSize: 11,

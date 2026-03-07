@@ -45,6 +45,18 @@ class Event {
   final double averageRating;
   final int ratingsCount;
 
+  static int _toInt(dynamic value, {int fallback = 0}) {
+    if (value == null) return fallback;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? fallback;
+  }
+
+  static double _toDouble(dynamic value, {double fallback = 0}) {
+    if (value == null) return fallback;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? fallback;
+  }
+
   Event({
     required this.id,
     required this.title,
@@ -125,11 +137,12 @@ class Event {
       duration: json['duration'],
       rating: json['rating'],
       trailerUrl: json['trailerUrl'],
-      likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
-      averageRating:
-          (json['averageRating'] as num?)?.toDouble() ??
-          (double.tryParse(json['rating']?.toString() ?? '') ?? 0),
-      ratingsCount: (json['ratingsCount'] as num?)?.toInt() ?? 0,
+      likesCount: _toInt(json['likesCount']),
+      averageRating: _toDouble(
+        json['averageRating'],
+        fallback: _toDouble(json['rating']),
+      ),
+      ratingsCount: _toInt(json['ratingsCount']),
     );
   }
   Map<String, dynamic> toJson() {

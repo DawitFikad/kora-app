@@ -10,6 +10,7 @@ import 'package:mobile/core/providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:mobile/features/profile/services/profile_service.dart';
+import 'package:mobile/features/events/presentation/home_screen.dart';
 import 'seat_selection_screen.dart';
 import 'ticket_selection_screen.dart';
 import 'package:share_plus/share_plus.dart';
@@ -54,6 +55,31 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     return ref.read(localStorageProvider).authToken != null;
   }
 
+  void _handleBackNavigation() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go('/home');
+  }
+
+  void _invalidateHomeEventFeeds() {
+    // Keep Home sections in sync after engagement changes made in details.
+    ref.invalidate(filteredEventsProvider);
+    ref.invalidate(recommendedMoviesProvider);
+    ref.invalidate(bestEventsThisWeekProvider);
+    ref.invalidate(trendingNowProvider);
+    ref.invalidate(personalizedPicksProvider);
+    ref.invalidate(upcomingAwardsProvider);
+    ref.invalidate(workshopsShortCoursesProvider);
+    ref.invalidate(citySpotlightProvider);
+    ref.invalidate(lastMinuteTodayProvider);
+    ref.invalidate(offersDealsProvider);
+    ref.invalidate(newUpcomingExperiencesProvider);
+    ref.invalidate(homeCarouselProvider);
+    ref.invalidate(eventsProvider);
+  }
+
   Future<void> _toggleLike() async {
     if (!_isAuthenticated()) {
       if (!mounted) return;
@@ -66,6 +92,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     try {
       await ref.read(eventServiceProvider).toggleLikeEvent(widget.eventId);
       ref.invalidate(eventEngagementProvider(widget.eventId));
+      ref.invalidate(eventDetailsProvider(widget.eventId));
+      _invalidateHomeEventFeeds();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -211,6 +239,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           );
       ref.invalidate(eventEngagementProvider(widget.eventId));
       ref.invalidate(eventDetailsProvider(widget.eventId));
+      _invalidateHomeEventFeeds();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -541,7 +570,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             elevation: 0,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
-              onPressed: () => Navigator.pop(context),
+              onPressed: _handleBackNavigation,
             ),
             title: Column(
               children: [

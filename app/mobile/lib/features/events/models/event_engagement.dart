@@ -6,6 +6,18 @@ class EventEngagement {
   final int? userRating;
   final String? userComment;
 
+  static int _toInt(dynamic value, {int fallback = 0}) {
+    if (value == null) return fallback;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? fallback;
+  }
+
+  static double _toDouble(dynamic value, {double fallback = 0}) {
+    if (value == null) return fallback;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? fallback;
+  }
+
   const EventEngagement({
     required this.likesCount,
     required this.averageRating,
@@ -17,11 +29,13 @@ class EventEngagement {
 
   factory EventEngagement.fromJson(Map<String, dynamic> json) {
     return EventEngagement(
-      likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
-      averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0,
-      ratingsCount: (json['ratingsCount'] as num?)?.toInt() ?? 0,
+      likesCount: _toInt(json['likesCount']),
+      averageRating: _toDouble(json['averageRating']),
+      ratingsCount: _toInt(json['ratingsCount']),
       userLiked: json['userLiked'] == true,
-      userRating: (json['userRating'] as num?)?.toInt(),
+      userRating: json['userRating'] == null
+          ? null
+          : _toInt(json['userRating']),
       userComment: json['userComment'] as String?,
     );
   }

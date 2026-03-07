@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  static const String _webLocalBaseUrl = 'http://127.0.0.1:4000/api';
-  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:4000/api';
-  static const String _defaultLocalBaseUrl = 'http://127.0.0.1:4000/api';
+  // Local API default moved to 4001 because 4000 is commonly occupied by Docker/WSL on Windows.
+  // Use IPv4 loopback on web to avoid localhost -> ::1 resolution issues.
+  static const String _webLocalBaseUrl = 'http://127.0.0.1:4001/api';
+  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:4001/api';
+  static const String _defaultLocalBaseUrl = 'http://127.0.0.1:4001/api';
 
   // Optional override, example:
   // flutter run --dart-define=API_BASE_URL=http://192.168.1.20:4000/api
