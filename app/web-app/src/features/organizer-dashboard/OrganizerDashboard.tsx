@@ -58,6 +58,67 @@ const OrganizerDashboard = () => {
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
 
+    const normalizeNotifications = (payload: any): any[] => {
+        if (!payload) return [];
+        if (Array.isArray(payload)) return payload;
+        if (Array.isArray(payload.data)) return payload.data;
+        return [];
+    };
+
+    const createFallbackNotificationsFromOverview = (overview: any): any[] => {
+        if (!overview) return [];
+
+        const rawAlerts: any[] = Array.isArray(overview.alerts) ? overview.alerts : [];
+        const upcomingEvents: any[] = Array.isArray(overview.upcomingEvents) ? overview.upcomingEvents : [];
+
+        const alertItems = rawAlerts.map((alert, index) => ({
+            id: -(index + 1),
+            content: alert?.message || alert?.content || 'Dashboard alert',
+            title: alert?.title || 'Dashboard Alert',
+            createdAt: new Date().toISOString(),
+            isRead: false,
+            localOnly: true,
+        }));
+
+        const now = Date.now();
+        const upcomingItems = upcomingEvents
+            .map((event: any, index: number) => {
+                const eventTime = new Date(event?.date).getTime();
+                if (!Number.isFinite(eventTime)) return null;
+
+                const diffHours = Math.floor((eventTime - now) / (1000 * 60 * 60));
+                if (diffHours < 0 || diffHours > 72) return null;
+
+                let timeLabel = 'starting soon';
+                const days = Math.floor(diffHours / 24);
+                const hours = diffHours % 24;
+                if (days > 0) {
+                    timeLabel = days === 1 ? '1 day' : `${days} days`;
+                } else if (hours > 0) {
+                    timeLabel = hours === 1 ? '1 hour' : `${hours} hours`;
+                }
+
+                return {
+                    id: -(1000 + index + 1),
+                    content: `Event starting in ${timeLabel}: ${event?.title || 'Event'}`,
+                    title: 'Upcoming Event',
+                    createdAt: new Date().toISOString(),
+                    isRead: false,
+                    localOnly: true,
+                    actionTab: 'Events',
+                };
+            })
+            .filter(Boolean) as any[];
+
+        const deduped = [...alertItems, ...upcomingItems].filter((item, index, arr) => {
+            const key = String(item?.content || '').trim().toLowerCase();
+            if (!key) return false;
+            return arr.findIndex((n: any) => String(n?.content || '').trim().toLowerCase() === key) === index;
+        });
+
+        return deduped;
+    };
+
     // Keep the page from scrolling; only the dashboard content should scroll.
     useEffect(() => {
         document.body.classList.add('dashboard-no-body-scroll');
@@ -80,12 +141,27 @@ const OrganizerDashboard = () => {
                     setOrganizerProfile(settingsRes);
                 }
 
-                // Fetch Notifications
-                const notifRes = await OrganizerService.getNotifications();
-                if ((notifRes as any).success) {
-                    setNotifications((notifRes as any).data);
-                    setUnreadCount((notifRes as any).unreadCount || 0);
-                }
+                // Fetch Notifications and Overview-derived alerts for bell panel
+                const [notifRes, overviewRes] = await Promise.all([
+                    OrganizerService.getNotifications().catch(() => null),
+                    OrganizerService.getOverview().catch(() => null),
+                ]);
+                const serverNotifications = normalizeNotifications(notifRes);
+                const serverUnread = Number((notifRes as any)?.unreadCount || 0);
+                const overviewData = (overviewRes as any)?.data || overviewRes;
+                const fallbackNotifications = createFallbackNotificationsFromOverview(overviewData);
+
+                const mergedNotifications = [...serverNotifications, ...fallbackNotifications].filter((item, index, arr) => {
+                    const key = `${String(item?.title || '').trim().toLowerCase()}|${String(item?.content || '').trim().toLowerCase()}`;
+                    if (key === '|') return false;
+                    return arr.findIndex((n: any) => `${String(n?.title || '').trim().toLowerCase()}|${String(n?.content || '').trim().toLowerCase()}` === key) === index;
+                });
+
+                setNotifications(mergedNotifications);
+
+                const serverDerivedUnread = serverUnread || serverNotifications.filter((n: any) => !n?.isRead).length;
+                const localDerivedUnread = fallbackNotifications.filter((n: any) => !n?.isRead).length;
+                setUnreadCount(serverDerivedUnread + localDerivedUnread);
             } catch (error) {
                 console.error("Failed to fetch dashboard data", error);
             }
@@ -129,11 +205,41 @@ const OrganizerDashboard = () => {
         return groups;
     };
 
+    const resolveNotificationActionTab = (notification: any): string | null => {
+        if (!notification) return null;
+
+        if (notification.actionTab) return notification.actionTab;
+
+        const title = String(notification.title || '').toLowerCase();
+        const content = String(notification.content || '').toLowerCase();
+        if (title.includes('upcoming') || content.includes('event starting in')) {
+            return 'Events';
+        }
+
+        return null;
+    };
+
+    const handleNotificationClick = async (notification: any) => {
+        if (!notification) return;
+
+        await handleMarkAsRead(notification.id);
+
+        const actionTab = resolveNotificationActionTab(notification);
+        if (actionTab) {
+            setActiveTab(actionTab);
+        }
+
+        setShowNotifications(false);
+    };
+
     const handleMarkAsRead = async (id?: number) => {
         try {
             const { OrganizerService } = await import('../../core/api/organizer.service');
             if (id) {
-                await OrganizerService.markNotificationsRead({ notificationIds: [id] });
+                const target = notifications.find(n => n.id === id);
+                if (!target?.localOnly) {
+                    await OrganizerService.markNotificationsRead({ notificationIds: [id] });
+                }
                 // Update local state
                 const updated = notifications.map(n => n.id === id ? { ...n, isRead: true } : n);
                 setNotifications(updated);
@@ -141,9 +247,13 @@ const OrganizerDashboard = () => {
             } else {
                 // Mark all displayed (or all new) as read
                 // For now, let's just mark all new as read if user clicks "Mark all read"
-                const newIds = notifications.filter(n => !n.isRead).map(n => n.id);
+                const newIds = notifications.filter(n => !n.isRead && !n.localOnly).map(n => n.id);
                 if (newIds.length > 0) {
                     await OrganizerService.markNotificationsRead({ notificationIds: newIds });
+                    const updated = notifications.map(n => ({ ...n, isRead: true }));
+                    setNotifications(updated);
+                    setUnreadCount(0);
+                } else {
                     const updated = notifications.map(n => ({ ...n, isRead: true }));
                     setNotifications(updated);
                     setUnreadCount(0);
@@ -381,7 +491,7 @@ const OrganizerDashboard = () => {
                                                                 {items.map((n: any) => (
                                                                     <div
                                                                         key={n.id}
-                                                                        onClick={() => handleMarkAsRead(n.id)}
+                                                                        onClick={() => handleNotificationClick(n)}
                                                                         style={{
                                                                             padding: '16px',
                                                                             borderBottom: '1px solid var(--border)',

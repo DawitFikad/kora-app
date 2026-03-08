@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MoreHorizontal, Ticket, Building2, Megaphone, Loader2, DollarSign, AlertTriangle, CalendarDays, ArrowRight, Clock } from 'lucide-react';
+import { MoreHorizontal, Ticket, Building2, Megaphone, Loader2, DollarSign, CalendarDays, ArrowRight, Clock } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
 import { useLanguage } from '../../../core/context/LanguageContext';
@@ -11,7 +11,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
     const [salesTrend, setSalesTrend] = useState<any[]>([]);
     const [velocity, setVelocity] = useState<any[]>([]);
     const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
-    const [alerts, setAlerts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,7 +25,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                 setVelocity(data.salesVelocity || []);
                 setUpcomingEvents(data.upcomingEvents || []);
                 setSalesTrend(financialsResponse.data?.salesTrend || []);
-                setAlerts(data.alerts || []);
             } catch (error) {
                 console.error("Failed to fetch dashboard stats", error);
             } finally {
@@ -77,60 +75,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
         return { days, hours, label, event: next };
     }, [upcomingEvents, t]);
 
-    const localizedAlerts = useMemo(() => {
-        const baseAlerts = alerts.map((alert: any) => {
-            const message = alert?.message || '';
-            if (message.match(/pending approval/i)) {
-                const countMatch = message.match(/(\d+)/);
-                const count = countMatch ? countMatch[1] : '0';
-                return { ...alert, message: t('org.dashboard.alertPendingApproval', '{count} events pending approval').replace('{count}', count) };
-            }
-            const lowCapMatch = message.match(/Low capacity:\s*(.+)\s+is\s+(\d+)%/i);
-            if (lowCapMatch) {
-                const [, title, percent] = lowCapMatch;
-                return {
-                    ...alert,
-                    message: t('org.dashboard.alertLowInventory', 'Low ticket inventory: {title} is {percent}% sold')
-                        .replace('{title}', title)
-                        .replace('{percent}', percent)
-                };
-            }
-            return alert;
-        });
-
-        // Add alerts for all upcoming events within 3 days
-        upcomingEvents.forEach(event => {
-            const now = new Date();
-            const eventDate = new Date(event.date);
-            const diffMs = eventDate.getTime() - now.getTime();
-            const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const days = Math.floor(totalHours / 24);
-            const remHours = totalHours % 24;
-
-            if (totalHours >= 0 && totalHours <= 72) { // Within 3 days
-                let timeMsg = "";
-                if (days > 0) {
-                    const templateKey = days === 1 ? 'org.dashboard.alertEventSoonSingle' : 'org.dashboard.alertEventSoon';
-                    timeMsg = t(templateKey, days === 1 ? '{days} day' : '{days} days').replace('{days}', String(days));
-                } else if (remHours > 0) {
-                    timeMsg = t('org.dashboard.hoursRemainShort', '{hours} hours').replace('{hours}', String(remHours));
-                } else {
-                    timeMsg = t('org.dashboard.startingSoon', 'Starting soon');
-                }
-
-                baseAlerts.unshift({
-                    type: 'warning',
-                    action: 'Events',
-                    message: t('org.dashboard.alertEventSoonFormat', 'Event starting in {time}: {title}')
-                        .replace('{time}', timeMsg)
-                        .replace('{title}', event.title || t('org.dashboard.unknownEvent', 'Event'))
-                });
-            }
-        });
-
-        return baseAlerts;
-    }, [alerts, upcomingEvents, t]);
-
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -142,53 +86,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader title={t('org.dashboard.welcome', 'Welcome back')} subtitle={t('org.dashboard.subtitle', 'Here is what’s happening with your events today.')} />
-
-
-
-            {/* Alerts Section */}
-            {localizedAlerts.length > 0 && (
-                <div style={{ marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {localizedAlerts.map((alert: any, i: number) => (
-                        <motion.div
-                            key={i}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            style={{
-                                padding: '16px',
-                                borderRadius: '12px',
-                                background: alert.type === 'critical' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                                border: `1px solid ${alert.type === 'critical' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)'}`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                color: alert.type === 'critical' ? '#EF4444' : '#EAB308'
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <AlertTriangle size={20} />
-                                <span style={{ fontWeight: 600 }}>{alert.message}</span>
-                            </div>
-                            <button
-                                onClick={() => handleQuickAction(alert.action)}
-                                style={{
-                                    background: 'transparent',
-                                    border: `1px solid ${alert.type === 'critical' ? '#EF4444' : '#EAB308'}`,
-                                    padding: '6px 16px',
-                                    borderRadius: '8px',
-                                    color: 'inherit',
-                                    fontWeight: 700,
-                                    fontSize: '0.8rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                {t('org.actions.view', 'View')}
-                            </button>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
-
             <div className="stats-grid">
                 {(
                     overview ? [
