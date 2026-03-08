@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/network/constants/api_constants.dart';
 import 'storage/local_storage.dart';
@@ -18,6 +19,12 @@ final authTokenProvider = Provider<String?>((ref) {
 });
 
 final dioProvider = Provider<Dio>((ref) {
+  if (kDebugMode) {
+    debugPrint(
+      '[API] platform=${ApiConstants.platformLabel} baseUrl=${ApiConstants.baseUrl}',
+    );
+  }
+
   final dio = Dio(
     BaseOptions(
       baseUrl: ApiConstants.baseUrl,

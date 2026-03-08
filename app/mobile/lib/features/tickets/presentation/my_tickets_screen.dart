@@ -16,7 +16,7 @@ final myTicketsProvider = FutureProvider.autoDispose<List<Ticket>>((ref) async {
   // Watch for auth changes to refresh ticket list
   final token = ref.watch(authTokenProvider);
   if (token == null) return [];
-  
+
   final service = ref.watch(ticketServiceProvider);
   return service.getMyTickets();
 });
@@ -52,7 +52,11 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 "Sort Tickets",
-                style: GoogleFonts.poppins(color: textColor, fontWeight: FontWeight.w600, fontSize: 14),
+                style: GoogleFonts.poppins(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -141,7 +145,9 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
-    final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
+    final backgroundColor = isDark
+        ? const Color(0xFF15131C)
+        : const Color(0xFFF8F7FA);
 
     return DefaultTabController(
       length: 3,
@@ -196,12 +202,12 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
                 labelColor: Colors.white,
                 unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
                 labelStyle: GoogleFonts.poppins(
-                   fontSize: 14,
-                   fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
                 unselectedLabelStyle: GoogleFonts.poppins(
-                   fontSize: 14,
-                   fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
                 tabAlignment: TabAlignment.start,
                 labelPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -215,9 +221,28 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
             Expanded(
               child: TabBarView(
                 children: [
-                  _TicketsListView(ref: ref, isPast: false, isDark: isDark, textColor: textColor, cardColor: cardColor, backgroundColor: backgroundColor),
-                  _TicketsListView(ref: ref, isPast: true, isDark: isDark, textColor: textColor, cardColor: cardColor, backgroundColor: backgroundColor),
-                  _buildEmptyState(context, ref, "No archived tickets", textColor.withOpacity(0.5)),
+                  _TicketsListView(
+                    ref: ref,
+                    isPast: false,
+                    isDark: isDark,
+                    textColor: textColor,
+                    cardColor: cardColor,
+                    backgroundColor: backgroundColor,
+                  ),
+                  _TicketsListView(
+                    ref: ref,
+                    isPast: true,
+                    isDark: isDark,
+                    textColor: textColor,
+                    cardColor: cardColor,
+                    backgroundColor: backgroundColor,
+                  ),
+                  _buildEmptyState(
+                    context,
+                    ref,
+                    "No archived tickets",
+                    textColor.withOpacity(0.5),
+                  ),
                 ],
               ),
             ),
@@ -227,15 +252,17 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, WidgetRef ref, String message, Color color) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    WidgetRef ref,
+    String message,
+    Color color,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            message,
-            style: GoogleFonts.poppins(color: color),
-          ),
+          Text(message, style: GoogleFonts.poppins(color: color)),
           const SizedBox(height: 16),
           TextButton(
             onPressed: () {
@@ -244,7 +271,10 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
             },
             child: Text(
               "tickets.buy_now".tr(),
-              style: const TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Color(0xFF8B5CF6),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -260,9 +290,9 @@ class _TicketsListView extends StatelessWidget {
   final Color textColor;
   final Color cardColor;
   final Color backgroundColor;
-  
+
   const _TicketsListView({
-    required this.ref, 
+    required this.ref,
     this.isPast = false,
     required this.isDark,
     required this.textColor,
@@ -282,14 +312,19 @@ class _TicketsListView extends StatelessWidget {
           final now = DateTime.now();
           final filteredTickets = tickets.where((ticket) {
             final eventDate = DateTime.parse(ticket.event.dateTime);
-            final isToday = eventDate.year == now.year && eventDate.month == now.month && eventDate.day == now.day;
-            
+            final isToday =
+                eventDate.year == now.year &&
+                eventDate.month == now.month &&
+                eventDate.day == now.day;
+
             if (isPast) {
-               // Show if status is not valid (used/refunded) OR if it was a previous day
-               return ticket.status != 'VALID' || (eventDate.isBefore(now) && !isToday);
+              // Show if status is not valid (used/refunded) OR if it was a previous day
+              return ticket.status != 'VALID' ||
+                  (eventDate.isBefore(now) && !isToday);
             } else {
-               // Show in upcoming if it's VALID and (happening today OR in the future)
-               return ticket.status == 'VALID' && (eventDate.isAfter(now) || isToday);
+              // Show in upcoming if it's VALID and (happening today OR in the future)
+              return ticket.status == 'VALID' &&
+                  (eventDate.isAfter(now) || isToday);
             }
           }).toList();
 
@@ -307,7 +342,11 @@ class _TicketsListView extends StatelessWidget {
               return isPast ? dateB.compareTo(dateA) : dateA.compareTo(dateB);
             });
           } else if (sort == TicketSort.name) {
-            filteredTickets.sort((a, b) => a.event.title.toLowerCase().compareTo(b.event.title.toLowerCase()));
+            filteredTickets.sort(
+              (a, b) => a.event.title.toLowerCase().compareTo(
+                b.event.title.toLowerCase(),
+              ),
+            );
           } else {
             filteredTickets.sort((a, b) {
               final dateA = a.createdAt;
@@ -333,7 +372,10 @@ class _TicketsListView extends StatelessWidget {
                     },
                     child: Text(
                       "tickets.buy_now".tr(),
-                      style: const TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Color(0xFF8B5CF6),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -351,9 +393,18 @@ class _TicketsListView extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: filteredTickets[index])),
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            TicketDetailScreen(ticket: filteredTickets[index]),
+                      ),
                     ),
-                    child: _LargeTicketCard(ticket: filteredTickets[index], isDark: isDark, textColor: textColor, cardColor: cardColor, backgroundColor: backgroundColor),
+                    child: _LargeTicketCard(
+                      ticket: filteredTickets[index],
+                      isDark: isDark,
+                      textColor: textColor,
+                      cardColor: cardColor,
+                      backgroundColor: backgroundColor,
+                    ),
                   ),
                 );
               }
@@ -362,15 +413,25 @@ class _TicketsListView extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: filteredTickets[index])),
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          TicketDetailScreen(ticket: filteredTickets[index]),
+                    ),
                   ),
-                  child: _CompactTicketCard(ticket: filteredTickets[index], isDark: isDark, textColor: textColor, cardColor: cardColor),
+                  child: _CompactTicketCard(
+                    ticket: filteredTickets[index],
+                    isDark: isDark,
+                    textColor: textColor,
+                    cardColor: cardColor,
+                  ),
                 ),
               );
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+        ),
         error: (err, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -390,7 +451,9 @@ class _TicketsListView extends StatelessWidget {
                 onPressed: () => ref.refresh(myTicketsProvider),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: Text("common.retry".tr()),
               ),
@@ -425,13 +488,15 @@ class _LargeTicketCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         children: [
@@ -439,7 +504,9 @@ class _LargeTicketCard extends StatelessWidget {
           Stack(
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
                 child: AppImage(
                   imageUrl: ticket.event.coverImage,
                   height: 200,
@@ -451,7 +518,10 @@ class _LargeTicketCard extends StatelessWidget {
                 top: 16,
                 left: 16,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(8),
@@ -510,7 +580,11 @@ class _LargeTicketCard extends StatelessWidget {
                   children: [
                     _buildTicketDetail("SECTION", "B", textColor),
                     _buildTicketDetail("ROW", "4", textColor),
-                    _buildTicketDetail("SEAT", ticket.seatNumber ?? "12", textColor),
+                    _buildTicketDetail(
+                      "SEAT",
+                      ticket.seatNumber ?? "12",
+                      textColor,
+                    ),
                   ],
                 ),
               ],
@@ -541,7 +615,11 @@ class _LargeTicketCard extends StatelessWidget {
                         (index) => SizedBox(
                           width: 8,
                           height: 1,
-                          child: DecoratedBox(decoration: BoxDecoration(color: textColor.withOpacity(0.1))),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: textColor.withOpacity(0.1),
+                            ),
+                          ),
                         ),
                       ),
                     );
@@ -575,11 +653,12 @@ class _LargeTicketCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  ticket.ticketCode != null 
-                    ? ticket.ticketCode!.toUpperCase() 
-                    : (ticket.id.length > 8 
-                        ? "${ticket.id.substring(0, 4)} - ${ticket.id.substring(4, 8)}".toUpperCase()
-                        : ticket.id.toUpperCase()),
+                  ticket.ticketCode != null
+                      ? ticket.ticketCode!.toUpperCase()
+                      : (ticket.id.length > 8
+                            ? "${ticket.id.substring(0, 4)} - ${ticket.id.substring(4, 8)}"
+                                  .toUpperCase()
+                            : ticket.id.toUpperCase()),
                   style: GoogleFonts.poppins(
                     color: textColor,
                     fontSize: 32,
@@ -609,38 +688,35 @@ class _LargeTicketCard extends StatelessWidget {
                     padding: EdgeInsets.zero,
                   ),
                 ),
-                const SizedBox(height: 24),
-                // Apple Wallet Button
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.wallet, size: 20),
-                  label: const Text("Add to Apple Wallet"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5CF6),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 54),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
-                  ),
-                ),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                        const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           "Available Offline",
-                          style: GoogleFonts.poppins(color: textColor.withOpacity(0.7), fontSize: 13),
+                          style: GoogleFonts.poppins(
+                            color: textColor.withOpacity(0.7),
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
                     TextButton(
-                      onPressed: () => Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(builder: (context) => TicketDetailScreen(ticket: ticket)),
-                      ),
+                      onPressed: () =>
+                          Navigator.of(context, rootNavigator: true).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  TicketDetailScreen(ticket: ticket),
+                            ),
+                          ),
                       child: Text(
                         "Details",
                         style: GoogleFonts.poppins(
@@ -666,12 +742,20 @@ class _LargeTicketCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(color: textColor.withOpacity(0.38), fontSize: 10, fontWeight: FontWeight.w500),
+          style: GoogleFonts.poppins(
+            color: textColor.withOpacity(0.38),
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: GoogleFonts.poppins(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            color: textColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -700,13 +784,15 @@ class _CompactTicketCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Row(
         children: [
@@ -730,22 +816,34 @@ class _CompactTicketCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "${DateFormat('MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}".toUpperCase(),
-                    style: GoogleFonts.poppins(color: const Color(0xFF8B5CF6), fontSize: 11, fontWeight: FontWeight.bold),
+                    "${DateFormat('MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}"
+                        .toUpperCase(),
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF8B5CF6),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     ticket.event.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.poppins(
+                      color: textColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     ticket.event.venue,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(color: textColor.withOpacity(0.53), fontSize: 12),
+                    style: GoogleFonts.poppins(
+                      color: textColor.withOpacity(0.53),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -761,7 +859,9 @@ class _CompactTicketCard extends StatelessWidget {
                 (index) => Expanded(
                   child: Container(
                     width: 1,
-                    color: index % 2 == 0 ? textColor.withOpacity(0.12) : Colors.transparent,
+                    color: index % 2 == 0
+                        ? textColor.withOpacity(0.12)
+                        : Colors.transparent,
                   ),
                 ),
               ),
@@ -769,7 +869,11 @@ class _CompactTicketCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Icon(Icons.qr_code_2, color: textColor.withOpacity(0.54), size: 24),
+            child: Icon(
+              Icons.qr_code_2,
+              color: textColor.withOpacity(0.54),
+              size: 24,
+            ),
           ),
         ],
       ),

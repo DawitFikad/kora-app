@@ -5,21 +5,74 @@ class ApiConstants {
   // Use IPv4 loopback on web to avoid localhost -> ::1 resolution issues.
   static const String _webLocalBaseUrl = 'http://127.0.0.1:4001/api';
   static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:4001/api';
+  static const String _iosSimulatorBaseUrl = 'http://127.0.0.1:4001/api';
   static const String _defaultLocalBaseUrl = 'http://127.0.0.1:4001/api';
 
-  // Optional override, example:
-  // flutter run --dart-define=API_BASE_URL=http://192.168.1.20:4000/api
+  // Override priority:
+  // 1) API_BASE_URL (global)
+  // 2) API_BASE_URL_WEB for web
+  // 3) API_BASE_URL_ANDROID / API_BASE_URL_IOS / API_BASE_URL_MOBILE for mobile
+  // 4) platform-safe defaults
   static String get baseUrl {
-    const envBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
-    if (envBaseUrl.isNotEmpty) return envBaseUrl;
+    const globalBaseUrl = String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: '',
+    );
+    if (globalBaseUrl.isNotEmpty) return globalBaseUrl;
 
-    if (kIsWeb) return _webLocalBaseUrl;
+    const webBaseUrl = String.fromEnvironment(
+      'API_BASE_URL_WEB',
+      defaultValue: '',
+    );
+    const mobileBaseUrl = String.fromEnvironment(
+      'API_BASE_URL_MOBILE',
+      defaultValue: '',
+    );
+    const androidBaseUrl = String.fromEnvironment(
+      'API_BASE_URL_ANDROID',
+      defaultValue: '',
+    );
+    const iosBaseUrl = String.fromEnvironment(
+      'API_BASE_URL_IOS',
+      defaultValue: '',
+    );
+
+    if (kIsWeb) {
+      if (webBaseUrl.isNotEmpty) return webBaseUrl;
+      return _webLocalBaseUrl;
+    }
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
+        if (androidBaseUrl.isNotEmpty) return androidBaseUrl;
+        if (mobileBaseUrl.isNotEmpty) return mobileBaseUrl;
         return _androidEmulatorBaseUrl;
+      case TargetPlatform.iOS:
+        if (iosBaseUrl.isNotEmpty) return iosBaseUrl;
+        if (mobileBaseUrl.isNotEmpty) return mobileBaseUrl;
+        return _iosSimulatorBaseUrl;
       default:
+        if (mobileBaseUrl.isNotEmpty) return mobileBaseUrl;
         return _defaultLocalBaseUrl;
+    }
+  }
+
+  static String get platformLabel {
+    if (kIsWeb) return 'web';
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'android';
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.windows:
+        return 'windows';
+      case TargetPlatform.macOS:
+        return 'macos';
+      case TargetPlatform.linux:
+        return 'linux';
+      default:
+        return 'unknown';
     }
   }
 

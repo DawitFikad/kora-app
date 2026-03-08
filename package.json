@@ -33,6 +33,9 @@
   "description": "ET-Ticket Platform v3",
   "scripts": {
     "build": "node build-all.js",
+    "docker:up": "docker compose -f services/api/docker-compose.yml up --build",
+    "docker:down": "docker compose -f services/api/docker-compose.yml down",
+    "docker:logs": "docker compose -f services/api/docker-compose.yml logs -f",
     "postinstall": "prisma generate --schema=services/api/prisma/schema.prisma",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

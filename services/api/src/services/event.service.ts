@@ -10,6 +10,108 @@ const prismaEngagement = prisma as typeof prisma & {
 };
 
 export class EventService {
+    private static async attachEngagementSummary(events: any[]): Promise<any[]> {
+        if (!events.length) return [];
+
+        const eventIds = events.map((event) => Number(event.id)).filter((id) => Number.isFinite(id));
+        if (!eventIds.length) {
+            return events.map((event) => ({
+                ...event,
+                likesCount: 0,
+                averageRating: Number(event.rating ?? 0) || 0,
+                ratingsCount: 0,
+            }));
+        }
+
+        try {
+            const hasDelegates = !!(prismaEngagement as any).eventLike && !!(prismaEngagement as any).eventRating;
+
+            if (hasDelegates) {
+                const [likeCounts, ratingAgg] = await Promise.all([
+                    prismaEngagement.eventLike.groupBy({
+                        by: ['eventId'],
+                        where: { eventId: { in: eventIds } },
+                        _count: { eventId: true },
+                    }),
+                    prismaEngagement.eventRating.groupBy({
+                        by: ['eventId'],
+                        where: { eventId: { in: eventIds } },
+                        _avg: { rating: true },
+                        _count: { rating: true },
+                    }),
+                ]);
+
+                const likesByEventId = new Map<number, number>(
+                    likeCounts.map((row: any) => [row.eventId, row._count.eventId])
+                );
+                const ratingsByEventId = new Map<number, { avg: number; count: number }>(
+                    ratingAgg.map((row: any) => [
+                        row.eventId,
+                        {
+                            avg: row._avg.rating ? Number(row._avg.rating) : 0,
+                            count: row._count.rating,
+                        },
+                    ])
+                );
+
+                return events.map((event) => {
+                    const likesCount = likesByEventId.get(event.id) || 0;
+                    const rating = ratingsByEventId.get(event.id) || { avg: Number(event.rating ?? 0) || 0, count: 0 };
+                    return {
+                        ...event,
+                        likesCount,
+                        averageRating: Number(Number(rating.avg || 0).toFixed(2)),
+                        ratingsCount: rating.count,
+                    };
+                });
+            }
+
+            const idsCsv = eventIds.join(',');
+            const [likeRows, ratingRows] = await Promise.all([
+                prisma.$queryRawUnsafe<Array<{ eventId: number; count: number }>>(
+                    `SELECT "eventId", COUNT(*)::int AS "count" FROM "EventLike" WHERE "eventId" IN (${idsCsv}) GROUP BY "eventId"`
+                ),
+                prisma.$queryRawUnsafe<Array<{ eventId: number; averageRating: number | string | null; ratingsCount: number }>>(
+                    `SELECT "eventId", COALESCE(AVG("rating"), 0) AS "averageRating", COUNT(*)::int AS "ratingsCount" FROM "EventRating" WHERE "eventId" IN (${idsCsv}) GROUP BY "eventId"`
+                ),
+            ]);
+
+            const likesByEventId = new Map<number, number>(
+                likeRows.map((row) => [Number(row.eventId), Number(row.count || 0)])
+            );
+            const ratingsByEventId = new Map<number, { avg: number; count: number }>(
+                ratingRows.map((row) => [
+                    Number(row.eventId),
+                    {
+                        avg: Number(row.averageRating ?? 0) || 0,
+                        count: Number(row.ratingsCount || 0),
+                    },
+                ])
+            );
+
+            return events.map((event) => {
+                const likesCount = likesByEventId.get(event.id) || 0;
+                const rating = ratingsByEventId.get(event.id) || { avg: Number(event.rating ?? 0) || 0, count: 0 };
+                return {
+                    ...event,
+                    likesCount,
+                    averageRating: Number(Number(rating.avg || 0).toFixed(2)),
+                    ratingsCount: rating.count,
+                };
+            });
+        } catch {
+            return events.map((event) => {
+                const fallback = Number(event.rating ?? 0);
+                return {
+                    ...event,
+                    likesCount: 0,
+                    averageRating: Number.isFinite(fallback) ? fallback : 0,
+                    ratingsCount: 0,
+                };
+            });
+        }
+    }
+
     private static extractMovieHighlights(event: {
         title: string;
         description?: string | null;
@@ -338,8 +440,9 @@ export class EventService {
     static async sendWeeklyPersonalizedSuggestions() {
         const { NotificationService } = require("./notification.service");
         const { NotificationChannel } = require("@prisma/client");
+        const prismaAny = prisma as any;
 
-        const users = await prisma.user.findMany({
+        const users = await prismaAny.user.findMany({
             where: { status: "ACTIVE" as any },
             select: {
                 id: true,
@@ -354,7 +457,7 @@ export class EventService {
             orderBy: { id: "asc" },
         });
 
-        for (const user of users) {
+        for (const user of users as Array<any>) {
             let cityIdFromProfile: number | undefined;
             const location = user.profile?.location?.trim();
             if (location) {
@@ -544,7 +647,7 @@ export class EventService {
     }) {
         const { categoryId, cityId, search, featured } = filters;
 
-        return prisma.event.findMany({
+        const events = await prisma.event.findMany({
             where: {
                 status: EventStatus.APPROVED,
                 categoryId: categoryId ? parseInt(categoryId as any) : undefined,
@@ -567,6 +670,8 @@ export class EventService {
             },
             orderBy: { dateTime: 'asc' }
         });
+
+        return this.attachEngagementSummary(events as any);
     }
 
     static async listRecommendedMovies(params: {
@@ -679,7 +784,7 @@ export class EventService {
                 movieHighlights: x.movieHighlights,
             }));
 
-        return ranked;
+        return this.attachEngagementSummary(ranked as any);
     }
 
     static async listBestEventsThisWeek(params: {
@@ -756,7 +861,7 @@ export class EventService {
             .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
 
-        return ranked;
+        return this.attachEngagementSummary(ranked as any);
     }
 
     static async listTrendingNow(params: {
@@ -878,15 +983,17 @@ export class EventService {
             select: { id: true, slug: true }
         });
 
+        const prismaAny = prisma as any;
+
         const userProfile = userId
-            ? await prisma.userProfile.findUnique({
+            ? await prismaAny.userProfile.findUnique({
                 where: { userId },
                 select: { location: true, interests: true },
-            })
+            }) as { location?: string | null; interests?: string[] } | null
             : null;
 
         const profileInterests = (userProfile?.interests || [])
-            .map((v) => v.trim().toLowerCase())
+            .map((v: string) => v.trim().toLowerCase())
             .filter(Boolean);
 
         const profileInterestCategories = profileInterests.length
@@ -1009,7 +1116,8 @@ export class EventService {
         // Ensure at least some exploration items are present
         const preferred = ranked.filter((e) => !e.isExplorationPick).slice(0, Math.ceil(limit * 0.7));
         const explore = ranked.filter((e) => e.isExplorationPick).slice(0, Math.max(1, limit - preferred.length));
-        return [...preferred, ...explore].slice(0, limit);
+        const picks = [...preferred, ...explore].slice(0, limit);
+        return this.attachEngagementSummary(picks as any);
     }
 
     static async listUpcomingAwards(params: {
@@ -1073,7 +1181,7 @@ export class EventService {
             soldCounts.map((row) => [row.eventId, row._count.eventId])
         );
 
-        return awards
+        const rankedAwards = awards
             .map((event) => {
                 const sold = soldByEventId.get(event.id) || 0;
                 const capacity = event.totalCapacity || 0;
@@ -1088,6 +1196,8 @@ export class EventService {
             })
             .sort((a, b) => +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
+
+        return this.attachEngagementSummary(rankedAwards as any);
     }
 
     static async listWorkshopsShortCourses(params: {
@@ -1144,7 +1254,7 @@ export class EventService {
             soldCounts.map((row) => [row.eventId, row._count.eventId])
         );
 
-        return workshops
+        const rankedWorkshops = workshops
             .map((event) => {
                 const sold = soldByEventId.get(event.id) || 0;
                 const capacity = event.totalCapacity || 0;
@@ -1168,6 +1278,8 @@ export class EventService {
             })
             .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
+
+        return this.attachEngagementSummary(rankedWorkshops as any);
     }
 
     static async listCitySpotlight(params: {
@@ -1243,7 +1355,7 @@ export class EventService {
             soldCounts.map((row) => [row.eventId, row._count.eventId])
         );
 
-        return spotlight
+        const rankedSpotlight = spotlight
             .map((event) => {
                 const sold = soldByEventId.get(event.id) || 0;
                 const capacity = event.totalCapacity || 0;
@@ -1258,6 +1370,8 @@ export class EventService {
             })
             .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
+
+        return this.attachEngagementSummary(rankedSpotlight as any);
     }
 
     static async listLastMinuteTodayEvents(params: {
@@ -1303,7 +1417,7 @@ export class EventService {
             soldCounts.map((row) => [row.eventId, row._count.eventId])
         );
 
-        return events
+        const rankedLastMinute = events
             .map((event) => {
                 const sold = soldByEventId.get(event.id) || 0;
                 const capacity = event.totalCapacity || 0;
@@ -1325,6 +1439,8 @@ export class EventService {
             })
             .sort((a, b) => b.urgencyScore - a.urgencyScore || +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
+
+        return this.attachEngagementSummary(rankedLastMinute as any);
     }
 
     static async listOffersDeals(params: {
@@ -1399,7 +1515,7 @@ export class EventService {
             soldCounts.map((row) => [row.eventId, row._count.eventId])
         );
 
-        return deals
+        const rankedDeals = deals
             .map((event) => {
                 const sold = soldByEventId.get(event.id) || 0;
                 const capacity = event.totalCapacity || 0;
@@ -1444,6 +1560,8 @@ export class EventService {
             })
             .sort((a, b) => b.dealScore - a.dealScore || +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
+
+        return this.attachEngagementSummary(rankedDeals as any);
     }
 
     static async listNewUpcomingExperiences(params: {
@@ -1552,7 +1670,7 @@ export class EventService {
         const userPreRegSet = new Set<number>(userPreRegs.map((row: { eventId: number }) => row.eventId));
         const userReminderSet = new Set<number>(userReminderSubs.map((row: { eventId: number }) => row.eventId));
 
-        return experiences
+        const rankedExperiences = experiences
             .map((event) => {
                 const sold = soldByEventId.get(event.id) || 0;
                 const capacity = event.totalCapacity || 0;
@@ -1594,6 +1712,8 @@ export class EventService {
             })
             .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
+
+            return this.attachEngagementSummary(rankedExperiences as any);
     }
 
     static async getEventEngagement(eventId: number, userId?: number) {
