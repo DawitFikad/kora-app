@@ -109,8 +109,8 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                 ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr', gap: '24px', marginBottom: '32px' }}>
-                <div className="stat-card" style={{ padding: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr', gap: '24px', marginBottom: '32px', alignItems: 'start' }}>
+                <div className="stat-card" style={{ padding: '32px', height: 'fit-content' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>{t('org.dashboard.salesTrend', '7-Day Sales Trend')}</h3>
@@ -141,10 +141,10 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
 
 
 
-                <div className="stat-card" style={{ padding: '32px' }}>
+                <div className="stat-card" style={{ padding: '32px', height: 'fit-content', maxHeight: '560px', display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>{t('org.dashboard.upcomingEvents', 'Upcoming Events (7 Days)')}</h3>
                     {upcomingEvents.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', paddingRight: '6px' }}>
                             {upcomingEvents.map((e: any) => (
                                 <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -173,7 +173,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                     )}
                 </div>
 
-                <div className="stat-card" style={{ padding: '32px' }}>
+                <div className="stat-card" style={{ padding: '32px', height: 'fit-content' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>{t('org.dashboard.quickActions', 'Quick Actions')}</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                         {[
