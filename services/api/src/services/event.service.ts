@@ -1713,7 +1713,7 @@ export class EventService {
             .sort((a, b) => b.popularityScore - a.popularityScore || +new Date(a.dateTime) - +new Date(b.dateTime))
             .slice(0, limit);
 
-            return this.attachEngagementSummary(rankedExperiences as any);
+        return this.attachEngagementSummary(rankedExperiences as any);
     }
 
     static async getEventEngagement(eventId: number, userId?: number) {

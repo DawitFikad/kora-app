@@ -3264,6 +3264,13 @@ class _UpcomingExperienceCard extends ConsumerWidget {
                     style: TextStyle(fontSize: 11, color: muted),
                   ),
                   const SizedBox(height: 7),
+                  _engagementMiniRow(
+                    likesCount: event.likesCount,
+                    averageRating: event.averageRating,
+                    ratingsCount: event.ratingsCount,
+                    textColor: muted,
+                  ),
+                  const SizedBox(height: 7),
                   SizedBox(
                     height: 24,
                     child: ListView(
@@ -3453,6 +3460,13 @@ class _TrendingCard extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 6),
+                  _engagementMiniRow(
+                    likesCount: event.likesCount,
+                    averageRating: event.averageRating,
+                    ratingsCount: event.ratingsCount,
+                    textColor: Colors.grey,
+                  ),
                 ],
               ),
             ),
@@ -3614,6 +3628,13 @@ class _VerticalEventCard extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 6),
+                  _engagementMiniRow(
+                    likesCount: event.likesCount,
+                    averageRating: event.averageRating,
+                    ratingsCount: event.ratingsCount,
+                    textColor: mutedColor,
+                  ),
                 ],
               ),
             ),
@@ -3622,6 +3643,47 @@ class _VerticalEventCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+Widget _engagementMiniRow({
+  required int likesCount,
+  required double averageRating,
+  required int ratingsCount,
+  required Color textColor,
+}) {
+  return Row(
+    children: [
+      const Icon(
+        Icons.favorite_rounded,
+        color: Color(0xFFF43F5E),
+        size: 13,
+      ),
+      const SizedBox(width: 4),
+      Text(
+        '$likesCount',
+        style: TextStyle(
+          color: textColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(width: 10),
+      const Icon(
+        Icons.star_rounded,
+        color: Color(0xFFFFB020),
+        size: 13,
+      ),
+      const SizedBox(width: 4),
+      Text(
+        '${averageRating.toStringAsFixed(1)} ($ratingsCount)',
+        style: TextStyle(
+          color: textColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ],
+  );
 }
 
 class _FeaturedBanners extends ConsumerStatefulWidget {
