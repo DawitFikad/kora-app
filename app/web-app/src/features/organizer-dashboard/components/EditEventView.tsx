@@ -113,9 +113,29 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
     };
 
     const handleTierChange = (index: number, field: string, value: any) => {
-        const newTiers = [...form.tiers];
-        newTiers[index] = { ...newTiers[index], [field]: value };
-        setForm({ ...form, tiers: newTiers });
+        setForm(prev => {
+            const newTiers = [...prev.tiers];
+            newTiers[index] = { ...newTiers[index], [field]: value };
+            return { ...prev, tiers: newTiers };
+        });
+    };
+
+    const mapTierNameToType = (name: string): 'GENERAL' | 'VIP' | 'EARLY_BIRD' => {
+        if (name === 'VIP') return 'VIP';
+        if (name === 'Early Bird') return 'EARLY_BIRD';
+        return 'GENERAL';
+    };
+
+    const handleTierNameChange = (index: number, name: string) => {
+        setForm(prev => {
+            const newTiers = [...prev.tiers];
+            newTiers[index] = {
+                ...newTiers[index],
+                name,
+                type: mapTierNameToType(name),
+            };
+            return { ...prev, tiers: newTiers };
+        });
     };
 
     const handleAddDate = () => {
@@ -409,15 +429,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                             <select
                                                 required
                                                 value={tier.name}
-                                                onChange={e => {
-                                                    const val = e.target.value;
-                                                    handleTierChange(index, 'name', val);
-
-                                                    // Auto-map name to type
-                                                    if (val === 'VIP') handleTierChange(index, 'type', 'VIP');
-                                                    else if (val === 'Early Bird') handleTierChange(index, 'type', 'EARLY_BIRD');
-                                                    else handleTierChange(index, 'type', 'GENERAL');
-                                                }}
+                                                onChange={e => handleTierNameChange(index, e.target.value)}
                                                 style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
                                             >
                                                 <option value="">Select Type</option>
