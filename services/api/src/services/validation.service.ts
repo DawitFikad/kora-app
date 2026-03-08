@@ -36,7 +36,13 @@ export class ValidationService {
             const transactionResult = await prisma.$transaction(async (tx) => {
                 const ticket = await tx.ticket.findUnique({
                     where: { id: tid },
-                    include: { event: true, tier: true }
+                    include: {
+                        event: true,
+                        tier: true,
+                        user: {
+                            include: { profile: true }
+                        }
+                    }
                 });
 
                 const eid = ticket?.eventId || enforcedEid || 0;
@@ -79,7 +85,13 @@ export class ValidationService {
                         id: updatedTicket.id,
                         tier: ticket.tier.name,
                         seat: ticket.seatNumber,
-                        userName: ticket.userId ? "Attendee" : "Guest", // Fallback name
+                        userName:
+                            ticket.user?.profile?.fullName ||
+                            ticket.user?.phoneNumber ||
+                            ticket.user?.email ||
+                            "Guest",
+                        attendeePhone: ticket.user?.phoneNumber || null,
+                        attendeeEmail: ticket.user?.email || null,
                         eventTitle: ticket.event.title,
                         tierName: ticket.tier.name
                     }

@@ -60,6 +60,10 @@ class ScannerService {
     'SCANNER_QR_SECRET',
     defaultValue: '',
   );
+  static const bool _strictOnlineValidation = bool.fromEnvironment(
+    'SCANNER_STRICT_ONLINE',
+    defaultValue: false,
+  );
 
   ScannerService(this._dio, this._db);
 
@@ -68,6 +72,13 @@ class ScannerService {
     final isOffline = connectivityResult == ConnectivityResult.none;
 
     if (isOffline) {
+      if (_strictOnlineValidation) {
+        return ScannerResponse(
+          success: false,
+          message: 'No internet. Live database validation is required.',
+          offline: false,
+        );
+      }
       return _validateOffline(qrPayload);
     }
 
@@ -78,9 +89,11 @@ class ScannerService {
       );
       return ScannerResponse.fromJson(response.data);
     } on DioException catch (e) {
-      // If server is unreachable but internet is technically "on", try offline fallback
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
+      // If strict mode is off, allow local fallback when server is unreachable.
+      if (!_strictOnlineValidation &&
+          (e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout ||
+              e.type == DioExceptionType.connectionError)) {
         return _validateOffline(qrPayload);
       }
 

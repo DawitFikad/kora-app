@@ -3653,11 +3653,7 @@ Widget _engagementMiniRow({
 }) {
   return Row(
     children: [
-      const Icon(
-        Icons.favorite_rounded,
-        color: Color(0xFFF43F5E),
-        size: 13,
-      ),
+      const Icon(Icons.favorite_rounded, color: Color(0xFFF43F5E), size: 13),
       const SizedBox(width: 4),
       Text(
         '$likesCount',
@@ -3668,11 +3664,7 @@ Widget _engagementMiniRow({
         ),
       ),
       const SizedBox(width: 10),
-      const Icon(
-        Icons.star_rounded,
-        color: Color(0xFFFFB020),
-        size: 13,
-      ),
+      const Icon(Icons.star_rounded, color: Color(0xFFFFB020), size: 13),
       const SizedBox(width: 4),
       Text(
         '${averageRating.toStringAsFixed(1)} ($ratingsCount)',
