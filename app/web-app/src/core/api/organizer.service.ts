@@ -74,7 +74,8 @@ export const OrganizerService = {
     requestCancellation: (eventId: number, reason: string) => api.post(`/organizer/events/${eventId}/request-cancellation`, { reason }),
 
     // Validation
-    validateTicket: (qrPayload: string, gateId?: string) => api.post('/validate/scan', { qrPayload, gateId }),
+    validateTicket: (qrPayload: string, gateId?: string, deviceId?: string) =>
+        api.post('/validate/scan', { qrPayload, gateId, deviceId }),
     getSyncData: (eventId: number) => api.get(`/validate/sync/${eventId}`),
     syncLogs: (logs: any[]) => api.post('/validate/sync', { logs }),
 };

@@ -22,6 +22,10 @@ import { useToast } from '../../../core/components/Toast';
 import { useAuth } from '../../../core/context/AuthContext';
 
 export const ScannerView = () => {
+    const HISTORY_STORAGE_KEY = 'scanner_recent_scans';
+    const OFFLINE_QUEUE_KEY = 'offline_scans';
+    const DEVICE_ID_STORAGE_KEY = 'scanner_device_id';
+
     const toast = useToast();
     const { user } = useAuth();
     const isAdmin = user?.role === 'ADMIN';
@@ -40,6 +44,7 @@ export const ScannerView = () => {
     const [cameraError, setCameraError] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const readerRef = useRef<any>(null);
+    const lastScanRef = useRef<{ value: string; at: number } | null>(null);
 
     // Live attendance metrics
     const [attendanceStats, setAttendanceStats] = useState({
@@ -59,18 +64,55 @@ export const ScannerView = () => {
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Load offline queue and scanned tickets
-        const saved = localStorage.getItem('offline_scans');
-        const scanned = localStorage.getItem('scanned_tickets');
-        if (saved) setOfflineQueue(JSON.parse(saved));
-        if (scanned) setScannedTickets(new Set(JSON.parse(scanned)));
+        // Restore scanner state from previous sessions.
+        const savedQueue = localStorage.getItem(OFFLINE_QUEUE_KEY);
+        if (savedQueue) {
+            try {
+                setOfflineQueue(JSON.parse(savedQueue));
+            } catch {
+                localStorage.removeItem(OFFLINE_QUEUE_KEY);
+            }
+        }
 
-        const savedDeviceId = localStorage.getItem('scanner_device_id');
+        const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
+        if (savedHistory) {
+            try {
+                const parsedHistory = JSON.parse(savedHistory);
+                const restoredHistory = Array.isArray(parsedHistory) ? parsedHistory : [];
+                setHistory(restoredHistory);
+
+                if (restoredHistory.length > 0) {
+                    const restoredStats = restoredHistory.reduce(
+                        (acc: any, item: any) => {
+                            acc.totalScans += 1;
+                            if (item?.status === 'SUCCESS' || item?.status === 'PENDING_SYNC') acc.successfulScans += 1;
+                            else if (item?.status === 'DUPLICATE') acc.duplicateScans += 1;
+                            else acc.failedScans += 1;
+                            return acc;
+                        },
+                        { totalScans: 0, successfulScans: 0, failedScans: 0, duplicateScans: 0 }
+                    );
+                    setAttendanceStats(restoredStats);
+
+                    const scannedIds = restoredHistory
+                        .map((entry: any) => entry?.id)
+                        .filter((value: any) => typeof value === 'string' && value.trim().length > 0);
+
+                    if (scannedIds.length > 0) {
+                        setScannedTickets(new Set(scannedIds));
+                    }
+                }
+            } catch {
+                localStorage.removeItem(HISTORY_STORAGE_KEY);
+            }
+        }
+
+        const savedDeviceId = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
         if (savedDeviceId) {
             setDeviceId(savedDeviceId);
         } else {
             const newId = `SCAN-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-            localStorage.setItem('scanner_device_id', newId);
+            localStorage.setItem(DEVICE_ID_STORAGE_KEY, newId);
             setDeviceId(newId);
         }
 
@@ -78,7 +120,16 @@ export const ScannerView = () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, []);
+    }, [DEVICE_ID_STORAGE_KEY, HISTORY_STORAGE_KEY, OFFLINE_QUEUE_KEY]);
+
+    useEffect(() => {
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+    }, [history, HISTORY_STORAGE_KEY]);
+
+    useEffect(() => {
+        if (!deviceId) return;
+        localStorage.setItem(DEVICE_ID_STORAGE_KEY, deviceId);
+    }, [deviceId, DEVICE_ID_STORAGE_KEY]);
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -103,18 +154,91 @@ export const ScannerView = () => {
 
     const gateOptions = useMemo(() => ['Gate A', 'Gate B', 'Gate C', 'VIP Gate'], []);
 
-    const handleValidate = async (id: string = ticketId, isOverride: boolean = false) => {
-        if (!id) return;
+    const normalizeScanInput = (raw: string) => {
+        const trimmed = raw.trim();
+        if (!trimmed) return '';
 
-        // Check for duplicates
-        if (!isOverride && scannedTickets.has(id)) {
+        const safeDecode = (value: string) => {
+            try {
+                return decodeURIComponent(value);
+            } catch {
+                return value;
+            }
+        };
+
+        const unwrapKnownPrefixes = (value: string) =>
+            value
+                .replace(/^et-ticket\s*[:|]\s*/i, '')
+                .replace(/^ticket\s*[:|]\s*/i, '')
+                .trim();
+
+        const extractJwtLike = (value: string) => {
+            const match = value.match(/[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
+            return match ? match[0] : '';
+        };
+
+        const fromJson = (() => {
+            if (!(trimmed.startsWith('{') && trimmed.endsWith('}'))) return '';
+            try {
+                const parsed = JSON.parse(trimmed);
+                const candidate =
+                    parsed?.qrPayload ||
+                    parsed?.payload ||
+                    parsed?.ticket ||
+                    parsed?.ticketId ||
+                    parsed?.code;
+                return typeof candidate === 'string' ? candidate : '';
+            } catch {
+                return '';
+            }
+        })();
+
+        if (fromJson) {
+            const decoded = safeDecode(fromJson).trim();
+            const unwrapped = unwrapKnownPrefixes(decoded);
+            return extractJwtLike(unwrapped) || unwrapped;
+        }
+
+        // Support URL-style QR values such as ?qrPayload=... or ?ticket=...
+        if (/^https?:\/\//i.test(trimmed)) {
+            try {
+                const url = new URL(trimmed);
+                const fromQuery =
+                    url.searchParams.get('qrPayload') ||
+                    url.searchParams.get('payload') ||
+                    url.searchParams.get('ticket') ||
+                    url.searchParams.get('ticketId') ||
+                    url.searchParams.get('code');
+
+                const fromPath = url.pathname ? url.pathname.split('/').filter(Boolean).pop() : '';
+                const decoded = safeDecode((fromQuery || fromPath || trimmed).trim());
+                const unwrapped = unwrapKnownPrefixes(decoded);
+                return extractJwtLike(unwrapped) || unwrapped;
+            } catch {
+                const decoded = safeDecode(trimmed);
+                const unwrapped = unwrapKnownPrefixes(decoded);
+                return extractJwtLike(unwrapped) || unwrapped;
+            }
+        }
+
+        const decoded = safeDecode(trimmed);
+        const unwrapped = unwrapKnownPrefixes(decoded);
+        return extractJwtLike(unwrapped) || unwrapped;
+    };
+
+    const handleValidate = async (id: string = ticketId, isOverride: boolean = false) => {
+        const normalizedId = normalizeScanInput(id);
+        if (!normalizedId) return;
+
+        // Only use local duplicate checks for offline queueing; online truth comes from backend.
+        if (!isOnline && !isOverride && scannedTickets.has(normalizedId)) {
             setStatus('duplicate');
             setScanResult({
                 message: 'This ticket has already been scanned!',
-                ticketId: id,
+                ticketId: normalizedId,
                 isDuplicate: true
             });
-            setPendingOverride(id);
+            setPendingOverride(normalizedId);
             setAttendanceStats(prev => ({
                 ...prev,
                 totalScans: prev.totalScans + 1,
@@ -133,7 +257,7 @@ export const ScannerView = () => {
             }
             const scan = {
                 id: Date.now(),
-                ticketId: id,
+                ticketId: normalizedId,
                 eventId: Number(selectedEventId),
                 scannedAt: new Date().toISOString(),
                 gateId,
@@ -143,12 +267,12 @@ export const ScannerView = () => {
             };
             const newQueue = [...offlineQueue, scan];
             setOfflineQueue(newQueue);
-            localStorage.setItem('offline_scans', JSON.stringify(newQueue));
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(newQueue));
 
             setStatus('success');
             setScanResult({ name: 'Saved Offline', type: 'Caching Mode', message: 'Scan cached for sync' });
-            addToHistory({ id, timestamp: new Date().toISOString(), status: 'PENDING_SYNC', gateId });
-            addScannedTicket(id);
+            addToHistory({ id: normalizedId, timestamp: new Date().toISOString(), status: 'PENDING_SYNC', gateId });
+            addScannedTicket(normalizedId);
             setTicketId('');
             setAttendanceStats(prev => ({
                 ...prev,
@@ -159,18 +283,25 @@ export const ScannerView = () => {
         }
 
         try {
-            const result = await OrganizerService.validateTicket(id, gateId) as any;
+            const result = await OrganizerService.validateTicket(normalizedId, gateId, deviceId) as any;
             if (result && result.success) {
+                const ticketInfo = result.ticket || {};
                 setStatus('success');
                 setScanResult({
-                    name: result.ticket.userName || 'Attendee',
-                    type: result.ticket.tierName,
-                    event: result.ticket.eventTitle || 'Event',
+                    name: ticketInfo.userName || 'Attendee',
+                    type: ticketInfo.tierName,
+                    event: ticketInfo.eventTitle || 'Event',
+                    ticketId: ticketInfo.id || normalizedId,
+                    attendeePhone: ticketInfo.attendeePhone || null,
+                    attendeeEmail: ticketInfo.attendeeEmail || null,
+                    seat: ticketInfo.seat || null,
+                    purchaseEventCount: ticketInfo.purchaseEventCount || 0,
+                    purchaseEvents: Array.isArray(ticketInfo.purchaseEvents) ? ticketInfo.purchaseEvents : [],
                     isOverride,
                     gateId
                 });
-                addToHistory({ id, timestamp: new Date().toISOString(), status: 'SUCCESS', isOverride, gateId });
-                addScannedTicket(id);
+                addToHistory({ id: normalizedId, timestamp: new Date().toISOString(), status: 'SUCCESS', isOverride, gateId });
+                addScannedTicket(normalizedId);
                 setTicketId('');
                 setPendingOverride(null);
                 setAttendanceStats(prev => ({
@@ -189,10 +320,36 @@ export const ScannerView = () => {
             }
         } catch (error: any) {
             console.error("Validation failed", error);
-            setStatus('error');
             const msg = error.message || error.error || (typeof error === 'string' ? error : JSON.stringify(error)) || 'Validation error. Please try again.';
-            setScanResult({ message: msg });
-            addToHistory({ id, timestamp: new Date().toISOString(), status: 'ERROR', gateId });
+            const duplicate = /duplicate|already\s+scanned/i.test(msg);
+            const notFound = /no\s+entry\s+found|ticket\s+not\s+found/i.test(msg);
+
+            if (duplicate) {
+                setStatus('duplicate');
+                setPendingOverride(normalizedId);
+                setScanResult({
+                    message: msg,
+                    ticketId: normalizedId,
+                    isDuplicate: true
+                });
+                addToHistory({ id: normalizedId, timestamp: new Date().toISOString(), status: 'DUPLICATE', gateId });
+                setAttendanceStats(prev => ({
+                    ...prev,
+                    totalScans: prev.totalScans + 1,
+                    duplicateScans: prev.duplicateScans + 1
+                }));
+                return;
+            }
+
+            setStatus('error');
+            if (notFound) {
+                setScanResult({
+                    message: `${msg} If this ticket was issued from another environment, connect scanner API to the same backend.`
+                });
+            } else {
+                setScanResult({ message: msg });
+            }
+            addToHistory({ id: normalizedId, timestamp: new Date().toISOString(), status: 'ERROR', gateId });
             setAttendanceStats(prev => ({
                 ...prev,
                 totalScans: prev.totalScans + 1,
@@ -202,14 +359,15 @@ export const ScannerView = () => {
     };
 
     const addScannedTicket = (id: string) => {
-        const updated = new Set(scannedTickets);
-        updated.add(id);
-        setScannedTickets(updated);
-        localStorage.setItem('scanned_tickets', JSON.stringify(Array.from(updated)));
+        setScannedTickets(prev => {
+            const updated = new Set(prev);
+            updated.add(id);
+            return updated;
+        });
     };
 
     const addToHistory = (scan: any) => {
-        setHistory([scan, ...history].slice(0, 50)); // Keep last 50 scans
+        setHistory(prev => [scan, ...prev].slice(0, 50)); // Keep last 50 scans
     };
 
     const handleAdminOverride = () => {
@@ -235,7 +393,7 @@ export const ScannerView = () => {
             }));
             await OrganizerService.syncLogs(normalizedLogs);
             setOfflineQueue([]);
-            localStorage.removeItem('offline_scans');
+            localStorage.removeItem(OFFLINE_QUEUE_KEY);
             toast.success(`${offlineQueue.length} scans synchronized successfully!`);
         } catch (error) {
             console.error("Sync failed", error);
@@ -254,7 +412,13 @@ export const ScannerView = () => {
             setCameraOn(true);
             await reader.decodeFromVideoDevice(undefined, videoRef.current as HTMLVideoElement, (result, err) => {
                 if (result) {
-                    handleValidate(result.getText());
+                    const raw = result.getText();
+                    const now = Date.now();
+                    if (lastScanRef.current && lastScanRef.current.value === raw && now - lastScanRef.current.at < 1500) {
+                        return;
+                    }
+                    lastScanRef.current = { value: raw, at: now };
+                    handleValidate(raw);
                 }
                 if (err && err.name === 'NotFoundException') {
                     // ignore no QR found
@@ -517,6 +681,33 @@ export const ScannerView = () => {
                                         <p style={{ fontWeight: 800 }}>{scanResult?.type}</p>
                                     </div>
 
+                                    <div style={{ marginTop: '16px', width: '100%', maxWidth: '620px', textAlign: 'left', background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
+                                        <p style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px' }}>ATTENDEE DETAILS</p>
+                                        <p style={{ marginBottom: '6px' }}><strong>Phone:</strong> {scanResult?.attendeePhone || '-'}</p>
+                                        <p style={{ marginBottom: '6px' }}><strong>Email:</strong> {scanResult?.attendeeEmail || '-'}</p>
+                                        <p style={{ marginBottom: '6px' }}><strong>Current Event:</strong> {scanResult?.event || '-'}</p>
+                                        <p style={{ marginBottom: '6px' }}><strong>Ticket ID:</strong> <span style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{scanResult?.ticketId || '-'}</span></p>
+                                        <p style={{ marginBottom: '0' }}><strong>Seat:</strong> {scanResult?.seat || 'General / N-A'}</p>
+                                    </div>
+
+                                    <div style={{ marginTop: '12px', width: '100%', maxWidth: '620px', textAlign: 'left', background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
+                                        <p style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '8px' }}>
+                                            OTHER EVENTS (BOUGHT/PARTICIPATED): {scanResult?.purchaseEventCount || 0}
+                                        </p>
+                                        {Array.isArray(scanResult?.purchaseEvents) && scanResult.purchaseEvents.length > 0 ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '140px', overflowY: 'auto' }}>
+                                                {scanResult.purchaseEvents.slice(0, 6).map((evt: any, idx: number) => (
+                                                    <div key={`${evt.eventId}-${idx}`} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', fontSize: '0.85rem' }}>
+                                                        <span>{evt.eventTitle}</span>
+                                                        <span style={{ color: 'var(--text-muted)' }}>{evt.ticketStatus}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No other purchases found for this attendee.</p>
+                                        )}
+                                    </div>
+
                                     {scanResult?.isOverride && (
                                         <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '12px', border: '1px solid #F59E0B' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#F59E0B', fontSize: '0.85rem', fontWeight: 700 }}>
@@ -573,9 +764,23 @@ export const ScannerView = () => {
                                         <span style={{
                                             fontSize: '0.7rem',
                                             fontWeight: 800,
-                                            color: h.status === 'SUCCESS' ? '#10B981' : h.status === 'PENDING_SYNC' ? '#FBBF24' : '#EF4444',
+                                            color:
+                                                h.status === 'SUCCESS'
+                                                    ? '#10B981'
+                                                    : h.status === 'PENDING_SYNC'
+                                                        ? '#FBBF24'
+                                                        : h.status === 'DUPLICATE'
+                                                            ? '#F59E0B'
+                                                            : '#EF4444',
                                             padding: '4px 8px',
-                                            background: h.status === 'SUCCESS' ? 'rgba(16, 185, 129, 0.1)' : h.status === 'PENDING_SYNC' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                            background:
+                                                h.status === 'SUCCESS'
+                                                    ? 'rgba(16, 185, 129, 0.1)'
+                                                    : h.status === 'PENDING_SYNC'
+                                                        ? 'rgba(251, 191, 36, 0.1)'
+                                                        : h.status === 'DUPLICATE'
+                                                            ? 'rgba(245, 158, 11, 0.1)'
+                                                            : 'rgba(239, 68, 68, 0.1)',
                                             borderRadius: '6px'
                                         }}>
                                             {h.status}

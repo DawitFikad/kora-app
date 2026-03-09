@@ -121,12 +121,14 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
     const handleExport = () => {
         try {
             const rows = [
-                ['Attendee Name', 'Phone', 'Event', 'Ticket Type', 'Purchase Date', 'Status', 'VIP'],
+                ['Attendee Name', 'Phone', 'Event', 'Ticket Type', 'Ticket ID', 'ET Code', 'Purchase Date', 'Status', 'VIP'],
                 ...filteredAttendees.map(person => [
                     person.name || 'Guest',
                     person.phone || '',
                     person.event || '',
                     person.type || '',
+                    person.id || '',
+                    person.ticketCode || '',
                     person.dateObj ? person.dateObj.toLocaleDateString() : '',
                     person.status || '',
                     person.isVip ? 'Yes' : 'No'
@@ -267,6 +269,8 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
                                 <th>Phone</th>
                                 <th>Event</th>
                                 <th>Ticket Type</th>
+                                <th>Ticket ID</th>
+                                <th>ET Code</th>
                                 <th>Purchase Date</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -275,58 +279,60 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
                         <tbody>
                             {filteredAttendees.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No attendees found matching your search.</td>
+                                    <td colSpan={9} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No attendees found matching your search.</td>
                                 </tr>
                             ) : (
                                 pagedAttendees.map((person) => (
                                     <tr key={person.id}>
-                                    <td style={{ fontWeight: 800 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span>{person.name}</span>
-                                            {person.isVip && (
-                                                <span style={{ padding: '4px 8px', fontSize: '0.65rem', fontWeight: 800, borderRadius: '999px', background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.35)' }}>VIP</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td style={{ color: 'var(--text-muted)' }}>{person.phone || '—'}</td>
-                                    <td style={{ fontWeight: 600 }}>{person.event}</td>
-                                    <td style={{ color: 'var(--text-muted)' }}>{person.type}</td>
+                                        <td style={{ fontWeight: 800 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span>{person.name}</span>
+                                                {person.isVip && (
+                                                    <span style={{ padding: '4px 8px', fontSize: '0.65rem', fontWeight: 800, borderRadius: '999px', background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.35)' }}>VIP</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td style={{ color: 'var(--text-muted)' }}>{person.phone || '—'}</td>
+                                        <td style={{ fontWeight: 600 }}>{person.event}</td>
+                                        <td style={{ color: 'var(--text-muted)' }}>{person.type}</td>
+                                        <td style={{ color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '0.75rem' }}>{person.id || '—'}</td>
+                                        <td style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '0.8rem' }}>{person.ticketCode || '—'}</td>
                                         <td style={{ color: 'var(--text-muted)' }}>{person.dateObj ? person.dateObj.toLocaleDateString() : '—'}</td>
-                                    <td>
-                                        <span className={`pill ${person.status === 'Used' ? 'pill-green' : person.status === 'Refunded' ? 'pill-red' : 'pill-blue'}`}>{person.status}</span>
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            <button
-                                                className="attendee-action primary"
-                                                disabled={processing === person.id}
-                                                onClick={() => handleResend(person.id, 'SMS')}
-                                            >
-                                                <MessageSquare size={12} /> Resend SMS
-                                            </button>
-                                            <button
-                                                className="attendee-action primary"
-                                                disabled={processing === person.id}
-                                                onClick={() => handleResend(person.id, 'EMAIL')}
-                                            >
-                                                <Mail size={12} /> Resend Email
-                                            </button>
-                                            <button
-                                                className="attendee-action success"
-                                                disabled={processing === person.id || person.status === 'Used' || person.status === 'Refunded'}
-                                                onClick={() => handleCheckIn(person.id)}
-                                            >
-                                                <CheckCircle size={12} /> Manual Check-in
-                                            </button>
-                                            <button
-                                                className="attendee-action warn"
-                                                disabled={processing === person.id}
-                                                onClick={() => handleVipToggle(person.id, !person.isVip)}
-                                            >
-                                                <Star size={12} /> {person.isVip ? 'VIP' : 'Tag VIP'}
-                                            </button>
-                                        </div>
-                                    </td>
+                                        <td>
+                                            <span className={`pill ${person.status === 'Used' ? 'pill-green' : person.status === 'Refunded' ? 'pill-red' : 'pill-blue'}`}>{person.status}</span>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                <button
+                                                    className="attendee-action primary"
+                                                    disabled={processing === person.id}
+                                                    onClick={() => handleResend(person.id, 'SMS')}
+                                                >
+                                                    <MessageSquare size={12} /> Resend SMS
+                                                </button>
+                                                <button
+                                                    className="attendee-action primary"
+                                                    disabled={processing === person.id}
+                                                    onClick={() => handleResend(person.id, 'EMAIL')}
+                                                >
+                                                    <Mail size={12} /> Resend Email
+                                                </button>
+                                                <button
+                                                    className="attendee-action success"
+                                                    disabled={processing === person.id || person.status === 'Used' || person.status === 'Refunded'}
+                                                    onClick={() => handleCheckIn(person.id)}
+                                                >
+                                                    <CheckCircle size={12} /> Manual Check-in
+                                                </button>
+                                                <button
+                                                    className="attendee-action warn"
+                                                    disabled={processing === person.id}
+                                                    onClick={() => handleVipToggle(person.id, !person.isVip)}
+                                                >
+                                                    <Star size={12} /> {person.isVip ? 'VIP' : 'Tag VIP'}
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))
                             )}

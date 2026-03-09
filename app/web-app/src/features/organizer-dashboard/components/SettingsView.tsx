@@ -6,12 +6,13 @@ import { OrganizerService } from '../../../core/api/organizer.service';
 import { useToast } from '../../../core/components/Toast';
 import { ConfirmDialog } from '../../../core/components/ConfirmDialog';
 import { useAuth } from '../../../core/context/AuthContext';
+import { resolveMediaUrl } from '../../../core/utils/media';
 
 type TabType = 'General' | 'Payout Methods' | 'Team Access' | 'Notifications' | 'Security' | 'Billing';
 
 export const SettingsView = () => {
     const toast = useToast();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const [activeTab, setActiveTab] = useState<TabType>('General');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -53,6 +54,13 @@ export const SettingsView = () => {
     const [newPhoneNumber, setNewPhoneNumber] = useState('');
     const [phoneOtp, setPhoneOtp] = useState('');
     const [confirmState, setConfirmState] = useState<{ open: boolean; title: string; description?: string; variant?: 'default' | 'danger'; onConfirm?: () => void }>({ open: false, title: '' });
+
+    const profileAvatarUrl = resolveMediaUrl(user?.profile?.avatarUrl);
+    const organizerLogoUrl = resolveMediaUrl(profile?.logoUrl);
+    const settingsAvatarSrc =
+        profileAvatarUrl ||
+        organizerLogoUrl ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.organizationName || user?.phoneNumber || 'Organization')}&background=11141B&color=fff&size=128`;
 
     useEffect(() => {
         fetchAllData();
@@ -540,7 +548,7 @@ export const SettingsView = () => {
                                         </div>
                                     )}
                                     <img
-                                        src={profile?.logoUrl ? `http://localhost:4000${profile.logoUrl}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.organizationName || 'Organization')}&background=11141B&color=fff&size=128`}
+                                        src={settingsAvatarSrc}
                                         style={{ width: '100%', height: '100%', borderRadius: '20px', objectFit: 'cover' }}
                                         alt="Organization Logo"
                                     />

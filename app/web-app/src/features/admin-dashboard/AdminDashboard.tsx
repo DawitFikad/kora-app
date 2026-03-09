@@ -23,6 +23,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import AdminEventDetails from './components/AdminEventDetails';
+import { useAuth } from '../../core/context/AuthContext';
+import { resolveMediaUrl } from '../../core/utils/media';
 
 // --- Sub-Pages ---
 import { AdminOverview } from './components/AdminOverview';
@@ -48,6 +50,7 @@ export type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' |
 
 const AdminDashboard = () => {
     const { t, i18n } = useTranslation();
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<AdminTab>('Dashboard');
     const [pendingCount, setPendingCount] = useState(0);
     const [eventPendingCount, setEventPendingCount] = useState(0);
@@ -55,6 +58,10 @@ const AdminDashboard = () => {
     const [notifications, setNotifications] = useState<any[]>([]);
 
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+
+    const adminAvatarSrc =
+        resolveMediaUrl(user?.profile?.avatarUrl) ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.profile?.fullName || user?.email || 'Admin Portal')}&background=000&color=fff`;
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -155,7 +162,7 @@ const AdminDashboard = () => {
             <aside className="sidebar" style={{ width: '280px', background: 'var(--bg-sidebar)' }}>
                 <div className="logo-section" style={{ marginBottom: '40px' }}>
                     <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#E0E0E0' }}>
-                        <img src="https://ui-avatars.com/api/?name=Admin+Portal&background=000&color=fff" style={{ width: '100%' }} />
+                        <img src={adminAvatarSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <div>
                         <h2 style={{ fontSize: '1.1rem', fontWeight: 900 }}>{t('admin.brand', 'Admin Portal')}</h2>

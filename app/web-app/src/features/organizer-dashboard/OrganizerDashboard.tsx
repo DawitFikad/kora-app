@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../core/context/AuthContext';
 import { useTheme } from '../../core/context/ThemeContext';
 import { useLanguage } from '../../core/context/LanguageContext';
+import { resolveMediaUrl } from '../../core/utils/media';
 import {
     Calendar,
     Ticket,
@@ -218,6 +219,13 @@ const OrganizerDashboard = () => {
 
         return null;
     };
+
+    const profileAvatarUrl = resolveMediaUrl(user?.profile?.avatarUrl);
+    const organizerLogoUrl = resolveMediaUrl(organizerProfile?.logoUrl);
+    const dashboardAvatarSrc =
+        profileAvatarUrl ||
+        organizerLogoUrl ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(organizerProfile?.organizationName || user?.phoneNumber || 'Org')}&background=11141B&color=fff`;
 
     const handleNotificationClick = async (notification: any) => {
         if (!notification) return;
@@ -539,7 +547,7 @@ const OrganizerDashboard = () => {
                         >
                             <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '2px' }}>
                                 <img
-                                    src={organizerProfile?.logoUrl ? `http://localhost:4000${organizerProfile.logoUrl}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(organizerProfile?.organizationName || user?.phoneNumber || 'Org')}&background=11141B&color=fff`}
+                                    src={dashboardAvatarSrc}
                                     style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                                     alt="Avatar"
                                 />

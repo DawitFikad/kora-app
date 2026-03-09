@@ -14,6 +14,56 @@ export interface ValidationResult {
 export class ValidationService {
     private static QR_SECRET = process.env.JWT_SECRET || "et-ticket-qr-secret";
 
+    private static readonly TICKET_INCLUDE = {
+        event: true,
+        tier: true,
+        user: {
+            include: { profile: true }
+        }
+    };
+
+    private static async resolveTicketForValidation(tx: any, rawInput: string) {
+        const trimmed = rawInput.trim();
+        if (!trimmed) return null;
+
+        const byId = await tx.ticket.findUnique({
+            where: { id: trimmed },
+            include: this.TICKET_INCLUDE
+        });
+        if (byId) return byId;
+
+        const compact = trimmed.replace(/\s+/g, "").toUpperCase();
+        if (compact) {
+            const normalizedCode = compact.startsWith("ET-") ? compact : `ET-${compact}`;
+            const byCode = await tx.ticket.findUnique({
+                where: { code: normalizedCode },
+                include: this.TICKET_INCLUDE
+            });
+            if (byCode) return byCode;
+
+            // Also allow exact stored code without forcing ET- prefix.
+            const byRawCode = await tx.ticket.findUnique({
+                where: { code: compact },
+                include: this.TICKET_INCLUDE
+            });
+            if (byRawCode) return byRawCode;
+        }
+
+        // Fallback for UI displays that show the first 8 chars of UUID.
+        const shortLower = trimmed.toLowerCase();
+        if (/^[a-f0-9]{8}$/.test(shortLower)) {
+            const matches = await tx.ticket.findMany({
+                where: { id: { startsWith: shortLower } },
+                include: this.TICKET_INCLUDE,
+                take: 2,
+                orderBy: { createdAt: "desc" }
+            });
+            if (matches.length === 1) return matches[0];
+        }
+
+        return null;
+    }
+
     /**
      * Validates a QR payload in real-time (Online Mode).
      */
@@ -34,16 +84,8 @@ export class ValidationService {
 
             // 2. Atomic Transaction: Check -> Mark USED -> Log
             const transactionResult = await prisma.$transaction(async (tx) => {
-                const ticket = await tx.ticket.findUnique({
-                    where: { id: tid },
-                    include: {
-                        event: true,
-                        tier: true,
-                        user: {
-                            include: { profile: true }
-                        }
-                    }
-                });
+                const ticket = await this.resolveTicketForValidation(tx, tid);
+                const resolvedTicketId = ticket?.id || tid;
 
                 const eid = ticket?.eventId || enforcedEid || 0;
 
@@ -53,12 +95,12 @@ export class ValidationService {
                 }
 
                 if (enforcedEid && ticket.eventId !== enforcedEid) {
-                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Event mismatch");
+                    const log = await this.logScan(tx, resolvedTicketId, eid, gateId, deviceId, "ONLINE", "REJECTED", "Event mismatch");
                     return { result: { success: false, message: "Invalid Ticket: Does not belong to this event" }, log };
                 }
 
                 if (ticket.status === TicketStatus.USED) {
-                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", "Already scanned", true);
+                    const log = await this.logScan(tx, resolvedTicketId, eid, gateId, deviceId, "ONLINE", "REJECTED", "Already scanned", true);
                     return {
                         result: { success: false, message: "Duplicate Entry: This ticket was already scanned", fraudDetected: true },
                         log
@@ -66,17 +108,52 @@ export class ValidationService {
                 }
 
                 if (ticket.status !== TicketStatus.VALID) {
-                    const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "REJECTED", `Status: ${ticket.status}`);
+                    const log = await this.logScan(tx, resolvedTicketId, eid, gateId, deviceId, "ONLINE", "REJECTED", `Status: ${ticket.status}`);
                     return { result: { success: false, message: `Invalid Status: Ticket is currently ${ticket.status}` }, log };
                 }
 
                 // SUCCESS: Mark as used
                 const updatedTicket = await tx.ticket.update({
-                    where: { id: tid },
+                    where: { id: ticket.id },
                     data: { status: TicketStatus.USED }
                 });
 
-                const log = await this.logScan(tx, tid, eid, gateId, deviceId, "ONLINE", "SUCCESS");
+                const attendeeTickets = await tx.ticket.findMany({
+                    where: {
+                        userId: ticket.userId,
+                        status: { in: [TicketStatus.VALID, TicketStatus.USED] }
+                    },
+                    select: {
+                        eventId: true,
+                        status: true,
+                        createdAt: true,
+                        event: {
+                            select: {
+                                title: true,
+                                dateTime: true
+                            }
+                        }
+                    },
+                    orderBy: { createdAt: "desc" },
+                    take: 25
+                });
+
+                const seenEventIds = new Set<number>();
+                const purchaseEvents = attendeeTickets
+                    .filter((entry: any) => {
+                        if (seenEventIds.has(entry.eventId)) return false;
+                        seenEventIds.add(entry.eventId);
+                        return true;
+                    })
+                    .map((entry: any) => ({
+                        eventId: entry.eventId,
+                        eventTitle: entry.event?.title || "Event",
+                        dateTime: entry.event?.dateTime || null,
+                        ticketStatus: entry.status,
+                        purchasedAt: entry.createdAt
+                    }));
+
+                const log = await this.logScan(tx, updatedTicket.id, eid, gateId, deviceId, "ONLINE", "SUCCESS");
 
                 const result = {
                     success: true,
@@ -93,7 +170,9 @@ export class ValidationService {
                         attendeePhone: ticket.user?.phoneNumber || null,
                         attendeeEmail: ticket.user?.email || null,
                         eventTitle: ticket.event.title,
-                        tierName: ticket.tier.name
+                        tierName: ticket.tier.name,
+                        purchaseEventCount: purchaseEvents.length,
+                        purchaseEvents
                     }
                 };
 

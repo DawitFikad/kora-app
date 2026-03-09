@@ -239,6 +239,7 @@ export class OrganizerController {
                     },
                     select: {
                         id: true,
+                        code: true,
                         status: true,
                         isVip: true,
                         createdAt: true,
@@ -265,6 +266,7 @@ export class OrganizerController {
                         },
                         select: {
                             id: true,
+                            code: true,
                             status: true,
                             createdAt: true,
                             user: {
@@ -288,6 +290,7 @@ export class OrganizerController {
 
             const formattedAttendees = tickets.map(t => ({
                 id: t.id,
+                ticketCode: t.code || null,
                 name: t.user?.profile?.fullName || 'Guest',
                 phone: t.user?.phoneNumber,
                 email: t.user?.email,
