@@ -8,6 +8,7 @@ import '../../features/events/presentation/home_screen.dart';
 import '../../features/events/presentation/notification_screen.dart';
 import '../../features/events/presentation/seat_selection_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/onboarding/presentation/onboarding_login_screen.dart';
 import '../../features/scanner/presentation/scanner_screen.dart';
 import '../../features/scanner/presentation/staff_management_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -29,8 +30,12 @@ class AppRouter {
 
       final location = state.uri.toString();
       final isGoingToOnboarding = state.matchedLocation == '/onboarding';
+      final isGoingToOnboardingLogin =
+          state.matchedLocation == '/onboarding-login';
       final isGoingToLogin = state.matchedLocation == '/login';
-      final isGoingToPaymentCallback = state.matchedLocation.startsWith('/payment');
+      final isGoingToPaymentCallback = state.matchedLocation.startsWith(
+        '/payment',
+      );
 
       // Handle deep links with etticket:// scheme
       if (location.startsWith('etticket://')) {
@@ -47,16 +52,19 @@ class AppRouter {
       // If it's the first launch, force onboarding UNLESS they are already authenticated.
       // An authenticated user should never be stuck in onboarding.
       if (isFirstLaunch && !isAuthenticated) {
-        if (!isGoingToOnboarding) return '/onboarding';
+        if (!(isGoingToOnboarding || isGoingToOnboardingLogin)) {
+          return '/onboarding';
+        }
         return null;
       }
 
       if (!isAuthenticated) {
-        if (!isGoingToLogin) return '/login';
+        if (!(isGoingToLogin || isGoingToOnboardingLogin)) return '/login';
         return null;
       }
 
-      if (isAuthenticated && (isGoingToLogin || isGoingToOnboarding)) {
+      if (isAuthenticated &&
+          (isGoingToLogin || isGoingToOnboarding || isGoingToOnboardingLogin)) {
         return '/home';
       }
 
@@ -68,13 +76,11 @@ class AppRouter {
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        path: '/onboarding-login',
+        builder: (context, state) => const OnboardingLoginScreen(),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomeScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
@@ -167,9 +173,7 @@ class AppRouter {
 
           // Return a temporary loading screen
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         },
       ),
@@ -186,9 +190,16 @@ class AppRouter {
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
-                  const Text('Page not found', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Page not found',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
-                  Text('Location: ${state.uri}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
+                  Text(
+                    'Location: ${state.uri}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {

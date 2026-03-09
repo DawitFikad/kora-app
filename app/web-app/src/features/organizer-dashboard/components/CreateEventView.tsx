@@ -257,6 +257,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Category</label>
                                     <select
+                                        className="create-event-taxonomy-select"
                                         required
                                         value={form.categoryId}
                                         onChange={e => setForm({ ...form, categoryId: e.target.value, subCategoryId: '' })}
@@ -269,6 +270,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Sub-Category</label>
                                     <select
+                                        className="create-event-taxonomy-select"
                                         value={(form as any).subCategoryId || ''}
                                         onChange={e => setForm({ ...form, subCategoryId: e.target.value } as any)}
                                         disabled={!form.categoryId}

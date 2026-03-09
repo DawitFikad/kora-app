@@ -21,19 +21,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       'title': 'onboarding.slide1_title'.tr(),
       'highlight': 'onboarding.slide1_highlight'.tr(),
       'desc': 'onboarding.slide1_desc'.tr(),
-      'image': 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=1000',
+      'image':
+          'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=1000',
     },
     {
       'title': 'onboarding.slide2_title'.tr(),
       'highlight': 'onboarding.slide2_highlight'.tr(),
       'desc': 'onboarding.slide2_desc'.tr(),
-      'image': 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=1000',
+      'image':
+          'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=1000',
     },
     {
       'title': 'onboarding.slide3_title'.tr(),
       'highlight': 'onboarding.slide3_highlight'.tr(),
       'desc': 'onboarding.slide3_desc'.tr(),
-      'image': 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000',
+      'image':
+          'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000',
     },
   ];
 
@@ -82,7 +85,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Stack(
                 children: [
-                   // Branding (Centered)
+                  // Branding (Centered)
                   Align(
                     alignment: Alignment.topCenter,
                     child: Row(
@@ -94,7 +97,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             color: const Color(0xFF8B5CF6).withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.auto_awesome, color: Color(0xFF8B5CF6), size: 18),
+                          child: const Icon(
+                            Icons.auto_awesome,
+                            color: Color(0xFF8B5CF6),
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -122,7 +129,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
@@ -165,7 +175,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         height: 1.1,
                       ),
                       children: [
-                        TextSpan(text: '${_onboardingData[_currentPage]['title']} '),
+                        TextSpan(
+                          text: '${_onboardingData[_currentPage]['title']} ',
+                        ),
                         TextSpan(
                           text: _onboardingData[_currentPage]['highlight'],
                           style: const TextStyle(color: Color(0xFF8B5CF6)),
@@ -174,7 +186,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Subtitle
                   Text(
                     _onboardingData[_currentPage]['desc']!,
@@ -218,7 +230,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               curve: Curves.fastOutSlowIn,
                             );
                           } else {
-                            await ref.read(localStorageProvider).setFirstLaunchComplete();
+                            await ref
+                                .read(localStorageProvider)
+                                .setFirstLaunchComplete();
                             if (mounted) context.go('/login');
                           }
                         },
@@ -226,17 +240,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           backgroundColor: const Color(0xFF8B5CF6),
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 60),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 0,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              _currentPage == _onboardingData.length - 1 
-                                  ? 'onboarding.get_started'.tr() 
+                              _currentPage == _onboardingData.length - 1
+                                  ? 'onboarding.get_started'.tr()
                                   : 'onboarding.continue'.tr(),
-                              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             const Icon(Icons.arrow_forward, size: 20),
@@ -245,16 +264,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                       const SizedBox(height: 16),
                       OutlinedButton(
-                        onPressed: () => context.go('/login'),
+                        onPressed: () => context.push('/onboarding-login'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: const BorderSide(color: Colors.white10),
                           minimumSize: const Size(double.infinity, 60),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                         child: Text(
                           'onboarding.login'.tr(),
-                          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
