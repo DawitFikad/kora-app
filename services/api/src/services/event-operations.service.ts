@@ -4,7 +4,7 @@ import redis from "../utils/redis";
 import { AnalyticsService } from "./analytics.service";
 
 export class EventOperationsService {
-    private static CACHE_TTL = 60; // 1 minute cache for dashboard metrics
+    private static CACHE_TTL = 15; // Keep metrics fresh for organizer dashboard views
 
     /**
      * Gets a comprehensive operational snapshot for an organizer.

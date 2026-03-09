@@ -49,12 +49,28 @@ export class ProfileService {
     }) {
         const { email, birthDate, ...profileData } = data;
 
+        // Keep updates partial: only fields explicitly provided by the client are written.
+        const updateData: Record<string, any> = {
+            ...profileData,
+            birthDate: birthDate ? new Date(birthDate) : undefined,
+        };
+
+        Object.keys(updateData).forEach((key) => {
+            if (updateData[key] === undefined) {
+                delete updateData[key];
+            }
+        });
+
+        if (updateData.interests !== undefined && !Array.isArray(updateData.interests)) {
+            delete updateData.interests;
+        }
+
         // If email is provided, update the User model
         if (email) {
             try {
                 await prisma.user.update({
                     where: { id: userId },
-                    data: { email }
+                    data: { email: email.trim() }
                 });
             } catch (error: any) {
                 if (error.code === 'P2002') {
@@ -64,13 +80,36 @@ export class ProfileService {
             }
         }
 
-        await (prisma as any).userProfile.update({
-            where: { userId },
-            data: {
-                ...profileData,
-                birthDate: birthDate ? new Date(birthDate) : undefined,
-            },
-        });
+        // Upsert supports users who do not have a profile row yet.
+        // If Prisma client/runtime is older and rejects a field (e.g. `location`),
+        // remove only that field and retry so other provided fields still save.
+        const safeData = { ...updateData };
+        while (true) {
+            try {
+                await (prisma as any).userProfile.upsert({
+                    where: { userId },
+                    create: {
+                        userId,
+                        fullName: "",
+                        language: "en",
+                        ...safeData,
+                    },
+                    update: safeData,
+                });
+                break;
+            } catch (error: any) {
+                const message = String(error?.message || "");
+                const unknownArgMatch = message.match(/Unknown argument `([^`]+)`/);
+                const unknownField = unknownArgMatch?.[1];
+
+                if (unknownField && Object.prototype.hasOwnProperty.call(safeData, unknownField)) {
+                    delete safeData[unknownField];
+                    continue;
+                }
+
+                throw error;
+            }
+        }
 
         // Return the full profile structure
         return this.getUserProfile(userId);

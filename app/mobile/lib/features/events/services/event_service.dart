@@ -45,6 +45,36 @@ class EventService {
   final Dio _dio;
   EventService(this._dio);
 
+  List<dynamic> _extractListPayload(dynamic payload) {
+    if (payload is List) return payload;
+    if (payload is Map<String, dynamic>) {
+      final dynamic data =
+          payload['data'] ?? payload['events'] ?? payload['items'];
+      if (data is List) return data;
+    }
+    return const <dynamic>[];
+  }
+
+  int? _extractTotalPages(dynamic payload) {
+    if (payload is! Map<String, dynamic>) return null;
+
+    final dynamic pagination = payload['pagination'] ?? payload['meta'];
+    if (pagination is Map<String, dynamic>) {
+      final dynamic tp = pagination['totalPages'] ?? pagination['pages'];
+      if (tp is num) return tp.toInt();
+
+      final dynamic total = pagination['total'];
+      final dynamic limit = pagination['limit'] ?? pagination['pageSize'];
+      if (total is num && limit is num && limit.toInt() > 0) {
+        final int t = total.toInt();
+        final int l = limit.toInt();
+        return (t / l).ceil();
+      }
+    }
+
+    return null;
+  }
+
   Future<Event> getEventById(int id) async {
     try {
       final response = await _dio.get('${ApiConstants.events}/$id');
@@ -70,6 +100,8 @@ class EventService {
     if (cityId != null) queryParams['cityId'] = cityId;
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
     if (featured != null) queryParams['featured'] = featured;
+    // Safe default if backend supports pagination.
+    queryParams['limit'] = 100;
 
     try {
       final response = await _dio.get(
@@ -77,8 +109,31 @@ class EventService {
         queryParameters: queryParams,
       );
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        return data.map((json) => Event.fromJson(json)).toList();
+        final Map<int, Event> uniqueEvents = {};
+
+        final firstBatch = _extractListPayload(response.data);
+        for (final item in firstBatch) {
+          final event = Event.fromJson(item);
+          uniqueEvents[event.id] = event;
+        }
+
+        final int totalPages = _extractTotalPages(response.data) ?? 1;
+        if (totalPages > 1) {
+          for (int page = 2; page <= totalPages; page++) {
+            final nextRes = await _dio.get(
+              ApiConstants.events,
+              queryParameters: {...queryParams, 'page': page},
+            );
+
+            final nextBatch = _extractListPayload(nextRes.data);
+            for (final item in nextBatch) {
+              final event = Event.fromJson(item);
+              uniqueEvents[event.id] = event;
+            }
+          }
+        }
+
+        return uniqueEvents.values.toList();
       } else {
         throw Exception('Failed to load events');
       }

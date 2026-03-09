@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Filter, Calendar, Globe, Pencil, BarChart3, Loader2, Copy, Send, CheckCircle2, XCircle, Eye, EyeOff, Layers } from 'lucide-react';
+import { Plus, Filter, Calendar, Globe, Pencil, BarChart3, Loader2, Copy, Send, CheckCircle2, XCircle, Eye, EyeOff, Layers, Heart, Star } from 'lucide-react';
 import { useToast } from '../../../core/components/Toast';
 import { PageHeader } from './PageHeader';
 import { OrganizerService } from '../../../core/api/organizer.service';
@@ -13,6 +13,28 @@ export const MyEventsView = ({ searchQuery = '', onNavigate, onEditEvent, onView
     const [activeFilter, setActiveFilter] = useState('All Events');
     const [confirmState, setConfirmState] = useState<{ open: boolean; title: string; description?: string; variant?: 'default' | 'danger'; onConfirm?: () => void }>({ open: false, title: '' });
 
+    const normalizeEventsPayload = (payload: any): any[] => {
+        if (Array.isArray(payload)) return payload;
+        if (Array.isArray(payload?.data)) return payload.data;
+        return [];
+    };
+
+    const getLatestEventDate = (event: any): Date => {
+        const baseDate = new Date(event?.dateTime);
+        const additionalDates = Array.isArray(event?.additionalDates) ? event.additionalDates : [];
+        const validDates = [baseDate, ...additionalDates.map((d: string) => new Date(d))].filter(
+            (d) => !Number.isNaN(d.getTime()),
+        );
+
+        if (validDates.length === 0) return new Date(0);
+
+        return validDates.reduce((max, d) => (d > max ? d : max), validDates[0]);
+    };
+
+    const isEventEnded = (event: any): boolean => {
+        return getLatestEventDate(event).getTime() < Date.now();
+    };
+
     const handleDuplicate = async (eventId: number) => {
         setConfirmState({
             open: true,
@@ -23,7 +45,7 @@ export const MyEventsView = ({ searchQuery = '', onNavigate, onEditEvent, onView
                     await OrganizerService.duplicateEvent(eventId);
                     toast.success('Event duplicated (Draft created)');
                     const response = await OrganizerService.getMyEvents();
-                    setEvents(response.data);
+                    setEvents(normalizeEventsPayload(response.data));
                 } catch (error: any) {
                     toast.error(error?.message || 'Failed to duplicate event');
                 } finally {
@@ -43,7 +65,7 @@ export const MyEventsView = ({ searchQuery = '', onNavigate, onEditEvent, onView
                     await OrganizerService.updateEvent(eventId, { status: 'PENDING' });
                     toast.success('Event submitted for approval');
                     const response = await OrganizerService.getMyEvents();
-                    setEvents(response.data);
+                    setEvents(normalizeEventsPayload(response.data));
                 } catch (error: any) {
                     toast.error(error?.message || 'Failed to submit event');
                 } finally {
@@ -62,7 +84,7 @@ export const MyEventsView = ({ searchQuery = '', onNavigate, onEditEvent, onView
                 try {
                     await OrganizerService.updateEvent(eventId, { isPublic: !isPublic });
                     const response = await OrganizerService.getMyEvents();
-                    setEvents(response.data);
+                    setEvents(normalizeEventsPayload(response.data));
                     toast.success(!isPublic ? 'Event is now public' : 'Event is now private');
                 } catch (error: any) {
                     toast.error(error?.message || 'Failed to update visibility');
@@ -73,28 +95,45 @@ export const MyEventsView = ({ searchQuery = '', onNavigate, onEditEvent, onView
         });
     };
 
+    const fetchEvents = useCallback(async (showLoader = false) => {
+        if (showLoader) setLoading(true);
+        try {
+            const response = await OrganizerService.getMyEvents();
+            setEvents(normalizeEventsPayload(response.data));
+        } catch (error) {
+            console.error("Failed to fetch events", error);
+        } finally {
+            if (showLoader) setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
-        const fetchEvents = async () => {
-            try {
-                const response = await OrganizerService.getMyEvents();
-                setEvents(response.data);
-            } catch (error) {
-                console.error("Failed to fetch events", error);
-            } finally {
-                setLoading(false);
+        fetchEvents(true);
+
+        const intervalId = setInterval(() => fetchEvents(false), 15000);
+        const refreshOnActive = () => {
+            if (document.visibilityState === 'visible') {
+                fetchEvents(false);
             }
         };
 
-        fetchEvents();
-    }, []);
+        window.addEventListener('focus', refreshOnActive);
+        document.addEventListener('visibilitychange', refreshOnActive);
+
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener('focus', refreshOnActive);
+            document.removeEventListener('visibilitychange', refreshOnActive);
+        };
+    }, [fetchEvents]);
 
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
     const filteredEvents = events.filter(event => {
         if (activeFilter === 'All Events') return true;
         if (activeFilter === 'Published') return event.status === 'PUBLISHED' || event.status === 'APPROVED';
-        if (activeFilter === 'Drafts') return event.status === 'DRAFT' || event.status === 'PENDING';
-        if (activeFilter === 'Past Events') return new Date(event.dateTime) < new Date();
+        if (activeFilter === 'Drafts') return ['DRAFT', 'PENDING', 'REJECTED'].includes(event.status);
+        if (activeFilter === 'Past Events') return isEventEnded(event);
         return true;
     }).filter(event => {
         if (!normalizedQuery) return true;
@@ -164,9 +203,7 @@ export const MyEventsView = ({ searchQuery = '', onNavigate, onEditEvent, onView
                         : 0;
                     const totalCapacity = event.tiers?.reduce((sum: number, t: any) => sum + (t.capacity || 0), 0) || 0;
                     const soldCount = event._count?.tickets || 0;
-                    const eventDates = [new Date(event.dateTime), ...(event.additionalDates || []).map((d: string) => new Date(d))];
-                    const latestDate = eventDates.reduce((max: Date, d: Date) => d > max ? d : max, eventDates[0]);
-                    const isEnded = latestDate && latestDate.getTime() < Date.now();
+                    const isEnded = isEventEnded(event);
                     const isSoldOut = totalCapacity > 0 && soldCount >= totalCapacity && !isEnded;
                     const baseStatus = event.status === 'APPROVED' ? 'Published'
                         : (event.status === 'DRAFT' || event.status === 'PENDING' || event.status === 'REJECTED') ? 'Draft'
@@ -230,6 +267,15 @@ export const MyEventsView = ({ searchQuery = '', onNavigate, onEditEvent, onView
                                     <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                                         <span style={{ color: 'var(--text-muted)' }}>Ticket Sales: </span>
                                         <span style={{ color: salesPercent > 80 ? '#10B981' : '#FBBF24' }}>{salesPercent.toFixed(0)}%</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                            <Heart size={14} color="#EF4444" /> {Number(event.likesCount || 0).toLocaleString()}
+                                        </span>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                            <Star size={14} color="#FBBF24" fill="#FBBF24" />
+                                            {Number(event.averageRating || 0).toFixed(1)} ({Number(event.ratingsCount || 0).toLocaleString()})
+                                        </span>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         {event.status === 'DRAFT' && (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MoreHorizontal, Ticket, Building2, Megaphone, Loader2, DollarSign, CalendarDays, ArrowRight, Clock } from 'lucide-react';
 import { PageHeader } from './PageHeader';
@@ -13,27 +13,44 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
     const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchStats = useCallback(async (showLoader = false) => {
+        if (showLoader) setLoading(true);
+        try {
+            const [overviewResponse, financialsResponse] = await Promise.all([
+                OrganizerService.getOverview(),
+                OrganizerService.getFinancials().catch(() => ({ data: { salesTrend: [] } }))
+            ]);
+            const data = overviewResponse.data;
+            setOverview(data);
+            setVelocity(data.salesVelocity || []);
+            setUpcomingEvents(data.upcomingEvents || []);
+            setSalesTrend(financialsResponse.data?.salesTrend || []);
+        } catch (error) {
+            console.error('Failed to fetch dashboard stats', error);
+        } finally {
+            if (showLoader) setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const [overviewResponse, financialsResponse] = await Promise.all([
-                    OrganizerService.getOverview(),
-                    OrganizerService.getFinancials().catch(() => ({ data: { salesTrend: [] } }))
-                ]);
-                const data = overviewResponse.data;
-                setOverview(data);
-                setVelocity(data.salesVelocity || []);
-                setUpcomingEvents(data.upcomingEvents || []);
-                setSalesTrend(financialsResponse.data?.salesTrend || []);
-            } catch (error) {
-                console.error("Failed to fetch dashboard stats", error);
-            } finally {
-                setLoading(false);
+        fetchStats(true);
+
+        const intervalId = setInterval(() => fetchStats(false), 15000);
+        const refreshOnActive = () => {
+            if (document.visibilityState === 'visible') {
+                fetchStats(false);
             }
         };
 
-        fetchStats();
-    }, []);
+        window.addEventListener('focus', refreshOnActive);
+        document.addEventListener('visibilitychange', refreshOnActive);
+
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener('focus', refreshOnActive);
+            document.removeEventListener('visibilitychange', refreshOnActive);
+        };
+    }, [fetchStats]);
 
     const handleQuickAction = (action: string) => {
         switch (action) {
@@ -63,7 +80,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
         const days = Math.floor(totalMinutes / (60 * 24));
         const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
 
-        let label = "";
+        let label = '';
         if (days > 0) {
             label = `${days}d ${hours}h`;
         } else if (hours > 0) {
@@ -86,6 +103,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <PageHeader title={t('org.dashboard.welcome', 'Welcome back')} subtitle={t('org.dashboard.subtitle', 'Here is what’s happening with your events today.')} />
+
             <div className="stats-grid">
                 {(
                     overview ? [
@@ -138,8 +156,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                         ))}
                     </div>
                 </div>
-
-
 
                 <div className="stat-card" style={{ padding: '32px', height: 'fit-content', maxHeight: '560px', display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '28px' }}>{t('org.dashboard.upcomingEvents', 'Upcoming Events (7 Days)')}</h3>
@@ -199,6 +215,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                 </div>
             </div>
 
-        </motion.div >
+        </motion.div>
     );
 };

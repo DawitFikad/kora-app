@@ -73,7 +73,9 @@ export class OrganizerController {
                         featured: true,
                         feeType: true,
                         _count: {
-                            select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
+                            select: {
+                                tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } }
+                            }
                         },
                         tiers: {
                             select: { capacity: true }
@@ -94,13 +96,89 @@ export class OrganizerController {
                         featured: true,
                         feeType: true,
                         _count: {
-                            select: { tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } } }
+                            select: {
+                                tickets: { where: { status: { in: ["SOLD", "USED", "VALID"] } } }
+                            }
                         },
                         tiers: {
                             select: { capacity: true }
                         }
                     }
                 } as any);
+            }
+
+            const eventIds = (events as any[]).map(e => e.id).filter(Boolean);
+            let likesByEventId = new Map<number, number>();
+            let ratingsByEventId = new Map<number, { avg: number; count: number }>();
+            if (eventIds.length > 0) {
+                try {
+                    const prismaAny = prisma as any;
+                    const hasDelegates = !!prismaAny.eventLike && !!prismaAny.eventRating;
+
+                    if (hasDelegates) {
+                        const [likeCounts, ratingAgg] = await Promise.all([
+                            prismaAny.eventLike.groupBy({
+                                by: ['eventId'],
+                                where: { eventId: { in: eventIds } },
+                                _count: { eventId: true }
+                            }),
+                            prismaAny.eventRating.groupBy({
+                                by: ['eventId'],
+                                where: { eventId: { in: eventIds } },
+                                _avg: { rating: true },
+                                _count: { rating: true }
+                            })
+                        ]);
+
+                        likesByEventId = new Map<number, number>(
+                            (likeCounts as any[]).map((row: any) => [row.eventId, Number(row?._count?.eventId || 0)])
+                        );
+                        ratingsByEventId = new Map<number, { avg: number; count: number }>(
+                            (ratingAgg as any[]).map((row: any) => [
+                                row.eventId,
+                                {
+                                    avg: row?._avg?.rating ? Number(row._avg.rating) : 0,
+                                    count: Number(row?._count?.rating || 0)
+                                }
+                            ])
+                        );
+                    } else {
+                        const idsCsv = eventIds.map((id: number) => Number(id)).filter(Number.isFinite).join(',');
+                        if (idsCsv) {
+                            const tableRows = await prisma.$queryRawUnsafe<Array<{ likeTable: string | null; ratingTable: string | null }>>(
+                                "SELECT to_regclass('public.\"EventLike\"') AS \"likeTable\", to_regclass('public.\"EventRating\"') AS \"ratingTable\""
+                            );
+                            const tables = tableRows[0] || { likeTable: null, ratingTable: null };
+
+                            if (tables.likeTable) {
+                                const likeRows = await prisma.$queryRawUnsafe<Array<{ eventId: number; count: number }>>(
+                                    `SELECT \"eventId\", COUNT(*)::int AS count FROM \"EventLike\" WHERE \"eventId\" IN (${idsCsv}) GROUP BY \"eventId\"`
+                                );
+                                likesByEventId = new Map<number, number>(
+                                    likeRows.map((row) => [Number(row.eventId), Number(row.count || 0)])
+                                );
+                            }
+
+                            if (tables.ratingTable) {
+                                const ratingRows = await prisma.$queryRawUnsafe<Array<{ eventId: number; averageRating: number | string | null; ratingsCount: number }>>(
+                                    `SELECT \"eventId\", COALESCE(AVG(\"rating\"), 0) AS \"averageRating\", COUNT(*)::int AS \"ratingsCount\" FROM \"EventRating\" WHERE \"eventId\" IN (${idsCsv}) GROUP BY \"eventId\"`
+                                );
+                                ratingsByEventId = new Map<number, { avg: number; count: number }>(
+                                    ratingRows.map((row) => [
+                                        Number(row.eventId),
+                                        {
+                                            avg: Number(row.averageRating ?? 0) || 0,
+                                            count: Number(row.ratingsCount || 0)
+                                        }
+                                    ])
+                                );
+                            }
+                        }
+                    }
+                } catch {
+                    likesByEventId = new Map<number, number>();
+                    ratingsByEventId = new Map<number, { avg: number; count: number }>();
+                }
             }
 
             // Check Logs for persistent status (Pending or Rejected)
@@ -127,7 +205,15 @@ export class OrganizerController {
             const formattedEvents = (events as any[]).map(event => ({
                 ...event,
                 totalCapacity: (event.tiers || []).reduce((sum: number, tier: any) => sum + tier.capacity, 0),
-                featureStatus: event.featured ? 'APPROVED' : (eventStatusMap.get(event.id) || 'NONE')
+                featureStatus: event.featured ? 'APPROVED' : (eventStatusMap.get(event.id) || 'NONE'),
+                likesCount: Number(likesByEventId.get(event.id) || 0),
+                ratingsCount: Number(ratingsByEventId.get(event.id)?.count || 0),
+                averageRating: (() => {
+                    const agg = ratingsByEventId.get(event.id);
+                    if (agg && agg.count > 0) return Number(agg.avg.toFixed(2));
+                    const fallback = Number(event?.rating ?? 0);
+                    return Number.isFinite(fallback) ? fallback : 0;
+                })()
             }));
 
             res.json({ success: true, data: formattedEvents });
@@ -746,24 +832,24 @@ export class OrganizerController {
 
             let promos: any[] = [];
             try {
-                    promos = await prisma.promoCode.findMany({
-                        where: {
-                            event: { organizerId }
-                        },
-                        orderBy: { createdAt: 'desc' },
-                        select: {
-                            id: true,
-                            code: true,
-                            discount: true,
-                            type: true,
-                            expiresAt: true,
-                            maxUses: true,
-                            usedCount: true,
-                            isActive: true,
-                            eventId: true,
-                            createdAt: true
-                        }
-                    });
+                promos = await prisma.promoCode.findMany({
+                    where: {
+                        event: { organizerId }
+                    },
+                    orderBy: { createdAt: 'desc' },
+                    select: {
+                        id: true,
+                        code: true,
+                        discount: true,
+                        type: true,
+                        expiresAt: true,
+                        maxUses: true,
+                        usedCount: true,
+                        isActive: true,
+                        eventId: true,
+                        createdAt: true
+                    }
+                });
             } catch (error: any) {
                 const msg = (error?.message || '').toLowerCase();
                 if (msg.includes('column') && msg.includes('does not exist')) {
@@ -1816,21 +1902,22 @@ export class OrganizerController {
                 const eventInfo = r.purchase.tickets[0]?.event;
 
                 return {
-                id: r.id,
-                status: r.status,
-                amount: refundAmount,
-                reason: r.reason,
-                description: r.description,
-                customerName: r.purchase.user.profile?.fullName || r.purchase.user.phoneNumber,
-                eventTitle: eventInfo?.title || 'Unknown Event',
-                eventDate: eventInfo?.dateTime || null,
-                refundPolicy: eventInfo?.refundPolicy || 'No refunds within 24 hours of event.',
-                ticketCount: r.purchase.tickets.length,
-                purchaseTotal,
-                refundType,
-                createdAt: r.createdAt,
-                updatedAt: r.updatedAt
-            }});
+                    id: r.id,
+                    status: r.status,
+                    amount: refundAmount,
+                    reason: r.reason,
+                    description: r.description,
+                    customerName: r.purchase.user.profile?.fullName || r.purchase.user.phoneNumber,
+                    eventTitle: eventInfo?.title || 'Unknown Event',
+                    eventDate: eventInfo?.dateTime || null,
+                    refundPolicy: eventInfo?.refundPolicy || 'No refunds within 24 hours of event.',
+                    ticketCount: r.purchase.tickets.length,
+                    purchaseTotal,
+                    refundType,
+                    createdAt: r.createdAt,
+                    updatedAt: r.updatedAt
+                }
+            });
 
             res.json({ success: true, data: formattedRefunds });
         } catch (error: any) {

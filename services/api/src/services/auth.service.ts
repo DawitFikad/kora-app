@@ -81,7 +81,7 @@ export class AuthService {
         const cleanPhone = this.normalizeEthiopianPhone(phoneNumber);
         const cleanOtp = String(otp).trim();
         console.log(`[AuthService] Verifying OTP for: ${cleanPhone}, Input OTP: ${cleanOtp}`);
-        const adminNumbers = ["910639875", "922222222"];
+        const adminNumbers = ["910639875"];
 
         const isValid = await OtpService.verifyOtp(cleanPhone, cleanOtp);
         if (!isValid) {

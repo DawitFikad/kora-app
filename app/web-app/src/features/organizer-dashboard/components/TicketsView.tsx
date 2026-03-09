@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Ticket, Loader2 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
@@ -14,20 +14,37 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
     const [page, setPage] = useState(1);
     const pageSize = 6;
 
+    const fetchStats = useCallback(async (showLoader = false) => {
+        if (showLoader) setLoading(true);
+        try {
+            const response = await OrganizerService.getTicketStats();
+            setStats(response.data);
+        } catch (error) {
+            console.error("Failed to fetch ticket stats", error);
+        } finally {
+            if (showLoader) setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await OrganizerService.getTicketStats();
-                setStats(response.data);
-            } catch (error) {
-                console.error("Failed to fetch ticket stats", error);
-            } finally {
-                setLoading(false);
+        fetchStats(true);
+
+        const intervalId = setInterval(() => fetchStats(false), 15000);
+        const refreshOnActive = () => {
+            if (document.visibilityState === 'visible') {
+                fetchStats(false);
             }
         };
 
-        fetchStats();
-    }, []);
+        window.addEventListener('focus', refreshOnActive);
+        document.addEventListener('visibilitychange', refreshOnActive);
+
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener('focus', refreshOnActive);
+            document.removeEventListener('visibilitychange', refreshOnActive);
+        };
+    }, [fetchStats]);
 
     const inventoryPercent = stats?.totalCapacity > 0
         ? (stats.totalSold / stats.totalCapacity) * 100

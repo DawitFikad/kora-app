@@ -36,13 +36,10 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [city] = useState('');
-    const [payoutDetails, setPayoutDetails] = useState('');
     const [organizerType, setOrganizerType] = useState<'company' | 'individual' | ''>('');
-    const [shortDescription, setShortDescription] = useState('');
     const [categories, setCategories] = useState('');
     const [operatingCities, setOperatingCities] = useState('');
     const [businessLicense, setBusinessLicense] = useState<File | null>(null);
-    const [eventPoster, setEventPoster] = useState<File | null>(null);
 
     const normalizeEthiopianPhone = (input: string) => {
         const trimmed = input.trim();
@@ -165,8 +162,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         phoneNumber,
                         email,
                         name,
-                        city,
-                        payoutDetails
+                        city
                     });
 
                     const regRes: any = await AuthService.registerOrganizer({
@@ -174,13 +170,11 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         email,
                         name,
                         city: operatingCities || city,
-                        payoutDetails,
+                        payoutDetails: 'TO_BE_UPDATED',
                         organizerType,
-                        shortDescription,
                         categories,
                         operatingCities,
-                        businessLicense,
-                        eventPoster
+                        businessLicense
                     });
 
                     console.log('Registration successful:', regRes);
@@ -256,7 +250,7 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                         {step === 'otp' && <ShieldCheck size={32} color="var(--primary)" />}
                     </div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
-                        {step === 'phone' && (mode === 'register' ? t('auth.applyTitle') : t('auth.welcomeTitle'))} [v3.12.8-FINAL]
+                        {step === 'phone' && (mode === 'register' ? t('auth.applyTitle') : t('auth.welcomeTitle'))}
                         {step === 'otp' && t('auth.verifyTitle')}
                     </h2>
                     <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '0.98rem' }}>
@@ -325,21 +319,6 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                             </select>
                                         </div>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.shortDesc')}</label>
-                                            <textarea
-                                                rows={2}
-                                                placeholder={t('auth.shortDescPlaceholder', 'Tell us what kind of events you run')}
-                                                value={shortDescription}
-                                                onChange={(e) => setShortDescription(e.target.value)}
-                                                required
-                                                style={{
-                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                                    padding: '12px', borderRadius: '14px', color: 'var(--text-main)', resize: 'none',
-                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
-                                                }}
-                                            />
-                                        </div>
-                                        <div>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.categories')}</label>
                                             <div style={{ position: 'relative' }}>
                                                 <Tag size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
@@ -394,38 +373,11 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                                             </div>
                                         </div>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>{t('auth.payout')}</label>
-                                            <input
-                                                type="text"
-                                                placeholder={t('auth.payoutPlaceholder')}
-                                                value={payoutDetails}
-                                                onChange={(e) => setPayoutDetails(e.target.value)}
-                                                required
-                                                style={{
-                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                                                    padding: '12px', borderRadius: '14px', color: 'var(--text-main)',
-                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
-                                                }}
-                                            />
-                                        </div>
-                                        <div>
                                             <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('auth.businessLicense')}</label>
                                             <input
                                                 type="file"
                                                 accept=".pdf,image/*"
                                                 onChange={(e) => setBusinessLicense(e.target.files?.[0] || null)}
-                                                style={{
-                                                    width: '100%', background: 'var(--bg-subtle)', border: '1px dashed var(--border)',
-                                                    padding: '10px', borderRadius: '12px', color: 'var(--text-muted)'
-                                                }}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('auth.poster')}</label>
-                                            <input
-                                                type="file"
-                                                accept="image/*,.pdf"
-                                                onChange={(e) => setEventPoster(e.target.files?.[0] || null)}
                                                 style={{
                                                     width: '100%', background: 'var(--bg-subtle)', border: '1px dashed var(--border)',
                                                     padding: '10px', borderRadius: '12px', color: 'var(--text-muted)'
