@@ -252,7 +252,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       if (mounted) {
         String errorMessage = ErrorMessageHandler.getReadableError(e);
 
-        if (errorMessage.contains('Maximum 5 tickets per user for this tier')) {
+        final isTicketLimitError =
+            errorMessage.contains('Maximum 5 tickets per user for this tier') ||
+            errorMessage.toLowerCase().contains('only buy up to 5 tickets');
+
+        if (isTicketLimitError) {
           errorMessage =
               'You can only buy up to 5 tickets for this ticket type. Reduce quantity and try again.';
         }
@@ -298,7 +302,136 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           // For now, just show the raw message which is helpful for debugging.
         }
 
-        // Show improved error dialog with retry option
+        if (isTicketLimitError) {
+          showDialog(
+            context: context,
+            builder: (ctx) => Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 24,
+              ),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B1728),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.35),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(
+                          Icons.info_outline,
+                          color: Color(0xFFF59E0B),
+                          size: 24,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Ticket Limit Reached',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Sorry, you can only buy up to 5 tickets for this ticket type.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Please reduce your quantity to 5 or fewer, then try again.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: Colors.white.withOpacity(0.25),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'OK',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              if (mounted) {
+                                Navigator.pop(context, 'adjust_quantity');
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Adjust Quantity',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          return;
+        }
+
+        final normalizedError = errorMessage.toLowerCase();
+        String friendlyPaymentMessage;
+        if (normalizedError.contains('network') ||
+            normalizedError.contains('timeout') ||
+            normalizedError.contains('socket') ||
+            normalizedError.contains('connection')) {
+          friendlyPaymentMessage =
+              'We could not connect to the payment service. Please check your internet and try again.';
+        } else if (normalizedError.contains('invalid') ||
+            normalizedError.contains('not allowed')) {
+          friendlyPaymentMessage =
+              'This payment request could not be completed. Please review your details and try again.';
+        } else {
+          friendlyPaymentMessage =
+              'Sorry, we could not complete your payment right now. Please try again in a moment.';
+        }
+
+        // User-focused dialog for non-limit errors
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -311,7 +444,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 28),
                 SizedBox(width: 12),
                 Text(
-                  "Payment Failed",
+                  "Couldn't Complete Payment",
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ],
@@ -321,38 +454,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  errorMessage,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  friendlyPaymentMessage,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "What to do next:",
-                        style: TextStyle(
-                          color: Color(0xFF8B5CF6),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        "• Check your internet connection\n• Verify payment details\n• Try again or contact support",
-                        style: TextStyle(
-                          color: Colors.white60,
-                          fontSize: 12,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 10),
+                const Text(
+                  'No charge is made until payment is confirmed.',
+                  style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
               ],
             ),
@@ -360,7 +472,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text(
-                  "Cancel",
+                  "Close",
                   style: TextStyle(color: Colors.white54),
                 ),
               ),

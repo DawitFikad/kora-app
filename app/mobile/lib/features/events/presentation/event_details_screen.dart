@@ -361,7 +361,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
     if (!mounted) return;
 
-    Navigator.push(
+    final checkoutResult = await Navigator.push<String>(
       context,
       MaterialPageRoute(
         builder: (context) => CheckoutScreen(
@@ -374,6 +374,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         ),
       ),
     );
+
+    if (!mounted) return;
+    if (checkoutResult == 'adjust_quantity') {
+      await _openTicketSelection(event, event.tiers);
+    }
   }
 
   Future<void> _openTicketSelection(Event event, List<TicketTier> tiers) async {
