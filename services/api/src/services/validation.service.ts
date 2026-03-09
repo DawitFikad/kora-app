@@ -13,6 +13,9 @@ export interface ValidationResult {
 
 export class ValidationService {
     private static QR_SECRET = process.env.JWT_SECRET || "et-ticket-qr-secret";
+    private static ALLOW_UNVERIFIED_QR_LOOKUP = ["1", "true", "yes"].includes(
+        String(process.env.ALLOW_UNVERIFIED_QR_LOOKUP || "").toLowerCase()
+    );
 
     private static readonly TICKET_INCLUDE = {
         event: true,
@@ -25,6 +28,15 @@ export class ValidationService {
     private static async resolveTicketForValidation(tx: any, rawInput: string) {
         const trimmed = rawInput.trim();
         if (!trimmed) return null;
+
+        // Test-mode fallback: allow exact raw QR payload lookup (useful for external scanners in mixed envs).
+        if (this.ALLOW_UNVERIFIED_QR_LOOKUP) {
+            const byPayload = await tx.ticket.findUnique({
+                where: { qrPayload: trimmed },
+                include: this.TICKET_INCLUDE
+            });
+            if (byPayload) return byPayload;
+        }
 
         const byId = await tx.ticket.findUnique({
             where: { id: trimmed },
@@ -71,15 +83,30 @@ export class ValidationService {
         try {
             let tid: string;
             let enforcedEid: number | undefined;
+            const rawInput = qrPayload.trim();
 
             try {
                 // 1. Verify Signature
-                const payload = jwt.verify(qrPayload, this.QR_SECRET) as any;
+                const payload = jwt.verify(rawInput, this.QR_SECRET) as any;
                 tid = payload.tid;
                 enforcedEid = payload.eid;
             } catch {
-                // Manual Entry (Raw ID)
-                tid = qrPayload.trim(); // Trim whitespace
+                // Manual entry fallback. In test mode, also decode unsigned JWT payload for tid/code extraction.
+                tid = rawInput;
+                if (this.ALLOW_UNVERIFIED_QR_LOOKUP) {
+                    const decoded = jwt.decode(rawInput) as any;
+                    if (decoded && typeof decoded === "object") {
+                        if (typeof decoded.tid === "string" && decoded.tid.trim()) {
+                            tid = decoded.tid.trim();
+                        } else if (typeof decoded.code === "string" && decoded.code.trim()) {
+                            tid = decoded.code.trim();
+                        }
+
+                        if (typeof decoded.eid === "number") {
+                            enforcedEid = decoded.eid;
+                        }
+                    }
+                }
             }
 
             // 2. Atomic Transaction: Check -> Mark USED -> Log

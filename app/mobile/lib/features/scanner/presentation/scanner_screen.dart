@@ -207,10 +207,38 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             ),
             if (result.success && result.ticket != null) ...[
               const SizedBox(height: 24),
-              _buildInfoRow('Attendee', result.ticket!['userName'] ?? 'Guest'),
-              _buildInfoRow('Type', result.ticket!['tierName'] ?? 'N/A'),
-              if (result.ticket!['seat'] != null)
-                _buildInfoRow('Seat', result.ticket!['seat']),
+              _buildInfoRow(
+                'Attendee',
+                _ticketValue(result.ticket, 'userName', fallback: 'Guest'),
+              ),
+              _buildInfoRow(
+                'Phone',
+                _ticketValue(result.ticket, 'attendeePhone'),
+              ),
+              _buildInfoRow(
+                'Email',
+                _ticketValue(result.ticket, 'attendeeEmail'),
+              ),
+              _buildInfoRow('Event', _ticketValue(result.ticket, 'eventTitle')),
+              _buildInfoRow(
+                'Type',
+                _ticketValue(result.ticket, 'tierName', fallback: 'N/A'),
+              ),
+              _buildInfoRow('Ticket ID', _ticketValue(result.ticket, 'id')),
+              _buildInfoRow(
+                'Seat',
+                _ticketValue(result.ticket, 'seat', fallback: 'General / N-A'),
+              ),
+              _buildInfoRow(
+                'Events Joined',
+                _ticketValue(
+                  result.ticket,
+                  'purchaseEventCount',
+                  fallback: '0',
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildPurchaseHistory(result.ticket),
             ],
             const SizedBox(height: 32),
             SizedBox(
@@ -268,6 +296,88 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
               fontSize: 14,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  String _ticketValue(
+    Map<String, dynamic>? ticket,
+    String key, {
+    String fallback = '-',
+  }) {
+    if (ticket == null) return fallback;
+    final value = ticket[key];
+    if (value == null) return fallback;
+    final text = value.toString().trim();
+    return text.isEmpty ? fallback : text;
+  }
+
+  Widget _buildPurchaseHistory(Map<String, dynamic>? ticket) {
+    final events = ticket?['purchaseEvents'];
+    if (events is! List || events.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+        ),
+        child: const Text(
+          'No additional event history found.',
+          style: TextStyle(color: Colors.white60, fontSize: 12),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Recent Events',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...events.take(5).map((entry) {
+            final row = entry is Map ? entry : const <String, dynamic>{};
+            final title = (row['eventTitle'] ?? 'Event').toString();
+            final status = (row['ticketStatus'] ?? '').toString();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (status.isNotEmpty)
+                    Text(
+                      status,
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );

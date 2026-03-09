@@ -17,7 +17,6 @@ export interface Ticket {
         name: string;
     };
 }
-
 export const ticketService = {
     getMyTickets: async (): Promise<Ticket[]> => {
         const response: any = await api.get('/ticketing/me');
