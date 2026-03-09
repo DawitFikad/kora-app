@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 import '../services/scanner_service.dart';
 
 class ScannerScreen extends ConsumerStatefulWidget {
@@ -22,7 +23,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   int _sessionScanCount = 0;
   ScannerResponse? _lastResult;
 
-  MobileScannerController controller = MobileScannerController(
+  final MobileScannerController controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
     torchEnabled: false,
@@ -36,6 +37,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
 
   Future<void> _checkConnectivity() async {
     final result = await Connectivity().checkConnectivity();
+    if (!mounted) return;
     setState(() {
       _isOnline = result != ConnectivityResult.none;
     });
@@ -43,7 +45,6 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
 
   bool _isDuplicateOrFraud(ScannerResponse result) {
     if (result.fraudDetected) return true;
-
     final normalized = result.message.toLowerCase();
     return normalized.contains('duplicate') ||
         normalized.contains('fraud') ||
@@ -51,96 +52,110 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         normalized.contains('invalid qr signature');
   }
 
+  Future<void> _vibratePulse({
+    required int duration,
+    int amplitude = 200,
+  }) async {
+    try {
+      final hasVibrator = await Vibration.hasVibrator();
+      if (!hasVibrator) return;
+      final hasAmplitudeControl = await Vibration.hasAmplitudeControl();
+      await Vibration.vibrate(
+        duration: duration,
+        amplitude: hasAmplitudeControl ? amplitude : -1,
+      );
+    } catch (_) {
+      // Ignore plugin errors and keep default haptics below.
+    }
+  }
+
   Future<void> _triggerScanFeedbackForResult(ScannerResponse result) async {
     if (result.success) {
-      // Success: strong hit followed by light confirmation tap.
-      await HapticFeedback.heavyImpact();
+      await _vibratePulse(duration: 130, amplitude: 255);
       await Future.delayed(const Duration(milliseconds: 70));
+      await _vibratePulse(duration: 90, amplitude: 220);
+      await HapticFeedback.vibrate();
+      await Future.delayed(const Duration(milliseconds: 50));
+      await HapticFeedback.heavyImpact();
+      await Future.delayed(const Duration(milliseconds: 60));
       await HapticFeedback.selectionClick();
+      await SystemSound.play(SystemSoundType.click);
       return;
     }
 
     if (_isDuplicateOrFraud(result)) {
-      // Fraud/duplicate: warning pulse pattern.
+      await _vibratePulse(duration: 180, amplitude: 255);
+      await Future.delayed(const Duration(milliseconds: 80));
+      await _vibratePulse(duration: 180, amplitude: 255);
       await HapticFeedback.vibrate();
-      await Future.delayed(const Duration(milliseconds: 90));
+      await Future.delayed(const Duration(milliseconds: 80));
       await HapticFeedback.heavyImpact();
-      await Future.delayed(const Duration(milliseconds: 90));
+      await Future.delayed(const Duration(milliseconds: 80));
       await HapticFeedback.heavyImpact();
+      await SystemSound.play(SystemSoundType.alert);
       return;
     }
 
-    // Other failures: single medium impact.
+    await _vibratePulse(duration: 140, amplitude: 235);
+    await HapticFeedback.vibrate();
     await HapticFeedback.mediumImpact();
+    await SystemSound.play(SystemSoundType.alert);
   }
 
   void _onDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
-
-    final List<Barcode> barcodes = capture.barcodes;
+    final barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
+    final code = barcodes.first.rawValue;
+    if (code == null || code.trim().isEmpty) return;
 
-    final String? code = barcodes.first.rawValue;
-    if (code == null) return;
-
-    setState(() {
-      _isProcessing = true;
-    });
+    setState(() => _isProcessing = true);
 
     if (!_isBulkMode) {
-      // Pause camera while processing to prevent duplicate scans
       await controller.stop();
     }
 
     try {
       final scannerService = ref.read(scannerServiceProvider);
       final result = await scannerService.validateTicket(code);
-
       if (!mounted) return;
 
+      await _triggerScanFeedbackForResult(result);
+
       if (_isBulkMode) {
-        // Show temporary result and increment counter
-        await _triggerScanFeedbackForResult(result);
         setState(() {
           _lastResult = result;
           if (result.success) _sessionScanCount++;
           _isProcessing = false;
         });
 
-        // Vibrate or Beep would be good here effectively via result flash
-        // Auto-clear last result after 2 seconds
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted && _lastResult == result) {
             setState(() => _lastResult = null);
           }
         });
       } else {
-        await _triggerScanFeedbackForResult(result);
         _showResultSheet(result);
       }
     } catch (e) {
       if (!mounted) return;
+      final errorResult = ScannerResponse(
+        success: false,
+        message: 'System Error',
+      );
+      await _triggerScanFeedbackForResult(errorResult);
+
       if (_isBulkMode) {
-        final errorResult = ScannerResponse(
-          success: false,
-          message: 'System Error',
-        );
-        await _triggerScanFeedbackForResult(errorResult);
         setState(() {
           _lastResult = errorResult;
           _isProcessing = false;
         });
       } else {
-        await _triggerScanFeedbackForResult(
-          ScannerResponse(success: false, message: 'System Error'),
-        );
         _showErrorSheet('An unexpected error occurred: $e');
       }
     } finally {
       if (mounted && !_isBulkMode) {
-        setState(() {
-          _isProcessing = false;
-        });
+        setState(() => _isProcessing = false);
       }
     }
   }
@@ -150,125 +165,153 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       context: context,
       isDismissible: false,
       enableDrag: false,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: const Color(0xFF15131C),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: Border.all(
-            color: result.success
-                ? const Color(0xFF10B981).withOpacity(0.3)
-                : const Color(0xFFEF4444).withOpacity(0.3),
-            width: 1,
+      builder: (context) => SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF15131C),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            border: Border.all(
+              color: result.success
+                  ? const Color(0xFF10B981).withOpacity(0.3)
+                  : const Color(0xFFEF4444).withOpacity(0.3),
+              width: 1,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color:
-                    (result.success
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.82,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color:
+                          (result.success
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFFEF4444))
+                              .withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      result.success
+                          ? Icons.check_circle_outline
+                          : Icons.error_outline,
+                      size: 48,
+                      color: result.success
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    result.success ? 'ACCESS GRANTED' : 'ACCESS DENIED',
+                    style: GoogleFonts.outfit(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: result.success
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    result.message,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  if (result.success && result.ticket != null) ...[
+                    const SizedBox(height: 20),
+                    _buildInfoRow(
+                      'Attendee',
+                      _ticketValue(
+                        result.ticket,
+                        'userName',
+                        fallback: 'Guest',
+                      ),
+                    ),
+                    _buildInfoRow(
+                      'Phone',
+                      _ticketValue(result.ticket, 'attendeePhone'),
+                    ),
+                    _buildInfoRow(
+                      'Email',
+                      _ticketValue(result.ticket, 'attendeeEmail'),
+                    ),
+                    _buildInfoRow(
+                      'Event',
+                      _ticketValue(result.ticket, 'eventTitle'),
+                    ),
+                    _buildInfoRow(
+                      'Type',
+                      _ticketValue(result.ticket, 'tierName', fallback: 'N/A'),
+                    ),
+                    _buildInfoRow(
+                      'Ticket ID',
+                      _ticketValue(result.ticket, 'id'),
+                    ),
+                    _buildInfoRow(
+                      'Seat',
+                      _ticketValue(
+                        result.ticket,
+                        'seat',
+                        fallback: 'General / N-A',
+                      ),
+                    ),
+                    _buildInfoRow(
+                      'Events Joined',
+                      _ticketValue(
+                        result.ticket,
+                        'purchaseEventCount',
+                        fallback: '0',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPurchaseHistory(result.ticket),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        controller.start();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: result.success
                             ? const Color(0xFF10B981)
-                            : const Color(0xFFEF4444))
-                        .withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                result.success
-                    ? Icons.check_circle_outline
-                    : Icons.error_outline,
-                size: 48,
-                color: result.success
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFFEF4444),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              result.success ? 'ACCESS GRANTED' : 'ACCESS DENIED',
-              style: GoogleFonts.outfit(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: result.success
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFFEF4444),
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              result.message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
-            ),
-            if (result.success && result.ticket != null) ...[
-              const SizedBox(height: 24),
-              _buildInfoRow(
-                'Attendee',
-                _ticketValue(result.ticket, 'userName', fallback: 'Guest'),
-              ),
-              _buildInfoRow(
-                'Phone',
-                _ticketValue(result.ticket, 'attendeePhone'),
-              ),
-              _buildInfoRow(
-                'Email',
-                _ticketValue(result.ticket, 'attendeeEmail'),
-              ),
-              _buildInfoRow('Event', _ticketValue(result.ticket, 'eventTitle')),
-              _buildInfoRow(
-                'Type',
-                _ticketValue(result.ticket, 'tierName', fallback: 'N/A'),
-              ),
-              _buildInfoRow('Ticket ID', _ticketValue(result.ticket, 'id')),
-              _buildInfoRow(
-                'Seat',
-                _ticketValue(result.ticket, 'seat', fallback: 'General / N-A'),
-              ),
-              _buildInfoRow(
-                'Events Joined',
-                _ticketValue(
-                  result.ticket,
-                  'purchaseEventCount',
-                  fallback: '0',
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildPurchaseHistory(result.ticket),
-            ],
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  controller.start();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: result.success
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFEF4444),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                            : const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'NEXT ATTENDEE',
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
                   ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'NEXT ATTENDEE',
-                  style: GoogleFonts.outfit(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -282,18 +325,27 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white38, fontSize: 14),
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white38, fontSize: 14),
+            ),
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
             ),
           ),
         ],
@@ -390,14 +442,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       body: Stack(
         children: [
           MobileScanner(controller: controller, onDetect: _onDetect),
-
-          // Overlay
           _buildScannerOverlay(),
-
-          // Bulk Mode Feedback Overlay
           if (_isBulkMode && _lastResult != null) _buildBulkFeedbackOverlay(),
-
-          // Session Stats
           if (_isBulkMode)
             Positioned(
               bottom: 40,
@@ -405,8 +451,6 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
               right: 20,
               child: _buildSessionStats(),
             ),
-
-          // Header
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
             left: 20,
@@ -419,8 +463,6 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                   icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                   style: IconButton.styleFrom(backgroundColor: Colors.black26),
                 ),
-
-                // Bulk Mode Toggle
                 GestureDetector(
                   onTap: () => setState(() => _isBulkMode = !_isBulkMode),
                   child: Container(
@@ -458,28 +500,20 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                     ),
                   ),
                 ),
-
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        setState(() => _isTorchOn = !_isTorchOn);
-                        controller.toggleTorch();
-                      },
-                      icon: Icon(
-                        _isTorchOn ? Icons.flash_on : Icons.flash_off,
-                        color: _isTorchOn ? Colors.yellow : Colors.white,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.black26,
-                      ),
-                    ),
-                  ],
+                IconButton(
+                  onPressed: () {
+                    setState(() => _isTorchOn = !_isTorchOn);
+                    controller.toggleTorch();
+                  },
+                  icon: Icon(
+                    _isTorchOn ? Icons.flash_on : Icons.flash_off,
+                    color: _isTorchOn ? Colors.yellow : Colors.white,
+                  ),
+                  style: IconButton.styleFrom(backgroundColor: Colors.black26),
                 ),
               ],
             ),
           ),
-
           if (_isProcessing && !_isBulkMode)
             Container(
               color: Colors.black54,
@@ -639,8 +673,6 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                 _buildCorner(0, 1),
                 _buildCorner(1, 0),
                 _buildCorner(1, 1),
-
-                // Animated Scanning Line
                 const ScanningLine(),
               ],
             ),
@@ -718,8 +750,8 @@ class ScanningLine extends StatefulWidget {
 
 class _ScanningLineState extends State<ScanningLine>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
 
   @override
   void initState() {
@@ -728,7 +760,6 @@ class _ScanningLineState extends State<ScanningLine>
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat(reverse: true);
-
     _animation = Tween<double>(begin: 40, end: 240).animate(_controller);
   }
 

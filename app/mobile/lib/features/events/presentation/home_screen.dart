@@ -1319,7 +1319,7 @@ class _MovieSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: 240,
+          height: 305,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
@@ -1350,7 +1350,7 @@ class _MovieCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/event/${movie.id}'),
       child: SizedBox(
-        width: 140,
+        width: 188,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1582,7 +1582,7 @@ class _BestEventsWeekSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 170,
+          height: 228,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
@@ -1623,8 +1623,8 @@ class _BestEventsWeekCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/event/${event.id}'),
       child: Container(
-        width: 280,
-        padding: const EdgeInsets.all(12),
+        width: 336,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(14),
@@ -1634,18 +1634,22 @@ class _BestEventsWeekCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: AppImage(
-                imageUrl: event.coverImage,
-                width: 80,
-                height: 130,
-                fit: BoxFit.cover,
-                placeholder: 'https://picsum.photos/300/400',
+            Expanded(
+              flex: 65,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: AppImage(
+                  imageUrl: event.coverImage,
+                  width: double.infinity,
+                  height: 164,
+                  fit: BoxFit.cover,
+                  placeholder: 'https://picsum.photos/300/400',
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 14),
             Expanded(
+              flex: 35,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1824,19 +1828,24 @@ class _TrendingNowCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(14),
-              ),
-              child: AppImage(
-                imageUrl: event.coverImage,
-                width: 110,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: 'https://picsum.photos/400/500',
+            Expanded(
+              flex: 65,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(14),
+                ),
+                child: AppImage(
+                  imageUrl: event.coverImage,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: 'https://picsum.photos/400/500',
+                ),
               ),
             ),
+            const SizedBox(width: 12),
             Expanded(
+              flex: 35,
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Column(
@@ -2041,18 +2050,22 @@ class _PersonalizedPickCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: AppImage(
-                imageUrl: event.coverImage,
-                width: 88,
-                height: 136,
-                fit: BoxFit.cover,
-                placeholder: 'https://picsum.photos/320/480',
+            Expanded(
+              flex: 65,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: AppImage(
+                  imageUrl: event.coverImage,
+                  width: double.infinity,
+                  height: 136,
+                  fit: BoxFit.cover,
+                  placeholder: 'https://picsum.photos/320/480',
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
+              flex: 35,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -2652,19 +2665,24 @@ class _CitySpotlightCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(14),
-              ),
-              child: AppImage(
-                imageUrl: event.coverImage,
-                width: 106,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: 'https://picsum.photos/360/500',
+            Expanded(
+              flex: 65,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(14),
+                ),
+                child: AppImage(
+                  imageUrl: event.coverImage,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: 'https://picsum.photos/360/500',
+                ),
               ),
             ),
+            const SizedBox(width: 12),
             Expanded(
+              flex: 35,
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Column(
@@ -2852,19 +2870,24 @@ class _LastMinuteEventCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(14),
-              ),
-              child: AppImage(
-                imageUrl: event.coverImage,
-                width: 104,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: 'https://picsum.photos/360/500',
+            Expanded(
+              flex: 65,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(14),
+                ),
+                child: AppImage(
+                  imageUrl: event.coverImage,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: 'https://picsum.photos/360/500',
+                ),
               ),
             ),
+            const SizedBox(width: 12),
             Expanded(
+              flex: 35,
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Column(
@@ -3019,18 +3042,22 @@ class _OfferDealCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: AppImage(
-                imageUrl: event.coverImage,
-                width: 92,
-                height: 158,
-                fit: BoxFit.cover,
-                placeholder: 'https://picsum.photos/360/520',
+            Expanded(
+              flex: 65,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: AppImage(
+                  imageUrl: event.coverImage,
+                  width: double.infinity,
+                  height: 158,
+                  fit: BoxFit.cover,
+                  placeholder: 'https://picsum.photos/360/520',
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
+              flex: 35,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -3225,18 +3252,22 @@ class _UpcomingExperienceCard extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: AppImage(
-                imageUrl: event.coverImage,
-                width: 92,
-                height: 164,
-                fit: BoxFit.cover,
-                placeholder: 'https://picsum.photos/360/520',
+            Expanded(
+              flex: 65,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: AppImage(
+                  imageUrl: event.coverImage,
+                  width: double.infinity,
+                  height: 164,
+                  fit: BoxFit.cover,
+                  placeholder: 'https://picsum.photos/360/520',
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
+              flex: 35,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
