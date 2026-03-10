@@ -9,15 +9,17 @@ export class AuthController {
                 return res.status(400).json({ error: "Phone number is required" });
             }
 
-            // 🔹 CONTROLLER-LEVEL BYPASS for Admin
-            // Guaranteed to work even if Service/Redis crashes
-            if (phoneNumber.includes("910639875")) {
-                console.log("[AuthController] Admin Bypass triggered");
+            // Optional controller-level bypass for emergency local testing only.
+            const allowBypassFlag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
+            const allowBypass = allowBypassFlag === "1" || allowBypassFlag === "true" || allowBypassFlag === "yes";
+            if (allowBypass && phoneNumber.includes("910639875")) {
+                console.log("[AuthController] Admin bypass triggered by ALLOW_TEST_OTP_BYPASS");
+                const otp = (process.env.MASTER_OTP_CODE || "123456").trim();
                 const explicit = (process.env.EXPOSE_OTP_IN_DOCKER || process.env.EXPOSE_OTP_IN_LOGS || "").toLowerCase();
                 const shouldExpose = explicit === "1" || explicit === "true" || explicit === "yes" || process.env.NODE_ENV !== "production";
                 if (shouldExpose) {
-                    console.log(`[OTP TEST] PHONE: ${phoneNumber} | CODE: 123456 (master test OTP)`);
-                    return res.json({ message: "OTP sent successfully", otp: "123456" });
+                    console.log(`[OTP TEST] PHONE: ${phoneNumber} | CODE: ${otp} (master test OTP)`);
+                    return res.json({ message: "OTP sent successfully", otp });
                 }
                 return res.json({ message: "OTP sent successfully" });
             }

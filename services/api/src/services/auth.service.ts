@@ -51,6 +51,11 @@ export class AuthService {
         return [normalized, withZero, local];
     }
 
+    private static allowTestNumberBypass() {
+        const flag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
+        return flag === "1" || flag === "true" || flag === "yes";
+    }
+
     static async requestOtp(phoneNumber: string) {
         const cleanPhone = this.normalizeEthiopianPhone(phoneNumber);
         console.log(`[AuthService] Requesting OTP for: ${cleanPhone}`);
@@ -58,11 +63,12 @@ export class AuthService {
         // 🔹 BYPASS EVERYTHING for Admin & Test Numbers (No Redis, No SMS)
         // This avoids the connection error since Vercel doesn't have local Redis
         const testNumbers = ["910639875", "911111111", "922222222"];
-        if (testNumbers.some(num => cleanPhone.includes(num))) {
+        if (this.allowTestNumberBypass() && testNumbers.some(num => cleanPhone.includes(num))) {
+            const bypassOtp = (process.env.MASTER_OTP_CODE || "123456").trim();
             console.log(`[AuthService] Test/Admin number detected (${cleanPhone}). Skipping OTP generation/Redis.`);
             if (this.shouldExposeOtpForTesting()) {
-                console.log(`[OTP TEST] PHONE: ${cleanPhone} | CODE: 123456 (master test OTP)`);
-                return { message: "OTP sent successfully", otp: "123456" };
+                console.log(`[OTP TEST] PHONE: ${cleanPhone} | CODE: ${bypassOtp} (master test OTP)`);
+                return { message: "OTP sent successfully", otp: bypassOtp };
             }
             return { message: "OTP sent successfully" };
         }

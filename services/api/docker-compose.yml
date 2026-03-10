@@ -23,7 +23,9 @@ services:
     working_dir: /usr/src/app
     environment:
       NODE_ENV: development
-      EXPOSE_OTP_IN_DOCKER: "true"
+      EXPOSE_OTP_IN_DOCKER: "${EXPOSE_OTP_IN_DOCKER:-false}"
+      ALLOW_MASTER_OTP: "${ALLOW_MASTER_OTP:-false}"
+      ALLOW_TEST_OTP_BYPASS: "${ALLOW_TEST_OTP_BYPASS:-false}"
       PORT: "4001"
       DATABASE_URL: "postgresql://postgres:2123@db:5432/Et-ticket-db?schema=public"
       DIRECT_URL: "postgresql://postgres:2123@db:5432/Et-ticket-db?schema=public"

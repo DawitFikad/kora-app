@@ -4,6 +4,11 @@ import axios from "axios";
 export class SmsService {
     private static twilioClient: Twilio | null = null;
 
+    private static allowTestNumberBypass() {
+        const flag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
+        return flag === "1" || flag === "true" || flag === "yes";
+    }
+
     private static shouldExposeOtpForTesting() {
         const explicit = (process.env.EXPOSE_OTP_IN_DOCKER || process.env.EXPOSE_OTP_IN_LOGS || "").toLowerCase();
         if (explicit === "1" || explicit === "true" || explicit === "yes") return true;
@@ -36,8 +41,8 @@ export class SmsService {
     }
 
     static async sendSms(phoneNumber: string, message: string) {
-        // 🔹 BYPASS SMS for Admin/Test Number (0910639875 / +251910639875)
-        if (phoneNumber.includes("910639875")) {
+        // Optional bypass for specific test numbers (disabled by default).
+        if (this.allowTestNumberBypass() && phoneNumber.includes("910639875")) {
             console.log(`[SMS BYPASS] Admin login detected for ${phoneNumber}. Skipping real SMS.`);
             return;
         }

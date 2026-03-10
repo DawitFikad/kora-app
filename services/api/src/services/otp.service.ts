@@ -5,6 +5,16 @@ import bcrypt from "bcryptjs";
 const OTP_TTL = 300; // 5 minutes
 
 export class OtpService {
+    private static isMasterOtpEnabled(): boolean {
+        const flag = (process.env.ALLOW_MASTER_OTP || "").toLowerCase();
+        return flag === "1" || flag === "true" || flag === "yes";
+    }
+
+    private static getMasterOtpCode(): string {
+        const configured = (process.env.MASTER_OTP_CODE || "").trim();
+        return configured || "123456";
+    }
+
     static async generateOtp(phoneNumber: string): Promise<string> {
         // Generate a 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -22,8 +32,8 @@ export class OtpService {
     }
 
     static async verifyOtp(phoneNumber: string, otp: string): Promise<boolean> {
-        // 🔹 MASTER OTP for Admin/Testing
-        if (otp === "123456") {
+        // Optional master OTP for emergency/testing only (disabled by default).
+        if (this.isMasterOtpEnabled() && otp === this.getMasterOtpCode()) {
             console.log(`[OtpService] Master OTP used for ${phoneNumber}`);
             return true;
         }
