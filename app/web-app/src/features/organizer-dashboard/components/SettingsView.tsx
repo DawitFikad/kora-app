@@ -42,11 +42,8 @@ export const SettingsView = () => {
     const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
 
     // Profile Management
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [settingsAvatarFailed, setSettingsAvatarFailed] = useState(false);
 
     // Phone Change
     const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -61,6 +58,18 @@ export const SettingsView = () => {
         profileAvatarUrl ||
         organizerLogoUrl ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.organizationName || user?.phoneNumber || 'Organization')}&background=11141B&color=fff&size=128`;
+
+    const settingsAvatarInitials = String(profile?.organizationName || user?.profile?.fullName || user?.phoneNumber || 'ORG')
+        .trim()
+        .split(/\s+/)
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
+
+    useEffect(() => {
+        setSettingsAvatarFailed(false);
+    }, [settingsAvatarSrc]);
 
     useEffect(() => {
         fetchAllData();
@@ -277,9 +286,18 @@ export const SettingsView = () => {
             formData.append('logo', file);
 
             const result = await OrganizerService.uploadLogo(formData);
-            const logoUrl = (result as any).logoUrl;
+            const logoUrl =
+                (result as any)?.logoUrl ||
+                (result as any)?.data?.logoUrl ||
+                (result as any)?.url ||
+                (result as any)?.data?.url;
 
-            setProfile({ ...profile, logoUrl });
+            if (!logoUrl) {
+                throw new Error('Upload succeeded but logo URL was not returned.');
+            }
+
+            setProfile((prev: any) => ({ ...prev, logoUrl }));
+            setSettingsAvatarFailed(false);
             toast.success("Profile picture uploaded successfully!");
         } catch (error: any) {
             console.error("Logo upload error:", error);
@@ -310,39 +328,6 @@ export const SettingsView = () => {
                 }
             }
         });
-    };
-
-    const handleChangePassword = async () => {
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            toast.error("Please fill in all password fields");
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            toast.error("New passwords do not match");
-            return;
-        }
-
-        if (newPassword.length < 8) {
-            toast.error("Password must be at least 8 characters long");
-            return;
-        }
-
-        setSaving(true);
-        try {
-            await OrganizerService.changePassword({ currentPassword, newPassword });
-            toast.success("Password changed successfully! Please log in again.");
-            setShowPasswordModal(false);
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
-            // Optionally redirect to login
-        } catch (error: any) {
-            console.error("Change password error:", error);
-            toast.error(error?.error || "Failed to change password");
-        } finally {
-            setSaving(false);
-        }
     };
 
     const handleRequestPhoneChange = async () => {
@@ -541,17 +526,24 @@ export const SettingsView = () => {
 
                             {/* Profile Picture Section */}
                             <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', alignItems: 'center' }}>
-                                <div style={{ width: '120px', height: '120px', borderRadius: '24px', background: 'linear-gradient(45deg, #1D90F5, #D946EF', padding: '4px', position: 'relative' }}>
+                                <div style={{ width: '120px', height: '120px', borderRadius: '24px', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '4px', position: 'relative' }}>
                                     {uploading && (
                                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
                                             <Loader2 className="animate-spin" size={32} color="white" />
                                         </div>
                                     )}
-                                    <img
-                                        src={settingsAvatarSrc}
-                                        style={{ width: '100%', height: '100%', borderRadius: '20px', objectFit: 'cover' }}
-                                        alt="Organization Logo"
-                                    />
+                                    {settingsAvatarFailed ? (
+                                        <div style={{ width: '100%', height: '100%', borderRadius: '20px', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--text-main)' }}>
+                                            {settingsAvatarInitials || 'OR'}
+                                        </div>
+                                    ) : (
+                                        <img
+                                            src={settingsAvatarSrc}
+                                            style={{ width: '100%', height: '100%', borderRadius: '20px', objectFit: 'cover' }}
+                                            alt=""
+                                            onError={() => setSettingsAvatarFailed(true)}
+                                        />
+                                    )}
                                 </div>
                                 <div>
                                     <input
@@ -669,14 +661,14 @@ export const SettingsView = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid var(--border)' }}>
                                     <div>
                                         <p style={{ fontWeight: 600, marginBottom: '4px' }}>Password</p>
-                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Change your account password</p>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>OTP-only authentication is active. Password management will be added later.</p>
                                     </div>
                                     <button
-                                        onClick={() => setShowPasswordModal(true)}
                                         className="btn-ghost"
-                                        style={{ padding: '10px 20px' }}
+                                        disabled
+                                        style={{ padding: '10px 20px', opacity: 0.65, cursor: 'not-allowed' }}
                                     >
-                                        Change Password
+                                        Coming Soon
                                     </button>
                                 </div>
 
@@ -775,55 +767,6 @@ export const SettingsView = () => {
                                     </button>
                                 </div>
                             )}
-                        </div>
-                    )}
-
-
-                    {showPasswordModal && (
-                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowPasswordModal(false)}>
-                            <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', width: '500px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
-                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Change Password</h3>
-
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Current Password</label>
-                                    <input
-                                        type="password"
-                                        value={currentPassword}
-                                        onChange={e => setCurrentPassword(e.target.value)}
-                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
-                                    />
-                                </div>
-
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>New Password</label>
-                                    <input
-                                        type="password"
-                                        value={newPassword}
-                                        onChange={e => setNewPassword(e.target.value)}
-                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
-                                    />
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>At least 8 characters with 1 uppercase, 1 lowercase, and 1 number</p>
-                                </div>
-
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Confirm New Password</label>
-                                    <input
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={e => setConfirmPassword(e.target.value)}
-                                        style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: 'var(--text-main)', outline: 'none' }}
-                                    />
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                    <button onClick={() => { setShowPasswordModal(false); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); }} className="btn-ghost">
-                                        Cancel
-                                    </button>
-                                    <button onClick={handleChangePassword} disabled={saving} className="btn-blue">
-                                        {saving ? <Loader2 className="animate-spin" size={16} /> : 'Change Password'}
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     )}
 
@@ -1028,6 +971,10 @@ export const SettingsView = () => {
                                 </button>
                             </div>
 
+                            <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.35)', borderRadius: '12px', padding: '14px 16px', marginBottom: '16px', color: '#10B981', fontSize: '0.85rem', fontWeight: 600 }}>
+                                SMS and Email channels are live. Toggle channels below and save to apply.
+                            </div>
+
                             <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '14px', padding: '24px', marginBottom: '32px' }}>
                                 {[
                                     { key: 'approval', label: 'Event Approval Updates', desc: 'Get notified when your event is approved or rejected.' },
@@ -1191,6 +1138,9 @@ export const SettingsView = () => {
                     {activeTab === 'Billing' && (
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Payout History</h3>
+                            <div style={{ background: 'rgba(29, 144, 245, 0.1)', border: '1px solid rgba(29, 144, 245, 0.35)', borderRadius: '12px', padding: '14px 16px', marginBottom: '16px', color: '#1D90F5', fontSize: '0.85rem', fontWeight: 600 }}>
+                                Billing controls are read-only right now. Automated billing and settlement actions are coming soon.
+                            </div>
                             {loading ? (
                                 <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
                                     <Loader2 className="animate-spin" size={32} />

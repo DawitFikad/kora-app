@@ -53,6 +53,7 @@ const OrganizerDashboard = () => {
     const [editingEventId, setEditingEventId] = useState<number | null>(null);
     const [viewingStatsId, setViewingStatsId] = useState<number | null>(null);
     const [organizerProfile, setOrganizerProfile] = useState<any>(null);
+    const [dashboardAvatarFailed, setDashboardAvatarFailed] = useState(false);
 
     // Notifications State
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -226,6 +227,20 @@ const OrganizerDashboard = () => {
         profileAvatarUrl ||
         organizerLogoUrl ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(organizerProfile?.organizationName || user?.phoneNumber || 'Org')}&background=11141B&color=fff`;
+
+    const dashboardAvatarInitials = String(
+        organizerProfile?.organizationName || user?.profile?.fullName || user?.phoneNumber || 'ORG'
+    )
+        .trim()
+        .split(/\s+/)
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
+
+    useEffect(() => {
+        setDashboardAvatarFailed(false);
+    }, [dashboardAvatarSrc]);
 
     const handleNotificationClick = async (notification: any) => {
         if (!notification) return;
@@ -546,11 +561,18 @@ const OrganizerDashboard = () => {
                             style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
                         >
                             <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '2px' }}>
-                                <img
-                                    src={dashboardAvatarSrc}
-                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                                    alt="Avatar"
-                                />
+                                {dashboardAvatarFailed ? (
+                                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                        {dashboardAvatarInitials || 'OR'}
+                                    </div>
+                                ) : (
+                                    <img
+                                        src={dashboardAvatarSrc}
+                                        style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                                        alt=""
+                                        onError={() => setDashboardAvatarFailed(true)}
+                                    />
+                                )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <p style={{ fontSize: '0.9rem', fontWeight: 800 }}>{organizerProfile?.organizationName || user?.profile?.fullName || user?.phoneNumber}</p>

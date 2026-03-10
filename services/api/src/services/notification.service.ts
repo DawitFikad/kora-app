@@ -30,6 +30,36 @@ const DEFAULT_THROTTLE_MINUTES: Partial<Record<NotificationType, number>> = {
 };
 
 export class NotificationService {
+    private static getOrganizerPreferenceKey(type?: string): 'approval' | 'sales' | 'inventory' | 'refunds' | 'payouts' | null {
+        const normalized = String(type || '').toUpperCase();
+
+        if (['EVENT_STATUS', 'EVENT_APPROVED', 'EVENT_REJECTED'].includes(normalized)) return 'approval';
+        if (['MILESTONE', 'SALES_MILESTONE', 'SOLD_OUT'].includes(normalized)) return 'sales';
+        if (['INVENTORY_LOW', 'LOW_INVENTORY'].includes(normalized)) return 'inventory';
+        if (['REFUND_REQUEST', 'REFUND_APPROVED', 'REFUND_REJECTED'].includes(normalized)) return 'refunds';
+        if (['PAYOUT_SUCCESS', 'PAYOUT_FAILED', 'PAYOUT_UPDATE'].includes(normalized)) return 'payouts';
+
+        return null;
+    }
+
+    private static applyOrganizerChannelPrefs(
+        channels: NotificationChannel[],
+        notificationPrefs: any,
+        metadata?: any
+    ): NotificationChannel[] {
+        const prefKey = this.getOrganizerPreferenceKey(metadata?.type);
+        if (!prefKey) return channels;
+
+        const channelPrefs = notificationPrefs?.[prefKey];
+        if (!channelPrefs || typeof channelPrefs !== 'object') return channels;
+
+        return channels.filter((channel) => {
+            if (channel === NotificationChannel.SMS) return !!channelPrefs.sms;
+            if (channel === NotificationChannel.EMAIL) return !!channelPrefs.email;
+            return true;
+        });
+    }
+
     private static async shouldThrottleInApp(options: {
         userId: number;
         title?: string;
@@ -212,27 +242,76 @@ export class NotificationService {
         metadata?: any;
     }) {
         const organizer = await prisma.organizerProfile.findUnique({
-            where: { id: organizerId }
+            where: { id: organizerId },
+            include: { user: { select: { email: true, phoneNumber: true } } }
         });
 
         if (!organizer) return;
 
-        for (const channel of options.channels) {
-            let status = "SENT"; // Mock success
+        const effectiveChannels = this.applyOrganizerChannelPrefs(
+            options.channels,
+            organizer.notificationPrefs,
+            options.metadata
+        );
 
-            if (channel === NotificationChannel.SMS && organizer.contactPhone) {
-                await SmsService.sendSms(organizer.contactPhone, options.content).catch(() => status = "FAILED");
+        for (const channel of effectiveChannels) {
+            let status = "FAILED";
+            let recipient = organizer.contactPhone || organizer.user?.phoneNumber || "UNKNOWN";
+            let providerRef: string | null = null;
+            let errorMessage: string | null = null;
+
+            try {
+                if (channel === NotificationChannel.SMS) {
+                    const phone = organizer.contactPhone || organizer.user?.phoneNumber;
+                    if (phone) {
+                        await SmsService.sendSms(phone, options.content);
+                        status = "SENT";
+                        recipient = phone;
+                    } else {
+                        status = "SKIPPED";
+                        recipient = "NO_PHONE";
+                    }
+                } else if (channel === NotificationChannel.EMAIL) {
+                    const email = organizer.contactEmail || organizer.user?.email;
+                    if (email) {
+                        await EmailService.sendEmail(
+                            email,
+                            options.title || "ET-Ticket Organizer Update",
+                            options.content
+                        );
+                        status = "SENT";
+                        recipient = email;
+                    } else {
+                        status = "SKIPPED";
+                        recipient = "NO_EMAIL";
+                    }
+                } else if (channel === NotificationChannel.PUSH) {
+                    // In-app log-backed delivery; push provider can be integrated later.
+                    status = "DELIVERED";
+                    recipient = "APP";
+                } else {
+                    status = "SKIPPED";
+                }
+            } catch (error: any) {
+                status = "FAILED";
+                errorMessage = error?.message || "Unknown delivery error";
             }
 
             await prisma.notificationLog.create({
                 data: {
                     organizerId,
+                    type: (options.metadata?.type as any) || undefined,
                     channel,
-                    recipient: organizer.contactPhone,
+                    recipient,
                     title: options.title,
+                    message: options.content,
                     content: options.content,
                     status,
-                    metadata: options.metadata
+                    providerRef,
+                    metadata: {
+                        ...(options.metadata || {}),
+                        deliveryError: errorMessage,
+                    }
                 }
             });
         }
