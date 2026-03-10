@@ -1497,15 +1497,16 @@ export class OrganizerController {
      */
     static async getNotifications(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
-            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+            const authUser = (req as any).user || {};
+            const authUserId = authUser.userId || authUser.id;
+            const authOrganizerId = authUser.organizerId;
+            if (!authUserId && !authOrganizerId) return res.status(403).json({ error: "Unauthorized" });
 
             const prisma = (await import("../lib/prisma")).prisma;
 
-            // Get organizer profile to find organizerId
-            const organizer = await prisma.organizerProfile.findUnique({
-                where: { userId }
-            });
+            const organizer = authOrganizerId
+                ? await prisma.organizerProfile.findUnique({ where: { id: Number(authOrganizerId) } })
+                : await prisma.organizerProfile.findUnique({ where: { userId: Number(authUserId) } });
 
             if (!organizer) {
                 return res.status(404).json({ error: "Organizer profile not found" });
@@ -1533,16 +1534,18 @@ export class OrganizerController {
      */
     static async markNotificationsRead(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
-            if (!userId) return res.status(403).json({ error: "Unauthorized" });
+            const authUser = (req as any).user || {};
+            const authUserId = authUser.userId || authUser.id;
+            const authOrganizerId = authUser.organizerId;
+            if (!authUserId && !authOrganizerId) return res.status(403).json({ error: "Unauthorized" });
 
             const { notificationIds, markAll } = req.body;
 
             const prisma = (await import("../lib/prisma")).prisma;
 
-            const organizer = await prisma.organizerProfile.findUnique({
-                where: { userId }
-            });
+            const organizer = authOrganizerId
+                ? await prisma.organizerProfile.findUnique({ where: { id: Number(authOrganizerId) } })
+                : await prisma.organizerProfile.findUnique({ where: { userId: Number(authUserId) } });
 
             if (!organizer) {
                 return res.status(404).json({ error: "Organizer profile not found" });
@@ -1554,10 +1557,18 @@ export class OrganizerController {
                     data: { isRead: true }
                 });
             } else if (notificationIds && Array.isArray(notificationIds) && notificationIds.length > 0) {
+                const normalizedIds = notificationIds
+                    .map((id: any) => Number(id))
+                    .filter((id: number) => Number.isInteger(id) && id > 0);
+
+                if (normalizedIds.length === 0) {
+                    return res.status(400).json({ error: "No valid notification IDs provided" });
+                }
+
                 await prisma.notificationLog.updateMany({
                     where: {
                         organizerId: organizer.id,
-                        id: { in: notificationIds }
+                        id: { in: normalizedIds }
                     },
                     data: { isRead: true }
                 });

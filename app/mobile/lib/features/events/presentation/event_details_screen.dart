@@ -417,6 +417,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
+
       builder: (context) {
         return SafeArea(
           child: Padding(

@@ -6,8 +6,11 @@ import {
     LayoutDashboard,
     Loader2,
     MapPin,
+    Plus,
+    Tag,
     TrendingUp,
-    UserPlus
+    UserPlus,
+    Image as ImageIcon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -217,42 +220,90 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                     />
                 </div>
 
-                <div style={{ marginBottom: '16px' }}>
-                    <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '24px', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                            <div style={{ background: 'var(--bg-active)', padding: '6px', borderRadius: '6px' }}>
-                                <LayoutDashboard size={13} color="white" />
-                            </div>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('admin.overview.command_center')}</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                    <button
+                        onClick={() => setActiveTab('Content')}
+                        style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                            padding: '24px', borderRadius: '24px', border: '1px solid var(--border)',
+                            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1))',
+                            color: 'var(--text-main)', cursor: 'pointer', transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1)';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.15))';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1))';
+                        }}
+                    >
+                        <div style={{ padding: '10px', background: '#3B82F6', borderRadius: '12px', color: 'white' }}>
+                            <ImageIcon size={20} />
                         </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-                            <SystemStatusCard
-                                health={healthState}
-                                fraudCount={0}
-                                refundFlags={0}
-                                warnings={warningsList}
-                            />
-
-                            <FinancialSnapshot
-                                gmvToday={stats.totalGMV || 0}
-                                ticketsToday={stats.totalTicketsSold || 0}
-                                revenueToday={stats.platformCommission || 0}
-                                change={{ gmv: 0, revenue: 0 }}
-                                onAdjustCommission={() => setActiveTab('Commissions')}
-                                onFeatureEvent={() => setActiveTab('Event Approvals')}
-                            />
-
-                            <PendingActionsCard
-                                pendingOrganizers={stats.pendingOrganizers}
-                                pendingEvents={stats.pendingEvents}
-                                pendingRefunds={0}
-                                onOpenOrganizers={() => setActiveTab('Organizer Approvals')}
-                                onOpenEvents={() => setActiveTab('Event Approvals')}
-                                onOpenRefunds={() => setActiveTab('Refunds & Cancellations')}
-                            />
+                        <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontWeight: 900, fontSize: '0.95rem' }}>Create Banner</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Manage platform promotions</div>
                         </div>
-                    </div>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('Content')}
+                        style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                            padding: '24px', borderRadius: '24px', border: '1px solid var(--border)',
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))',
+                            color: 'var(--text-main)', cursor: 'pointer', transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1)';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))';
+                        }}
+                    >
+                        <div style={{ padding: '10px', background: '#10B981', borderRadius: '12px', color: 'white' }}>
+                            <MapPin size={20} />
+                        </div>
+                        <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontWeight: 900, fontSize: '0.95rem' }}>Location</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Add or manage cities</div>
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('Content')}
+                        style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                            padding: '24px', borderRadius: '24px', border: '1px solid var(--border)',
+                            background: 'linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(192, 38, 211, 0.1))',
+                            color: 'var(--text-main)', cursor: 'pointer', transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1)';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(217, 70, 239, 0.15), rgba(192, 38, 211, 0.15))';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(192, 38, 211, 0.1))';
+                        }}
+                    >
+                        <div style={{ padding: '10px', background: '#D946EF', borderRadius: '12px', color: 'white' }}>
+                            <Tag size={20} />
+                        </div>
+                        <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontWeight: 900, fontSize: '0.95rem' }}>Event Category</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Manage categories & tags</div>
+                        </div>
+                    </button>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '20px' }}>
@@ -354,17 +405,18 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
-                    <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '24px' }}>
+                    {/* Latest Organizers */}
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h4 style={{ fontSize: '1.2rem', fontWeight: 950, color: 'white' }}>{t('admin.overview.latest_organizers')}</h4>
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: 950, color: 'white' }}>{t('admin.overview.latest_organizers')}</h4>
                             <button onClick={() => handleExportOrganizers('csv')} style={{ border: 'none', background: 'var(--bg-subtle)', padding: '8px', cursor: 'pointer', borderRadius: '8px', color: 'var(--text-muted)' }}>
                                 <Download size={16} />
                             </button>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
                             {organizers.length > 0 ? organizers.map((org, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--bg-subtle)', borderRadius: '12px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: org.status === 'APPROVED' ? '#10B981' : '#F59E0B' }} />
                                         <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)' }}>{org.organizationName}</span>
@@ -374,49 +426,43 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                             )) : <p style={{ color: 'var(--text-muted)' }}>{t('admin.overview.no_recent_records')}</p>}
                         </div>
                     </div>
-                </div>
 
-                <div style={{ marginTop: '24px' }}>
-                    <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-main)' }}>{t('admin.overview.approved_events')}</h3>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 800, padding: '4px 12px', background: 'var(--bg-subtle)', borderRadius: '20px' }}>{stats.activeEvents} {t('admin.overview.live_events')}</span>
+                    {/* Approved Events */}
+                    <div className="admin-card" style={{ padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-main)' }}>{t('admin.overview.approved_events')}</h3>
+                            <button onClick={() => setActiveTab('Event Approvals')} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'white', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}>
+                                {t('admin.view_all')}
+                            </button>
                         </div>
-                        <div style={{ overflowX: 'auto' }}>
+                        <div style={{ overflowX: 'auto', flex: 1 }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                 <thead>
-                                    <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase' }}>{t('admin.overview.event_name')}</th>
-                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase' }}>{t('admin.overview.category')}</th>
-                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase' }}>{t('admin.overview.event_date')}</th>
-                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase' }}>{t('admin.overview.revenue')}</th>
-                                        <th style={{ padding: '12px 10px', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>{t('admin.overview.action')}</th>
+                                    <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+                                        <th style={{ padding: '8px 4px', fontWeight: 800, textTransform: 'uppercase' }}>{t('admin.overview.event_name')}</th>
+                                        <th style={{ padding: '8px 4px', fontWeight: 800, textTransform: 'uppercase' }}>{t('admin.overview.revenue')}</th>
+                                        <th style={{ padding: '8px 4px', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>{t('admin.overview.action')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {recentEvents.length > 0 ? recentEvents.map((event, i) => (
-                                        <tr key={i} style={{ borderBottom: i < recentEvents.length - 1 ? '1px solid var(--border)' : 'none', fontSize: '0.92rem' }}>
-                                            <td style={{ padding: '16px 10px', fontWeight: 800, color: 'var(--text-main)' }}>{event.title}</td>
-                                            <td style={{ padding: '16px 10px', color: 'var(--text-muted)' }}>{event.category?.name || 'GENERIC'}</td>
-                                            <td style={{ padding: '16px 10px', color: 'var(--text-muted)' }}>{new Date(event.dateTime).toLocaleDateString()}</td>
-                                            <td style={{ padding: '16px 10px', fontWeight: 900, color: 'var(--text-main)' }}>ETB {Number(event.metrics?.totalRevenue || 0).toLocaleString()}</td>
-                                            <td style={{ padding: '16px 10px', textAlign: 'right' }}>
+                                    {recentEvents.length > 0 ? recentEvents.slice(0, 5).map((event, i) => (
+                                        <tr key={i} style={{ borderBottom: i < 4 ? '1px solid var(--border)' : 'none', fontSize: '0.85rem' }}>
+                                            <td style={{ padding: '12px 4px', fontWeight: 800, color: 'var(--text-main)' }}>
+                                                <div style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.title}</div>
+                                            </td>
+                                            <td style={{ padding: '12px 4px', fontWeight: 900, color: 'var(--text-main)' }}>ETB {Number(event.metrics?.totalRevenue || 0).toLocaleString()}</td>
+                                            <td style={{ padding: '12px 4px', textAlign: 'right' }}>
                                                 <button
                                                     onClick={() => setSelectedEvent(computeMetrics(event))}
-                                                    style={{ padding: '8px 16px', background: 'var(--bg-active)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                                                    style={{ padding: '4px 8px', background: 'var(--bg-active)', border: 'none', borderRadius: '6px', color: 'white', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer' }}
                                                 >
                                                     {t('admin.overview.inspect')}
                                                 </button>
                                             </td>
                                         </tr>
-                                    )) : <tr><td colSpan={5} style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-muted)' }}>{t('admin.overview.no_events')}</td></tr>}
+                                    )) : <tr><td colSpan={3} style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-muted)' }}>{t('admin.overview.no_events')}</td></tr>}
                                 </tbody>
                             </table>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-                            <button onClick={() => setActiveTab('Event Approvals')} style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'white', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>
-                                {t('admin.view_all')}
-                            </button>
                         </div>
                     </div>
                 </div>

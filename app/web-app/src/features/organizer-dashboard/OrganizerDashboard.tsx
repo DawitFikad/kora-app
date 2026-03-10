@@ -266,21 +266,15 @@ const OrganizerDashboard = () => {
                 // Update local state
                 const updated = notifications.map(n => n.id === id ? { ...n, isRead: true } : n);
                 setNotifications(updated);
-                setUnreadCount(prev => Math.max(0, prev - 1));
-            } else {
-                // Mark all displayed (or all new) as read
-                // For now, let's just mark all new as read if user clicks "Mark all read"
-                const newIds = notifications.filter(n => !n.isRead && !n.localOnly).map(n => n.id);
-                if (newIds.length > 0) {
-                    await OrganizerService.markNotificationsRead({ notificationIds: newIds });
-                    const updated = notifications.map(n => ({ ...n, isRead: true }));
-                    setNotifications(updated);
-                    setUnreadCount(0);
-                } else {
-                    const updated = notifications.map(n => ({ ...n, isRead: true }));
-                    setNotifications(updated);
-                    setUnreadCount(0);
+                if (!target?.isRead) {
+                    setUnreadCount(prev => Math.max(0, prev - 1));
                 }
+            } else {
+                // Explicitly mark all server-side notifications as read.
+                await OrganizerService.markNotificationsRead({ markAll: true });
+                const updated = notifications.map(n => ({ ...n, isRead: true }));
+                setNotifications(updated);
+                setUnreadCount(0);
             }
         } catch (error) {
             console.error("Failed to mark read", error);
