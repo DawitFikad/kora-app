@@ -464,9 +464,17 @@ const OrganizerLanding = () => {
         const fetchEvents = async () => {
             try {
                 setEventsLoading(true);
-                const data = await EventService.getEvents({ featured: true });
-                const normalized = Array.isArray(data) ? data : [];
-                setPrioritizedEvents(normalized);
+                const featuredData = await EventService.getEvents({ featured: true });
+                const normalizedFeatured = Array.isArray(featuredData) ? featuredData : [];
+
+                if (normalizedFeatured.length > 0) {
+                    setPrioritizedEvents(normalizedFeatured);
+                    return;
+                }
+
+                const allData = await EventService.getEvents();
+                const normalizedAll = Array.isArray(allData) ? allData : [];
+                setPrioritizedEvents(normalizedAll);
             } catch (err) {
                 console.error('Failed to load events', err);
                 setPrioritizedEvents([]);

@@ -16,6 +16,10 @@
             "schedule": "0 12 * * *"
         },
         {
+            "path": "/api/cron/complete-events",
+            "schedule": "*/30 * * * *"
+        },
+        {
             "path": "/api/cron/reconcile",
             "schedule": "0 0 * * *"
         }

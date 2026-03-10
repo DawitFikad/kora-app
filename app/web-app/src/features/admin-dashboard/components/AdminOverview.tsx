@@ -369,44 +369,58 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '20px' }}>
-                    <div className="admin-card" style={{ flex: 1, padding: '20px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: '320px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                            <UserPlus size={16} color="#10B981" />
-                            <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-main)' }}>{t('admin.overview.organizer_status')}</h3>
+                    <div className="admin-card" style={{ flex: 1, padding: '24px', borderRadius: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: '340px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                            <UserPlus size={18} color="#10B981" />
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 950, color: 'var(--text-main)' }}>{t('admin.overview.organizer_status')}</h3>
                         </div>
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
-                            <div style={{ position: 'relative', width: '140px', height: '140px' }}>
-                                <svg width="140" height="140" style={{ transform: 'rotate(-90deg)' }}>
-                                    <circle cx="70" cy="70" r="60" fill="none" stroke="var(--bg-subtle)" strokeWidth="12" />
-                                    <circle cx="70" cy="70" r="60" fill="none" stroke="#10B981" strokeWidth="12" strokeDasharray={`${(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 2 * Math.PI * 60} ${2 * Math.PI * 60}`} style={{ transition: 'stroke-dasharray 1.5s ease', strokeLinecap: 'round' }} />
-                                    <circle cx="70" cy="70" r="60" fill="none" stroke="#F59E0B" strokeWidth="12" strokeDasharray={`${(stats.pendingOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 2 * Math.PI * 60} ${2 * Math.PI * 60}`} strokeDashoffset={`-(stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 2 * Math.PI * 60}`} style={{ transition: 'stroke-dasharray 1.5s ease', strokeLinecap: 'round' }} />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '24px' }}>
+                            <div style={{ position: 'relative', width: '130px', height: '130px', margin: '0 auto' }}>
+                                <svg viewBox="0 0 32 32" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%', borderRadius: '50%' }}>
+                                    {[
+                                        { name: t('admin.overview.verified'), value: stats.activeOrganizers, color: '#10B981' },
+                                        { name: t('admin.overview.pending'), value: stats.pendingOrganizers, color: '#F59E0B' },
+                                    ].map((slice, i, arr) => {
+                                        const total = arr.reduce((acc, item) => acc + item.value, 0) || 1;
+                                        const percentage = (slice.value / total) * 100;
+                                        const offset = arr.slice(0, i).reduce((acc, item) => acc + (item.value / total) * 100, 0);
+                                        return (
+                                            <circle
+                                                key={i}
+                                                r="16" cx="16" cy="16"
+                                                fill="transparent"
+                                                stroke={slice.color}
+                                                strokeWidth="32"
+                                                strokeDasharray={`${percentage} 100`}
+                                                strokeDashoffset={-offset}
+                                                style={{ transition: 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                                            />
+                                        );
+                                    })}
+                                    <circle r="11" cx="16" cy="16" fill="var(--bg-card)" />
                                 </svg>
                                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)' }}>{stats.activeOrganizers + stats.pendingOrganizers}</div>
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.overview.total')}</div>
+                                    <div style={{ fontSize: '1.4rem', fontWeight: 1000, color: 'var(--text-main)' }}>{stats.activeOrganizers + stats.pendingOrganizers}</div>
+                                    <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 1000 }}>{t('admin.overview.total')}</div>
                                 </div>
                             </div>
-
-                            <div style={{ display: 'flex', gap: '24px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10B981' }} />
-                                    <div>
-                                        <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', margin: '0 0 2px 0' }}>{t('admin.overview.verified')}</p>
-                                        <p style={{ fontSize: '1rem', fontWeight: 900, color: '#10B981', margin: 0 }}>{stats.activeOrganizers}</p>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#F59E0B' }} />
-                                    <div>
-                                        <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', margin: '0 0 2px 0' }}>{t('admin.overview.pending')}</p>
-                                        <p style={{ fontSize: '1rem', fontWeight: 900, color: '#F59E0B', margin: 0 }}>{stats.pendingOrganizers}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>{t('admin.overview.verification_rate')}</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10B981' }}>{((stats.activeOrganizers / (stats.activeOrganizers + stats.pendingOrganizers || 1)) * 100).toFixed(1)}%</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {[
+                                    { name: t('admin.overview.verified'), value: stats.activeOrganizers, color: '#10B981' },
+                                    { name: t('admin.overview.pending'), value: stats.pendingOrganizers, color: '#F59E0B' },
+                                ].map((item, i, arr) => {
+                                    const total = arr.reduce((acc, s) => acc + s.value, 0) || 1;
+                                    const pct = ((item.value / total) * 100).toFixed(1);
+                                    return (
+                                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color }} />
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{item.name}</span>
+                                            </div>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 1000, color: 'var(--text-main)' }}>{item.value} ({pct}%)</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

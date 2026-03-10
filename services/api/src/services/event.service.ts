@@ -437,6 +437,28 @@ export class EventService {
         }
     }
 
+    /**
+     * Called by Cron Job to auto-complete events that are already in the past.
+     */
+    static async completePastEvents() {
+        const now = new Date();
+
+        const result = await prisma.event.updateMany({
+            where: {
+                status: EventStatus.APPROVED,
+                dateTime: { lt: now }
+            },
+            data: {
+                status: EventStatus.COMPLETED
+            }
+        });
+
+        return {
+            completedCount: result.count,
+            timestamp: now.toISOString()
+        };
+    }
+
     static async sendWeeklyPersonalizedSuggestions() {
         const { NotificationService } = require("./notification.service");
         const { NotificationChannel } = require("@prisma/client");
@@ -694,13 +716,21 @@ export class EventService {
         featured?: boolean;
     }) {
         const { categoryId, cityId, search, featured } = filters;
+        const featuredRaw = featured as unknown;
+        const normalizedFeatured =
+            featuredRaw === true || featuredRaw === 'true' || featuredRaw === '1'
+                ? true
+                : featuredRaw === false || featuredRaw === 'false' || featuredRaw === '0'
+                    ? false
+                    : undefined;
 
         const events = await prisma.event.findMany({
             where: {
                 status: EventStatus.APPROVED,
+                isPublic: true,
                 categoryId: categoryId ? parseInt(categoryId as any) : undefined,
                 cityId: cityId ? parseInt(cityId as any) : undefined,
-                featured: featured ? true : undefined,
+                featured: normalizedFeatured,
                 OR: search ? [
                     { title: { contains: search, mode: "insensitive" } },
                     { description: { contains: search, mode: "insensitive" } },

@@ -82,6 +82,7 @@ const EventDetailsPage: React.FC = () => {
 
     const lowestPrice = Math.min(...event.tiers.map(t => t.price));
     const totalAvailable = event.tiers.reduce((sum, t) => sum + t.available, 0);
+    const isEventEnded = new Date(event.dateTime).getTime() <= Date.now();
 
     return (
         <div className="event-details-page">
@@ -230,7 +231,7 @@ const EventDetailsPage: React.FC = () => {
                                         <div className="info-text">
                                             <span className="info-label">Availability</span>
                                             <span className="info-value">
-                                                {totalAvailable > 0 ? `${totalAvailable} tickets available` : 'Sold Out'}
+                                                {isEventEnded ? 'Event Ended' : (totalAvailable > 0 ? `${totalAvailable} tickets available` : 'Sold Out')}
                                             </span>
                                         </div>
                                     </div>
@@ -239,9 +240,9 @@ const EventDetailsPage: React.FC = () => {
                                 <button
                                     className="btn-get-tickets"
                                     onClick={handleGetTickets}
-                                    disabled={totalAvailable === 0}
+                                    disabled={totalAvailable === 0 || isEventEnded}
                                 >
-                                    {totalAvailable > 0 ? 'Get Tickets' : 'Sold Out'}
+                                    {isEventEnded ? 'Event Ended' : (totalAvailable > 0 ? 'Get Tickets' : 'Sold Out')}
                                 </button>
 
                                 <div className="secure-notice">

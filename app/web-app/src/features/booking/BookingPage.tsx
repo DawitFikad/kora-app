@@ -238,6 +238,7 @@ const BookingPage: React.FC = () => {
 
     const selectedTier = event.tiers.find(t => t.id === selectedTierId);
     const effectiveQuantity = event.eventType === 'SEAT_MAP' ? selectedSeats.length : quantity;
+    const isEventEnded = new Date(event.dateTime).getTime() <= Date.now();
 
     return (
         <div className="booking-page">
@@ -292,6 +293,9 @@ const BookingPage: React.FC = () => {
                     {/* Quantity or Seat Selection */}
                     {selectedTierId && (
                         <section className="booking-section">
+                            {isEventEnded && (
+                                <p className="availability-hint">This event has ended. Ticket sales are closed.</p>
+                            )}
                             {event.eventType === 'SEAT_MAP' ? (
                                 <>
                                     <h2>Select Seats</h2>
@@ -364,7 +368,7 @@ const BookingPage: React.FC = () => {
                                 <button
                                     className="btn-reserve"
                                     onClick={handleReserve}
-                                    disabled={isProcessing || effectiveQuantity < 1}
+                                    disabled={isProcessing || effectiveQuantity < 1 || isEventEnded}
                                 >
                                     {isProcessing ? (
                                         <>
@@ -372,7 +376,9 @@ const BookingPage: React.FC = () => {
                                             Processing...
                                         </>
                                     ) : (
-                                        `Reserve & Pay ${priceBreakdown ? `ETB ${priceBreakdown.total.toFixed(2)}` : ''}`
+                                        isEventEnded
+                                            ? 'Event Ended'
+                                            : `Reserve & Pay ${priceBreakdown ? `ETB ${priceBreakdown.total.toFixed(2)}` : ''}`
                                     )}
                                 </button>
                             </>

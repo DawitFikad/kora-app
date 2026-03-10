@@ -99,6 +99,19 @@ router.get("/cron/reminders", async (req, res) => {
   }
 });
 
+router.get("/cron/complete-events", async (req, res) => {
+  try {
+    if (!isAuthorizedCronRequest(req)) {
+      return res.status(401).json({ error: "Unauthorized cron request" });
+    }
+
+    const result = await EventService.completePastEvents();
+    return res.json({ success: true, message: "Past events marked as completed", ...result });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.get("/cron/reconcile", async (req, res) => {
   try {
     if (!isAuthorizedCronRequest(req)) {

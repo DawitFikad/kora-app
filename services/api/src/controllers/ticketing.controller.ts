@@ -26,6 +26,9 @@ export class TicketingController {
             if (!tier) return res.status(404).json({ error: "Ticket tier not found" });
 
             const now = new Date();
+            if (now >= new Date(event.dateTime)) {
+                return res.status(400).json({ error: "This event has already ended" });
+            }
             if (tier.salesStart && now < tier.salesStart) {
                 return res.status(400).json({ error: "Ticket sales for this tier have not started yet" });
             }

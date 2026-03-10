@@ -432,6 +432,9 @@ export class BookingService {
         }
 
         const now = new Date();
+        if (now >= new Date(event.dateTime)) {
+            return { success: false, error: "This event has already ended" };
+        }
         if (tier.salesStart && now < tier.salesStart) {
             return { success: false, error: "Ticket sales for this tier have not started yet" };
         }

@@ -86,7 +86,12 @@ const AdminDashboard = () => {
                 ]);
                 setPendingCount(orgs.filter((o: any) => o.status === 'PENDING').length);
                 setEventPendingCount(stats.kpis.pendingEvents);
-                setNotifications(notifRes.data);
+                const notifList = Array.isArray(notifRes)
+                    ? notifRes
+                    : Array.isArray(notifRes?.data)
+                        ? notifRes.data
+                        : [];
+                setNotifications(notifList);
             } catch (err) {
                 console.error('Failed to fetch admin counts', err);
             }
@@ -112,6 +117,7 @@ const AdminDashboard = () => {
     };
 
     const featureRequestCount = notifications.filter(n => n.metadata?.type === 'FEATURE_REQUEST').length;
+    const bellCount = pendingCount + eventPendingCount;
 
     const navItems = [
         { icon: Layout, label: 'Dashboard' as AdminTab, display: t('admin.sidebar.dashboard_nav'), key: 'dashboard' },
@@ -265,11 +271,13 @@ const AdminDashboard = () => {
                         <div
                             className="action-icon"
                             onClick={() => setShowNotifications(!showNotifications)}
-                            style={{ background: 'rgba(255,255,255,0.03)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            style={{ background: 'rgba(255,255,255,0.03)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}
                         >
                             <Bell size={18} />
-                            {(pendingCount + eventPendingCount) > 0 && (
-                                <span style={{ position: 'absolute', top: 0, right: 0, width: '10px', height: '10px', background: '#EF4444', borderRadius: '50%', border: '2px solid #0B0E14' }} />
+                            {bellCount > 0 && (
+                                <span style={{ position: 'absolute', top: '-6px', right: '-8px', minWidth: '18px', height: '18px', padding: '0 5px', background: '#EF4444', borderRadius: '999px', border: '2px solid #0B0E14', color: 'white', fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                                    {bellCount > 99 ? '99+' : bellCount}
+                                </span>
                             )}
                         </div>
 
