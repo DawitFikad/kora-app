@@ -22,6 +22,7 @@ import staffRoutes from "./routes/staff.routes";
 import supportRoutes from "./routes/support.routes";
 import publicRoutes from "./routes/public.routes";
 import { errorHandler } from "./middlewares/error.middleware";
+import { enforceMaintenanceMode } from "./middlewares/maintenance.middleware";
 import { EventService } from "./services/event.service";
 import { PaymentService } from "./services/payment.service";
 
@@ -45,6 +46,8 @@ app.use(
     },
   })
 );
+
+app.use(enforceMaintenanceMode);
 
 // TOP LEVEL DIAGNOSTICS - BEFORE ANY ROUTING
 app.get("/api/health-check-v3", (req, res) => {

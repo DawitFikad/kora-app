@@ -4,6 +4,7 @@ import { LockService } from "./lock.service";
 import { PromoCodeService } from "./promo-code.service";
 import { PriceCalculator } from "../utils/price-calculator";
 import crypto from "crypto";
+import { SystemConfigService } from "./system-config.service";
 
 export interface BookingRequest {
     eventId: number;
@@ -46,9 +47,15 @@ export interface BookingResponse {
 }
 
 export class BookingService {
-    private static readonly LOCK_TTL_SECONDS = 300; // 5 minutes
     private static readonly CONVENIENCE_FEE_PERCENTAGE = 2.5; // 2.5%
     private static readonly MAX_TICKETS_PER_PURCHASE = 10;
+
+    private static async resolveLockTtlSeconds() {
+        const configured = await SystemConfigService.getNumber("event.seat_lock", 5);
+        const ttlSeconds = Math.max(60, Math.min(1800, Math.floor(configured) * 60));
+        LockService.setLockTtls(ttlSeconds);
+        return ttlSeconds;
+    }
 
     /**
      * Gets purchase details for payment page
@@ -85,7 +92,7 @@ export class BookingService {
             paymentRef: purchase.paymentRef,
             priceBreakdown: metadata.priceBreakdown,
             event,
-            lockExpiry: new Date(Date.now() + 5 * 60 * 1000) // Estimate remaining time or store creation time and calc
+            lockExpiry: new Date(Date.now() + (await this.resolveLockTtlSeconds()) * 1000)
         };
     }
 
@@ -374,7 +381,7 @@ export class BookingService {
             success: lockedSeats.length === seatNumbers.length,
             lockedSeats,
             failedSeats,
-            expiry: new Date(Date.now() + this.LOCK_TTL_SECONDS * 1000)
+            expiry: new Date(Date.now() + (await this.resolveLockTtlSeconds()) * 1000)
         };
     }
 
@@ -395,12 +402,17 @@ export class BookingService {
         request: BookingRequest
     ): Promise<BookingResponse> {
         const { eventId, tierId, quantity, seatNumbers, paymentMethod, promoCode } = request;
+        const lockTtlSeconds = await this.resolveLockTtlSeconds();
+        const configuredMax = Math.max(
+            1,
+            Math.min(20, Math.floor(await SystemConfigService.getNumber("event.max_per_user", this.MAX_TICKETS_PER_PURCHASE)))
+        );
 
         // Validation
-        if (quantity < 1 || quantity > this.MAX_TICKETS_PER_PURCHASE) {
+        if (quantity < 1 || quantity > configuredMax) {
             return {
                 success: false,
-                error: `Quantity must be between 1 and ${this.MAX_TICKETS_PER_PURCHASE}`
+                error: `Quantity must be between 1 and ${configuredMax}`
             };
         }
 
@@ -562,7 +574,7 @@ export class BookingService {
             purchaseId: purchase.id,
             paymentRef: purchase.paymentRef,
             priceBreakdown,
-            lockExpiry: new Date(Date.now() + this.LOCK_TTL_SECONDS * 1000)
+            lockExpiry: new Date(Date.now() + lockTtlSeconds * 1000)
         };
     }
 
@@ -573,6 +585,7 @@ export class BookingService {
         purchaseId: number,
         userId: number
     ): Promise<{ success: boolean; newExpiry?: Date; error?: string }> {
+        const lockTtlSeconds = await this.resolveLockTtlSeconds();
         const purchase = await prisma.purchase.findUnique({
             where: { id: purchaseId }
         });
@@ -603,7 +616,7 @@ export class BookingService {
 
         return {
             success: true,
-            newExpiry: new Date(Date.now() + this.LOCK_TTL_SECONDS * 1000)
+            newExpiry: new Date(Date.now() + lockTtlSeconds * 1000)
         };
     }
 

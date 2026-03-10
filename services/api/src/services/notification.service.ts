@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import { NotificationChannel } from "@prisma/client";
 import { SmsService } from "./sms.service";
 import { EmailService } from "./email.service";
+import { SystemConfigService } from "./system-config.service";
 
 export const NotificationTypes = {
     TICKET_CONFIRMATION: "TICKET_CONFIRMATION",
@@ -30,6 +31,21 @@ const DEFAULT_THROTTLE_MINUTES: Partial<Record<NotificationType, number>> = {
 };
 
 export class NotificationService {
+    private static async applyGlobalChannelSettings(channels: NotificationChannel[]) {
+        const [smsEnabled, emailEnabled, pushEnabled] = await Promise.all([
+            SystemConfigService.getBoolean("notification.sms_enabled", true),
+            SystemConfigService.getBoolean("notification.email_enabled", true),
+            SystemConfigService.getBoolean("notification.push_enabled", true),
+        ]);
+
+        return channels.filter((channel) => {
+            if (channel === NotificationChannel.SMS) return smsEnabled;
+            if (channel === NotificationChannel.EMAIL) return emailEnabled;
+            if (channel === NotificationChannel.PUSH) return pushEnabled;
+            return true;
+        });
+    }
+
     private static getOrganizerPreferenceKey(type?: string): 'approval' | 'sales' | 'inventory' | 'refunds' | 'payouts' | null {
         const normalized = String(type || '').toUpperCase();
 
@@ -158,8 +174,10 @@ export class NotificationService {
 
         const wantsInApp = options.inApp ?? true;
 
+        const channels = await this.applyGlobalChannelSettings(options.channels);
+
         const results = [];
-        for (const channel of options.channels) {
+        for (const channel of channels) {
             let status = "FAILED";
             let providerRef = null;
             let recipient = user.phoneNumber;
@@ -212,7 +230,7 @@ export class NotificationService {
         }
 
         // Ensure in-app notification exists even when PUSH channel is not requested.
-        if (wantsInApp && !options.channels.includes(NotificationChannel.PUSH)) {
+        if (wantsInApp && !channels.includes(NotificationChannel.PUSH)) {
             await (prisma as any).notificationLog.create({
                 data: {
                     userId,
@@ -254,7 +272,9 @@ export class NotificationService {
             options.metadata
         );
 
-        for (const channel of effectiveChannels) {
+        const channels = await this.applyGlobalChannelSettings(effectiveChannels);
+
+        for (const channel of channels) {
             let status = "FAILED";
             let recipient = organizer.contactPhone || organizer.user?.phoneNumber || "UNKNOWN";
             let providerRef: string | null = null;

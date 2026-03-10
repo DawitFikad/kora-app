@@ -91,6 +91,16 @@ export const AdminSettingsView = () => {
         }
     };
 
+    const handleClearAuditLogs = async () => {
+        try {
+            await AdminService.clearAuditLogs();
+            await fetchData();
+            showMessage('success', 'Audit logs cleared successfully.');
+        } catch (err) {
+            showMessage('error', 'Failed to clear audit logs.');
+        }
+    };
+
     const showMessage = (type: 'success' | 'error', text: string) => {
         setMessage({ type, text });
         setTimeout(() => setMessage(null), 3000);
@@ -155,7 +165,7 @@ export const AdminSettingsView = () => {
                                     </motion.div>
                                 </div>
                             ) : (
-                                renderCategoryContent(activeCategory, { getConfigValue, handleUpdateConfig, auditLogs })
+                                renderCategoryContent(activeCategory, { getConfigValue, handleUpdateConfig, auditLogs, onRefreshLogs: fetchData, onClearLogs: handleClearAuditLogs })
                             )}
                         </motion.div>
                     </AnimatePresence>
@@ -278,8 +288,22 @@ const PaymentSettings = ({ getConfigValue, handleUpdateConfig }: any) => (
     </>
 );
 
-const ActivityLogs = ({ auditLogs }: { auditLogs: AuditLog[] }) => (
+const ActivityLogs = ({ auditLogs, onRefreshLogs, onClearLogs }: { auditLogs: AuditLog[]; onRefreshLogs: () => void; onClearLogs: () => void }) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <button
+                onClick={onRefreshLogs}
+                style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 700 }}
+            >
+                Refresh
+            </button>
+            <button
+                onClick={onClearLogs}
+                style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid #EF4444', background: 'rgba(239,68,68,0.1)', color: '#EF4444', cursor: 'pointer', fontWeight: 800 }}
+            >
+                Clear Logs
+            </button>
+        </div>
         {auditLogs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No audit events found.</div>
         ) : (

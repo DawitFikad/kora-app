@@ -6,6 +6,7 @@ import { env } from "../config/env";
 import logger from "../utils/logger";
 import { ChapaProvider } from "./providers/chapa.provider";
 import { TelebirrProvider } from "./providers/telebirr.provider";
+import { SystemConfigService } from "./system-config.service";
 
 function isTruthy(value: string | undefined): boolean {
     const normalized = (value || "").trim().toLowerCase();
@@ -57,7 +58,8 @@ function getSafeChapaPayerEmail(candidate: string | null | undefined, txRef?: st
 }
 
 export class PaymentService {
-    private static allowTelebirrDevFallback(): boolean {
+    private static allowTelebirrDevFallback(sandboxEnabled = false): boolean {
+        if (sandboxEnabled) return true;
         if (isTruthy(process.env.ALLOW_TELEBIRR_DEV_FALLBACK)) return true;
         return (process.env.NODE_ENV || "development") !== "production";
     }
@@ -98,9 +100,21 @@ export class PaymentService {
         const return_url = `${baseUrl}/api/payments/verify-callback?ref=${tx_ref}`;
         const callback_url = `${baseUrl}/api/payments/webhook`;
 
+        const chapaEnabled = await SystemConfigService.getBoolean("payment.chapa", true);
+        const telebirrEnabled = await SystemConfigService.getBoolean("payment.telebirr", true);
+        const sandboxEnabled = await SystemConfigService.getBoolean(
+            "payment.sandbox",
+            (process.env.NODE_ENV || "development") !== "production"
+        );
+
         try {
             switch (purchase.paymentMethod) {
                 case "TELEBIRR":
+                    if (!telebirrEnabled) {
+                        const gatewayError: any = new Error("Telebirr is disabled by system configuration.");
+                        gatewayError.status = 403;
+                        throw gatewayError;
+                    }
                     // Check if Telebirr is properly configured
                     const isTelebirrConfigured = !!(
                         env.teleBirrMerchantAppId &&
@@ -127,7 +141,7 @@ export class PaymentService {
                             checkoutUrl = telebirrResult.checkoutUrl;
                             providerPayload = { prepayId: telebirrResult.prepayId };
                         } catch (telebirrError: any) {
-                            if (!this.allowTelebirrDevFallback()) {
+                            if (!this.allowTelebirrDevFallback(sandboxEnabled)) {
                                 throw telebirrError;
                             }
 
@@ -142,7 +156,7 @@ export class PaymentService {
                             };
                         }
                     } else {
-                        if (this.allowTelebirrDevFallback()) {
+                        if (this.allowTelebirrDevFallback(sandboxEnabled)) {
                             logger.warn(
                                 { purchaseId: purchase.id },
                                 "Telebirr not configured; using dev fallback checkout URL"
@@ -158,6 +172,11 @@ export class PaymentService {
                 case "CHAPA":
                 case "CBE_BIRR":
                 case "AMOLE":
+                    if (!chapaEnabled) {
+                        const gatewayError: any = new Error("Chapa-based payments are disabled by system configuration.");
+                        gatewayError.status = 403;
+                        throw gatewayError;
+                    }
                     // Use Chapa as aggregator for multiple payment methods
                     if (ChapaProvider.isConfigured()) {
                         logger.info({ tx_ref, method: purchase.paymentMethod }, "Initializing Chapa payment");
@@ -228,19 +247,29 @@ export class PaymentService {
 
         logger.info({ paymentRef, method: purchase.paymentMethod }, "Verifying payment");
 
+        const chapaEnabled = await SystemConfigService.getBoolean("payment.chapa", true);
+        const telebirrEnabled = await SystemConfigService.getBoolean("payment.telebirr", true);
+        const sandboxEnabled = await SystemConfigService.getBoolean(
+            "payment.sandbox",
+            (process.env.NODE_ENV || "development") !== "production"
+        );
+
         let isValid = false;
         let verificationResult: any = {};
 
         try {
             switch (purchase.paymentMethod) {
                 case "TELEBIRR":
+                    if (!telebirrEnabled) {
+                        throw new Error("Telebirr is disabled by system configuration.");
+                    }
                     if (TelebirrProvider.isConfigured() || TelebirrProvider.isTestMode()) {
                         try {
                             const result = await TelebirrProvider.verify(paymentRef);
                             isValid = result.success;
                             verificationResult = result;
                         } catch (telebirrVerifyError: any) {
-                            if (!this.allowTelebirrDevFallback()) throw telebirrVerifyError;
+                            if (!this.allowTelebirrDevFallback(sandboxEnabled)) throw telebirrVerifyError;
 
                             logger.warn(
                                 { paymentRef, error: telebirrVerifyError?.message },
@@ -251,7 +280,7 @@ export class PaymentService {
                             externalRef = externalRef || `DEV-TELEBIRR-${Date.now()}`;
                         }
                     } else {
-                        if (this.allowTelebirrDevFallback()) {
+                        if (this.allowTelebirrDevFallback(sandboxEnabled)) {
                             logger.warn({ paymentRef }, "Telebirr not configured in dev; treating verification as success fallback");
                             isValid = true;
                             verificationResult = { message: "Development fallback success (not configured)" };
@@ -264,6 +293,9 @@ export class PaymentService {
                 case "CHAPA":
                 case "CBE_BIRR":
                 case "AMOLE":
+                    if (!chapaEnabled) {
+                        throw new Error("Chapa-based payments are disabled by system configuration.");
+                    }
                     if (ChapaProvider.isConfigured()) {
                         const result = await ChapaProvider.verify(paymentRef);
                         isValid = result.success;

@@ -9,6 +9,12 @@ export class LockService {
     private static SEAT_LOCK_TTL = 300; // 5 minutes in seconds
     private static CAPACITY_LOCK_TTL = 300;
 
+    static setLockTtls(seconds: number) {
+        const ttl = Math.max(60, Math.min(1800, Math.floor(seconds)));
+        this.SEAT_LOCK_TTL = ttl;
+        this.CAPACITY_LOCK_TTL = ttl;
+    }
+
     /**
      * Attempts to lock a specific seat for a user.
      * Returns true if successful, false if already locked.

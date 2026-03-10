@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { SystemConfigService } from "./system-config.service";
 
 export class ContentService {
     static async listCategories() {
@@ -142,6 +143,9 @@ export class ContentService {
     }
 
     static async listActiveBanners() {
+        const configuredLimit = await SystemConfigService.getNumber("homepage.banner_limit", 5);
+        const take = Math.max(1, Math.min(20, Math.floor(configuredLimit)));
+
         return prisma.homepageBanner.findMany({
             where: {
                 isActive: true
@@ -149,7 +153,8 @@ export class ContentService {
             orderBy: [
                 { priority: 'desc' },
                 { order: 'asc' }
-            ]
+            ],
+            take,
         });
     }
 

@@ -2,9 +2,19 @@ import { Request, Response } from "express";
 import { EventService } from "../services/event.service";
 import { EventStatus, Role } from "@prisma/client";
 import { ProfileService } from "../services/profile.service";
+import { SystemConfigService } from "../services/system-config.service";
 
 export class EventController {
     // --- Public Discovery ---
+    private static async resolveDiscoveryLimit(rawLimit: unknown) {
+        if (rawLimit !== undefined && rawLimit !== null && String(rawLimit).trim() !== "") {
+            const parsed = parseInt(String(rawLimit), 10);
+            if (Number.isFinite(parsed)) return Math.max(1, Math.min(50, parsed));
+        }
+
+        const configured = await SystemConfigService.getNumber("homepage.featured_count", 12);
+        return Math.max(1, Math.min(50, Math.floor(configured)));
+    }
 
     static async getEventEngagement(req: Request, res: Response) {
         try {
@@ -54,7 +64,7 @@ export class EventController {
             const experiences = await EventService.listNewUpcomingExperiences({
                 userId: req.user?.userId as number | undefined,
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+                limit: await this.resolveDiscoveryLimit(filters.limit),
             });
             res.json(experiences);
         } catch (error: any) {
@@ -89,7 +99,7 @@ export class EventController {
             const filters = req.query as any;
             const events = await EventService.listLastMinuteTodayEvents({
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+                limit: await this.resolveDiscoveryLimit(filters.limit),
             });
             res.json(events);
         } catch (error: any) {
@@ -102,7 +112,7 @@ export class EventController {
             const filters = req.query as any;
             const deals = await EventService.listOffersDeals({
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+                limit: await this.resolveDiscoveryLimit(filters.limit),
             });
             res.json(deals);
         } catch (error: any) {
@@ -115,7 +125,7 @@ export class EventController {
             const filters = req.query as any;
             const workshops = await EventService.listWorkshopsShortCourses({
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+                limit: await this.resolveDiscoveryLimit(filters.limit),
             });
             res.json(workshops);
         } catch (error: any) {
@@ -128,7 +138,7 @@ export class EventController {
             const filters = req.query as any;
             const events = await EventService.listCitySpotlight({
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+                limit: await this.resolveDiscoveryLimit(filters.limit),
             });
             res.json(events);
         } catch (error: any) {
@@ -142,7 +152,7 @@ export class EventController {
             const picks = await EventService.listPersonalizedPicks({
                 userId: req.user?.userId as number | undefined,
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+                limit: await this.resolveDiscoveryLimit(filters.limit),
             });
             res.json(picks);
         } catch (error: any) {
@@ -155,7 +165,7 @@ export class EventController {
             const filters = req.query as any;
             const awards = await EventService.listUpcomingAwards({
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined,
+                limit: await this.resolveDiscoveryLimit(filters.limit),
             });
             res.json(awards);
         } catch (error: any) {
@@ -167,7 +177,7 @@ export class EventController {
         try {
             const filters = req.query as any;
             const events = await EventService.listTrendingNow({
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined
+                limit: await this.resolveDiscoveryLimit(filters.limit)
             });
             res.json(events);
         } catch (error: any) {
@@ -180,7 +190,7 @@ export class EventController {
             const filters = req.query as any;
             const events = await EventService.listBestEventsThisWeek({
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined
+                limit: await this.resolveDiscoveryLimit(filters.limit)
             });
             res.json(events);
         } catch (error: any) {
@@ -195,7 +205,7 @@ export class EventController {
             const movies = await EventService.listRecommendedMovies({
                 userId,
                 cityId: filters.cityId ? parseInt(String(filters.cityId), 10) : undefined,
-                limit: filters.limit ? parseInt(String(filters.limit), 10) : undefined
+                limit: await this.resolveDiscoveryLimit(filters.limit)
             });
             res.json(movies);
         } catch (error: any) {
@@ -307,12 +317,17 @@ export class EventController {
                 return res.status(400).json({ error: "Invalid status" });
             }
 
+            const defaultCommissionRate = await SystemConfigService.getNumber("commission.default_rate", 10);
+            const resolvedFeePercentage = Number.isFinite(Number(feePercentage))
+                ? Number(feePercentage)
+                : defaultCommissionRate;
+
             const event = await EventService.reviewEvent(
                 parseInt(id),
                 status,
                 feeType || "PERCENTAGE",
                 feeFixed || 0,
-                feePercentage || 0,
+                resolvedFeePercentage,
                 adminNote
             );
 

@@ -3,6 +3,44 @@ import { prisma } from "../lib/prisma";
 import { Role, AccountStatus, OrganizerStatus, NotificationChannel, RefundReason, RefundStatus } from "@prisma/client";
 import { AdminAnalyticsService } from "../services/admin-analytics.service";
 import { EmailService } from "../services/email.service";
+import { SystemConfigService } from "../services/system-config.service";
+
+const BOOLEAN_CONFIG_KEYS = new Set([
+    "maintenance_mode",
+    "auth.mandatory_2fa",
+    "notification.email_enabled",
+    "notification.sms_enabled",
+    "notification.push_enabled",
+    "payment.chapa",
+    "payment.telebirr",
+    "payment.sandbox",
+]);
+
+const NUMBER_CONFIG_KEYS = new Set([
+    "auth.session_timeout",
+    "auth.max_attempts",
+    "commission.default_rate",
+    "commission.min_payout",
+    "commission.fixed_fee",
+    "event.seat_lock",
+    "event.rescan_limit",
+    "event.max_per_user",
+    "homepage.banner_limit",
+    "homepage.featured_count",
+]);
+
+const STRING_CONFIG_KEYS = new Set([
+    "general.platform_name",
+    "general.support_phone",
+    "language.default",
+    "language.supported",
+]);
+
+const ALLOWED_CONFIG_KEYS = new Set([
+    ...BOOLEAN_CONFIG_KEYS,
+    ...NUMBER_CONFIG_KEYS,
+    ...STRING_CONFIG_KEYS,
+]);
 
 export class AdminController {
     static async getCancellationRequests(req: Request, res: Response) {
@@ -841,11 +879,33 @@ export class AdminController {
     static async updateSystemConfig(req: Request, res: Response) {
         try {
             const { key, value, description } = req.body;
-            const config = await prisma.systemConfig.upsert({
-                where: { key },
-                update: { value, description },
-                create: { key, value, description }
-            });
+
+            if (!key || typeof key !== 'string') {
+                return res.status(400).json({ error: 'Config key is required' });
+            }
+            if (!ALLOWED_CONFIG_KEYS.has(key)) {
+                return res.status(400).json({ error: `Unsupported config key: ${key}` });
+            }
+            if (typeof value !== 'string') {
+                return res.status(400).json({ error: 'Config value must be a string' });
+            }
+
+            const normalizedValue = value.trim();
+            if (BOOLEAN_CONFIG_KEYS.has(key)) {
+                const lower = normalizedValue.toLowerCase();
+                if (!["true", "false", "1", "0", "yes", "no", "on", "off"].includes(lower)) {
+                    return res.status(400).json({ error: `Invalid boolean value for ${key}` });
+                }
+            }
+
+            if (NUMBER_CONFIG_KEYS.has(key)) {
+                const numeric = Number(normalizedValue);
+                if (!Number.isFinite(numeric)) {
+                    return res.status(400).json({ error: `Invalid numeric value for ${key}` });
+                }
+            }
+
+            const config = await SystemConfigService.setConfig(key, normalizedValue, description);
 
             // Audit Log
             await prisma.notificationLog.create({

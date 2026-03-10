@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { PaymentService } from "../services/payment.service";
 import { env } from "../config/env";
 import logger from "../utils/logger";
+import { SystemConfigService } from "../services/system-config.service";
 
 function getSafeWebReturn(value: unknown): string | null {
     if (typeof value !== "string" || !value.trim()) return null;
@@ -84,6 +85,14 @@ export class PaymentController {
      */
     static async initialize(req: Request, res: Response) {
         try {
+            const readOnly = await SystemConfigService.getBoolean("payments_read_only", false);
+            if (readOnly) {
+                return res.status(503).json({
+                    error: "Payments are currently in read-only mode",
+                    message: "Payment initialization is temporarily disabled by admin settings."
+                });
+            }
+
             const { purchaseId } = req.body;
             console.log(`[Payment] Initializing payment for purchaseId: ${purchaseId}`);
 
@@ -133,6 +142,14 @@ export class PaymentController {
      */
     static async verify(req: Request, res: Response) {
         try {
+            const readOnly = await SystemConfigService.getBoolean("payments_read_only", false);
+            if (readOnly) {
+                return res.status(503).json({
+                    error: "Payments are currently in read-only mode",
+                    message: "Payment verification is temporarily disabled by admin settings."
+                });
+            }
+
             const { paymentRef, externalRef } = req.body;
             const result = await PaymentService.verifyPayment(paymentRef, externalRef);
             res.json({

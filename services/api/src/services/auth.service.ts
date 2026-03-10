@@ -3,6 +3,8 @@ import { Role, AccountStatus } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { OtpService } from "./otp.service";
 import { SmsService } from "./sms.service";
+import { SystemConfigService } from "./system-config.service";
+import redis from "../utils/redis";
 
 
 const getAccessTokenSecret = () => process.env.JWT_SECRET || "default_access_secret";
@@ -83,11 +85,20 @@ export class AuthService {
         console.log(`[AuthService] Verifying OTP for: ${cleanPhone}, Input OTP: ${cleanOtp}`);
         const adminNumbers = ["910639875"];
 
+        const maxAttempts = Math.max(1, Math.floor(await SystemConfigService.getNumber("auth.max_attempts", 5)));
+        const attemptKey = `otp_attempts:${cleanPhone}`;
+        const currentAttempts = Number((await redis.get(attemptKey)) || 0);
+        if (currentAttempts >= maxAttempts) {
+            throw new Error("Too many failed OTP attempts. Please request a new OTP and try again.");
+        }
+
         const isValid = await OtpService.verifyOtp(cleanPhone, cleanOtp);
         if (!isValid) {
+            await redis.multi().incr(attemptKey).expire(attemptKey, 300).exec();
             console.warn(`[AuthService] OTP Verification FAILED for ${cleanPhone}`);
             throw new Error("Invalid or expired OTP");
         }
+        await redis.del(attemptKey);
         console.log(`[AuthService] OTP Verification SUCCESS for ${cleanPhone}`);
 
         try {
@@ -154,7 +165,7 @@ export class AuthService {
 
             // Generate tokens
             console.log(`[AuthService] Generating tokens...`);
-            const accessToken = this.generateAccessToken(user.id, user.role, organizerId);
+            const accessToken = await this.generateAccessToken(user.id, user.role, organizerId);
             const refreshToken = this.generateRefreshToken(user.id);
             console.log(`[AuthService] Tokens generated successfully`);
 
@@ -324,7 +335,7 @@ export class AuthService {
 
         // Generate tokens
         console.log(`[AuthService] Generating tokens for organizer`);
-        const accessToken = this.generateAccessToken(user.id, user.role, organizerId);
+        const accessToken = await this.generateAccessToken(user.id, user.role, organizerId);
         const refreshToken = this.generateRefreshToken(user.id);
 
         // Store refresh token - delete any existing ones first to avoid unique constraint
@@ -373,7 +384,7 @@ export class AuthService {
             const organizerId = storedToken.user.organizer?.id;
 
             // Generate new access token
-            const accessToken = this.generateAccessToken(storedToken.user.id, storedToken.user.role, organizerId);
+            const accessToken = await this.generateAccessToken(storedToken.user.id, storedToken.user.role, organizerId);
 
             return { accessToken };
         } catch (error) {
@@ -381,8 +392,10 @@ export class AuthService {
         }
     }
 
-    private static generateAccessToken(userId: number, role: Role, organizerId?: number) {
-        return jwt.sign({ userId, id: userId, role, organizerId }, getAccessTokenSecret(), { expiresIn: "24h" });
+    private static async generateAccessToken(userId: number, role: Role, organizerId?: number) {
+        const configuredMinutes = await SystemConfigService.getNumber("auth.session_timeout", 60 * 24);
+        const sessionMinutes = Math.min(10080, Math.max(5, Math.floor(configuredMinutes)));
+        return jwt.sign({ userId, id: userId, role, organizerId }, getAccessTokenSecret(), { expiresIn: `${sessionMinutes}m` });
     }
 
     private static generateRefreshToken(userId: number) {

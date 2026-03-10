@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import DecisionModal from './DecisionModal';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Calendar, MapPin, Tag, Download, Check, X, Info } from 'lucide-react';
+import { Loader2, Calendar, MapPin, Tag, Download, Check, X, Info, Clock, CheckCircle2, XCircle, FileText } from 'lucide-react';
 
 import { AdminService } from '../../../core/api/admin.service';
 import { exportToCSV } from '../../../core/utils/export';
+import { exportToPDF } from '../../../core/utils/pdf';
 import Pagination from '../../../core/components/Pagination';
 import { useDialog } from '../../../core/context/DialogContext';
 
@@ -14,12 +15,13 @@ export const EventApprovalsView = () => {
     const dialog = useDialog();
     const [events, setEvents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
+    const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('approved');
     const [processingId, setProcessingId] = useState<number | null>(null);
     const [decisionOpen, setDecisionOpen] = useState(false);
     const [decisionContext, setDecisionContext] = useState<any>(null);
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isExporting, setIsExporting] = useState(false);
     const pageSize = 10;
 
     const fetchEvents = async () => {
@@ -81,147 +83,287 @@ export const EventApprovalsView = () => {
     const filteredEvents = allFilteredEvents.slice(startIndex, startIndex + pageSize);
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {/* Tab Navigation & Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-sidebar)', padding: '6px', borderRadius: '16px', width: 'fit-content', border: '1px solid var(--border)' }}>
-                    {(['pending', 'approved', 'rejected'] as const).map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            style={{
-                                padding: '10px 24px',
-                                borderRadius: '12px',
-                                border: 'none',
-                                background: activeTab === tab ? 'var(--bg-active)' : 'transparent',
-                                color: activeTab === tab ? 'white' : 'var(--text-muted)',
-                                fontSize: '0.85rem',
-                                fontWeight: 800,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                        >
-                            {tab === 'pending' ? t('admin.approvals.pending_tab') : tab === 'approved' ? t('admin.approvals.approved_tab') : t('admin.approvals.rejected_tab')}
-                            {tab === 'pending' && events.filter(e => e.status === 'PENDING').length > 0 && (
-                                <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#EF4444', color: 'white', borderRadius: '6px', fontSize: '0.65rem' }}>
-                                    {events.filter(e => e.status === 'PENDING').length}
-                                </span>
-                            )}
-                        </button>
-                    ))}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            {/* 📑 Premium Control Header */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '40px',
+                background: 'var(--bg-card)',
+                padding: '24px',
+                borderRadius: '24px',
+                border: '1px solid var(--border)',
+                boxShadow: '0 10px 30px -10px rgba(0,0,0,0.3)'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    gap: '12px',
+                    background: 'var(--bg-subtle)',
+                    padding: '8px',
+                    borderRadius: '20px',
+                    width: 'fit-content',
+                    border: '1px solid var(--border)'
+                }}>
+                    {[
+                        { id: 'approved', label: 'Active Events', icon: CheckCircle2, color: '#10B981' },
+                        { id: 'pending', label: 'Pending Review', icon: Clock, color: '#F59E0B', count: events.filter(e => e.status === 'PENDING').length },
+                        { id: 'rejected', label: 'Removed/Rejected', icon: XCircle, color: '#EF4444' },
+                    ].map((tab) => {
+                        const Icon = tab.icon;
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    padding: '14px 28px',
+                                    borderRadius: '16px',
+                                    border: isActive ? `1px solid ${tab.color}40` : '1px solid transparent',
+                                    background: isActive ? 'var(--bg-card)' : 'transparent',
+                                    color: isActive ? tab.color : 'var(--text-muted)',
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    boxShadow: isActive ? `0 10px 20px ${tab.color}15` : 'none',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                <Icon size={18} color={isActive ? tab.color : 'var(--text-muted)'} />
+                                {tab.label}
+                                {tab.count !== undefined && tab.count > 0 && (
+                                    <span style={{
+                                        marginLeft: '6px',
+                                        padding: '2px 8px',
+                                        background: tab.color,
+                                        color: 'white',
+                                        borderRadius: '8px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 900,
+                                        boxShadow: `0 4px 10px ${tab.color}40`
+                                    }}>
+                                        {tab.count}
+                                    </span>
+                                )}
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="premiumTabGlowEvents"
+                                        style={{
+                                            position: 'absolute',
+                                            bottom: '-2px',
+                                            left: '20%',
+                                            right: '20%',
+                                            height: '2.5px',
+                                            background: tab.color,
+                                            boxShadow: `0 0 15px ${tab.color}`,
+                                            borderRadius: '100px'
+                                        }}
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
 
-                <button
-                    onClick={() => exportToCSV(allFilteredEvents.map(e => ({
-                        Title: e.title,
-                        Organizer: e.organizer?.organizationName,
-                        City: e.city?.name,
-                        Date: e.dateTime,
-                        Status: e.status
-                    })), 'events.csv')}
-                    className="btn-blue"
-                    style={{ background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '12px' }}
-                >
-                    <Download size={18} />
-                    {t('admin.export', 'Export CSV')}
-                </button>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                    <button
+                        onClick={() => {
+                            setIsExporting(true);
+                            exportToCSV(allFilteredEvents.map(e => ({
+                                Title: e.title,
+                                Organizer: e.organizer?.organizationName,
+                                City: e.city?.name,
+                                Date: e.dateTime,
+                                Status: e.status
+                            })), 'events_report.csv');
+                            setTimeout(() => setIsExporting(false), 2000);
+                        }}
+                        disabled={isExporting}
+                        style={{
+                            background: 'rgba(255,255,255,0.03)',
+                            color: 'var(--text-main)',
+                            border: '1px solid var(--border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '14px 28px',
+                            borderRadius: '18px',
+                            fontWeight: 900,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            backdropFilter: 'blur(10px)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                            e.currentTarget.style.transform = 'translateY(-3px)';
+                            e.currentTarget.style.borderColor = 'var(--primary)';
+                            e.currentTarget.style.boxShadow = '0 12px 24px -10px rgba(0,0,0,0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.borderColor = 'var(--border)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        {isExporting ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} color="var(--primary)" />}
+                        {t('admin.export', 'Export Events')}
+                    </button>
+                    <button
+                        onClick={() => {
+                            setIsExporting(true);
+                            exportToPDF(allFilteredEvents.map(e => ({
+                                Title: e.title,
+                                Organizer: e.organizer?.organizationName,
+                                City: e.city?.name,
+                                Status: e.status
+                            })), ['Title', 'Organizer', 'City', 'Status'], 'events_full_report.pdf', 'Platform Events Comprehensive Directory');
+                            setTimeout(() => setIsExporting(false), 2000);
+                        }}
+                        disabled={isExporting}
+                        style={{
+                            background: 'linear-gradient(135deg, var(--primary), #3B82F6)',
+                            color: 'white',
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '14px 28px',
+                            borderRadius: '18px',
+                            fontWeight: 950,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: '0 8px 20px -5px rgba(59, 130, 246, 0.4)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-3px)';
+                            e.currentTarget.style.boxShadow = '0 15px 30px -8px rgba(59, 130, 246, 0.6)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 8px 20px -5px rgba(59, 130, 246, 0.4)';
+                        }}
+                    >
+                        <FileText size={20} />
+                        Detailed PDF
+                    </button>
+                </div>
             </div>
 
-            <div className="admin-card" style={{ padding: '0', overflow: 'hidden' }}>
-                <table className="admin-table">
-                    <thead>
-                        <tr>
-                            <th style={{ width: '50px' }}>#</th>
-                            <th>{t('admin.approvals.event_title')}</th>
-                            <th>{t('admin.approvals.category_city')}</th>
-                            <th>{t('admin.approvals.date_time')}</th>
-                            <th style={{ textAlign: 'right' }}>{t('admin.approvals.actions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredEvents.length === 0 ? (
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98, y: -10 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="admin-card"
+                    style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-card)', borderRadius: '24px' }}
+                >
+                    <table className="admin-table">
+                        <thead>
                             <tr>
-                                <td colSpan={5} style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>
-                                    <Calendar size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
-                                    <p>{activeTab === 'pending' ? t('admin.approvals.no_pending') : activeTab === 'approved' ? t('admin.approvals.no_approved') : t('admin.approvals.no_rejected')}</p>
-                                </td>
+                                <th style={{ width: '50px' }}>#</th>
+                                <th>{t('admin.approvals.event_title')}</th>
+                                <th>{t('admin.approvals.category_city')}</th>
+                                <th>{t('admin.approvals.date_time')}</th>
+                                <th style={{ textAlign: 'right' }}>{t('admin.approvals.actions')}</th>
                             </tr>
-                        ) : (
-                            filteredEvents.map((evt, index) => (
-                                <tr key={evt.id}>
-                                    <td style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                        {startIndex + index + 1}
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-                                                {evt.images?.[0] ? <img src={evt.images[0]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Info size={16} color="var(--primary)" />}
-                                            </div>
-                                            <div>
-                                                <p style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem' }}>{evt.title}</p>
-                                                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{evt.organizer?.organizationName}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 800 }}>
-                                                <Tag size={12} color="var(--primary)" />
-                                                {evt.category?.name}
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                <MapPin size={12} />
-                                                {evt.city?.name}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>
-                                            {new Date(evt.dateTime).toLocaleDateString()}
-                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: '6px' }}>{new Date(evt.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        </div>
-                                    </td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        {evt.status === 'PENDING' ? (
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button
-                                                    onClick={() => handleReview(evt.id, 'APPROVED')}
-                                                    style={{ background: '#10B981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                                                >
-                                                    {processingId === evt.id ? <Loader2 className="animate-spin" size={14} /> : <Check size={16} />}
-                                                    {t('admin.approvals.approve')}
-                                                </button>
-                                                <button
-                                                    onClick={() => handleReview(evt.id, 'REJECTED')}
-                                                    style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                                                >
-                                                    <X size={18} />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end' }}>
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 900, color: evt.status === 'REJECTED' ? '#EF4444' : '#10B981', background: evt.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '100px' }}>
-                                                    {evt.status}
-                                                </span>
-                                                <button onClick={() => setSelectedItem(evt)} style={{ padding: '8px 12px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.7rem', cursor: 'pointer' }}>
-                                                    {t('admin.overview.details')}
-                                                </button>
-                                            </div>
-                                        )}
+                        </thead>
+                        <tbody>
+                            {filteredEvents.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>
+                                        <Calendar size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
+                                        <p>{activeTab === 'pending' ? t('admin.approvals.no_pending') : activeTab === 'approved' ? t('admin.approvals.no_approved') : t('admin.approvals.no_rejected')}</p>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            ) : (
+                                filteredEvents.map((evt, index) => (
+                                    <tr key={evt.id}>
+                                        <td style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                            {startIndex + index + 1}
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                                                    {evt.images?.[0] ? <img src={evt.images[0]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Info size={16} color="var(--primary)" />}
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem' }}>{evt.title}</p>
+                                                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{evt.organizer?.organizationName}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 800 }}>
+                                                    <Tag size={12} color="var(--primary)" />
+                                                    {evt.category?.name}
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    <MapPin size={12} />
+                                                    {evt.city?.name}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                                                {new Date(evt.dateTime).toLocaleDateString()}
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: '6px' }}>{new Date(evt.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                        </td>
+                                        <td style={{ textAlign: 'right' }}>
+                                            {evt.status === 'PENDING' ? (
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        onClick={() => handleReview(evt.id, 'APPROVED')}
+                                                        style={{ background: '#10B981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                                    >
+                                                        {processingId === evt.id ? <Loader2 className="animate-spin" size={14} /> : <Check size={16} />}
+                                                        {t('admin.approvals.approve')}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleReview(evt.id, 'REJECTED')}
+                                                        style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                    >
+                                                        <X size={18} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end' }}>
+                                                    <span style={{ fontSize: '0.7rem', fontWeight: 900, color: evt.status === 'REJECTED' ? '#EF4444' : '#10B981', background: evt.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '100px' }}>
+                                                        {evt.status}
+                                                    </span>
+                                                    <button onClick={() => setSelectedItem(evt)} style={{ padding: '8px 12px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.7rem', cursor: 'pointer' }}>
+                                                        {t('admin.overview.details')}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </motion.div>
+            </AnimatePresence>
 
-            <Pagination
-                currentPage={currentPage}
-                totalItems={allFilteredEvents.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-            />
+            <div style={{ marginTop: '32px' }}>
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={allFilteredEvents.length}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                />
+            </div>
 
             {decisionOpen && (
                 <DecisionModal
