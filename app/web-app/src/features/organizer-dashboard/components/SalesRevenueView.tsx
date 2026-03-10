@@ -390,16 +390,17 @@ export const SalesRevenueView = () => {
         const radius = innerRadius + (outerRadius - innerRadius) * 1.2;
         const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
         const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+        const compactValue = formatETB(Number(value), { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         return (
             <text
                 x={x}
                 y={y}
                 fill="var(--text-main)"
-                textAnchor={x > cx ? 'start' : 'end'}
+                textAnchor={x > cx ? 'end' : 'start'}
                 dominantBaseline="central"
                 style={{ fontSize: '0.75rem', fontWeight: 700 }}
             >
-                {name}: {formatETB(Number(value))}
+                {name}: {compactValue}
             </text>
         );
     };

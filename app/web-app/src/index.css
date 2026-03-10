@@ -168,6 +168,17 @@ body.dashboard-no-body-scroll {
     background-color: var(--bg-card);
 }
 
+/* Sales dashboard dropdown theming */
+.sales-dashboard-select {
+    color: var(--text-main);
+    background-color: var(--bg-card);
+}
+
+.sales-dashboard-select option {
+    color: var(--text-main);
+    background-color: var(--bg-card);
+}
+
 .container {
     max-width: 1280px;
     margin: 0 auto;

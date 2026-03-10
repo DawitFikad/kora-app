@@ -319,6 +319,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>City</label>
                                 <select
+                                    className="create-event-taxonomy-select"
                                     required
                                     value={form.cityId}
                                     onChange={e => setForm({ ...form, cityId: e.target.value })}
@@ -481,6 +482,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Name</label>
                                             <select
+                                                className="create-event-taxonomy-select"
                                                 required
                                                 value={tier.name}
                                                 onChange={e => handleTierNameChange(index, e.target.value)}
@@ -543,6 +545,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                                 <div>
                                                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Tier Type</label>
                                                     <select
+                                                        className="create-event-taxonomy-select"
                                                         value={(tier as any).type || 'GENERAL'}
                                                         onChange={e => handleTierChange(index, 'type', e.target.value)}
                                                         style={{ width: '100%', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '10px', borderRadius: '10px', color: 'var(--text-main)', fontSize: '0.85rem' }}

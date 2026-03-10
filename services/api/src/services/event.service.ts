@@ -605,12 +605,36 @@ export class EventService {
             throw new Error("Cannot pre-register for past events");
         }
 
-        await prismaAny.eventPreRegistration.createMany({
+        const createResult = await prismaAny.eventPreRegistration.createMany({
             data: [{ eventId, userId }],
             skipDuplicates: true,
         });
 
-        return { success: true, eventId, userId };
+        // Notify user in-app only when a new pre-registration was created.
+        if ((createResult?.count ?? 0) > 0) {
+            const { NotificationService } = require("./notification.service");
+            const { NotificationChannel } = require("@prisma/client");
+
+            await NotificationService.notifyUser(userId, {
+                title: "Pre-registration Confirmed",
+                content: `You are pre-registered for ${event.title}. We will notify you with important updates.`,
+                channels: [NotificationChannel.PUSH],
+                type: "EVENT_UPDATE",
+                referenceId: eventId,
+                dedupeMinutes: 60,
+                metadata: {
+                    eventId,
+                    action: "PRE_REGISTER",
+                },
+            });
+        }
+
+        return {
+            success: true,
+            eventId,
+            userId,
+            alreadyPreRegistered: (createResult?.count ?? 0) === 0,
+        };
     }
 
     static async subscribeEventReminder(eventId: number, userId: number) {
@@ -629,12 +653,36 @@ export class EventService {
             throw new Error("Cannot subscribe reminder for past events");
         }
 
-        await prismaAny.eventReminderSubscription.createMany({
+        const createResult = await prismaAny.eventReminderSubscription.createMany({
             data: [{ eventId, userId }],
             skipDuplicates: true,
         });
 
-        return { success: true, eventId, userId };
+        // Notify user in-app only when a new reminder subscription was created.
+        if ((createResult?.count ?? 0) > 0) {
+            const { NotificationService } = require("./notification.service");
+            const { NotificationChannel } = require("@prisma/client");
+
+            await NotificationService.notifyUser(userId, {
+                title: "Reminder Enabled",
+                content: `Reminder enabled for ${event.title}. We will alert you before it starts.`,
+                channels: [NotificationChannel.PUSH],
+                type: "EVENT_REMINDER",
+                referenceId: eventId,
+                dedupeMinutes: 60,
+                metadata: {
+                    eventId,
+                    action: "REMINDER_SUBSCRIBE",
+                },
+            });
+        }
+
+        return {
+            success: true,
+            eventId,
+            userId,
+            alreadySubscribed: (createResult?.count ?? 0) === 0,
+        };
     }
 
     // --- Users: Discovery ---
