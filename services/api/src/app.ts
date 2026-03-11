@@ -25,6 +25,7 @@ import { errorHandler } from "./middlewares/error.middleware";
 import { enforceMaintenanceMode } from "./middlewares/maintenance.middleware";
 import { EventService } from "./services/event.service";
 import { PaymentService } from "./services/payment.service";
+import { FinancialService } from "./services/financial.service";
 
 // Extend IncomingMessage to include rawBody
 import type { IncomingMessage } from "http";
@@ -106,7 +107,27 @@ router.get("/cron/complete-events", async (req, res) => {
     }
 
     const result = await EventService.completePastEvents();
-    return res.json({ success: true, message: "Past events marked as completed", ...result });
+    const settlements = await FinancialService.releaseSettlementsForCompletedEvents();
+    return res.json({
+      success: true,
+      message: "Past events marked as completed and settlements released",
+      ...result,
+      settlements,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get("/cron/settlements", async (req, res) => {
+  try {
+    if (!isAuthorizedCronRequest(req)) {
+      return res.status(401).json({ error: "Unauthorized cron request" });
+    }
+
+    const limit = Number((req.query.limit as string) || 200);
+    const settlements = await FinancialService.releaseSettlementsForCompletedEvents(limit);
+    return res.json({ success: true, message: "Settlement release completed", settlements });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }

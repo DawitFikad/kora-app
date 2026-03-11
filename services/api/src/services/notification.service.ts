@@ -31,6 +31,13 @@ const DEFAULT_THROTTLE_MINUTES: Partial<Record<NotificationType, number>> = {
 };
 
 export class NotificationService {
+    private static normalizePersistedType(type?: string) {
+        const normalized = String(type || "").toUpperCase();
+        return (Object.values(NotificationTypes) as string[]).includes(normalized)
+            ? (normalized as any)
+            : undefined;
+    }
+
     private static async applyGlobalChannelSettings(channels: NotificationChannel[]) {
         const [smsEnabled, emailEnabled, pushEnabled] = await Promise.all([
             SystemConfigService.getBoolean("notification.sms_enabled", true),
@@ -320,7 +327,7 @@ export class NotificationService {
             await prisma.notificationLog.create({
                 data: {
                     organizerId,
-                    type: (options.metadata?.type as any) || undefined,
+                    type: this.normalizePersistedType(options.metadata?.type),
                     channel,
                     recipient,
                     title: options.title,

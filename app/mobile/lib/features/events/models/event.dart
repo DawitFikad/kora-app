@@ -48,6 +48,7 @@ class Event {
   final int? duration;
   final String? rating;
   final String? trailerUrl;
+  final String? status;
   final int likesCount;
   final double averageRating;
   final int ratingsCount;
@@ -118,6 +119,7 @@ class Event {
     this.duration,
     this.rating,
     this.trailerUrl,
+    this.status,
     this.likesCount = 0,
     this.averageRating = 0,
     this.ratingsCount = 0,
@@ -182,6 +184,7 @@ class Event {
       duration: json['duration'],
       rating: json['rating'],
       trailerUrl: json['trailerUrl'],
+      status: json['status']?.toString(),
       likesCount: _toInt(json['likesCount']),
       averageRating: _toDouble(
         json['averageRating'],
@@ -231,6 +234,7 @@ class Event {
       'duration': duration,
       'rating': rating,
       'trailerUrl': trailerUrl,
+      'status': status,
       'likesCount': likesCount,
       'averageRating': averageRating,
       'ratingsCount': ratingsCount,

@@ -37,16 +37,20 @@ export class TicketingController {
             }
 
             if (tier.maxPerUser && tier.maxPerUser > 0) {
+                const lockTtlSeconds = 300;
                 const userTicketCount = await prisma.ticket.count({
                     where: { userId, tierId }
                 });
 
                 const pendingPurchases = await prisma.purchase.findMany({
                     where: { userId, status: PaymentStatus.PENDING },
-                    select: { metadata: true }
+                    select: { metadata: true, createdAt: true }
                 });
 
+                const activePendingCutoff = new Date(Date.now() - lockTtlSeconds * 1000);
+
                 const pendingQty = pendingPurchases.reduce((sum, purchase) => {
+                    if (purchase.createdAt < activePendingCutoff) return sum;
                     const metadata = purchase.metadata as any;
                     if (metadata?.tierId === tierId) {
                         return sum + (parseInt(metadata?.quantity, 10) || 0);

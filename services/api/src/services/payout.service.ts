@@ -1,17 +1,38 @@
 import { prisma } from "../lib/prisma";
-import { FinancialStatus, TransactionType, PayoutMethod, Prisma } from "@prisma/client";
+import { FinancialStatus, TransactionType, PayoutMethod, Prisma, RiskLevel } from "@prisma/client";
 import axios from "axios";
 import { env } from "../config/env";
 import logger from "../utils/logger";
 import crypto from "crypto";
+import { SystemConfigService } from "./system-config.service";
 
 export class PayoutService {
+    private static async ensurePayoutFraudChecksPassed(organizerId: number) {
+        const blockOnFraud = await SystemConfigService.getBoolean("financial.settlement.block_on_fraud", true);
+        if (!blockOnFraud) return;
+
+        const unresolvedFraudCount = await prisma.fraudAlert.count({
+            where: {
+                organizerId,
+                isCleared: false,
+                riskLevel: {
+                    in: [RiskLevel.HIGH, RiskLevel.CRITICAL]
+                }
+            }
+        });
+
+        if (unresolvedFraudCount > 0) {
+            throw new Error("Payout blocked by fraud checks. Please clear active fraud alerts first.");
+        }
+    }
+
     /**
      * Organizer requests a payout.
      * Validates that the requested amount is available in their wallet.
      */
     static async requestPayout(organizerId: number, amount: number, method: PayoutMethod, details: string) {
         const payoutAmount = new Prisma.Decimal(amount);
+        await this.ensurePayoutFraudChecksPassed(organizerId);
 
         return await prisma.$transaction(async (tx) => {
             const wallet = await tx.organizerWallet.findUnique({
@@ -59,6 +80,8 @@ export class PayoutService {
             }
 
             const wallet = batch.wallet;
+            await this.ensurePayoutFraudChecksPassed(wallet.organizerId);
+
             if (wallet.availableBalance.lessThan(batch.amount)) {
                 throw new Error("Insufficient funds in wallet at time of approval");
             }

@@ -17,6 +17,7 @@ router.get('/revenue', authenticate, authorize([Role.ADMIN]), FinancialControlle
 router.get('/payouts', authenticate, authorize([Role.ADMIN]), FinancialController.listPayouts);
 router.get('/ledger', authenticate, authorize([Role.ADMIN]), FinancialController.getSettlementLedger);
 router.get('/ledger/export', authenticate, authorize([Role.ADMIN]), FinancialController.exportLedgerCSV);
+router.post('/settlements/release-completed', authenticate, authorize([Role.ADMIN]), FinancialController.releaseCompletedEventSettlements);
 
 // Organizer Wallet
 router.get("/wallet", authenticate, authorize([Role.ORGANIZER]), FinancialController.getOrganizerWallet);

@@ -65,6 +65,80 @@ export class FraudController {
         }
     }
 
+    static async clearAlert(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const { adminNote } = req.body;
+            const alert = await prisma.fraudAlert.update({
+                where: { id: parseInt(id) },
+                data: {
+                    isCleared: true,
+                    adminNote: adminNote || "Cleared by admin after review",
+                    resolvedAt: new Date(),
+                },
+            });
+            res.json({ success: true, data: alert });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async clearOrganizerAlerts(req: Request, res: Response) {
+        try {
+            const organizerId = parseInt(req.params.organizerId);
+            const { adminNote } = req.body;
+
+            const result = await prisma.fraudAlert.updateMany({
+                where: {
+                    organizerId,
+                    isCleared: false,
+                    riskLevel: { in: [RiskLevel.HIGH, RiskLevel.CRITICAL] },
+                },
+                data: {
+                    isCleared: true,
+                    adminNote: adminNote || "Bulk-cleared by admin after payout review",
+                    resolvedAt: new Date(),
+                },
+            });
+
+            res.json({
+                success: true,
+                message: `Cleared ${result.count} blocking fraud alert(s) for organizer ${organizerId}`,
+                data: { organizerId, clearedCount: result.count },
+            });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async getOrganizerBlockingAlerts(req: Request, res: Response) {
+        try {
+            const organizerId = parseInt(req.params.organizerId);
+            const alerts = await prisma.fraudAlert.findMany({
+                where: {
+                    organizerId,
+                    isCleared: false,
+                    riskLevel: { in: [RiskLevel.HIGH, RiskLevel.CRITICAL] },
+                },
+                orderBy: { createdAt: "desc" },
+                include: {
+                    event: { select: { id: true, title: true } },
+                },
+            });
+
+            res.json({
+                success: true,
+                data: {
+                    organizerId,
+                    blockingCount: alerts.length,
+                    blockingAlerts: alerts,
+                },
+            });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
     static async getRiskScores(req: Request, res: Response) {
         try {
             const scores = await prisma.riskScore.findMany({

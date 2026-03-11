@@ -317,4 +317,14 @@ export class FinancialController {
             res.send(csv);
         } catch (error: any) { res.status(500).json({ success: false, message: error.message }); }
     }
+
+    static async releaseCompletedEventSettlements(req: Request, res: Response) {
+        try {
+            const limit = Number((req.query.limit as string) || 200);
+            const result = await FinancialService.releaseSettlementsForCompletedEvents(limit);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }

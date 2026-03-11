@@ -449,10 +449,14 @@ export class BookingService {
 
             const pendingPurchases = await prisma.purchase.findMany({
                 where: { userId, status: PaymentStatus.PENDING },
-                select: { metadata: true }
+                select: { metadata: true, createdAt: true }
             });
 
+            // Only count active pending reservations that are still within lock TTL.
+            const activePendingCutoff = new Date(Date.now() - lockTtlSeconds * 1000);
+
             const pendingQty = pendingPurchases.reduce((sum, purchase) => {
+                if (purchase.createdAt < activePendingCutoff) return sum;
                 const metadata = purchase.metadata as any;
                 if (metadata?.tierId === tierId) {
                     return sum + (parseInt(metadata?.quantity, 10) || 0);

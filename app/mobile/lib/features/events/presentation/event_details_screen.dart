@@ -95,6 +95,73 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     return ref.read(localStorageProvider).authToken != null;
   }
 
+  bool _isEventCompleted(Event event) {
+    final status = (event.status ?? '').toUpperCase();
+    if (status == 'COMPLETED' || status == 'CANCELLED') return true;
+
+    final eventDate = DateTime.tryParse(event.dateTime);
+    if (eventDate == null) return false;
+    return DateTime.now().isAfter(eventDate);
+  }
+
+  bool _isEventFullySoldOut(Event event) {
+    if (event.tiers.isEmpty) return true;
+    return event.tiers.every((tier) => tier.sold >= tier.capacity);
+  }
+
+  bool _isEventUnavailable(Event event) {
+    return _isEventCompleted(event) || _isEventFullySoldOut(event);
+  }
+
+  String _eventUnavailableReason(Event event) {
+    if (_isEventCompleted(event)) {
+      return 'Sorry, this event is already completed and cannot be booked.';
+    }
+    return 'Sorry, this event is sold out and cannot be booked.';
+  }
+
+  Future<void> _showEventUnavailableDialog(Event event) async {
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1D192B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.sentiment_dissatisfied,
+              color: Color(0xFFF59E0B),
+              size: 26,
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Sorry',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          _eventUnavailableReason(event),
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK', style: TextStyle(color: Colors.white70)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _handleBackNavigation() {
     if (context.canPop()) {
       context.pop();
@@ -299,6 +366,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   void _onCheckout(Event event) async {
+    if (_isEventUnavailable(event)) {
+      await _showEventUnavailableDialog(event);
+      return;
+    }
+
     // 0. Check Auth
     final isAuthenticated = ref.read(localStorageProvider).authToken != null;
     if (!isAuthenticated) {
@@ -382,6 +454,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   Future<void> _openTicketSelection(Event event, List<TicketTier> tiers) async {
+    if (_isEventUnavailable(event)) {
+      await _showEventUnavailableDialog(event);
+      return;
+    }
+
     final updated = await Navigator.push<Map<int, int>>(
       context,
       MaterialPageRoute(
@@ -1323,6 +1400,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Widget _buildBottomBar(Event event, List<TicketTier> tiers) {
     final total = _calculateTotal(event);
     final count = _totalTickets();
+    final eventUnavailable = _isEventUnavailable(event);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white54 : Colors.black54;
@@ -1394,6 +1472,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
+                  if (eventUnavailable) {
+                    _showEventUnavailableDialog(event);
+                    return;
+                  }
+
                   if (count == 0) {
                     _openTicketSelection(event, tiers);
                     return;
@@ -1401,7 +1484,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   _onCheckout(event);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
+                  backgroundColor: eventUnavailable
+                      ? const Color(0xFF6B7280)
+                      : const Color(0xFF8B5CF6),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   shape: RoundedRectangleBorder(
@@ -1410,7 +1495,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   elevation: 0,
                 ),
                 child: Text(
-                  count > 0 ? "event_details.checkout".tr() : "Select Tickets",
+                  eventUnavailable
+                      ? 'Unavailable'
+                      : (count > 0
+                            ? "event_details.checkout".tr()
+                            : "Select Tickets"),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -1430,6 +1519,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     Color textColor,
     Color mutedColor,
   ) {
+    final eventUnavailable = _isEventUnavailable(event);
     final selected = tiers
         .where((tier) => (_ticketQuantities[tier.id] ?? 0) > 0)
         .toList();
@@ -1458,8 +1548,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () => _openTicketSelection(event, tiers),
-                child: const Text('Select'),
+                onPressed: () {
+                  if (eventUnavailable) {
+                    _showEventUnavailableDialog(event);
+                    return;
+                  }
+                  _openTicketSelection(event, tiers);
+                },
+                child: Text(eventUnavailable ? 'Unavailable' : 'Select'),
               ),
             ],
           ),
