@@ -47,6 +47,14 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
     final bgColor = isDark ? const Color(0xFF0F0D15) : const Color(0xFFF8F7FA);
+    final hasEventLevelSoldOut =
+        (widget.event.ticketsAvailable != null &&
+        widget.event.ticketsAvailable! <= 0);
+    final totalAvailableByTiers = widget.tiers.fold<int>(
+      0,
+      (sum, tier) => sum + tier.available,
+    );
+    final isFullySoldOut = hasEventLevelSoldOut || totalAvailableByTiers <= 0;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -76,18 +84,17 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Choose any ticket type and adjust quantities.',
+            isFullySoldOut
+                ? 'Sorry, this event is sold out. Ticket selection is disabled.'
+                : 'Choose any ticket type and adjust quantities.',
             style: GoogleFonts.poppins(color: mutedColor, fontSize: 12),
           ),
           const SizedBox(height: 14),
           ...widget.tiers.map((tier) {
-            final soldOut = tier.sold >= tier.capacity;
-            final available = (tier.capacity - tier.sold).clamp(
-              0,
-              tier.capacity,
-            );
+            final soldOut = tier.available <= 0;
+            final available = tier.available;
             final qty = _quantities[tier.id] ?? 0;
-            final availabilityLimit = available is int ? available : 0;
+            final availabilityLimit = available;
             final perUserLimit = tier.maxPerUser > 0 ? tier.maxPerUser : 5;
             final maxAllowed = availabilityLimit < perUserLimit
                 ? availabilityLimit
@@ -159,8 +166,10 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                   const SizedBox(height: 10),
                   _QtyControl(
                     quantity: qty,
-                    disableIncrement: soldOut || qty >= maxAllowed,
+                    disableIncrement:
+                        isFullySoldOut || soldOut || qty >= maxAllowed,
                     onChanged: (next) {
+                      if (isFullySoldOut) return;
                       if (next < 0) return;
                       if (next > maxAllowed) return;
                       setState(() => _quantities[tier.id] = next);
@@ -217,9 +226,13 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
             ),
             const SizedBox(width: 12),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context, _quantities),
+              onPressed: isFullySoldOut
+                  ? null
+                  : () => Navigator.pop(context, _quantities),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8B5CF6),
+                backgroundColor: isFullySoldOut
+                    ? const Color(0xFF6B7280)
+                    : const Color(0xFF8B5CF6),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,

@@ -105,8 +105,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   bool _isEventFullySoldOut(Event event) {
+    if (event.ticketsAvailable != null && event.ticketsAvailable! <= 0) {
+      return true;
+    }
     if (event.tiers.isEmpty) return true;
-    return event.tiers.every((tier) => tier.sold >= tier.capacity);
+    return event.tiers.every((tier) => tier.available <= 0);
   }
 
   bool _isEventUnavailable(Event event) {
@@ -454,8 +457,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   Future<void> _openTicketSelection(Event event, List<TicketTier> tiers) async {
-    if (_isEventUnavailable(event)) {
-      await _showEventUnavailableDialog(event);
+    Event latestEvent = event;
+    List<TicketTier> latestTiers = tiers;
+
+    try {
+      latestEvent = await ref.read(eventServiceProvider).getEventById(event.id);
+      latestTiers = latestEvent.tiers;
+    } catch (_) {
+      // Fall back to currently loaded event if refresh fails.
+    }
+
+    if (_isEventUnavailable(latestEvent)) {
+      await _showEventUnavailableDialog(latestEvent);
       return;
     }
 
@@ -463,8 +476,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => TicketSelectionScreen(
-          event: event,
-          tiers: tiers,
+          event: latestEvent,
+          tiers: latestTiers,
           initialQuantities: Map<int, int>.from(_ticketQuantities),
         ),
       ),
@@ -473,7 +486,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     if (updated == null || !mounted) return;
 
     setState(() {
-      for (final tier in tiers) {
+      for (final tier in latestTiers) {
         _ticketQuantities[tier.id] = updated[tier.id] ?? 0;
       }
     });
@@ -1010,7 +1023,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     int totalAvailable = 0;
     int totalCapacity = 0;
     for (var tier in tiers) {
-      totalAvailable += (tier.capacity - tier.sold);
+      totalAvailable += tier.available;
       totalCapacity += tier.capacity;
     }
 

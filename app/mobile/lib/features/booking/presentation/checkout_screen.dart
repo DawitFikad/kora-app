@@ -256,9 +256,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             errorMessage.contains('Maximum 5 tickets per user for this tier') ||
             errorMessage.toLowerCase().contains('only buy up to 5 tickets');
         final isAvailabilityError =
-          errorMessage.toLowerCase().contains('not enough tickets available') ||
-          errorMessage.toLowerCase().contains('not enough capacity available') ||
-          errorMessage.toLowerCase().contains('sold out');
+            errorMessage.toLowerCase().contains(
+              'not enough tickets available',
+            ) ||
+            errorMessage.toLowerCase().contains(
+              'not enough capacity available',
+            ) ||
+            errorMessage.toLowerCase().contains('sold out');
 
         if (isTicketLimitError) {
           errorMessage =

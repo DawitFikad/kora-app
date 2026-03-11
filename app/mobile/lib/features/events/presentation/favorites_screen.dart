@@ -13,7 +13,58 @@ import 'home_screen.dart';
 class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({super.key});
 
-  void _showMenu(BuildContext context, WidgetRef ref, Color textColor, Color backgroundColor) {
+  bool _isEventUnavailableForBooking(Event event) {
+    final status = (event.status ?? '').toUpperCase();
+    final eventDate = DateTime.tryParse(event.dateTime);
+    final isCompletedByStatus = status == 'COMPLETED' || status == 'CANCELLED';
+    final isCompletedByTime =
+        eventDate != null && DateTime.now().isAfter(eventDate);
+    final isSoldOut =
+        event.tiers.isNotEmpty && event.tiers.every((t) => t.available <= 0);
+    return isCompletedByStatus || isCompletedByTime || isSoldOut;
+  }
+
+  Future<void> _openEventWithAvailabilityGuard(
+    BuildContext context,
+    Event event,
+  ) async {
+    if (!_isEventUnavailableForBooking(event)) {
+      context.push('/event/${event.id}');
+      return;
+    }
+
+    final status = (event.status ?? '').toUpperCase();
+    final completed = status == 'COMPLETED' || status == 'CANCELLED';
+    final message = completed
+        ? 'Sorry, this event is already completed and cannot be booked.'
+        : 'Sorry, this event is sold out and cannot be booked.';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1D192B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Sorry', style: TextStyle(color: Colors.white)),
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white70, height: 1.35),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK', style: TextStyle(color: Colors.white70)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMenu(
+    BuildContext context,
+    WidgetRef ref,
+    Color textColor,
+    Color backgroundColor,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: backgroundColor,
@@ -27,7 +78,10 @@ class FavoritesScreen extends ConsumerWidget {
           children: [
             ListTile(
               leading: Icon(Icons.delete_outline, color: textColor),
-              title: Text("Clear all favorites", style: TextStyle(color: textColor)),
+              title: Text(
+                "Clear all favorites",
+                style: TextStyle(color: textColor),
+              ),
               onTap: () async {
                 await ref.read(localStorageProvider).clearFavorites();
                 if (context.mounted) Navigator.pop(context);
@@ -57,14 +111,16 @@ class FavoritesScreen extends ConsumerWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
-    final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
+    final backgroundColor = isDark
+        ? const Color(0xFF15131C)
+        : const Color(0xFFF8F7FA);
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Navigator.canPop(context) 
+        leading: Navigator.canPop(context)
             ? IconButton(
                 icon: Icon(Icons.arrow_back, color: textColor),
                 onPressed: () => Navigator.pop(context),
@@ -81,13 +137,20 @@ class FavoritesScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.more_horiz, color: textColor),
-            onPressed: () => _showMenu(context, ref, textColor, isDark ? const Color(0xFF1D192B) : Colors.white),
+            onPressed: () => _showMenu(
+              context,
+              ref,
+              textColor,
+              isDark ? const Color(0xFF1D192B) : Colors.white,
+            ),
           ),
         ],
       ),
       body: eventsAsync.when(
         data: (events) {
-          final favoriteEvents = events.where((e) => favoriteIds.contains(e.id.toString())).toList();
+          final favoriteEvents = events
+              .where((e) => favoriteIds.contains(e.id.toString()))
+              .toList();
 
           if (favoriteEvents.isEmpty) {
             return _buildEmptyState(context, ref, isDark, textColor);
@@ -99,12 +162,17 @@ class FavoritesScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 20),
-                child: _FavoriteCard(event: favoriteEvents[index]),
+                child: _FavoriteCard(
+                  event: favoriteEvents[index],
+                  openEventWithGuard: _openEventWithAvailabilityGuard,
+                ),
               );
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+        ),
         error: (err, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -124,7 +192,9 @@ class FavoritesScreen extends ConsumerWidget {
                 onPressed: () => ref.refresh(eventsProvider),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: Text("common.retry".tr()),
               ),
@@ -135,7 +205,12 @@ class FavoritesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, WidgetRef ref, bool isDark, Color textColor) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    WidgetRef ref,
+    bool isDark,
+    Color textColor,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -146,7 +221,11 @@ class FavoritesScreen extends ConsumerWidget {
               color: isDark ? const Color(0xFF1D192B) : Colors.grey[200],
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.favorite_border_rounded, size: 64, color: textColor.withOpacity(0.1)),
+            child: Icon(
+              Icons.favorite_border_rounded,
+              size: 64,
+              color: textColor.withOpacity(0.1),
+            ),
           ),
           const SizedBox(height: 24),
           Text(
@@ -176,7 +255,9 @@ class FavoritesScreen extends ConsumerWidget {
               backgroundColor: const Color(0xFF8B5CF6),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             child: Text("favorites.explore_btn".tr()),
           ),
@@ -188,7 +269,46 @@ class FavoritesScreen extends ConsumerWidget {
 
 class _FavoriteCard extends ConsumerWidget {
   final Event event;
-  const _FavoriteCard({required this.event});
+  final Future<void> Function(BuildContext, Event) openEventWithGuard;
+  const _FavoriteCard({required this.event, required this.openEventWithGuard});
+
+  String? _eventAvailabilityLabel(Event event) {
+    final status = (event.status ?? '').toUpperCase();
+    final eventDate = DateTime.tryParse(event.dateTime);
+    final isCompletedByStatus = status == 'COMPLETED' || status == 'CANCELLED';
+    final isCompletedByTime =
+        eventDate != null && DateTime.now().isAfter(eventDate);
+    final isSoldOut =
+        event.tiers.isNotEmpty && event.tiers.every((t) => t.available <= 0);
+
+    if (isCompletedByStatus || isCompletedByTime) return 'COMPLETED';
+    if (isSoldOut) return 'SOLD OUT';
+    return null;
+  }
+
+  Widget _eventAvailabilityBadge(Event event) {
+    final label = _eventAvailabilityLabel(event);
+    if (label == null) return const SizedBox.shrink();
+
+    final isCompleted = label == 'COMPLETED';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: (isCompleted ? const Color(0xFF6B7280) : const Color(0xFFB91C1C))
+            .withOpacity(0.9),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -199,27 +319,30 @@ class _FavoriteCard extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () {
-          // Navigate to details
-           context.push('/event/${event.id}');
+        openEventWithGuard(context, event);
       },
       child: Container(
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: isDark ? null : [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: Column(
           children: [
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
                   child: AppImage(
                     imageUrl: event.coverImage,
                     height: 180,
@@ -231,16 +354,27 @@ class _FavoriteCard extends ConsumerWidget {
                   top: 16,
                   right: 16,
                   child: GestureDetector(
-                    onTap: () => ref.read(localStorageProvider).toggleFavorite(event.id.toString()),
+                    onTap: () => ref
+                        .read(localStorageProvider)
+                        .toggleFavorite(event.id.toString()),
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.favorite, color: Color(0xFF8B5CF6), size: 20),
+                      child: const Icon(
+                        Icons.favorite,
+                        color: Color(0xFF8B5CF6),
+                        size: 20,
+                      ),
                     ),
                   ),
+                ),
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: _eventAvailabilityBadge(event),
                 ),
               ],
             ),
@@ -265,7 +399,9 @@ class _FavoriteCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Text(
                         // Display price range or base price
-                        (event.tiers.isNotEmpty) ? "${event.tiers.first.price} ETB" : "favorites.free".tr(),
+                        (event.tiers.isNotEmpty)
+                            ? "${event.tiers.first.price} ETB"
+                            : "favorites.free".tr(),
                         style: GoogleFonts.poppins(
                           color: const Color(0xFF8B5CF6),
                           fontSize: 16,
@@ -277,22 +413,36 @@ class _FavoriteCard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, color: textColor.withOpacity(0.4), size: 14),
+                      Icon(
+                        Icons.calendar_today,
+                        color: textColor.withOpacity(0.4),
+                        size: 14,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         "${DateFormat('E, MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}",
-                        style: GoogleFonts.poppins(color: textColor.withOpacity(0.4), fontSize: 13),
+                        style: GoogleFonts.poppins(
+                          color: textColor.withOpacity(0.4),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined, color: textColor.withOpacity(0.4), size: 14),
+                      Icon(
+                        Icons.location_on_outlined,
+                        color: textColor.withOpacity(0.4),
+                        size: 14,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         event.venue,
-                        style: GoogleFonts.poppins(color: textColor.withOpacity(0.4), fontSize: 13),
+                        style: GoogleFonts.poppins(
+                          color: textColor.withOpacity(0.4),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -302,13 +452,17 @@ class _FavoriteCard extends ConsumerWidget {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                              ref.read(localStorageProvider).toggleFavorite(event.id.toString());
+                            ref
+                                .read(localStorageProvider)
+                                .toggleFavorite(event.id.toString());
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: textColor,
                             side: BorderSide(color: textColor.withOpacity(0.1)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           child: Text("favorites.remove".tr()),
                         ),
@@ -317,14 +471,16 @@ class _FavoriteCard extends ConsumerWidget {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                             context.push('/event/${event.id}');
+                            openEventWithGuard(context, event);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8B5CF6),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           child: Text("favorites.buy_ticket".tr()),
                         ),

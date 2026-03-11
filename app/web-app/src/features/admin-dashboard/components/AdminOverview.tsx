@@ -68,6 +68,12 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
 
     const computeMetrics = (evt: any) => {
         if (!evt) return evt;
+        const existingRevenue = Number(evt?.metrics?.totalRevenue || 0);
+        const existingTickets = Number(evt?.metrics?.ticketsSold || 0);
+        if (existingRevenue > 0 || existingTickets > 0) {
+            return evt;
+        }
+
         const tiers = Array.isArray(evt.tiers) ? evt.tiers : [];
         const ticketsSold = tiers.reduce((s: number, t: any) => s + (Number(t.soldCount || 0)), 0);
         const totalRevenue = tiers.reduce((s: number, t: any) => s + (Number(t.soldCount || 0) * Number(t.price || 0)), 0);
@@ -133,34 +139,17 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                     activeEvents: activeEventCount
                 });
 
-                const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                const mockDaily = weekdays.map(day => ({
-                    name: day,
-                    amount: Math.floor(Math.random() * 50000) + 10000
-                }));
                 const analytics = analyticsResponse?.data || analyticsResponse || {};
                 const dailySales = Array.isArray(analytics.dailySales) ? analytics.dailySales : [];
-                setSalesTrends(dailySales.length > 0 ? dailySales : mockDaily);
+                setSalesTrends(dailySales);
 
-                const mockOrganizers = [
-                    { name: 'Redfox Events', value: 40, color: '#8B5CF6' },
-                    { name: 'Alex Promotions', value: 25, color: '#3B82F6' },
-                    { name: 'Tech Hive', value: 20, color: '#10B981' },
-                    { name: 'Arts Studio', value: 15, color: '#F59E0B' }
-                ];
                 const organizerDistribution = Array.isArray(analytics.organizerDistribution) ? analytics.organizerDistribution : [];
                 setOrganizerSales(
                     organizerDistribution.length > 0
                         ? normalizeDistribution(organizerDistribution)
-                        : mockOrganizers
+                        : []
                 );
 
-                const mockCategories = [
-                    { name: 'Music & Concerts', value: 50, color: '#3B82F6' },
-                    { name: 'Professional', value: 20, color: '#10B981' },
-                    { name: 'Entertainment', value: 15, color: '#8B5CF6' },
-                    { name: 'Sports', value: 15, color: '#F59E0B' }
-                ];
                 const apiCategoryDistribution =
                     Array.isArray(analytics.categoryDistribution) && analytics.categoryDistribution.length > 0
                         ? analytics.categoryDistribution
@@ -174,7 +163,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                         ? normalizeDistribution(apiCategoryDistribution)
                         : eventCategoryDistribution.length > 0
                             ? eventCategoryDistribution
-                            : mockCategories;
+                            : [];
 
                 setCategorySales(finalCategoryDistribution);
 
@@ -674,7 +663,13 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                                 </div>
                                 <div style={{ background: 'var(--bg-subtle)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)' }}>
                                     <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px' }}>{t('admin.overview.platform_profit')}</p>
-                                    <h4 style={{ fontSize: '1.3rem', fontWeight: 1000, color: '#10B981' }}>ETB {Number(selectedEvent.metrics?.totalRevenue * 0.1 || 0).toLocaleString()}</h4>
+                                    <h4 style={{ fontSize: '1.3rem', fontWeight: 1000, color: '#10B981' }}>ETB {Number(selectedEvent.metrics?.platformFee || 0).toLocaleString()}</h4>
+                                </div>
+                            </div>
+                            <div style={{ marginTop: '-10px', marginBottom: '24px', padding: '14px 16px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase' }}>Organizer Net</p>
+                                    <p style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>ETB {Number(selectedEvent.metrics?.organizerNet || 0).toLocaleString()}</p>
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>

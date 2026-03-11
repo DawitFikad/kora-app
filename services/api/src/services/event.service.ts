@@ -2106,24 +2106,144 @@ export class EventService {
             }
         });
 
-        if (!event || (event.status !== EventStatus.APPROVED)) {
-            // Organizer can still view their own PENDING event (controller logic handles this)
+        if (!event) {
             return event;
         }
 
-        return event;
+        const [eventSoldAgg, tierSoldAgg] = await Promise.all([
+            prisma.ticket.groupBy({
+                by: ['eventId'],
+                where: {
+                    eventId: event.id,
+                    status: 'VALID',
+                },
+                _count: { eventId: true },
+            }),
+            prisma.ticket.groupBy({
+                by: ['tierId'],
+                where: {
+                    eventId: event.id,
+                    status: 'VALID',
+                },
+                _count: { tierId: true },
+            }),
+        ]);
+
+        const soldByTierId = new Map<number, number>(
+            tierSoldAgg
+                .filter((row) => row.tierId != null)
+                .map((row) => [row.tierId as number, row._count.tierId])
+        );
+
+        const sold = eventSoldAgg[0]?._count.eventId || 0;
+        const totalCapacity =
+            event.totalCapacity ?? event.tiers.reduce((sum, tier) => sum + (tier.capacity || 0), 0);
+        const ticketsAvailable = Math.max(totalCapacity - sold, 0);
+
+        const tiersWithAvailability = event.tiers.map((tier) => {
+            const tierSold = soldByTierId.get(tier.id) || 0;
+            const tierTicketsAvailable = Math.max((tier.capacity || 0) - tierSold, 0);
+
+            return {
+                ...tier,
+                sold: tierSold,
+                ticketsAvailable: tierTicketsAvailable,
+                remainingTickets: tierTicketsAvailable,
+            };
+        });
+
+        return {
+            ...event,
+            sold,
+            ticketsAvailable,
+            tiers: tiersWithAvailability,
+        };
     }
 
     // --- Admin: Moderation ---
 
     static async adminListEvents() {
-        return prisma.event.findMany({
+        const events = await prisma.event.findMany({
             include: {
                 category: true,
                 city: true,
-                organizer: true
+                organizer: true,
+                tiers: true,
             },
             orderBy: { createdAt: 'desc' }
+        });
+
+        if (!events.length) return [];
+
+        const eventIds = events.map((e) => e.id);
+        const tierIds = events.flatMap((e) => e.tiers.map((t) => t.id));
+
+        const [eventSalesAgg, tierSoldAgg] = await Promise.all([
+            prisma.financialTransaction.groupBy({
+                by: ['eventId'],
+                where: {
+                    eventId: { in: eventIds },
+                    type: 'TICKET_PURCHASE',
+                    status: { in: ['CAPTURED', 'RELEASED', 'SETTLED'] },
+                },
+                _sum: { amount: true, feeAmount: true, netAmount: true },
+            }),
+            tierIds.length
+                ? prisma.ticket.groupBy({
+                    by: ['tierId'],
+                    where: {
+                        tierId: { in: tierIds },
+                        status: { in: ['SOLD', 'VALID', 'USED'] },
+                    },
+                    _count: { tierId: true },
+                })
+                : Promise.resolve([] as any[]),
+        ]);
+
+        const revenueByEventId = new Map<number, { totalRevenue: number; platformFee: number; organizerNet: number }>(
+            eventSalesAgg
+                .filter((row) => row.eventId != null)
+                .map((row) => [
+                    row.eventId as number,
+                    {
+                        totalRevenue: Number(row._sum.amount || 0),
+                        platformFee: Number(row._sum.feeAmount || 0),
+                        organizerNet: Number(row._sum.netAmount || 0),
+                    },
+                ])
+        );
+
+        const soldByTierId = new Map<number, number>(
+            tierSoldAgg
+                .filter((row) => row.tierId != null)
+                .map((row) => [row.tierId as number, Number(row._count.tierId || 0)])
+        );
+
+        return events.map((event) => {
+            const metrics = revenueByEventId.get(event.id) || {
+                totalRevenue: 0,
+                platformFee: 0,
+                organizerNet: 0,
+            };
+
+            const tiers = event.tiers.map((tier) => {
+                const soldCount = soldByTierId.get(tier.id) || 0;
+                return {
+                    ...tier,
+                    soldCount,
+                    ticketsAvailable: Math.max((tier.capacity || 0) - soldCount, 0),
+                };
+            });
+
+            return {
+                ...event,
+                tiers,
+                totalCapacity: tiers.reduce((sum, tier) => sum + (tier.capacity || 0), 0),
+                metrics: {
+                    ...metrics,
+                    ticketsSold: tiers.reduce((sum, tier) => sum + (tier.soldCount || 0), 0),
+                },
+            };
         });
     }
 

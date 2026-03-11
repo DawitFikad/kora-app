@@ -19,18 +19,63 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
 
+  bool _isEventUnavailableForBooking(Event event) {
+    final status = (event.status ?? '').toUpperCase();
+    final eventDate = DateTime.tryParse(event.dateTime);
+    final isCompletedByStatus = status == 'COMPLETED' || status == 'CANCELLED';
+    final isCompletedByTime =
+        eventDate != null && DateTime.now().isAfter(eventDate);
+    final isSoldOut =
+        event.tiers.isNotEmpty && event.tiers.every((t) => t.available <= 0);
+    return isCompletedByStatus || isCompletedByTime || isSoldOut;
+  }
+
+  Future<void> _openEventWithAvailabilityGuard(Event event) async {
+    if (!_isEventUnavailableForBooking(event)) {
+      context.push('/event/${event.id}');
+      return;
+    }
+
+    final status = (event.status ?? '').toUpperCase();
+    final completed = status == 'COMPLETED' || status == 'CANCELLED';
+    final message = completed
+        ? 'Sorry, this event is already completed and cannot be booked.'
+        : 'Sorry, this event is sold out and cannot be booked.';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1D192B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Sorry', style: TextStyle(color: Colors.white)),
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white70, height: 1.35),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK', style: TextStyle(color: Colors.white70)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // eventsProvider is imported from event_service.dart
     final eventsAsync = ref.watch(eventsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
     final cardColor = isDark ? const Color(0xFF232030) : Colors.white;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
+      backgroundColor: isDark
+          ? const Color(0xFF15131C)
+          : const Color(0xFFF8F7FA),
       body: SafeArea(
         child: Column(
           children: [
@@ -43,7 +88,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.chevron_left, color: textColor, size: 28),
+                        icon: Icon(
+                          Icons.chevron_left,
+                          color: textColor,
+                          size: 28,
+                        ),
                         onPressed: () => context.pop(),
                       ),
                       const SizedBox(width: 8),
@@ -73,7 +122,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         Expanded(
                           child: TextField(
                             controller: _searchController,
-                            onChanged: (val) => setState(() => _searchQuery = val),
+                            onChanged: (val) =>
+                                setState(() => _searchQuery = val),
                             style: TextStyle(color: textColor),
                             decoration: InputDecoration(
                               hintText: "search.hint".tr(),
@@ -84,7 +134,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                         if (_searchQuery.isNotEmpty)
                           IconButton(
-                            icon: Icon(Icons.clear, color: mutedColor, size: 20),
+                            icon: Icon(
+                              Icons.clear,
+                              color: mutedColor,
+                              size: 20,
+                            ),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _searchQuery = "");
@@ -101,10 +155,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             Expanded(
               child: eventsAsync.when(
                 data: (events) {
-                  final filteredEvents = events.where((e) => 
-                    e.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                    e.venue.toLowerCase().contains(_searchQuery.toLowerCase())
-                  ).toList();
+                  final filteredEvents = events
+                      .where(
+                        (e) =>
+                            e.title.toLowerCase().contains(
+                              _searchQuery.toLowerCase(),
+                            ) ||
+                            e.venue.toLowerCase().contains(
+                              _searchQuery.toLowerCase(),
+                            ),
+                      )
+                      .toList();
 
                   if (filteredEvents.isEmpty) {
                     return Center(
@@ -123,12 +184,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   }
 
                   return ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     itemCount: filteredEvents.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 16),
                     itemBuilder: (context, index) {
                       final event = filteredEvents[index];
-                      return _SearchResultCard(event: event, isDark: isDark);
+                      return _SearchResultCard(
+                        event: event,
+                        isDark: isDark,
+                        onOpenEvent: _openEventWithAvailabilityGuard,
+                      );
                     },
                   );
                 },
@@ -137,7 +205,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
+                      const Icon(
+                        Icons.wifi_off_rounded,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(height: 16),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -152,7 +224,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         onPressed: () => ref.refresh(eventsProvider),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B5CF6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: Text("common.retry".tr()),
                       ),
@@ -171,13 +245,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 class _SearchResultCard extends StatelessWidget {
   final Event event;
   final bool isDark;
+  final Future<void> Function(Event event) onOpenEvent;
 
-  const _SearchResultCard({required this.event, required this.isDark});
+  const _SearchResultCard({
+    required this.event,
+    required this.isDark,
+    required this.onOpenEvent,
+  });
+
+  String? _eventAvailabilityLabel(Event event) {
+    final status = (event.status ?? '').toUpperCase();
+    final eventDate = DateTime.tryParse(event.dateTime);
+    final isCompletedByStatus = status == 'COMPLETED' || status == 'CANCELLED';
+    final isCompletedByTime =
+        eventDate != null && DateTime.now().isAfter(eventDate);
+    final isSoldOut =
+        event.tiers.isNotEmpty && event.tiers.every((t) => t.available <= 0);
+
+    if (isCompletedByStatus || isCompletedByTime) return 'COMPLETED';
+    if (isSoldOut) return 'SOLD OUT';
+    return null;
+  }
+
+  Widget _eventAvailabilityBadge(Event event) {
+    final label = _eventAvailabilityLabel(event);
+    if (label == null) return const SizedBox.shrink();
+
+    final isCompleted = label == 'COMPLETED';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: (isCompleted ? const Color(0xFF6B7280) : const Color(0xFFB91C1C))
+            .withOpacity(0.9),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.25,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => onOpenEvent(event),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -200,15 +317,23 @@ class _SearchResultCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    event.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          event.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      _eventAvailabilityBadge(event),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -216,8 +341,13 @@ class _SearchResultCard extends StatelessWidget {
                       Icon(Icons.calendar_today, size: 12, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text(
-                        DateFormat('MMM d, y').format(DateTime.parse(event.dateTime)),
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        DateFormat(
+                          'MMM d, y',
+                        ).format(DateTime.parse(event.dateTime)),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -230,7 +360,10 @@ class _SearchResultCard extends StatelessWidget {
                           event.venue,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],

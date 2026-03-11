@@ -91,19 +91,23 @@ export class EventOperationsService {
     }
 
     private static async getFinancialSnapshot(eventId: number) {
-        // Use Ticket financial snapshots for accurate reporting without payments (Point 7)
-        const ticketStats = await prisma.ticket.aggregate({
-            where: { eventId, status: { in: ["SOLD", "USED", "VALID"] } },
-            _sum: {
-                basePrice: true,
-                organizerNet: true,
-                platformNet: true
-            }
-        });
+        const [salesAgg, feeAgg] = await Promise.all([
+            prisma.financialTransaction.aggregate({
+                where: { eventId, type: "TICKET_PURCHASE" },
+                _sum: {
+                    amount: true,
+                    netAmount: true,
+                },
+            }),
+            prisma.financialTransaction.aggregate({
+                where: { eventId, type: "PLATFORM_FEE" },
+                _sum: { amount: true },
+            }),
+        ]);
 
-        const gross = Number(ticketStats._sum.basePrice || 0);
-        const net = Number(ticketStats._sum.organizerNet || 0);
-        const fees = Number(ticketStats._sum.platformNet || 0);
+        const gross = Number(salesAgg._sum.amount || 0);
+        const net = Number(salesAgg._sum.netAmount || 0);
+        const fees = Number(feeAgg._sum.amount || 0);
 
         // Check if event has a payout batch (Real bank status)
         const payout = await prisma.payoutBatch.findFirst({
@@ -192,21 +196,16 @@ export class EventOperationsService {
             return sum + event.tiers.reduce((tSum, tier) => tSum + tier.capacity, 0);
         }, 0);
 
-        // Calculate total revenue snapshots from issued tickets (Point 7)
-        const ticketMetrics = await prisma.ticket.aggregate({
-            where: {
-                event: { organizerId },
-                status: { in: ["SOLD", "USED", "VALID"] }
-            },
+        const salesAgg = await prisma.financialTransaction.aggregate({
+            where: { event: { organizerId }, type: "TICKET_PURCHASE" },
             _sum: {
-                basePrice: true,
-                organizerNet: true,
-                platformNet: true
-            }
+                amount: true,
+                netAmount: true,
+            },
         });
 
-        const grossVolume = Number(ticketMetrics._sum.basePrice || 0);
-        const netEarnings = Number(ticketMetrics._sum.organizerNet || 0);
+        const grossVolume = Number(salesAgg._sum.amount || 0);
+        const netEarnings = Number(salesAgg._sum.netAmount || 0);
 
         // Calculate daily sales for velocity chart (last 7 days)
         const salesVelocity = new Array(7).fill(0).map((_, i) => {
@@ -435,7 +434,7 @@ export class EventOperationsService {
                 select: {
                     basePrice: true,
                     createdAt: true,
-                    tier: { select: { name: true } },
+                    tier: { select: { name: true, price: true } },
                     event: { select: { id: true, title: true } }
                 },
                 orderBy: { createdAt: 'desc' },
@@ -451,7 +450,7 @@ export class EventOperationsService {
             })
         ]);
 
-        const totalRevenue = Number(ticketingMetrics._sum.basePrice || 0);
+        const fallbackTicketRevenue = Number(ticketingMetrics._sum.basePrice || 0);
         const totalTicketsSold = ticketingMetrics._count || 0;
 
         const eventTitleMap = new Map<number, string>(events.map((e: any) => [e.id, e.title]));
@@ -467,6 +466,8 @@ export class EventOperationsService {
             where: { event: { organizerId }, type: "PLATFORM_FEE" },
             _sum: { amount: true }
         });
+
+        const totalRevenue = Number(grossSales._sum.amount || 0) || fallbackTicketRevenue;
 
         // Total revenue and sold counts calculated from ticketingMetrics aggregate above
 
@@ -487,9 +488,10 @@ export class EventOperationsService {
         // Fill in actual sales data
         tickets.forEach(ticket => {
             const dateKey = new Date(ticket.createdAt).toISOString().split('T')[0];
+            const ticketAmount = Number(ticket.basePrice ?? ticket.tier?.price ?? 0);
             if (salesTrendMap.has(dateKey)) {
                 const existing = salesTrendMap.get(dateKey)!;
-                existing.revenue += Number(ticket.basePrice);
+                existing.revenue += ticketAmount;
                 existing.tickets += 1;
             }
         });
@@ -505,11 +507,12 @@ export class EventOperationsService {
         const revenueByTypeMap = new Map<string, { revenue: number; count: number }>();
         tickets.forEach(ticket => {
             const tierName = ticket.tier.name;
+            const ticketAmount = Number(ticket.basePrice ?? ticket.tier?.price ?? 0);
             if (!revenueByTypeMap.has(tierName)) {
                 revenueByTypeMap.set(tierName, { revenue: 0, count: 0 });
             }
             const existing = revenueByTypeMap.get(tierName)!;
-            existing.revenue += Number(ticket.basePrice);
+            existing.revenue += ticketAmount;
             existing.count += 1;
         });
 
@@ -525,6 +528,7 @@ export class EventOperationsService {
         const eventRevenueMap = new Map<number, { title: string; revenue: number; tickets: number }>();
         tickets.forEach(ticket => {
             const eventId = ticket.event.id;
+            const ticketAmount = Number(ticket.basePrice ?? ticket.tier?.price ?? 0);
             if (!eventRevenueMap.has(eventId)) {
                 eventRevenueMap.set(eventId, {
                     title: ticket.event.title,
@@ -533,7 +537,7 @@ export class EventOperationsService {
                 });
             }
             const existing = eventRevenueMap.get(eventId)!;
-            existing.revenue += Number(ticket.basePrice);
+            existing.revenue += ticketAmount;
             existing.tickets += 1;
         });
 

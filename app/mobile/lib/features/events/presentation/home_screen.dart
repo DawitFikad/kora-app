@@ -26,6 +26,90 @@ final selectedCategoryProvider = StateProvider<Category?>((ref) => null);
 final selectedCityProvider = StateProvider<City?>((ref) => null);
 final homeIndexProvider = StateProvider<int>((ref) => 0);
 
+bool _isEventUnavailableForBooking(Event event) {
+  final status = (event.status ?? '').toUpperCase();
+  final eventDate = DateTime.tryParse(event.dateTime);
+  final isCompletedByStatus = status == 'COMPLETED' || status == 'CANCELLED';
+  final isCompletedByTime =
+      eventDate != null && DateTime.now().isAfter(eventDate);
+  final isSoldOut =
+      event.tiers.isNotEmpty && event.tiers.every((t) => t.available <= 0);
+  return isCompletedByStatus || isCompletedByTime || isSoldOut;
+}
+
+String? _eventAvailabilityLabel(Event event) {
+  final status = (event.status ?? '').toUpperCase();
+  final eventDate = DateTime.tryParse(event.dateTime);
+  final isCompletedByStatus = status == 'COMPLETED' || status == 'CANCELLED';
+  final isCompletedByTime =
+      eventDate != null && DateTime.now().isAfter(eventDate);
+  final isSoldOut =
+      event.tiers.isNotEmpty && event.tiers.every((t) => t.available <= 0);
+
+  if (isCompletedByStatus || isCompletedByTime) return 'COMPLETED';
+  if (isSoldOut) return 'SOLD OUT';
+  return null;
+}
+
+Widget _eventAvailabilityBadge(Event event) {
+  final label = _eventAvailabilityLabel(event);
+  if (label == null) return const SizedBox.shrink();
+
+  final isCompleted = label == 'COMPLETED';
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: (isCompleted ? const Color(0xFF6B7280) : const Color(0xFFB91C1C))
+          .withOpacity(0.9),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.3,
+      ),
+    ),
+  );
+}
+
+Future<void> _openEventWithAvailabilityGuard(
+  BuildContext context,
+  Event event,
+) async {
+  if (!_isEventUnavailableForBooking(event)) {
+    context.push('/event/${event.id}');
+    return;
+  }
+
+  final status = (event.status ?? '').toUpperCase();
+  final completed = status == 'COMPLETED' || status == 'CANCELLED';
+  final message = completed
+      ? 'Sorry, this event is already completed and cannot be booked.'
+      : 'Sorry, this event is sold out and cannot be booked.';
+
+  await showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF1D192B),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      title: const Text('Sorry', style: TextStyle(color: Colors.white)),
+      content: Text(
+        message,
+        style: const TextStyle(color: Colors.white70, height: 1.35),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('OK', style: TextStyle(color: Colors.white70)),
+        ),
+      ],
+    ),
+  );
+}
+
 final filteredEventsProvider = FutureProvider<List<Event>>((ref) async {
   // Watch for auth changes
   ref.watch(authTokenProvider);
@@ -1043,7 +1127,7 @@ class _FeaturedCard extends ConsumerWidget {
     );
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 280,
         decoration: BoxDecoration(
@@ -1092,6 +1176,11 @@ class _FeaturedCard extends ConsumerWidget {
                   ),
                 ),
               ),
+            ),
+            Positioned(
+              top: 56,
+              right: 20,
+              child: _eventAvailabilityBadge(event),
             ),
             Positioned(
               top: 20,
@@ -1174,7 +1263,9 @@ class _FeaturedCard extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          "Live • Music",
+                          _eventAvailabilityLabel(event) == 'SOLD OUT'
+                              ? 'Sold out'
+                              : 'Live • ${event.category?.name ?? 'Event'}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -1348,7 +1439,7 @@ class _MovieCard extends StatelessWidget {
         : _fallbackMovieHighlights(movie);
 
     return GestureDetector(
-      onTap: () => context.push('/event/${movie.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, movie),
       child: SizedBox(
         width: 188,
         child: Column(
@@ -1398,6 +1489,11 @@ class _MovieCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: _eventAvailabilityBadge(movie),
+                    ),
                   ],
                 ),
               ),
@@ -1459,7 +1555,8 @@ class _MovieCard extends StatelessWidget {
               width: double.infinity,
               height: 28,
               child: ElevatedButton(
-                onPressed: () => context.push('/event/${movie.id}'),
+                onPressed: () =>
+                    _openEventWithAvailabilityGuard(context, movie),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.zero,
                   elevation: 0,
@@ -1621,7 +1718,7 @@ class _BestEventsWeekCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 336,
         padding: const EdgeInsets.all(16),
@@ -1816,7 +1913,7 @@ class _TrendingNowCard extends StatelessWidget {
         : const Color(0xFF16A34A);
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 310,
         decoration: BoxDecoration(
@@ -2037,7 +2134,7 @@ class _PersonalizedPickCard extends StatelessWidget {
     final muted = isDark ? Colors.white60 : Colors.black54;
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 290,
         padding: const EdgeInsets.all(12),
@@ -2224,7 +2321,7 @@ class _UpcomingAwardCard extends StatelessWidget {
         : '${event.ticketsAvailable} tickets left';
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 320,
         padding: const EdgeInsets.all(12),
@@ -2414,7 +2511,7 @@ class _WorkshopCourseCard extends StatelessWidget {
         : [event.category?.name ?? 'Workshop'];
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 320,
         padding: const EdgeInsets.all(10),
@@ -2653,7 +2750,7 @@ class _CitySpotlightCard extends StatelessWidget {
     final muted = isDark ? Colors.white60 : Colors.black54;
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 300,
         decoration: BoxDecoration(
@@ -2858,7 +2955,7 @@ class _LastMinuteEventCard extends StatelessWidget {
             .ceil();
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 300,
         decoration: BoxDecoration(
@@ -3029,7 +3126,7 @@ class _OfferDealCard extends StatelessWidget {
     final (tag, tagColor) = _resolveDealTag(event);
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 296,
         padding: const EdgeInsets.all(10),
@@ -3239,7 +3336,7 @@ class _UpcomingExperienceCard extends ConsumerWidget {
     final reminderSubscribed = event.userReminderSubscribed == true;
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         width: 312,
         padding: const EdgeInsets.all(10),
@@ -3425,7 +3522,7 @@ class _TrendingCard extends ConsumerWidget {
         .contains(event.id.toString());
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -3556,7 +3653,7 @@ class _VerticalEventCard extends ConsumerWidget {
     final mutedColor = isDark ? Colors.white60 : Colors.black54;
 
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF232030) : Colors.white,
@@ -3593,6 +3690,9 @@ class _VerticalEventCard extends ConsumerWidget {
                               _eventTitleTagChip(event.titleTag, compact: true),
                               const SizedBox(height: 4),
                             ],
+                            _eventAvailabilityBadge(event),
+                            if (_eventAvailabilityLabel(event) != null)
+                              const SizedBox(height: 4),
                             Text(
                               event.title,
                               maxLines: 1,
@@ -3844,7 +3944,7 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
 
   Widget _buildEventBannerCard(Event event, bool isDark) {
     return GestureDetector(
-      onTap: () => context.push('/event/${event.id}'),
+      onTap: () => _openEventWithAvailabilityGuard(context, event),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
         child: ClipRRect(

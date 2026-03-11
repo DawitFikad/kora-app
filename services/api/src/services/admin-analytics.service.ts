@@ -4,21 +4,23 @@ import * as os from "os";
 
 export class AdminAnalyticsService {
     static async getPlatformStats() {
-        // 1. GMT and Commissions from issued tickets (Point 7: Accurate without payment gateway)
-        const ticketStats = await prisma.ticket.aggregate({
-            where: { status: { in: ['SOLD', 'VALID', 'USED'] } },
-            _sum: {
-                basePrice: true,
-                commissionAmt: true,
-                convenienceFee: true,
-                platformNet: true,
-                organizerNet: true
-            }
-        });
+        const [salesAgg, platformFeeAgg] = await Promise.all([
+            prisma.financialTransaction.aggregate({
+                where: { type: 'TICKET_PURCHASE' },
+                _sum: {
+                    amount: true,
+                    netAmount: true,
+                },
+            }),
+            prisma.financialTransaction.aggregate({
+                where: { type: 'PLATFORM_FEE' },
+                _sum: { amount: true },
+            }),
+        ]);
 
-        const totalGMV = Number(ticketStats._sum.basePrice || 0) + Number(ticketStats._sum.convenienceFee || 0);
-        const platformCommission = Number(ticketStats._sum.platformNet || 0);
-        const organizerEarnings = Number(ticketStats._sum.organizerNet || 0);
+        const totalGMV = Number(salesAgg._sum.amount || 0);
+        const platformCommission = Number(platformFeeAgg._sum.amount || 0);
+        const organizerEarnings = Number(salesAgg._sum.netAmount || 0);
 
         // 2. Active Counts
         const activeEvents = await prisma.event.count({
@@ -61,7 +63,7 @@ export class AdminAnalyticsService {
         });
 
         // 5. Organizer Liabilities (What we owe them)
-        const organizerLiabilities = Number(ticketStats._sum.organizerNet || 0);
+        const organizerLiabilities = Number(salesAgg._sum.netAmount || 0);
 
         // 6. Revenue Projections (Simple linear projection based on last 7 days)
         const sevenDaysAgo = new Date();
@@ -159,7 +161,7 @@ export class AdminAnalyticsService {
         const sales: any[] = await prisma.financialTransaction.findMany({
             where: {
                 type: 'TICKET_PURCHASE',
-                status: 'SETTLED',
+                status: { in: ['CAPTURED', 'RELEASED', 'SETTLED'] },
                 createdAt: { gte: sixMonthsAgo }
             },
             select: {
@@ -181,7 +183,7 @@ export class AdminAnalyticsService {
                 events: {
                     include: {
                         transactions: {
-                            where: { type: 'TICKET_PURCHASE', status: 'SETTLED' },
+                            where: { type: 'TICKET_PURCHASE', status: { in: ['CAPTURED', 'RELEASED', 'SETTLED'] } },
                             select: { amount: true }
                         }
                     }
@@ -213,7 +215,7 @@ export class AdminAnalyticsService {
                 events: {
                     include: {
                         transactions: {
-                            where: { type: 'TICKET_PURCHASE', status: 'SETTLED' },
+                            where: { type: 'TICKET_PURCHASE', status: { in: ['CAPTURED', 'RELEASED', 'SETTLED'] } },
                             select: { amount: true }
                         }
                     }
@@ -240,11 +242,87 @@ export class AdminAnalyticsService {
             });
         }
 
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const dailyTx = await prisma.financialTransaction.findMany({
+            where: {
+                type: 'TICKET_PURCHASE',
+                status: { in: ['CAPTURED', 'RELEASED', 'SETTLED'] },
+                createdAt: { gte: sevenDaysAgo },
+            },
+            select: {
+                amount: true,
+                event: {
+                    select: {
+                        organizer: { select: { organizationName: true } },
+                        category: { select: { name: true } },
+                    },
+                },
+                createdAt: true,
+            },
+        });
+
+        const dayMap = new Map<string, number>();
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(sevenDaysAgo);
+            d.setDate(sevenDaysAgo.getDate() + i);
+            const key = d.toISOString().slice(0, 10);
+            dayMap.set(key, 0);
+        }
+
+        const organizerRevenue = new Map<string, number>();
+        const categoryRevenue = new Map<string, number>();
+
+        dailyTx.forEach((tx) => {
+            const dayKey = tx.createdAt.toISOString().slice(0, 10);
+            dayMap.set(dayKey, (dayMap.get(dayKey) || 0) + Number(tx.amount || 0));
+
+            const organizerName = tx.event?.organizer?.organizationName || 'Unknown';
+            organizerRevenue.set(organizerName, (organizerRevenue.get(organizerName) || 0) + Number(tx.amount || 0));
+
+            const categoryName = tx.event?.category?.name || 'Uncategorized';
+            categoryRevenue.set(categoryName, (categoryRevenue.get(categoryName) || 0) + Number(tx.amount || 0));
+        });
+
+        const dailySales = Array.from(dayMap.entries()).map(([date, amount]) => {
+            const d = new Date(date);
+            return {
+                date,
+                name: d.toLocaleDateString('en-US', { weekday: 'short' }),
+                amount,
+            };
+        });
+
+        const organizerTotal = Array.from(organizerRevenue.values()).reduce((sum, v) => sum + v, 0);
+        const organizerDistribution = Array.from(organizerRevenue.entries())
+            .map(([name, revenue]) => ({
+                name,
+                revenue,
+                value: organizerTotal > 0 ? Math.round((revenue / organizerTotal) * 100) : 0,
+            }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 6);
+
+        const categoryTotal = Array.from(categoryRevenue.values()).reduce((sum, v) => sum + v, 0);
+        const categoryDistributionLive = Array.from(categoryRevenue.entries())
+            .map(([name, revenue]) => ({
+                name,
+                revenue,
+                value: categoryTotal > 0 ? Math.round((revenue / categoryTotal) * 100) : 0,
+            }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 6);
+
         return {
             monthlySales: sortedMonths,
             categories: categoriesWithPercentage, // Return as 'categories' for frontend
-            categoryDistribution, // Keep original for reference
-            cityDistribution
+            categoryRevenueDistribution: categoryDistribution,
+            cityDistribution,
+            dailySales,
+            organizerDistribution,
+            categoryDistribution: categoryDistributionLive,
         };
     }
 }
