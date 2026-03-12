@@ -635,6 +635,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final subtotal =
+        (_priceBreakdown?['subtotal'] ?? (widget.unitPrice * widget.quantity))
+            .toDouble();
+    final commission = (_priceBreakdown?['commission'] ?? 0).toDouble();
+    final gatewayFee =
+        (_priceBreakdown?['paymentGatewayFee'] ??
+                _priceBreakdown?['convenienceFee'] ??
+                0)
+            .toDouble();
+    final discount = (_priceBreakdown?['discount'] ?? 0).toDouble();
+    final organizerEarnings =
+        (_priceBreakdown?['organizerEarnings'] ??
+                (subtotal - commission - gatewayFee - discount))
+            .toDouble();
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0D15),
       appBar: AppBar(
@@ -778,23 +793,28 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       children: [
                         _buildRow(
                           "Ticket Price (${widget.quantity}x)",
-                          "${(widget.unitPrice * widget.quantity).toStringAsFixed(2)} ETB",
+                          "${subtotal.toStringAsFixed(2)} ETB",
                         ),
                         if (_priceBreakdown != null) ...[
                           _buildRow(
-                            "Commission",
-                            "${(_priceBreakdown!['commission'] ?? 0).toStringAsFixed(2)} ETB",
-                            subtitle: "Platform service",
+                            "Platform Fee",
+                            "${commission.toStringAsFixed(2)} ETB",
+                            subtitle: "Deducted from organizer payout",
                           ),
                           _buildRow(
-                            "Convenience Fee",
-                            "${(_priceBreakdown!['convenienceFee'] ?? 0).toStringAsFixed(2)} ETB",
-                            subtitle: "Secure processing",
+                            "Payment Gateway Fee",
+                            "${gatewayFee.toStringAsFixed(2)} ETB",
+                            subtitle: "Deducted from organizer payout",
                           ),
-                          if ((_priceBreakdown!['discount'] ?? 0) > 0)
+                          _buildRow(
+                            "Organizer Earnings",
+                            "${organizerEarnings.toStringAsFixed(2)} ETB",
+                            subtitle: "Estimated net amount organizer receives",
+                          ),
+                          if (discount > 0)
                             _buildRow(
                               "Promo Discount",
-                              "-${(_priceBreakdown!['discount'] ?? 0).toStringAsFixed(2)} ETB",
+                              "-${discount.toStringAsFixed(2)} ETB",
                               color: const Color(0xFF10B981),
                               subtitle: "Code applied",
                             ),

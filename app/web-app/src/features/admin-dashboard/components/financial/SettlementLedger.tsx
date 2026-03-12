@@ -51,6 +51,7 @@ export const SettlementLedger: React.FC = () => {
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const visible = filtered.slice(page * pageSize, page * pageSize + pageSize);
+    const latestTimestamp = rows[0]?.timestamp ? formatDate(rows[0].timestamp) : 'No entries yet';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -59,7 +60,7 @@ export const SettlementLedger: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                     <div style={{ padding: '12px 20px', borderRadius: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <ShieldCheck size={18} color="#10B981" />
-                        <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Immutable Chain Verified</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ledger Feed Live ({rows.length})</span>
                     </div>
                 </div>
 
@@ -78,6 +79,10 @@ export const SettlementLedger: React.FC = () => {
                         Export Audit
                     </button>
                 </div>
+            </div>
+
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                Last ledger entry: {latestTimestamp}
             </div>
 
             {/* 📋 Ledger Table */}

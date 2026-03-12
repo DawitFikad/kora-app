@@ -52,6 +52,25 @@ export const GMVDashboard: React.FC = () => {
     };
 
     const totalGMV = rows.reduce((s, r) => s + Number(r.gmv || 0), 0);
+    const cityTotals = rows.reduce((acc: Record<string, number>, r) => {
+        const city = String(r.city || 'Unknown');
+        acc[city] = (acc[city] || 0) + Number(r.gmv || 0);
+        return acc;
+    }, {});
+    const topCityEntry = Object.entries(cityTotals).sort((a, b) => b[1] - a[1])[0];
+    const topCity = topCityEntry?.[0] || 'N/A';
+
+    const dateTotals = rows.reduce((acc: Record<string, number>, r) => {
+        const date = String(r.date || '');
+        acc[date] = (acc[date] || 0) + Number(r.gmv || 0);
+        return acc;
+    }, {});
+    const orderedDates = Object.keys(dateTotals).sort();
+    const midpoint = Math.floor(orderedDates.length / 2);
+    const firstHalf = orderedDates.slice(0, midpoint).reduce((sum, d) => sum + dateTotals[d], 0);
+    const secondHalf = orderedDates.slice(midpoint).reduce((sum, d) => sum + dateTotals[d], 0);
+    const trendPct = firstHalf > 0 ? ((secondHalf - firstHalf) / firstHalf) * 100 : 0;
+    const trendLabel = Number.isFinite(trendPct) ? `${trendPct >= 0 ? '+' : ''}${trendPct.toFixed(1)}%` : '0.0%';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -62,7 +81,7 @@ export const GMVDashboard: React.FC = () => {
                         <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <TrendingUp color="#10B981" size={20} />
                         </div>
-                        <div style={{ padding: '4px 12px', borderRadius: '100px', background: 'rgba(16, 185, 129, 0.1)', fontSize: '0.7rem', color: '#10B981', fontWeight: 900 }}>+12.5%</div>
+                        <div style={{ padding: '4px 12px', borderRadius: '100px', background: 'rgba(16, 185, 129, 0.1)', fontSize: '0.7rem', color: '#10B981', fontWeight: 900 }}>{trendLabel}</div>
                     </div>
                     <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Total Period GMV</p>
                     <p style={{ fontSize: '2.2rem', fontWeight: 950, color: 'var(--text-main)', letterSpacing: '-0.03em' }}>ETB {formatCurrency(totalGMV)}</p>
@@ -76,7 +95,7 @@ export const GMVDashboard: React.FC = () => {
                         <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>Top Region</span>
                     </div>
                     <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Leading Performance</p>
-                    <p style={{ fontSize: '2.2rem', fontWeight: 950, color: 'var(--text-main)', letterSpacing: '-0.03em' }}>Addis Ababa</p>
+                    <p style={{ fontSize: '2.2rem', fontWeight: 950, color: 'var(--text-main)', letterSpacing: '-0.03em' }}>{topCity}</p>
                 </div>
 
                 <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '32px', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -86,7 +105,7 @@ export const GMVDashboard: React.FC = () => {
                             <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{range.toUpperCase()}</p>
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Data Nodes</p>
+                            <p style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Records</p>
                             <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>{rows.length}</p>
                         </div>
                     </div>

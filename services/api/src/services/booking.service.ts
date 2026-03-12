@@ -21,7 +21,9 @@ export interface PriceBreakdown {
     subtotal: number;
     commission: number;
     convenienceFee: number;
+    paymentGatewayFee?: number;
     discount: number;
+    organizerEarnings?: number;
     total: number;
     promoApplied?: {
         code: string;
@@ -329,7 +331,9 @@ export class BookingService {
             }
         }
 
-        const total = subtotal + commission + convenienceFee - discount;
+        // Buyer does not pay extra fees above ticket price; gateway/platform fees are deducted from organizer payout.
+        const organizerEarnings = subtotal - commission - convenienceFee - discount;
+        const total = subtotal - discount;
 
         return {
             basePrice: ticketPrice,
@@ -337,7 +341,9 @@ export class BookingService {
             subtotal,
             commission: Math.round(commission * 100) / 100,
             convenienceFee: Math.round(convenienceFee * 100) / 100,
+            paymentGatewayFee: Math.round(convenienceFee * 100) / 100,
             discount: Math.round(discount * 100) / 100,
+            organizerEarnings: Math.round(organizerEarnings * 100) / 100,
             total: Math.round(total * 100) / 100,
             promoApplied,
             commissionRate: activeFeeType === 'PERCENTAGE' ? activeFeePercentage : activeFeeFixed,

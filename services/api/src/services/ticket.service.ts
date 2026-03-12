@@ -45,7 +45,7 @@ export class TicketService {
         const ticketConvenience = Number(priceBreakdown.convenienceFee) / quantity;
         const ticketDiscount = Number(priceBreakdown.discount || 0) / quantity;
 
-        const organizerNet = ticketBasePrice - ticketCommission - ticketDiscount;
+        const organizerNet = ticketBasePrice - ticketCommission - ticketConvenience - ticketDiscount;
         const platformNet = ticketCommission + ticketConvenience;
 
         for (let i = 0; i < quantity; i++) {

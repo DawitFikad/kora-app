@@ -188,6 +188,12 @@ export const OrganizerPayouts: React.FC = () => {
         </div>
     );
 
+    const pendingCount = Array.isArray(payouts.pending) ? payouts.pending.length : 0;
+    const complianceBadge = pendingCount === 0 ? 'RECONCILED' : 'PENDING REVIEW';
+    const complianceText = pendingCount === 0
+        ? 'All payout batches are currently reconciled.'
+        : `${pendingCount} payout batch(es) are waiting for admin decision.`;
+
     const StatCard = ({ label, amount, items, color, icon: Icon, type }: any) => (
         <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -355,10 +361,10 @@ export const OrganizerPayouts: React.FC = () => {
                     </div>
                     <div>
                         <h4 style={{ margin: 0, fontWeight: 850 }}>System Liquidity Assurance</h4>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>All displayed funds are reconciled with Telebirr/Chapa settlement batches.</p>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{complianceText}</p>
                     </div>
                 </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.1em' }}>RECONCILED 100%</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{complianceBadge}</div>
             </div>
         </div>
     );

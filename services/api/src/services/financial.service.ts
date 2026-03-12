@@ -95,13 +95,18 @@ export class FinancialService {
         const subtotal = Number(breakdown.subtotal || 0);
         const commission = Number(breakdown.commission || 0);
         const convenienceFee = Number(breakdown.convenienceFee || 0);
+        const discount = Number(breakdown.discount || 0);
         const totalCaptured = Number(purchase.totalAmount);
 
         // Escrow-first split:
         // - platformFee is recognized at platform level
         // - organizerNet becomes platform liability and is credited to organizer pending wallet
         const platformFee = this.round2(commission + convenienceFee);
-        const organizerNet = this.round2(subtotal - commission);
+        const organizerNet = this.round2(
+            Number.isFinite(Number(breakdown.organizerEarnings))
+                ? Number(breakdown.organizerEarnings)
+                : (subtotal - commission - convenienceFee - discount)
+        );
         const feeAmount = this.round2(platformFee);
 
         if (organizerNet < 0) {

@@ -19,10 +19,12 @@ export const FinancialControlIndex: React.FC = () => {
     const [stats, setStats] = useState<any>(null);
 
     useEffect(() => {
-        AdminService.getStats().then(res => setStats(res));
+        AdminService.getStats().then((res: any) => setStats(res?.data || res));
     }, []);
 
     const currency = (v: number) => `ETB ${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    const platformLiquidity = Number(stats?.financials?.organizerLiabilities ?? stats?.kpis?.organizerLiabilities ?? 0);
+    const totalGMV = Number(stats?.kpis?.totalGMV ?? 0);
 
     return (
         <motion.div
@@ -56,11 +58,11 @@ export const FinancialControlIndex: React.FC = () => {
                 <div style={{ display: 'flex', gap: '24px' }}>
                     <div style={{ textAlign: 'right', padding: '0 24px', borderRight: '1px solid var(--border)' }}>
                         <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Platform Liquidity</p>
-                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text-main)' }}>{stats ? currency(stats.financials?.totalVolume || 0) : '---'}</p>
+                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text-main)' }}>{stats ? currency(platformLiquidity) : '---'}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Live GMV</p>
-                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: '#10B981' }}>{stats ? currency(stats.financials?.gmvToday || 0) : '---'}</p>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Total GMV</p>
+                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: '#10B981' }}>{stats ? currency(totalGMV) : '---'}</p>
                     </div>
                 </div>
             </div>

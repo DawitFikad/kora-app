@@ -24,7 +24,12 @@ interface CreateEventViewProps {
 
 export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
     const toast = useToast();
+    const PLATFORM_COMMISSION_RATE = 0.10;
+    const PAYMENT_GATEWAY_RATE = 0.025;
+    const LOW_MARGIN_RATE_THRESHOLD = 0.80;
+    const LOW_MARGIN_PER_TICKET_THRESHOLD = 100;
     const [loading, setLoading] = useState(false);
+    const [showProjectionModal, setShowProjectionModal] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
 
@@ -204,6 +209,58 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
         e.preventDefault();
         handleSubmit('PENDING'); // Default to submit
     };
+
+    const toAmount = (value: any): number => {
+        const n = Number(value);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+
+    const fmt = (value: number): string => {
+        return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const estimateTierFinancials = (priceInput: any) => {
+        const ticketPrice = toAmount(priceInput);
+        const platformFee = ticketPrice * PLATFORM_COMMISSION_RATE;
+        const gatewayFee = ticketPrice * PAYMENT_GATEWAY_RATE;
+        const organizerNet = ticketPrice - platformFee - gatewayFee;
+        const buyerPays = ticketPrice;
+
+        return {
+            ticketPrice,
+            platformFee,
+            gatewayFee,
+            organizerNet,
+            buyerPays,
+        };
+    };
+
+    const estimateTierProjection = (tier: any) => {
+        const perTicket = estimateTierFinancials(tier?.price);
+        const capacity = Math.floor(toAmount(tier?.capacity));
+
+        return {
+            name: tier?.name || 'Tier',
+            capacity,
+            ticketPrice: perTicket.ticketPrice,
+            buyerGross: perTicket.buyerPays * capacity,
+            platformFee: perTicket.platformFee * capacity,
+            gatewayFee: perTicket.gatewayFee * capacity,
+            organizerNet: perTicket.organizerNet * capacity,
+        };
+    };
+
+    const projectedRows = form.tiers.map((tier) => estimateTierProjection(tier));
+    const projectionTotals = projectedRows.reduce(
+        (acc, row) => ({
+            capacity: acc.capacity + row.capacity,
+            buyerGross: acc.buyerGross + row.buyerGross,
+            platformFee: acc.platformFee + row.platformFee,
+            gatewayFee: acc.gatewayFee + row.gatewayFee,
+            organizerNet: acc.organizerNet + row.organizerNet,
+        }),
+        { capacity: 0, buyerGross: 0, platformFee: 0, gatewayFee: 0, organizerNet: 0 }
+    );
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -466,13 +523,22 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <Ticket size={20} color="#FBBF24" /> Ticket Tiers
                             </h3>
-                            <button
-                                type="button"
-                                onClick={handleAddTier}
-                                className="btn-blue" style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-                            >
-                                <Plus size={16} /> Add Tier
-                            </button>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowProjectionModal(true)}
+                                    style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Revenue Projection
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleAddTier}
+                                    className="btn-blue" style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                                >
+                                    <Plus size={16} /> Add Tier
+                                </button>
+                            </div>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -527,6 +593,69 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                             <Trash2 size={18} />
                                         </button>
                                     </div>
+
+                                    {(() => {
+                                        const est = estimateTierFinancials((tier as any).price);
+                                        const cap = Math.floor(toAmount((tier as any).capacity));
+                                        if (est.ticketPrice <= 0) {
+                                            return (
+                                                <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '10px', border: '1px dashed var(--border)', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                                    Enter ticket price to preview earnings for this tier.
+                                                </div>
+                                            );
+                                        }
+
+                                        const marginRate = est.ticketPrice > 0 ? est.organizerNet / est.ticketPrice : 0;
+                                        const isLowMargin =
+                                            marginRate < LOW_MARGIN_RATE_THRESHOLD ||
+                                            est.organizerNet < LOW_MARGIN_PER_TICKET_THRESHOLD;
+                                        const soldOutGross = est.buyerPays * cap;
+                                        const soldOutNet = est.organizerNet * cap;
+
+                                        return (
+                                            <div
+                                                style={{
+                                                    marginTop: '12px',
+                                                    padding: '12px',
+                                                    borderRadius: '12px',
+                                                    background: isLowMargin ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.08)',
+                                                    border: isLowMargin ? '1px solid rgba(245,158,11,0.45)' : '1px solid rgba(16,185,129,0.35)',
+                                                    display: 'grid',
+                                                    gridTemplateColumns: '1fr auto',
+                                                    gap: '8px 12px'
+                                                }}
+                                            >
+                                                <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>Per ticket take-home</div>
+                                                <div style={{ color: '#10B981', fontSize: '0.78rem', fontWeight: 900 }}>ETB {fmt(est.organizerNet)}</div>
+
+                                                {cap > 0 ? (
+                                                    <>
+                                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>If sold out ({cap} tickets)</div>
+                                                        <div style={{ fontSize: '0.76rem', fontWeight: 900, color: '#10B981' }}>ETB {fmt(soldOutNet)}</div>
+                                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>Gross sales from buyers</div>
+                                                        <div style={{ fontSize: '0.76rem', fontWeight: 800 }}>ETB {fmt(soldOutGross)}</div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div style={{ gridColumn: '1 / -1', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                                                            Add capacity to see sold-out total projection.
+                                                        </div>
+                                                    </>
+                                                )}
+                                                {isLowMargin && (
+                                                    <>
+                                                        <div style={{ gridColumn: '1 / -1', fontSize: '0.75rem', color: '#F59E0B', fontWeight: 800 }}>
+                                                            Low margin warning: organizer keeps ETB {fmt(est.organizerNet)} per ticket ({(marginRate * 100).toFixed(1)}%).
+                                                        </div>
+                                                        <div style={{ gridColumn: '1 / -1', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                                            Consider increasing ticket price or revising this tier to improve take-home.
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+
                                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '12px' }}>
                                         <button
                                             type="button"
@@ -638,8 +767,43 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                                 </div>
                                                 <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: 'rgba(29, 144, 245, 0.1)', borderRadius: '8px', fontSize: '0.75rem', color: '#1D90F5' }}>
                                                     <AlertCircle size={14} />
-                                                    <span>Estimated Fees: 5% Platform Commission + 2% Service Fee will be deducted/added based on configuration.</span>
+                                                    <span>Live estimate from your ticket price.</span>
                                                 </div>
+
+                                                {(() => {
+                                                    const est = estimateTierFinancials((tier as any).price);
+                                                    if (est.ticketPrice <= 0) {
+                                                        return (
+                                                            <div style={{ gridColumn: '1 / -1', padding: '10px', borderRadius: '8px', border: '1px dashed var(--border)', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                                                Enter ticket price to preview organizer earnings.
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return (
+                                                        <div style={{ gridColumn: '1 / -1', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                                                            <div style={{ padding: '10px 12px', background: 'rgba(16, 185, 129, 0.08)', borderBottom: '1px solid var(--border)', fontWeight: 800, fontSize: '0.8rem', color: '#10B981' }}>
+                                                                Price Breakdown (Per Ticket)
+                                                            </div>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px 12px', padding: '12px', fontSize: '0.8rem' }}>
+                                                                <span style={{ color: 'var(--text-muted)' }}>Ticket Price (Organizer Input)</span>
+                                                                <span style={{ fontWeight: 800 }}>ETB {fmt(est.ticketPrice)}</span>
+
+                                                                <span style={{ color: 'var(--text-muted)' }}>Platform Fee (10%)</span>
+                                                                <span style={{ fontWeight: 800, color: '#F59E0B' }}>- ETB {fmt(est.platformFee)}</span>
+
+                                                                <span style={{ color: 'var(--text-muted)' }}>Organizer Earnings</span>
+                                                                <span style={{ fontWeight: 900, color: '#10B981' }}>ETB {fmt(est.organizerNet)}</span>
+
+                                                                <span style={{ color: 'var(--text-muted)' }}>Payment Gateway Fee (2.5%)</span>
+                                                                <span style={{ fontWeight: 800 }}>+ ETB {fmt(est.gatewayFee)}</span>
+
+                                                                <span style={{ color: 'var(--text-muted)' }}>Buyer Pays</span>
+                                                                <span style={{ fontWeight: 900 }}>ETB {fmt(est.buyerPays)}</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         )}
                                     </div>
@@ -768,6 +932,72 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     </div>
                 </div>
             </form>
+
+            {showProjectionModal && (
+                <div
+                    onClick={() => setShowProjectionModal(false)}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ width: '100%', maxWidth: '920px', maxHeight: '85vh', overflow: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '22px' }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900 }}>Projected Earnings From Ticket Tiers</h3>
+                                <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Preview totals from your current price and capacity inputs.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowProjectionModal(false)}
+                                style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 700 }}
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: '12px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '860px' }}>
+                                <thead>
+                                    <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                                        <th style={{ textAlign: 'left', padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tier</th>
+                                        <th style={{ textAlign: 'right', padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Capacity</th>
+                                        <th style={{ textAlign: 'right', padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ticket Price</th>
+                                        <th style={{ textAlign: 'right', padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Gross Sales</th>
+                                        <th style={{ textAlign: 'right', padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Platform Fee</th>
+                                        <th style={{ textAlign: 'right', padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Gateway Fee</th>
+                                        <th style={{ textAlign: 'right', padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>You Get</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {projectedRows.map((row, idx) => (
+                                        <tr key={`${row.name}-${idx}`} style={{ borderTop: '1px solid var(--border)' }}>
+                                            <td style={{ padding: '12px', fontWeight: 700 }}>{row.name}</td>
+                                            <td style={{ padding: '12px', textAlign: 'right' }}>{row.capacity}</td>
+                                            <td style={{ padding: '12px', textAlign: 'right' }}>ETB {fmt(row.ticketPrice)}</td>
+                                            <td style={{ padding: '12px', textAlign: 'right' }}>ETB {fmt(row.buyerGross)}</td>
+                                            <td style={{ padding: '12px', textAlign: 'right', color: '#F59E0B' }}>ETB {fmt(row.platformFee)}</td>
+                                            <td style={{ padding: '12px', textAlign: 'right', color: '#F59E0B' }}>ETB {fmt(row.gatewayFee)}</td>
+                                            <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900, color: '#10B981' }}>ETB {fmt(row.organizerNet)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr style={{ borderTop: '2px solid var(--border)', background: 'rgba(16,185,129,0.06)' }}>
+                                        <td style={{ padding: '12px', fontWeight: 900 }}>Total</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900 }}>{projectionTotals.capacity}</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900 }}>-</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900 }}>ETB {fmt(projectionTotals.buyerGross)}</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900 }}>ETB {fmt(projectionTotals.platformFee)}</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900 }}>ETB {fmt(projectionTotals.gatewayFee)}</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900, color: '#10B981' }}>ETB {fmt(projectionTotals.organizerNet)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
         </motion.div>
     );
 };

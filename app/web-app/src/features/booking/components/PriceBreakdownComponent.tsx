@@ -7,7 +7,9 @@ interface PriceBreakdown {
     subtotal: number;
     commission: number;
     convenienceFee: number;
+    paymentGatewayFee?: number;
     discount: number;
+    organizerEarnings?: number;
     total: number;
     promoApplied?: {
         code: string;
@@ -28,17 +30,25 @@ const PriceBreakdownComponent: React.FC<PriceBreakdownComponentProps> = ({ break
         }).format(amount);
     };
 
+    const gatewayFee = Number(
+        breakdown.paymentGatewayFee ?? breakdown.convenienceFee ?? 0
+    );
+    const organizerEarnings = Number(
+        breakdown.organizerEarnings ??
+        (Number(breakdown.subtotal || 0) - Number(breakdown.commission || 0) - gatewayFee - Number(breakdown.discount || 0))
+    );
+
     return (
         <div className="price-breakdown">
             <div className="breakdown-line">
-                <span>Subtotal</span>
+                <span>Ticket Price</span>
                 <span>ETB {formatCurrency(breakdown.subtotal)}</span>
             </div>
 
             <div className="breakdown-line fee">
                 <span>
-                    Service Fee
-                    <span className="info-tooltip" title="Platform commission for secure transactions">
+                    Platform Fee
+                    <span className="info-tooltip" title="Platform commission">
                         ⓘ
                     </span>
                 </span>
@@ -47,12 +57,17 @@ const PriceBreakdownComponent: React.FC<PriceBreakdownComponentProps> = ({ break
 
             <div className="breakdown-line fee">
                 <span>
-                    Convenience Fee
-                    <span className="info-tooltip" title="Processing and handling fee">
+                    Payment Gateway Fee
+                    <span className="info-tooltip" title="Deducted from organizer payout">
                         ⓘ
                     </span>
                 </span>
-                <span>ETB {formatCurrency(breakdown.convenienceFee)}</span>
+                <span>ETB {formatCurrency(gatewayFee)}</span>
+            </div>
+
+            <div className="breakdown-line">
+                <span>Organizer Earnings</span>
+                <span>ETB {formatCurrency(organizerEarnings)}</span>
             </div>
 
             {breakdown.discount > 0 && (
