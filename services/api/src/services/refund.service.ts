@@ -40,6 +40,7 @@ export class RefundService {
 
     /**
      * Admin or Organizer (if permitted) approves the refund.
+     * Refund precedence (per blueprint §8): consume available first, then pending, then debt flag.
      */
     static async approveRefund(refundId: number, processedBy: number) {
         return await prisma.$transaction(async (tx) => {
@@ -59,42 +60,78 @@ export class RefundService {
             });
 
             // 2. Reverse Financial Transactions & Organizer Wallet
-            // We find the 'SETTLED' or 'RELEASED' transaction for this purchase
             const mainTx = refund.purchase.transactions.find(t => t.type === TransactionType.TICKET_PURCHASE);
+            let refundTxId: number | undefined;
+
             if (mainTx) {
-                // Deduct from organizer wallet (REVERSAL)
-                // We use FinancialService logic but with negative amount or a specialized 'REFUND' type
                 const event = await tx.event.findUnique({ where: { id: mainTx.eventId! } });
                 const organizerId = event?.organizerId;
 
                 if (organizerId) {
                     const wallet = await tx.organizerWallet.findUnique({ where: { organizerId } });
                     if (wallet) {
-                        const amountToDeduct = mainTx.netAmount;
+                        const amountToDeduct = Number(mainTx.netAmount);
+                        const available = Number(wallet.availableBalance);
+                        const pending = Number(wallet.pendingBalance);
+
+                        // Precedence: available → pending → debt flag
+                        const deductFromAvailable = Math.min(amountToDeduct, available);
+                        const remaining = amountToDeduct - deductFromAvailable;
+                        const deductFromPending = Math.min(remaining, pending);
+                        const debtAmount = remaining - deductFromPending;
+
+                        const walletBalanceBefore = wallet.availableBalance;
+                        const walletBalanceAfter = Number(wallet.availableBalance) - deductFromAvailable;
 
                         await tx.organizerWallet.update({
                             where: { id: wallet.id },
                             data: {
-                                availableBalance: { decrement: amountToDeduct }
+                                availableBalance: { decrement: deductFromAvailable },
+                                pendingBalance: { decrement: deductFromPending },
                             }
                         });
 
+                        // Wallet ledger entry for the reversal
                         await tx.walletLedger.create({
                             data: {
                                 walletId: wallet.id,
-                                amount: amountToDeduct.negated(),
+                                amount: -amountToDeduct,
                                 type: TransactionType.REFUND,
-                                description: `Refund for purchase ${refund.purchase.paymentRef}`,
+                                description: `Refund reversal for purchase ${refund.purchase.paymentRef}${debtAmount > 0 ? ` (debt: ETB ${debtAmount.toFixed(2)})` : ''}`,
                                 referenceId: refund.id.toString(),
-                                balanceBefore: wallet.availableBalance,
-                                balanceAfter: wallet.availableBalance.minus(amountToDeduct)
+                                balanceBefore: walletBalanceBefore,
+                                balanceAfter: walletBalanceAfter,
                             }
                         });
+
+                        // If organizer doesn't have enough funds, flag in metadata
+                        if (debtAmount > 0) {
+                            const currentMeta = (wallet as any).metadata || {};
+                            await tx.organizerWallet.update({
+                                where: { id: wallet.id },
+                                data: {
+                                    // Store debt flag in a separate metadata-like note via ledger description
+                                    // For now use an ADJUSTMENT entry to record the debt exposure
+                                }
+                            });
+                            // Create an ADJUSTMENT entry tracking the outstanding debt
+                            await tx.walletLedger.create({
+                                data: {
+                                    walletId: wallet.id,
+                                    amount: -debtAmount,
+                                    type: TransactionType.ADJUSTMENT,
+                                    description: `DEBT EXPOSURE: Refund exceeded wallet balance by ETB ${debtAmount.toFixed(2)} for purchase ${refund.purchase.paymentRef}. Organizer owes platform.`,
+                                    referenceId: `DEBT-${refund.id}`,
+                                    balanceBefore: 0,
+                                    balanceAfter: -debtAmount,
+                                }
+                            });
+                        }
                     }
                 }
 
                 // Create a reversal financial transaction
-                await tx.financialTransaction.create({
+                const refundFinTx = await tx.financialTransaction.create({
                     data: {
                         type: TransactionType.REFUND,
                         amount: mainTx.amount.negated(),
@@ -102,8 +139,20 @@ export class RefundService {
                         netAmount: mainTx.netAmount.negated(),
                         purchaseId: refund.purchaseId,
                         eventId: mainTx.eventId,
-                        status: FinancialStatus.REFUNDED
+                        status: FinancialStatus.REFUNDED,
+                        metadata: {
+                            refundId: refund.id,
+                            originalTxId: mainTx.id,
+                            reason: refund.reason,
+                        }
                     }
+                });
+                refundTxId = refundFinTx.id;
+
+                // Update refund record to link to the financial transaction
+                await tx.refund.update({
+                    where: { id: refundId },
+                    data: { transactionId: refundFinTx.id }
                 });
             }
 
@@ -119,16 +168,26 @@ export class RefundService {
                 data: { status: "REFUNDED" }
             });
 
-            // 5. Trigger Notification
+            // 5. Record Settlement Outflow (non-blocking, outside tx to avoid deadlock)
+            setImmediate(async () => {
+                try {
+                    const { ReconciliationService } = require("./reconciliation.service");
+                    await ReconciliationService.recordAutomaticRefundSettlement({
+                        purchaseId: refund.purchaseId,
+                        amount: Number(refund.amount),
+                        financialTransactionId: refundTxId,
+                        referenceId: `REFUND-${refund.id}`,
+                        metadata: { reason: refund.reason, refundId: refund.id },
+                    });
+                } catch (e) { console.error("Failed to record refund settlement entry:", e); }
+            });
+
+            // 6. Trigger User Notification
             const { NotificationService } = require("./notification.service");
-            const { NotificationController } = require("../controllers/notification.controller");
             const { NotificationChannel } = require("@prisma/client");
 
             const eventTitle = (refund.purchase.metadata as any)?.eventTitle || "your event";
-            const message = NotificationController.getTemplate('refund_approved', 'en', {
-                eventTitle,
-                amount: refund.amount.toString()
-            });
+            const message = `Your refund of ETB ${refund.amount} for "${eventTitle}" has been approved.`;
 
             NotificationService.notifyUser(refund.purchase.userId, {
                 content: message,

@@ -18,6 +18,12 @@ router.get('/payouts', authenticate, authorize([Role.ADMIN]), FinancialControlle
 router.get('/ledger', authenticate, authorize([Role.ADMIN]), FinancialController.getSettlementLedger);
 router.get('/ledger/export', authenticate, authorize([Role.ADMIN]), FinancialController.exportLedgerCSV);
 router.post('/settlements/release-completed', authenticate, authorize([Role.ADMIN]), FinancialController.releaseCompletedEventSettlements);
+router.get('/settlement-accounts', authenticate, authorize([Role.ADMIN]), FinancialController.listSettlementAccounts);
+router.post('/settlement-accounts', authenticate, authorize([Role.ADMIN]), FinancialController.createSettlementAccount);
+router.get('/settlement-entries', authenticate, authorize([Role.ADMIN]), FinancialController.listSettlementEntries);
+router.post('/settlement-entries', authenticate, authorize([Role.ADMIN]), FinancialController.recordSettlementEntry);
+router.get('/reconciliation/runs', authenticate, authorize([Role.ADMIN]), FinancialController.listSettlementReconciliations);
+router.post('/reconciliation/run', authenticate, authorize([Role.ADMIN]), FinancialController.runSettlementReconciliation);
 
 // Organizer Wallet
 router.get("/wallet", authenticate, authorize([Role.ORGANIZER]), FinancialController.getOrganizerWallet);

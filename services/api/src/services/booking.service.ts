@@ -264,11 +264,12 @@ export class BookingService {
         const event = tier.event;
         const organizer = event.organizer;
 
-        // Resolve Commission Rules
+        // Resolve Commission Rules (§6, §14)
         let activeFeeType = "PERCENTAGE";
         let activeFeeFixed = 0;
-        let activeFeePercentage = 10; // Default fallback
+        let activeFeePercentage = 10; // Base platform default
 
+        // 1. Check for Event/Organizer Overrides first
         if (event.feeType) {
             activeFeeType = event.feeType;
             activeFeeFixed = Number(event.feeFixed || 0);
@@ -278,14 +279,28 @@ export class BookingService {
             activeFeeFixed = Number(organizer.feeFixed || 0);
             activeFeePercentage = Number(organizer.feePercentage || 0);
         } else {
-            // Get Global Default
-            const globalConfig = await prisma.platformFeeConfig.findFirst({
-                where: { isDefault: true, isActive: true }
-            });
-            if (globalConfig) {
-                activeFeeType = globalConfig.feeType;
-                activeFeeFixed = Number(globalConfig.feeFixed);
-                activeFeePercentage = Number(globalConfig.feePercentage);
+            // 2. Resolve via Global Commission Model (Blueprint §14)
+            const commissionModel = await SystemConfigService.getString("financial.commission.model", "HYBRID");
+            const globalPercentage = await SystemConfigService.getNumber("platform.fee_percentage", 5);
+            const globalFixed = await SystemConfigService.getNumber("platform.convenience_fee_fixed", 10); // Using this as fixed portion
+
+            if (commissionModel === "HYBRID") {
+                const threshold = await SystemConfigService.getNumber("financial.commission.hybrid_threshold_etb", 500);
+                const ticketPrice = Number(tier.price);
+
+                if (ticketPrice < threshold) {
+                    activeFeeType = "HYBRID";
+                    activeFeeFixed = globalFixed;
+                    activeFeePercentage = globalPercentage;
+                } else {
+                    activeFeeType = "PERCENTAGE";
+                    activeFeePercentage = globalPercentage;
+                    activeFeeFixed = 0;
+                }
+            } else {
+                activeFeeType = "PERCENTAGE";
+                activeFeePercentage = globalPercentage;
+                activeFeeFixed = 0;
             }
         }
 

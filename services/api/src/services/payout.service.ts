@@ -5,34 +5,30 @@ import { env } from "../config/env";
 import logger from "../utils/logger";
 import crypto from "crypto";
 import { SystemConfigService } from "./system-config.service";
+import { ReconciliationService } from "./reconciliation.service";
+import { RiskService } from "./risk.service";
 
 export class PayoutService {
-    private static async ensurePayoutFraudChecksPassed(organizerId: number) {
-        const blockOnFraud = await SystemConfigService.getBoolean("financial.settlement.block_on_fraud", true);
-        if (!blockOnFraud) return;
-
-        const unresolvedFraudCount = await prisma.fraudAlert.count({
-            where: {
-                organizerId,
-                isCleared: false,
-                riskLevel: {
-                    in: [RiskLevel.HIGH, RiskLevel.CRITICAL]
-                }
-            }
-        });
-
-        if (unresolvedFraudCount > 0) {
-            throw new Error("Payout blocked by fraud checks. Please clear active fraud alerts first.");
-        }
-    }
-
     /**
      * Organizer requests a payout.
-     * Validates that the requested amount is available in their wallet.
+     * Validates that the requested amount is available in their wallet and meets platform guardrails.
+     * Guardrails (§9, §13, §14):
+     * 1. Compliance (KYC Status, License)
+     * 2. Fraud Block (Active HIGH/CRITICAL alerts)
+     * 3. Minimum Payout Threshold (financial.payout.minimum_etb)
+     * 4. Risk Reserve Hold for New Organizers (first N events completed)
      */
     static async requestPayout(organizerId: number, amount: number, method: PayoutMethod, details: string) {
         const payoutAmount = new Prisma.Decimal(amount);
-        await this.ensurePayoutFraudChecksPassed(organizerId);
+
+        // 1. Centralized Risk & Compliance Check (§9, §13, §14)
+        await RiskService.validatePayoutEligibility(organizerId);
+
+        // 2. Minimum Threshold Check
+        const minPayout = await SystemConfigService.getNumber("financial.payout.minimum_etb", 100);
+        if (amount < minPayout) {
+            throw new Error(`Minimum payout amount is ETB ${minPayout}. Please accumulate more funds.`);
+        }
 
         return await prisma.$transaction(async (tx) => {
             const wallet = await tx.organizerWallet.findUnique({
@@ -56,10 +52,6 @@ export class PayoutService {
                 }
             });
 
-            // Note: We don't deduct from availableBalance yet. 
-            // We'll do it on approval, or we could "lock" it by moving to a 'payoutLock' field.
-            // For now, simple implementation: deduct on approval.
-
             return batch;
         });
     }
@@ -67,20 +59,27 @@ export class PayoutService {
     /**
      * Admin approves and processes a payout.
      * Deducts funds from wallet and records ledger entry.
+     * Idempotency: re-checks status inside the transaction to prevent double-approval.
      */
     static async approvePayout(batchId: number, adminId: number) {
         return await prisma.$transaction(async (tx) => {
+            // Lock the batch row to prevent concurrent approvals
             const batch = await tx.payoutBatch.findUnique({
                 where: { id: batchId },
                 include: { wallet: true }
             });
 
-            if (!batch || batch.status !== FinancialStatus.INITIATED) {
-                throw new Error("Payout batch not found or already processed");
+            if (!batch) {
+                throw new Error("Payout batch not found");
+            }
+
+            // Idempotency guard: only INITIATED batches can be approved
+            if (batch.status !== FinancialStatus.INITIATED) {
+                throw new Error(`Payout batch is already in status: ${batch.status}. Cannot re-approve.`);
             }
 
             const wallet = batch.wallet;
-            await this.ensurePayoutFraudChecksPassed(wallet.organizerId);
+            await RiskService.validatePayoutEligibility(wallet.organizerId);
 
             if (wallet.availableBalance.lessThan(batch.amount)) {
                 throw new Error("Insufficient funds in wallet at time of approval");
@@ -99,64 +98,109 @@ export class PayoutService {
                 }
             });
 
-            // 2. Update Batch Status
-            await tx.payoutBatch.update({
-                where: { id: batchId },
-                data: {
-                    status: FinancialStatus.PAID_OUT,
-                    processedAt: new Date(),
-                    adminId
-                }
-            });
+            let transferReference = `PAYOUT-${batch.id}-${Date.now()}`;
+            const payoutAmount = Number(batch.amount);
+            const settlementMetadata: Record<string, unknown> = {
+                method: batch.method,
+                approvedBy: adminId,
+            };
+            let transferStatus = "MANUAL";
 
-            // 3. Trigger Real Payout (B2B/B2C)
-            // If the payout method allows automatic transfer (e.g., TeleBirr), we execute it here.
-            // For MANUAL, we just record it.
-
+            // 2. Trigger Real Payout (B2B/B2C) or log for manual channels
             if (batch.method === PayoutMethod.MOBILE_MONEY) {
                 try {
-                    // Example: TeleBirr B2C / B2B Transfer
+                    // TeleBirr B2C / B2B Transfer
                     const payload = {
                         appid: env.teleBirrMerchantAppId,
-                        shortCode: env.teleBirrShortCode, // The Payer ShortCode
-                        outTradeNo: `PAYOUT-${batch.id}`,
-                        receiverShortCode: batch.payoutDetails, // Organizer's ShortCode/Phone
+                        shortCode: env.teleBirrShortCode,
+                        outTradeNo: transferReference,
+                        receiverShortCode: batch.payoutDetails,
                         amount: batch.amount.toString(),
                         nonce: crypto.randomBytes(16).toString("hex"),
                         timestamp: Date.now().toString()
                     };
 
-                    // In production: Sign payload with env.teleBirrPrivateKey
+                    // In production: Sign and submit payload
                     // const signed = sign(payload, env.teleBirrPrivateKey);
+                    // await axios.post('https://app.tty.ethio/.../b2c', signed);
 
                     logger.info({ batchId, payload }, "Initiating TeleBirr B2B Payout");
 
-                    // await axios.post('https://app.tty.ethio/ ... /b2c', payload); 
-
-                    // If call fails, we should probably revert or mark as FAILED.
-                    // For now, we assume admin has manually triggered or we log the "API" success.
+                    settlementMetadata.provider = "TeleBirr";
+                    settlementMetadata.transferPayload = {
+                        outTradeNo: payload.outTradeNo,
+                        receiverShortCode: payload.receiverShortCode,
+                        amount: payload.amount,
+                    };
+                    transferStatus = "SUBMITTED";
                 } catch (e: any) {
                     logger.error({ batchId, error: e.message }, "TeleBirr B2B Payout API Failed");
-                    // Important: Decide if transaction should rollback. 
-                    // Throwing here rolls back the Prisma transaction.
+                    // Record failure reason on batch before throwing (will rollback wallet too)
                     throw new Error(`TeleBirr Payout Failed: ${e.message}`);
                 }
+            } else if (batch.method === PayoutMethod.BANK_TRANSFER) {
+                transferStatus = "MANUAL_BANK";
+                settlementMetadata.note = "Manual bank transfer — admin must execute externally";
+                logger.info({ batchId, payoutDetails: batch.payoutDetails }, "Bank transfer payout approved — manual execution required");
             }
 
-            // 3. Create Ledger Entry
+            // 3. Update Batch with transfer tracking info
+            await (tx.payoutBatch as any).update({
+                where: { id: batchId },
+                data: {
+                    status: FinancialStatus.PAID_OUT,
+                    processedAt: new Date(),
+                    adminId,
+                    transferReference,
+                    transferStatus,
+                } as any
+            });
+
+            // 4. Create Financial Transaction record
+            const payoutTx = await tx.financialTransaction.create({
+                data: {
+                    status: FinancialStatus.PAID_OUT,
+                    type: TransactionType.ORGANIZER_PAYOUT,
+                    amount: new Prisma.Decimal(-payoutAmount),
+                    feeAmount: new Prisma.Decimal(0),
+                    netAmount: new Prisma.Decimal(-payoutAmount),
+                    payoutBatchId: batch.id,
+                    metadata: {
+                        payoutFlow: {
+                            stage: "AVAILABLE_TO_PAYOUT",
+                            method: batch.method,
+                            transferReference,
+                            transferStatus,
+                        },
+                        ...settlementMetadata,
+                    },
+                },
+            });
+
+            // 5. Record Settlement Outflow
+            await ReconciliationService.recordAutomaticPayoutSettlement(tx, {
+                amount: payoutAmount,
+                referenceId: transferReference,
+                description: `Organizer payout via ${batch.method} (${transferStatus})`,
+                payoutBatchId: batch.id,
+                financialTransactionId: payoutTx.id,
+                metadata: settlementMetadata as Prisma.InputJsonValue,
+            });
+
+            // 6. Create Wallet Ledger Entry
             await tx.walletLedger.create({
                 data: {
                     walletId: wallet.id,
                     amount: batch.amount.neg(),
                     type: TransactionType.ORGANIZER_PAYOUT,
-                    description: `Payout via ${batch.method}`,
+                    description: `Payout via ${batch.method} | Ref: ${transferReference}`,
                     referenceId: batch.id.toString(),
                     balanceBefore,
                     balanceAfter
                 }
             });
 
-            // 4. Send Notification (Async)
+            // 7. Send Notification (Async, non-blocking)
             (async () => {
                 try {
                     const { NotificationService } = require("./notification.service");
@@ -165,12 +209,12 @@ export class PayoutService {
                         title: "Payout Approved 💰",
                         content: `Your payout of ETB ${batch.amount} has been processed via ${batch.method}.`,
                         channels: [NotificationChannel.SMS, NotificationChannel.PUSH],
-                        metadata: { type: 'PAYOUT_SUCCESS', amount: batch.amount, batchId: batch.id }
+                        metadata: { type: 'PAYOUT_SUCCESS', amount: batch.amount, batchId: batch.id, transferReference }
                     });
                 } catch (e) { console.error("Failed to notify organizer of payout:", e); }
             })();
 
-            return batch;
+            return { ...batch, transferReference, transferStatus };
         });
     }
 

@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { FinancialStatus, RiskLevel, TransactionType } from "@prisma/client";
 import { SystemConfigService } from "./system-config.service";
+import { RiskService } from "./risk.service";
 
 export class FinancialService {
     private static round2(value: number): number {
@@ -42,13 +43,34 @@ export class FinancialService {
             _sum: { totalAmount: true }
         });
 
+        // Organizer Liabilities (Blueprint §2: Total Escrow Pending Payout)
+        const organizerWallets = await prisma.organizerWallet.aggregate({
+            _sum: { availableBalance: true, pendingBalance: true }
+        });
+
+        // Reconciliation Health (§11)
+        const lastRun = await prisma.reconciliationRun.findFirst({
+            orderBy: { completedAt: 'desc' },
+            include: { _count: { select: { mismatches: true } } }
+        });
+
         return {
             platformCommission: totalCommission._sum.amount?.toNumber() || 0,
             pendingPayouts: {
                 amount: pendingPayouts._sum.amount?.toNumber() || 0,
                 count: pendingPayouts._count._all
             },
-            monthlyGMV: monthlyGMV._sum.totalAmount?.toNumber() || 0
+            monthlyGMV: monthlyGMV._sum.totalAmount?.toNumber() || 0,
+            organizerLiabilities: {
+                available: organizerWallets._sum.availableBalance?.toNumber() || 0,
+                pending: organizerWallets._sum.pendingBalance?.toNumber() || 0,
+                total: (organizerWallets._sum.availableBalance?.toNumber() || 0) + (organizerWallets._sum.pendingBalance?.toNumber() || 0)
+            },
+            reconciliationStatus: lastRun ? {
+                status: lastRun.status,
+                lastRunAt: lastRun.completedAt,
+                mismatchCount: (lastRun as any)._count?.mismatches || 0
+            } : null
         };
     }
 
@@ -263,26 +285,11 @@ export class FinancialService {
                 continue;
             }
 
-            // Trigger 2: fraud checks must pass before release.
-            if (blockOnFraud) {
-                const unresolvedFraudCount = await prisma.fraudAlert.count({
-                    where: {
-                        isCleared: false,
-                        riskLevel: {
-                            in: [RiskLevel.HIGH, RiskLevel.CRITICAL],
-                        },
-                        OR: [
-                            { eventId: event.id },
-                            { organizerId },
-                        ],
-                    },
-                });
-
-                if (unresolvedFraudCount > 0) {
-                    blockedByFraudChecks += 1;
-                    skipped += 1;
-                    continue;
-                }
+            // Trigger 2: Risk checks must pass before release (§13).
+            if (await RiskService.shouldHoldSettlement(event.id, organizerId)) {
+                blockedByFraudChecks += 1;
+                skipped += 1;
+                continue;
             }
 
             const net = Number(txn.netAmount || 0);

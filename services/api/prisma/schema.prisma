@@ -337,6 +337,7 @@ model Purchase {
   transactions  FinancialTransaction[]
   user          User                   @relation(fields: [userId], references: [id])
   refunds       Refund[]
+  settlementEntries SettlementEntry[]
   tickets       Ticket[]
 }
 
@@ -383,21 +384,111 @@ model FinancialTransaction {
   payoutBatch   PayoutBatch?    @relation(fields: [payoutBatchId], references: [id])
   purchase      Purchase?       @relation(fields: [purchaseId], references: [id])
   refund        Refund?
+  settlementEntries SettlementEntry[]
 }
 
 model PayoutBatch {
-  id            Int                    @id @default(autoincrement())
-  status        FinancialStatus        @default(INITIATED)
-  amount        Decimal                @db.Decimal(12, 2)
-  method        PayoutMethod
-  payoutDetails String
-  walletId      Int
-  processedAt   DateTime?
-  adminId       Int?
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  transactions  FinancialTransaction[]
-  wallet        OrganizerWallet        @relation(fields: [walletId], references: [id])
+  id                Int                    @id @default(autoincrement())
+  status            FinancialStatus        @default(INITIATED)
+  amount            Decimal                @db.Decimal(12, 2)
+  method            PayoutMethod
+  payoutDetails     String
+  walletId          Int
+  processedAt       DateTime?
+  adminId           Int?
+  transferReference String?
+  transferStatus    String?
+  retryCount        Int                    @default(0)
+  failureReason     String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  settlementEntries SettlementEntry[]
+  transactions      FinancialTransaction[]
+  wallet            OrganizerWallet        @relation(fields: [walletId], references: [id])
+}
+
+
+model SettlementAccount {
+  id                   Int                  @id @default(autoincrement())
+  name                 String
+  provider             String?
+  bankName             String?
+  accountNumberMasked  String?
+  currency             String               @default("ETB")
+  accountType          SettlementAccountType @default(SETTLEMENT)
+  status               SettlementAccountStatus @default(ACTIVE)
+  currentBalance       Decimal              @default(0.0) @db.Decimal(14, 2)
+  lastReconciledBalance Decimal             @default(0.0) @db.Decimal(14, 2)
+  lastReconciledAt     DateTime?
+  metadata             Json?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  entries              SettlementEntry[]
+  reconciliationRuns   ReconciliationRun[]
+}
+
+model SettlementEntry {
+  id                   Int                     @id @default(autoincrement())
+  accountId            Int
+  entryType            SettlementEntryType
+  direction            SettlementEntryDirection
+  amount               Decimal                 @db.Decimal(14, 2)
+  runningBalanceAfter  Decimal                 @db.Decimal(14, 2)
+  referenceId          String?
+  externalReference    String?
+  description          String?
+  purchaseId           Int?
+  payoutBatchId        Int?
+  financialTransactionId Int?
+  occurredAt           DateTime                @default(now())
+  createdAt            DateTime                @default(now())
+  metadata             Json?
+  account              SettlementAccount       @relation(fields: [accountId], references: [id])
+  financialTransaction FinancialTransaction?   @relation(fields: [financialTransactionId], references: [id])
+  payoutBatch          PayoutBatch?            @relation(fields: [payoutBatchId], references: [id])
+  purchase             Purchase?               @relation(fields: [purchaseId], references: [id])
+
+  @@index([accountId, occurredAt])
+  @@index([purchaseId])
+  @@index([payoutBatchId])
+  @@index([financialTransactionId])
+}
+
+model ReconciliationRun {
+  id                     Int                        @id @default(autoincrement())
+  accountId              Int
+  status                 ReconciliationStatus       @default(PENDING)
+  scopeStart             DateTime?
+  scopeEnd               DateTime?
+  internalCaptured       Decimal                    @default(0.0) @db.Decimal(14, 2)
+  internalRefunds        Decimal                    @default(0.0) @db.Decimal(14, 2)
+  internalPayouts        Decimal                    @default(0.0) @db.Decimal(14, 2)
+  internalExpectedBalance Decimal                   @default(0.0) @db.Decimal(14, 2)
+  actualBalance          Decimal                    @default(0.0) @db.Decimal(14, 2)
+  variance               Decimal                    @default(0.0) @db.Decimal(14, 2)
+  notes                  String?
+  createdAt              DateTime                   @default(now())
+  completedAt            DateTime?
+  account                SettlementAccount          @relation(fields: [accountId], references: [id])
+  mismatches             ReconciliationMismatch[]
+
+  @@index([accountId, createdAt])
+}
+
+model ReconciliationMismatch {
+  id             Int                         @id @default(autoincrement())
+  runId          Int
+  mismatchType   ReconciliationMismatchType
+  referenceId    String?
+  expectedAmount Decimal?                    @db.Decimal(14, 2)
+  actualAmount   Decimal?                    @db.Decimal(14, 2)
+  description    String
+  metadata       Json?
+  resolvedAt     DateTime?
+  createdAt      DateTime                    @default(now())
+  run            ReconciliationRun           @relation(fields: [runId], references: [id])
+
+  @@index([runId, mismatchType])
 }
 
 model PlatformFeeConfig {
@@ -643,6 +734,45 @@ enum PayoutMethod {
   BANK_TRANSFER
   MOBILE_MONEY
   MANUAL
+}
+
+enum SettlementAccountType {
+  SETTLEMENT
+  ESCROW
+  SAFEGUARDED
+}
+
+enum SettlementAccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SettlementEntryType {
+  PROVIDER_SETTLEMENT
+  ORGANIZER_PAYOUT
+  REFUND
+  BANK_FEE
+  MANUAL_ADJUSTMENT
+}
+
+enum SettlementEntryDirection {
+  INFLOW
+  OUTFLOW
+}
+
+enum ReconciliationStatus {
+  PENDING
+  MATCHED
+  MISMATCH
+  FAILED
+}
+
+enum ReconciliationMismatchType {
+  BALANCE_VARIANCE
+  MISSING_PROVIDER_SETTLEMENT
+  MISSING_PAYOUT_ENTRY
+  MISSING_REFUND_ENTRY
 }
 
 enum RiskLevel {

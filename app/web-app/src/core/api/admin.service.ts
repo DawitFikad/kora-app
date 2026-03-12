@@ -25,6 +25,13 @@ export const AdminService = {
     getOrganizerPayouts: (params?: any) => api.get('/financials/payouts', { params }),
     getSettlementLedger: (params?: any) => api.get('/financials/ledger', { params }),
     exportSettlementLedgerCSV: (params?: any) => api.get('/financials/ledger/export', { params, responseType: 'blob' }),
+    getSettlementAccounts: () => api.get('/financials/settlement-accounts'),
+    createSettlementAccount: (data: { name: string; provider?: string; bankName?: string; accountNumberMasked?: string; currency?: string; accountType?: string }) => api.post('/financials/settlement-accounts', data),
+    getSettlementEntries: (params?: any) => api.get('/financials/settlement-entries', { params }),
+    createSettlementEntry: (data: any) => api.post('/financials/settlement-entries', data),
+    importProviderSettlements: (data: { accountId?: number; provider: string; settlements: any[] }) => api.post('/financials/settlement-entries/import-provider', data),
+    getReconciliationRuns: (params?: any) => api.get('/financials/reconciliation/runs', { params }),
+    runReconciliation: (data: { accountId: number; scopeEnd?: string }) => api.post('/financials/reconciliation/run', data),
     getFinancialDefinitions: () => api.get('/admin/financial-definitions'),
     togglePaymentsReadOnly: (enabled: boolean) => api.post('/admin/payments/read-only', { enabled }),
     // Content & Discovery

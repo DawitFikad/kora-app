@@ -7,6 +7,7 @@ import logger from "../utils/logger";
 import { ChapaProvider } from "./providers/chapa.provider";
 import { TelebirrProvider } from "./providers/telebirr.provider";
 import { SystemConfigService } from "./system-config.service";
+import { ReconciliationService } from "./reconciliation.service";
 
 function isTruthy(value: string | undefined): boolean {
     const normalized = (value || "").trim().toLowerCase();
@@ -361,6 +362,26 @@ export class PaymentService {
                     await FinancialService.recordTicketPurchase(updatedPurchase.id);
                 } catch (error) {
                     logger.error({ error, purchaseId: purchase.id }, "Failed to record financial transaction");
+                }
+
+                try {
+                    const provider = purchase.paymentMethod === "TELEBIRR" ? "TELEBIRR" : "CHAPA";
+                    const providerReference = externalRef || verificationResult?.reference || `SETTLEMENT-${paymentRef}`;
+                    await ReconciliationService.recordAutomaticProviderSettlement({
+                        purchaseId: updatedPurchase.id,
+                        amount: Number(updatedPurchase.totalAmount),
+                        provider,
+                        referenceId: `${provider}-${paymentRef}`,
+                        externalReference: providerReference,
+                        metadata: {
+                            paymentMethod: purchase.paymentMethod,
+                            paymentRef,
+                            providerReference,
+                            verificationResult,
+                        },
+                    });
+                } catch (error) {
+                    logger.error({ error, purchaseId: purchase.id }, "Failed to record provider settlement entry");
                 }
 
                 return updatedPurchase;

@@ -140,7 +140,21 @@ router.get("/cron/reconcile", async (req, res) => {
     }
 
     await PaymentService.reconcileStuckPayments();
-    return res.json({ success: true, message: "Reconciliation completed" });
+    return res.json({ success: true, message: "Stuck payment reconciliation completed" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get("/cron/reconcile-settlement", async (req, res) => {
+  try {
+    if (!isAuthorizedCronRequest(req)) {
+      return res.status(401).json({ error: "Unauthorized cron request" });
+    }
+
+    const { ReconciliationService } = require("./services/reconciliation.service");
+    const result = await ReconciliationService.runDailyReconciliationForAllAccounts();
+    return res.json({ success: true, message: "Daily settlement reconciliation completed", result });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }

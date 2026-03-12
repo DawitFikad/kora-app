@@ -1,7 +1,14 @@
 import { Request, Response } from "express";
 import { FinancialService } from "../services/financial.service";
 import { prisma } from "../lib/prisma";
-import { Prisma, FinancialStatus } from "@prisma/client";
+import {
+    Prisma,
+    FinancialStatus,
+    SettlementAccountType,
+    SettlementEntryDirection,
+    SettlementEntryType,
+} from "@prisma/client";
+import { ReconciliationService } from "../services/reconciliation.service";
 
 export class FinancialController {
     /**
@@ -323,6 +330,127 @@ export class FinancialController {
             const limit = Number((req.query.limit as string) || 200);
             const result = await FinancialService.releaseSettlementsForCompletedEvents(limit);
             res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async listSettlementAccounts(req: Request, res: Response) {
+        try {
+            const accounts = await ReconciliationService.listSettlementAccounts();
+            res.json({ success: true, data: accounts });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async createSettlementAccount(req: Request, res: Response) {
+        try {
+            const { name, provider, bankName, accountNumberMasked, currency, accountType, metadata } = req.body;
+
+            if (!name || typeof name !== "string") {
+                return res.status(400).json({ success: false, message: "Settlement account name is required" });
+            }
+
+            const account = await ReconciliationService.createSettlementAccount({
+                name,
+                provider,
+                bankName,
+                accountNumberMasked,
+                currency,
+                accountType: accountType as SettlementAccountType | undefined,
+                metadata,
+            });
+
+            res.json({ success: true, data: account });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async listSettlementEntries(req: Request, res: Response) {
+        try {
+            const accountId = req.query.accountId ? Number(req.query.accountId) : undefined;
+            const limit = Number((req.query.limit as string) || 100);
+            const entries = await ReconciliationService.listSettlementEntries(accountId, limit);
+            res.json({ success: true, data: entries });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async recordSettlementEntry(req: Request, res: Response) {
+        try {
+            const {
+                accountId,
+                entryType,
+                direction,
+                amount,
+                referenceId,
+                externalReference,
+                description,
+                purchaseId,
+                payoutBatchId,
+                financialTransactionId,
+                occurredAt,
+                metadata,
+            } = req.body;
+
+            const numericAmount = Number(amount);
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                return res.status(400).json({ success: false, message: "Amount must be greater than zero" });
+            }
+
+            if (!entryType || !direction) {
+                return res.status(400).json({ success: false, message: "Entry type and direction are required" });
+            }
+
+            const entry = await ReconciliationService.recordSettlementEntry({
+                accountId: accountId ? Number(accountId) : undefined,
+                entryType: entryType as SettlementEntryType,
+                direction: direction as SettlementEntryDirection,
+                amount: numericAmount,
+                referenceId,
+                externalReference,
+                description,
+                purchaseId: purchaseId ? Number(purchaseId) : undefined,
+                payoutBatchId: payoutBatchId ? Number(payoutBatchId) : undefined,
+                financialTransactionId: financialTransactionId ? Number(financialTransactionId) : undefined,
+                occurredAt: occurredAt ? new Date(occurredAt) : undefined,
+                metadata,
+            });
+
+            res.json({ success: true, data: entry });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async runSettlementReconciliation(req: Request, res: Response) {
+        try {
+            const accountId = Number(req.body.accountId || req.query.accountId);
+            if (!Number.isFinite(accountId) || accountId <= 0) {
+                return res.status(400).json({ success: false, message: "Valid accountId is required" });
+            }
+
+            const scopeEndRaw = req.body.scopeEnd || req.query.scopeEnd;
+            const run = await ReconciliationService.runReconciliation(
+                accountId,
+                scopeEndRaw ? new Date(String(scopeEndRaw)) : undefined,
+            );
+
+            res.json({ success: true, data: run });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async listSettlementReconciliations(req: Request, res: Response) {
+        try {
+            const accountId = req.query.accountId ? Number(req.query.accountId) : undefined;
+            const limit = Number((req.query.limit as string) || 20);
+            const runs = await ReconciliationService.listReconciliationRuns(accountId, limit);
+            res.json({ success: true, data: runs });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
         }

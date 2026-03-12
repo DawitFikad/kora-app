@@ -4,8 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "prisma:generate": "prisma generate",
+    "prebuild": "npm run prisma:generate",
     "dev": "ts-node-dev src/server.ts",
     "build": "tsc",
+    "seed:settlement-account": "node scripts/seed-settlement-account.js",
+    "cleanup:verify-real-buy": "node scripts/cleanup-verify-real-buy-flow.js",
     "postinstall": "prisma generate"
   },
   "keywords": [],

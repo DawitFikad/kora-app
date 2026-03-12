@@ -20,8 +20,8 @@ RUN npm install --no-audit --no-fund
 # Copy source
 COPY . .
 
-# Generate Prisma client (if present)
-RUN npx prisma generate || true
+# Generate Prisma client and fail fast if schema/client generation is broken
+RUN npx prisma generate
 
 EXPOSE 4001
 
