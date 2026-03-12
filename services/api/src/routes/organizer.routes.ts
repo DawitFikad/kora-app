@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { OrganizerController } from "../controllers/organizer.controller";
-import { authenticate, authorize } from "../middlewares/auth.middleware";
+import { authenticate, authenticateWithQueryToken, authorize } from "../middlewares/auth.middleware";
 import { Role } from "@prisma/client";
 import { upload } from "../config/upload.config";
 
 const router = Router();
+
+router.get("/notifications/stream", authenticateWithQueryToken, authorize([Role.ORGANIZER, Role.ADMIN]), OrganizerController.streamNotifications);
 
 // All organizer routes require authentication and ORGANIZER role
 router.use(authenticate);

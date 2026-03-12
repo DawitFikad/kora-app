@@ -1530,6 +1530,90 @@ export class OrganizerController {
     }
 
     /**
+     * GET /api/organizer/notifications/stream
+     * SSE stream for near real-time organizer notification updates.
+     */
+    static async streamNotifications(req: Request, res: Response) {
+        try {
+            const authUser = (req as any).user || {};
+            const authUserId = authUser.userId || authUser.id;
+            const authOrganizerId = authUser.organizerId;
+            if (!authUserId && !authOrganizerId) {
+                return res.status(403).json({ error: "Unauthorized" });
+            }
+
+            const prisma = (await import("../lib/prisma")).prisma;
+            const organizer = authOrganizerId
+                ? await prisma.organizerProfile.findUnique({ where: { id: Number(authOrganizerId) } })
+                : await prisma.organizerProfile.findUnique({ where: { userId: Number(authUserId) } });
+
+            if (!organizer) {
+                return res.status(404).json({ error: "Organizer profile not found" });
+            }
+
+            res.setHeader("Content-Type", "text/event-stream");
+            res.setHeader("Cache-Control", "no-cache, no-transform");
+            res.setHeader("Connection", "keep-alive");
+            res.setHeader("X-Accel-Buffering", "no");
+            res.flushHeaders?.();
+
+            const writeEvent = (event: string, payload: any) => {
+                res.write(`event: ${event}\n`);
+                res.write(`data: ${JSON.stringify(payload)}\n\n`);
+            };
+
+            const fetchSnapshot = async () => {
+                const [latest, unreadCount] = await Promise.all([
+                    prisma.notificationLog.findFirst({
+                        where: { organizerId: organizer.id },
+                        orderBy: { createdAt: "desc" },
+                        select: { id: true, createdAt: true },
+                    }),
+                    prisma.notificationLog.count({
+                        where: { organizerId: organizer.id, isRead: false },
+                    }),
+                ]);
+
+                return {
+                    latestId: latest?.id || 0,
+                    latestAt: latest?.createdAt || null,
+                    unreadCount,
+                };
+            };
+
+            let last = await fetchSnapshot();
+            writeEvent("connected", { ok: true, organizerId: organizer.id, ...last });
+
+            const tick = setInterval(async () => {
+                try {
+                    const next = await fetchSnapshot();
+                    if (next.latestId !== last.latestId || next.unreadCount !== last.unreadCount) {
+                        last = next;
+                        writeEvent("notifications", next);
+                    }
+                } catch (error: any) {
+                    writeEvent("error", { message: error?.message || "Stream check failed" });
+                }
+            }, 2000);
+
+            const keepAlive = setInterval(() => {
+                res.write(": ping\n\n");
+            }, 15000);
+
+            req.on("close", () => {
+                clearInterval(tick);
+                clearInterval(keepAlive);
+                res.end();
+            });
+        } catch (error: any) {
+            console.error("Stream notifications error:", error);
+            if (!res.headersSent) {
+                res.status(500).json({ error: error.message });
+            }
+        }
+    }
+
+    /**
      * PATCH /api/organizer/notifications/read
      */
     static async markNotificationsRead(req: Request, res: Response) {

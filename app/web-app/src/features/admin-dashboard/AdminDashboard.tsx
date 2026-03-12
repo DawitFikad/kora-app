@@ -56,6 +56,7 @@ const AdminDashboard = () => {
     const [eventPendingCount, setEventPendingCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
+    const [notificationRefreshToken, setNotificationRefreshToken] = useState(0);
 
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
@@ -97,9 +98,35 @@ const AdminDashboard = () => {
             }
         };
         fetchCounts();
-        // Refresh every 30s
-        const interval = setInterval(fetchCounts, 30000);
+        // Refresh frequently so admin bell/counters update faster.
+        const interval = setInterval(fetchCounts, 10000);
         return () => clearInterval(interval);
+    }, [notificationRefreshToken]);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const apiBase = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
+        const base = String(apiBase).replace(/\/$/, '');
+        const streamUrl = `${base}/admin/notifications/stream?token=${encodeURIComponent(token)}`;
+        const stream = new EventSource(streamUrl);
+
+        const onNotification = () => {
+            setNotificationRefreshToken((value) => value + 1);
+        };
+
+        stream.addEventListener('notifications', onNotification);
+        stream.addEventListener('connected', onNotification);
+        stream.onerror = () => {
+            // Keep polling as fallback if stream disconnects.
+        };
+
+        return () => {
+            stream.removeEventListener('notifications', onNotification);
+            stream.removeEventListener('connected', onNotification);
+            stream.close();
+        };
     }, []);
 
     const handleLogout = () => {

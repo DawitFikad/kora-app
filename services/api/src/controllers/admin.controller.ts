@@ -701,6 +701,83 @@ export class AdminController {
         }
     }
 
+    static async streamNotifications(req: Request, res: Response) {
+        try {
+            const currentUserId = (req as any).user.userId || (req as any).user.id;
+
+            const makeWhere = () => ({
+                OR: [
+                    { userId: currentUserId },
+                    { recipient: 'Audit Log' },
+                ],
+            });
+
+            res.setHeader("Content-Type", "text/event-stream");
+            res.setHeader("Cache-Control", "no-cache, no-transform");
+            res.setHeader("Connection", "keep-alive");
+            res.setHeader("X-Accel-Buffering", "no");
+            res.flushHeaders?.();
+
+            const writeEvent = (event: string, payload: any) => {
+                res.write(`event: ${event}\n`);
+                res.write(`data: ${JSON.stringify(payload)}\n\n`);
+            };
+
+            const fetchSnapshot = async () => {
+                const where = makeWhere();
+                const [latest, unreadCount] = await Promise.all([
+                    prisma.notificationLog.findFirst({
+                        where,
+                        orderBy: { createdAt: "desc" },
+                        select: { id: true, createdAt: true },
+                    }),
+                    prisma.notificationLog.count({
+                        where: {
+                            ...where,
+                            isRead: false,
+                        },
+                    }),
+                ]);
+
+                return {
+                    latestId: latest?.id || 0,
+                    latestAt: latest?.createdAt || null,
+                    unreadCount,
+                };
+            };
+
+            let last = await fetchSnapshot();
+            writeEvent("connected", { ok: true, ...last });
+
+            const tick = setInterval(async () => {
+                try {
+                    const next = await fetchSnapshot();
+                    if (next.latestId !== last.latestId || next.unreadCount !== last.unreadCount) {
+                        last = next;
+                        writeEvent("notifications", next);
+                    }
+                } catch (error: any) {
+                    writeEvent("error", { message: error?.message || "Stream check failed" });
+                }
+            }, 2000);
+
+            const keepAlive = setInterval(() => {
+                res.write(": ping\n\n");
+            }, 15000);
+
+            req.on("close", () => {
+                clearInterval(tick);
+                clearInterval(keepAlive);
+                res.end();
+            });
+        } catch (error: any) {
+            console.error("Admin notifications stream error:", error);
+            if (!res.headersSent) {
+                res.status(500).json({ error: error.message });
+            }
+        }
+    }
+
     // Delete a single notification/log
     static async deleteNotification(req: Request, res: Response) {
         try {

@@ -184,10 +184,37 @@ export class NotificationService {
         const channels = await this.applyGlobalChannelSettings(options.channels);
 
         const results = [];
+        let inAppLogged = false;
+
+        // Write app notification first so users can see it immediately,
+        // while external channels (SMS/Email) continue afterward.
+        if (wantsInApp) {
+            await (prisma as any).notificationLog.create({
+                data: {
+                    userId,
+                    type: options.type,
+                    referenceId: options.referenceId?.toString(),
+                    channel: NotificationChannel.PUSH,
+                    recipient: "APP",
+                    title: options.title,
+                    message: options.content,
+                    content: options.content,
+                    status: "DELIVERED",
+                    metadata: metadataPayload,
+                },
+            });
+            inAppLogged = true;
+        }
+
         for (const channel of channels) {
             let status = "FAILED";
             let providerRef = null;
             let recipient = user.phoneNumber;
+
+            if (channel === NotificationChannel.PUSH && inAppLogged) {
+                results.push({ channel, status: "SENT", providerRef });
+                continue;
+            }
 
             try {
                 if (channel === NotificationChannel.SMS && user.phoneNumber) {
@@ -237,7 +264,7 @@ export class NotificationService {
         }
 
         // Ensure in-app notification exists even when PUSH channel is not requested.
-        if (wantsInApp && !channels.includes(NotificationChannel.PUSH)) {
+        if (wantsInApp && !inAppLogged && !channels.includes(NotificationChannel.PUSH)) {
             await (prisma as any).notificationLog.create({
                 data: {
                     userId,

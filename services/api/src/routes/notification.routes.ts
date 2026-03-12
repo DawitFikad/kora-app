@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { NotificationController } from "../controllers/notification.controller";
-import { authenticate } from "../middlewares/auth.middleware";
+import { authenticate, authenticateWithQueryToken } from "../middlewares/auth.middleware";
 
 const router = Router();
+
+router.get("/stream", authenticateWithQueryToken, NotificationController.streamMyNotifications);
 
 router.use(authenticate);
 

@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/core/network/constants/api_constants.dart';
@@ -47,6 +51,38 @@ class NotificationService {
       await _dio.delete('${ApiConstants.notifications}/$id');
     } catch (e) {
       // Log error or handle
+    }
+  }
+
+  Stream<void> notificationEvents(String token) async* {
+    final client = HttpClient();
+    try {
+      final uri = Uri.parse(
+        '${ApiConstants.notifications}/stream?token=${Uri.encodeQueryComponent(token)}',
+      );
+      final request = await client.getUrl(uri);
+      request.headers.set(HttpHeaders.acceptHeader, 'text/event-stream');
+
+      final response = await request.close();
+      if (response.statusCode != 200) {
+        throw 'Failed to connect notification stream';
+      }
+
+      String? currentEvent;
+      await for (final line
+          in response.transform(utf8.decoder).transform(const LineSplitter())) {
+        if (line.startsWith('event:')) {
+          currentEvent = line.substring(6).trim();
+        } else if (line.startsWith('data:')) {
+          if (currentEvent == 'notifications' || currentEvent == 'connected') {
+            yield null;
+          }
+        } else if (line.isEmpty) {
+          currentEvent = null;
+        }
+      }
+    } finally {
+      client.close(force: true);
     }
   }
 }

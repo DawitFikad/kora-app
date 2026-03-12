@@ -12,22 +12,24 @@ import 'package:mobile/features/profile/services/profile_service.dart';
 import '../../../../core/providers.dart';
 import 'package:mobile/core/utils/error_handler.dart';
 
-final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>((ref) async {
+Future<List<AppNotification>> _loadNotifications(Ref ref) async {
   // Watch token to ensure refresh on logout/login
   final token = ref.watch(authTokenProvider);
   if (token == null) return [];
 
   final service = ref.read(notificationServiceProvider);
-  // We don't necessarily need to wait for profile if the token is enough, 
-  // but filtering relies on profile role. 
+  // We don't necessarily need to wait for profile if the token is enough,
+  // but filtering relies on profile role.
   // Since userProfileProvider is watched, it will trigger this provider update when profile loads.
   final profile = await ref.watch(userProfileProvider.future);
-  
+
   final allNotifications = await service.getNotifications();
   int? organizerId;
   if (profile.role == 'ORGANIZER') {
     try {
-      final organizerProfile = await ref.read(profileServiceProvider).getOrganizerProfile();
+      final organizerProfile = await ref
+          .read(profileServiceProvider)
+          .getOrganizerProfile();
       organizerId = organizerProfile['id'] is int
           ? organizerProfile['id']
           : int.tryParse(organizerProfile['id']?.toString() ?? '');
@@ -35,27 +37,72 @@ final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>(
       organizerId = null;
     }
   }
-  
+
   // Filter notifications based on role and IDs
   return allNotifications.where((n) {
     // If it's a general notification (no IDs), show to everyone
     if (n.userId == null && n.organizerId == null) return true;
-    
+
     // If user is a regular user, show only their notifications
     if (profile.role == 'USER') {
       return n.userId == profile.id;
     }
-    
+
     // If user is an organizer, show their notifications
     if (profile.role == 'ORGANIZER') {
-       // Check meta for organizer id or if organizerId matches
-       // Usually organizerId corresponds to their profile id
-       return (organizerId != null && n.organizerId == organizerId) || n.userId == profile.id;
+      // Check meta for organizer id or if organizerId matches
+      // Usually organizerId corresponds to their profile id
+      return (organizerId != null && n.organizerId == organizerId) ||
+          n.userId == profile.id;
     }
-    
+
     return true;
   }).toList();
-});
+}
+
+final notificationsProvider = StreamProvider.autoDispose<List<AppNotification>>(
+  (ref) async* {
+    final token = ref.watch(authTokenProvider);
+    final service = ref.read(notificationServiceProvider);
+
+    final controller = StreamController<List<AppNotification>>();
+    StreamSubscription<void>? realtimeSub;
+    Timer? fallbackTimer;
+    var disposed = false;
+
+    Future<void> emitLatest() async {
+      if (disposed) return;
+      try {
+        controller.add(await _loadNotifications(ref));
+      } catch (error, stackTrace) {
+        if (!disposed) {
+          controller.addError(error, stackTrace);
+        }
+      }
+    }
+
+    emitLatest();
+
+    if (token != null) {
+      realtimeSub = service
+          .notificationEvents(token)
+          .listen((_) => emitLatest(), onError: (_) {});
+    }
+
+    fallbackTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      emitLatest();
+    });
+
+    ref.onDispose(() async {
+      disposed = true;
+      fallbackTimer?.cancel();
+      await realtimeSub?.cancel();
+      await controller.close();
+    });
+
+    yield* controller.stream;
+  },
+);
 
 final unreadNotificationsCountProvider = Provider<int>((ref) {
   final notificationsAsync = ref.watch(notificationsProvider);
@@ -74,7 +121,9 @@ class NotificationScreen extends ConsumerWidget {
     final notificationsAsync = ref.watch(notificationsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
-    final backgroundColor = isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA);
+    final backgroundColor = isDark
+        ? const Color(0xFF15131C)
+        : const Color(0xFFF8F7FA);
     final unreadCount = notificationsAsync.maybeWhen(
       data: (notifications) => notifications.where((n) => !n.isRead).length,
       orElse: () => 0,
@@ -107,10 +156,12 @@ class NotificationScreen extends ConsumerWidget {
                   final service = ref.read(notificationServiceProvider);
                   await service.markAllAsRead();
                   ref.invalidate(notificationsProvider);
-                  
+
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("notifications.mark_all_success".tr())),
+                      SnackBar(
+                        content: Text("notifications.mark_all_success".tr()),
+                      ),
                     );
                   }
                 },
@@ -139,8 +190,14 @@ class NotificationScreen extends ConsumerWidget {
                 dividerColor: Colors.transparent,
                 labelColor: Colors.white,
                 unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
-                labelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
-                unselectedLabelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+                labelStyle: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 tabAlignment: TabAlignment.start,
                 labelPadding: const EdgeInsets.symmetric(horizontal: 24),
                 tabs: [
@@ -153,52 +210,82 @@ class NotificationScreen extends ConsumerWidget {
             Expanded(
               child: notificationsAsync.when(
                 data: (notifications) {
-                    if (notifications.isEmpty) {
-                        return Center(child: Text("notifications.no_notif".tr(), style: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.black45)));
-                    }
-                    
-                    final now = DateTime.now();
-                    final today = notifications.where((n) {
-                        final diff = now.difference(n.timestamp);
-                        return diff.inHours < 24;
-                    }).toList();
-                    
-                    final earlier = notifications.where((n) {
-                         final diff = now.difference(n.timestamp);
-                        return diff.inHours >= 24;
-                    }).toList();
-
-                    return TabBarView(
-                        children: [
-                        _NotificationListView(today: today, earlier: earlier, isDark: isDark, textColor: textColor),
-                        _NotificationListView(
-                            today: today.where((n) => n.type == 'booking').toList(), 
-                            earlier: earlier.where((n) => n.type == 'booking').toList(),
-                            isDark: isDark,
-                            textColor: textColor,
+                  if (notifications.isEmpty) {
+                    return Center(
+                      child: Text(
+                        "notifications.no_notif".tr(),
+                        style: GoogleFonts.poppins(
+                          color: isDark ? Colors.white54 : Colors.black45,
                         ),
-                        _NotificationListView(
-                             today: today.where((n) => n.type == 'update' || n.type == 'alert').toList(), 
-                            earlier: earlier.where((n) => n.type == 'update' || n.type == 'alert').toList(),
-                            isDark: isDark,
-                            textColor: textColor,
-                        ),
-                        ],
+                      ),
                     );
+                  }
+
+                  final now = DateTime.now();
+                  final today = notifications.where((n) {
+                    final diff = now.difference(n.timestamp);
+                    return diff.inHours < 24;
+                  }).toList();
+
+                  final earlier = notifications.where((n) {
+                    final diff = now.difference(n.timestamp);
+                    return diff.inHours >= 24;
+                  }).toList();
+
+                  return TabBarView(
+                    children: [
+                      _NotificationListView(
+                        today: today,
+                        earlier: earlier,
+                        isDark: isDark,
+                        textColor: textColor,
+                      ),
+                      _NotificationListView(
+                        today: today.where((n) => n.type == 'booking').toList(),
+                        earlier: earlier
+                            .where((n) => n.type == 'booking')
+                            .toList(),
+                        isDark: isDark,
+                        textColor: textColor,
+                      ),
+                      _NotificationListView(
+                        today: today
+                            .where(
+                              (n) => n.type == 'update' || n.type == 'alert',
+                            )
+                            .toList(),
+                        earlier: earlier
+                            .where(
+                              (n) => n.type == 'update' || n.type == 'alert',
+                            )
+                            .toList(),
+                        isDark: isDark,
+                        textColor: textColor,
+                      ),
+                    ],
+                  );
                 },
-                loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+                ),
                 error: (err, stack) => Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
+                      const Icon(
+                        Icons.wifi_off_rounded,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(height: 16),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 40),
                         child: Text(
                           ErrorMessageHandler.getReadableError(err),
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(color: textColor.withOpacity(0.7)),
+                          style: GoogleFonts.poppins(
+                            color: textColor.withOpacity(0.7),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -206,7 +293,9 @@ class NotificationScreen extends ConsumerWidget {
                         onPressed: () => ref.refresh(notificationsProvider),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B5CF6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: Text("common.retry".tr()),
                       ),
@@ -238,14 +327,24 @@ class _NotificationListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (today.isEmpty && earlier.isEmpty) {
-         return Center(child: Text("No notifications", style: GoogleFonts.poppins(color: isDark ? Colors.white54 : Colors.black45)));
+      return Center(
+        child: Text(
+          "No notifications",
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.white54 : Colors.black45,
+          ),
+        ),
+      );
     }
-  
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
         if (today.isNotEmpty) ...[
-          _SectionHeader(title: "notifications.today".tr(), textColor: textColor),
+          _SectionHeader(
+            title: "notifications.today".tr(),
+            textColor: textColor,
+          ),
           const SizedBox(height: 16),
           ...today.map(
             (n) => _DismissibleNotificationTile(
@@ -257,7 +356,10 @@ class _NotificationListView extends StatelessWidget {
         ],
         if (earlier.isNotEmpty) ...[
           const SizedBox(height: 24),
-          _SectionHeader(title: "notifications.earlier".tr(), textColor: textColor),
+          _SectionHeader(
+            title: "notifications.earlier".tr(),
+            textColor: textColor,
+          ),
           const SizedBox(height: 16),
           ...earlier.map(
             (n) => _DismissibleNotificationTile(
@@ -295,7 +397,7 @@ class _NotificationTile extends ConsumerWidget {
   final AppNotification notification;
   final Color textColor;
   final bool isDark;
-  
+
   const _NotificationTile({
     required this.notification,
     required this.textColor,
@@ -320,63 +422,69 @@ class _NotificationTile extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _NotificationIcon(type: notification.type),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(child: Text(
-                          notification.title,
-                          style: GoogleFonts.poppins(
-                            color: textColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )),
-                        if (!notification.isRead)
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF8B5CF6),
-                              shape: BoxShape.circle,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _NotificationIcon(type: notification.type),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification.title,
+                              style: GoogleFonts.poppins(
+                                color: textColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      notification.description,
-                      style: GoogleFonts.poppins(
-                        color: textColor.withOpacity(0.6),
-                        fontSize: 13,
-                        height: 1.5,
+                          if (!notification.isRead)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF8B5CF6),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _formatTimestamp(notification.timestamp),
-                      style: GoogleFonts.poppins(
-                        color: textColor.withOpacity(0.38),
-                        fontSize: 11,
+                      const SizedBox(height: 4),
+                      Text(
+                        notification.description,
+                        style: GoogleFonts.poppins(
+                          color: textColor.withOpacity(0.6),
+                          fontSize: 13,
+                          height: 1.5,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        _formatTimestamp(notification.timestamp),
+                        style: GoogleFonts.poppins(
+                          color: textColor.withOpacity(0.38),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              ],
+            ),
+            if (notification.metadata != null) ...[
+              const SizedBox(height: 16),
+              _BookingCard(
+                metadata: notification.metadata!,
+                isDark: isDark,
+                textColor: textColor,
               ),
             ],
-          ),
-          if (notification.metadata != null) ...[
-            const SizedBox(height: 16),
-            _BookingCard(metadata: notification.metadata!, isDark: isDark, textColor: textColor),
-          ],
           ],
         ),
       ),
@@ -438,10 +546,13 @@ class _NotificationTile extends ConsumerWidget {
     final now = DateTime.now();
     final diff = now.difference(dt);
 
-    if (diff.inMinutes < 60) return "notifications.m_ago".tr(args: [diff.inMinutes.toString()]);
-    if (diff.inHours < 24) return "notifications.h_ago".tr(args: [diff.inHours.toString()]);
+    if (diff.inMinutes < 60)
+      return "notifications.m_ago".tr(args: [diff.inMinutes.toString()]);
+    if (diff.inHours < 24)
+      return "notifications.h_ago".tr(args: [diff.inHours.toString()]);
     if (diff.inDays == 1) return "notifications.yesterday".tr();
-    if (diff.inDays < 7) return "notifications.days_ago".tr(args: [diff.inDays.toString()]);
+    if (diff.inDays < 7)
+      return "notifications.days_ago".tr(args: [diff.inDays.toString()]);
     return DateFormat('MMM d').format(dt);
   }
 }
@@ -458,10 +569,12 @@ class _DismissibleNotificationTile extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_DismissibleNotificationTile> createState() => _DismissibleNotificationTileState();
+  ConsumerState<_DismissibleNotificationTile> createState() =>
+      _DismissibleNotificationTileState();
 }
 
-class _DismissibleNotificationTileState extends ConsumerState<_DismissibleNotificationTile> {
+class _DismissibleNotificationTileState
+    extends ConsumerState<_DismissibleNotificationTile> {
   Timer? _deleteTimer;
   bool _pendingDelete = false;
   bool _isProcessing = false;
@@ -488,7 +601,11 @@ class _DismissibleNotificationTileState extends ConsumerState<_DismissibleNotifi
       },
       child: Column(
         children: [
-          _NotificationTile(notification: widget.notification, textColor: widget.textColor, isDark: widget.isDark),
+          _NotificationTile(
+            notification: widget.notification,
+            textColor: widget.textColor,
+            isDark: widget.isDark,
+          ),
           Divider(height: 1, color: widget.textColor.withOpacity(0.06)),
           const SizedBox(height: 16),
         ],
@@ -506,10 +623,7 @@ class _DismissibleNotificationTileState extends ConsumerState<_DismissibleNotifi
       SnackBar(
         content: const Text('Notification deleted'),
         duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: _undoDelete,
-        ),
+        action: SnackBarAction(label: 'Undo', onPressed: _undoDelete),
       ),
     );
 
@@ -559,7 +673,13 @@ class _DismissibleNotificationTileState extends ConsumerState<_DismissibleNotifi
         children: const [
           Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
           SizedBox(width: 8),
-          Text('Delete', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600)),
+          Text(
+            'Delete',
+            style: TextStyle(
+              color: Color(0xFFEF4444),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -619,7 +739,7 @@ class _BookingCard extends StatelessWidget {
   final Map<String, dynamic> metadata;
   final bool isDark;
   final Color textColor;
-  
+
   const _BookingCard({
     required this.metadata,
     required this.isDark,
@@ -628,10 +748,10 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      // Basic fallback if metadata is missing expected keys
-      final orderId = metadata['orderId'] ?? '---';
-      final eventTitle = metadata['eventTitle'] ?? 'Event';
-      final eventTime = metadata['eventTime'] ?? '';
+    // Basic fallback if metadata is missing expected keys
+    final orderId = metadata['orderId'] ?? '---';
+    final eventTitle = metadata['eventTitle'] ?? 'Event';
+    final eventTime = metadata['eventTime'] ?? '';
 
     return Container(
       margin: const EdgeInsets.only(left: 64, top: 8),
@@ -650,10 +770,15 @@ class _BookingCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.confirmation_num, color: Color(0xFF8B5CF6), size: 14),
+                    const Icon(
+                      Icons.confirmation_num,
+                      color: Color(0xFF8B5CF6),
+                      size: 14,
+                    ),
                     const SizedBox(width: 8),
                     Text(
-                      "${"notifications.order_prefix".tr()} $orderId".toUpperCase(),
+                      "${"notifications.order_prefix".tr()} $orderId"
+                          .toUpperCase(),
                       style: GoogleFonts.poppins(
                         color: textColor.withOpacity(0.38),
                         fontSize: 11,

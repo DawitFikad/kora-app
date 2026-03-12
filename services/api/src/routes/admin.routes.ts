@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AdminController } from "../controllers/admin.controller";
-import { authenticate } from "../middlewares/auth.middleware";
+import { authenticate, authenticateWithQueryToken } from "../middlewares/auth.middleware";
 import { authorize } from "../middlewares/rbac.middleware";
 import { Role } from "@prisma/client";
 
@@ -38,6 +38,7 @@ router.delete("/users/:userId", authenticate, authorize([Role.ADMIN]), AdminCont
 router.patch("/events/:eventId/featured", authenticate, authorize([Role.ADMIN]), AdminController.toggleEventFeatured);
 
 // Notifications
+router.get("/notifications/stream", authenticateWithQueryToken, authorize([Role.ADMIN]), AdminController.streamNotifications);
 router.get("/notifications", authenticate, authorize([Role.ADMIN]), AdminController.getNotifications);
 router.delete("/notifications/clear", authenticate, authorize([Role.ADMIN]), AdminController.clearAuditLogs);
 router.delete("/notifications/:id", authenticate, authorize([Role.ADMIN]), AdminController.deleteNotification);

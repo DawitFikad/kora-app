@@ -59,6 +59,7 @@ const OrganizerDashboard = () => {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [notificationRefreshToken, setNotificationRefreshToken] = useState(0);
 
     const normalizeNotifications = (payload: any): any[] => {
         if (!payload) return [];
@@ -170,9 +171,47 @@ const OrganizerDashboard = () => {
         };
         fetchData();
 
-        // Optional: Poll notifications every minute
-        const interval = setInterval(fetchData, 60000);
-        return () => clearInterval(interval);
+        // Keep notifications responsive while limiting network load.
+        const interval = setInterval(fetchData, 10000);
+        const refreshOnActive = () => {
+            if (document.visibilityState === 'visible') {
+                fetchData();
+            }
+        };
+        window.addEventListener('focus', refreshOnActive);
+        document.addEventListener('visibilitychange', refreshOnActive);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', refreshOnActive);
+            document.removeEventListener('visibilitychange', refreshOnActive);
+        };
+    }, [notificationRefreshToken]);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const apiBase = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
+        const base = String(apiBase).replace(/\/$/, '');
+        const streamUrl = `${base}/organizer/notifications/stream?token=${encodeURIComponent(token)}`;
+        const stream = new EventSource(streamUrl);
+
+        const onNotification = () => {
+            setNotificationRefreshToken((value) => value + 1);
+        };
+
+        stream.addEventListener('notifications', onNotification);
+        stream.addEventListener('connected', onNotification);
+        stream.onerror = () => {
+            // Keep polling as fallback if stream disconnects.
+        };
+
+        return () => {
+            stream.removeEventListener('notifications', onNotification);
+            stream.removeEventListener('connected', onNotification);
+            stream.close();
+        };
     }, []);
 
     // Group Notifications Helper
