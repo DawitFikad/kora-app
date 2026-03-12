@@ -430,6 +430,433 @@ class _HomeBody extends ConsumerWidget {
                               if (featured.isEmpty)
                                 return const SizedBox.shrink();
 
+                              final availablePool = events
+                                  .where(
+                                    (event) =>
+                                        !_isEventUnavailableForBooking(event),
+                                  )
+                                  .toList();
+                              final sourcePool = availablePool.isNotEmpty
+                                  ? availablePool
+                                  : events;
+
+                              List<Event> fallbackSlice({
+                                required int start,
+                                int limit = 8,
+                              }) {
+                                if (sourcePool.isEmpty) return const <Event>[];
+
+                                final count = sourcePool.length < limit
+                                    ? sourcePool.length
+                                    : limit;
+                                return List.generate(
+                                  count,
+                                  (i) =>
+                                      sourcePool[(start + i) %
+                                          sourcePool.length],
+                                );
+                              }
+
+                              String searchableText(Event event) {
+                                return [
+                                  event.title,
+                                  event.description,
+                                  event.category?.name ?? '',
+                                  event.titleTag ?? '',
+                                ].join(' ').toLowerCase();
+                              }
+
+                              bool containsAny(
+                                Event event,
+                                List<String> words,
+                              ) {
+                                final text = searchableText(event);
+                                return words.any(text.contains);
+                              }
+
+                              DateTime? parsedDate(Event event) =>
+                                  DateTime.tryParse(event.dateTime);
+
+                              final now = DateTime.now();
+
+                              double engagementScore(Event event) {
+                                final likes = (event.likesCount ?? 0)
+                                    .toDouble();
+                                final avg = (event.averageRating ?? 0)
+                                    .toDouble();
+                                final ratings = (event.ratingsCount ?? 0)
+                                    .toDouble();
+                                return likes + (avg * 15) + (ratings * 1.5);
+                              }
+
+                              List<Event> pickByPredicate(
+                                bool Function(Event event) test, {
+                                required int fallbackStart,
+                                int limit = 8,
+                              }) {
+                                final filtered = sourcePool
+                                    .where(test)
+                                    .toList();
+                                if (filtered.isNotEmpty) {
+                                  return filtered.take(limit).toList();
+                                }
+                                return fallbackSlice(
+                                  start: fallbackStart,
+                                  limit: limit,
+                                );
+                              }
+
+                              List<Event> pickNearestUpcoming({
+                                required Duration minFromNow,
+                                required Duration maxFromNow,
+                                int limit = 8,
+                                bool Function(Event event)? extraFilter,
+                                Set<int> excludeIds = const <int>{},
+                              }) {
+                                final items =
+                                    sourcePool.where((event) {
+                                      if (excludeIds.contains(event.id))
+                                        return false;
+                                      if (extraFilter != null &&
+                                          !extraFilter(event)) {
+                                        return false;
+                                      }
+                                      final date = parsedDate(event);
+                                      if (date == null) return false;
+                                      final diff = date.difference(now);
+                                      return diff >= minFromNow &&
+                                          diff <= maxFromNow;
+                                    }).toList()..sort((a, b) {
+                                      final ad = parsedDate(a);
+                                      final bd = parsedDate(b);
+                                      if (ad == null || bd == null) return 0;
+                                      return ad.compareTo(bd);
+                                    });
+
+                                return items.take(limit).toList();
+                              }
+
+                              List<Event> pickTopByEngagement({
+                                required int fallbackStart,
+                                int limit = 8,
+                              }) {
+                                if (sourcePool.isEmpty) {
+                                  return fallbackSlice(
+                                    start: fallbackStart,
+                                    limit: limit,
+                                  );
+                                }
+                                final sorted = [...sourcePool]
+                                  ..sort(
+                                    (a, b) => engagementScore(
+                                      b,
+                                    ).compareTo(engagementScore(a)),
+                                  );
+                                return sorted.take(limit).toList();
+                              }
+
+                              bool isMovie(Event event) {
+                                final category = (event.category?.name ?? '')
+                                    .toLowerCase();
+                                return category.contains('movie') ||
+                                    category.contains('film') ||
+                                    category.contains('cinema') ||
+                                    containsAny(event, [
+                                      'movie',
+                                      'film',
+                                      'cinema',
+                                      'screening',
+                                    ]);
+                              }
+
+                              bool isBestThisWeek(Event event) {
+                                final date = parsedDate(event);
+                                if (date == null) return false;
+                                return !date.isBefore(now) &&
+                                    date.isBefore(
+                                      now.add(const Duration(days: 7)),
+                                    );
+                              }
+
+                              bool isAward(Event event) {
+                                return event.nomineesInfoAvailable == true ||
+                                    event.winnersInfoAvailable == true ||
+                                    containsAny(event, [
+                                      'award',
+                                      'recognition',
+                                      'nominee',
+                                      'winner',
+                                      'academy',
+                                    ]);
+                              }
+
+                              bool isWorkshop(Event event) {
+                                return event.workshopTopics.isNotEmpty ||
+                                    containsAny(event, [
+                                      'workshop',
+                                      'course',
+                                      'training',
+                                      'masterclass',
+                                      'bootcamp',
+                                      'class',
+                                    ]);
+                              }
+
+                              bool isLastMinute(Event event) {
+                                final date = parsedDate(event);
+                                if (date == null) return false;
+                                return !date.isBefore(now) &&
+                                    date.isBefore(
+                                      now.add(const Duration(hours: 24)),
+                                    );
+                              }
+
+                              bool isDeal(Event event) {
+                                return event.hasBundle == true ||
+                                    event.hasPartner == true ||
+                                    event.hasLimitedTime == true ||
+                                    ((event.dealTag ?? '').trim().isNotEmpty) ||
+                                    containsAny(event, [
+                                      'deal',
+                                      'offer',
+                                      'discount',
+                                      'promo',
+                                      'bundle',
+                                    ]);
+                              }
+
+                              bool isNewUpcoming(Event event) {
+                                final date = parsedDate(event);
+                                final isSoon =
+                                    date != null &&
+                                    date.isAfter(now) &&
+                                    date.isBefore(
+                                      now.add(const Duration(days: 60)),
+                                    );
+                                final hasUpcomingSignal =
+                                    event.earlyBirdAvailable == true ||
+                                    event.preRegistrationAvailable == true ||
+                                    event.reminderAvailable == true ||
+                                    containsAny(event, [
+                                      'new',
+                                      'upcoming',
+                                      'early bird',
+                                      'pre-register',
+                                      'pre registration',
+                                      'launch',
+                                      'premiere',
+                                      'experience',
+                                    ]);
+                                return isSoon && hasUpcomingSignal;
+                              }
+
+                              final recommendedMovies = recommendedMoviesAsync
+                                  .maybeWhen(
+                                    data: (value) => value,
+                                    orElse: () => const <Event>[],
+                                  );
+                              final bestEventsThisWeek = bestEventsWeekAsync
+                                  .maybeWhen(
+                                    data: (value) => value,
+                                    orElse: () => const <Event>[],
+                                  );
+                              final trendingNow = trendingNowAsync.maybeWhen(
+                                data: (value) => value,
+                                orElse: () => const <Event>[],
+                              );
+                              final personalizedPicks = personalizedPicksAsync
+                                  .maybeWhen(
+                                    data: (value) => value,
+                                    orElse: () => const <Event>[],
+                                  );
+                              final upcomingAwards = upcomingAwardsAsync
+                                  .maybeWhen(
+                                    data: (value) => value,
+                                    orElse: () => const <Event>[],
+                                  );
+                              final workshops = workshopsAsync.maybeWhen(
+                                data: (value) => value,
+                                orElse: () => const <Event>[],
+                              );
+                              final citySpotlight = citySpotlightAsync
+                                  .maybeWhen(
+                                    data: (value) => value,
+                                    orElse: () => const <Event>[],
+                                  );
+                              final lastMinuteToday = lastMinuteTodayAsync
+                                  .maybeWhen(
+                                    data: (value) => value,
+                                    orElse: () => const <Event>[],
+                                  );
+                              final offersDeals = offersDealsAsync.maybeWhen(
+                                data: (value) => value,
+                                orElse: () => const <Event>[],
+                              );
+                              final newUpcomingExperiences =
+                                  newUpcomingExperiencesAsync.maybeWhen(
+                                    data: (value) => value,
+                                    orElse: () => const <Event>[],
+                                  );
+
+                              final resolvedRecommendedMovies =
+                                  recommendedMovies.isNotEmpty
+                                  ? recommendedMovies
+                                  : pickByPredicate(
+                                      isMovie,
+                                      fallbackStart: 0,
+                                      limit: 6,
+                                    );
+                              final resolvedBestEventsThisWeek =
+                                  bestEventsThisWeek.isNotEmpty
+                                  ? bestEventsThisWeek
+                                  : pickByPredicate(
+                                      isBestThisWeek,
+                                      fallbackStart: 2,
+                                      limit: 6,
+                                    );
+                              final resolvedTrendingNow = trendingNow.isNotEmpty
+                                  ? trendingNow
+                                  : pickTopByEngagement(
+                                      fallbackStart: 3,
+                                      limit: 8,
+                                    );
+                              final resolvedPersonalizedPicks =
+                                  personalizedPicks.isNotEmpty
+                                  ? personalizedPicks
+                                  : pickByPredicate(
+                                      (event) =>
+                                          !isMovie(event) && !isDeal(event),
+                                      fallbackStart: 1,
+                                      limit: 8,
+                                    );
+                              final resolvedUpcomingAwards =
+                                  upcomingAwards.isNotEmpty
+                                  ? upcomingAwards
+                                  : pickByPredicate(
+                                      isAward,
+                                      fallbackStart: 4,
+                                      limit: 8,
+                                    );
+                              final resolvedWorkshops = workshops.isNotEmpty
+                                  ? workshops
+                                  : pickByPredicate(
+                                      isWorkshop,
+                                      fallbackStart: 5,
+                                      limit: 8,
+                                    );
+                              final resolvedCitySpotlight = (() {
+                                final hasSelectedCity =
+                                    selectedCity != null && selectedCity.id > 0;
+
+                                if (hasSelectedCity) {
+                                  final fromApi = citySpotlight
+                                      .where(
+                                        (event) =>
+                                            event.city?.id == selectedCity.id,
+                                      )
+                                      .toList();
+                                  if (fromApi.isNotEmpty) {
+                                    return fromApi.take(8).toList();
+                                  }
+
+                                  final fromPool = sourcePool
+                                      .where(
+                                        (event) =>
+                                            event.city?.id == selectedCity.id,
+                                      )
+                                      .take(8)
+                                      .toList();
+                                  if (fromPool.isNotEmpty) {
+                                    return fromPool;
+                                  }
+
+                                  return const <Event>[];
+                                }
+
+                                return citySpotlight.isNotEmpty
+                                    ? citySpotlight.take(8).toList()
+                                    : pickByPredicate(
+                                        (event) => true,
+                                        fallbackStart: 6,
+                                        limit: 8,
+                                      );
+                              })();
+                              final resolvedLastMinuteToday =
+                                  lastMinuteToday.isNotEmpty
+                                  ? lastMinuteToday
+                                  : (() {
+                                      final strict = sourcePool
+                                          .where(isLastMinute)
+                                          .take(8)
+                                          .toList();
+                                      if (strict.isNotEmpty) return strict;
+
+                                      final soon = pickNearestUpcoming(
+                                        minFromNow: Duration.zero,
+                                        maxFromNow: const Duration(hours: 72),
+                                        limit: 8,
+                                      );
+                                      if (soon.isNotEmpty) return soon;
+
+                                      return pickNearestUpcoming(
+                                        minFromNow: Duration.zero,
+                                        maxFromNow: const Duration(days: 7),
+                                        limit: 8,
+                                      );
+                                    })();
+                              final resolvedOffersDeals = offersDeals.isNotEmpty
+                                  ? offersDeals
+                                  : pickByPredicate(
+                                      isDeal,
+                                      fallbackStart: 8,
+                                      limit: 8,
+                                    );
+                              final resolvedNewUpcomingExperiences =
+                                  newUpcomingExperiences.isNotEmpty
+                                  ? newUpcomingExperiences
+                                  : (() {
+                                      final lastMinuteIds =
+                                          resolvedLastMinuteToday
+                                              .map((event) => event.id)
+                                              .toSet();
+
+                                      final strict = sourcePool
+                                          .where(
+                                            (event) =>
+                                                !lastMinuteIds.contains(
+                                                  event.id,
+                                                ) &&
+                                                isNewUpcoming(event),
+                                          )
+                                          .take(8)
+                                          .toList();
+                                      if (strict.isNotEmpty) return strict;
+
+                                      final upcomingNotSoon =
+                                          pickNearestUpcoming(
+                                            minFromNow: const Duration(
+                                              hours: 25,
+                                            ),
+                                            maxFromNow: const Duration(
+                                              days: 60,
+                                            ),
+                                            limit: 8,
+                                            excludeIds: lastMinuteIds,
+                                            extraFilter: (event) =>
+                                                !isDeal(event),
+                                          );
+                                      if (upcomingNotSoon.isNotEmpty) {
+                                        return upcomingNotSoon;
+                                      }
+
+                                      return pickNearestUpcoming(
+                                        minFromNow: const Duration(hours: 25),
+                                        maxFromNow: const Duration(days: 120),
+                                        limit: 8,
+                                        excludeIds: lastMinuteIds,
+                                      );
+                                    })();
+
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -449,107 +876,66 @@ class _HomeBody extends ConsumerWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 32),
-                                  recommendedMoviesAsync.when(
-                                    data: (movies) => _MovieSection(
-                                      movies: movies,
-                                      isDark: isDark,
-                                      textColor: textColor,
-                                    ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _MovieSection(
+                                    movies: resolvedRecommendedMovies,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   const SizedBox(height: 24),
-                                  bestEventsWeekAsync.when(
-                                    data: (events) => _BestEventsWeekSection(
-                                      events: events,
-                                      isDark: isDark,
-                                      textColor: textColor,
-                                    ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _BestEventsWeekSection(
+                                    events: resolvedBestEventsThisWeek,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   const SizedBox(height: 24),
-                                  trendingNowAsync.when(
-                                    data: (events) => _TrendingNowSection(
-                                      events: events,
-                                      isDark: isDark,
-                                      textColor: textColor,
-                                    ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _TrendingNowSection(
+                                    events: resolvedTrendingNow,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   const SizedBox(height: 24),
-                                  personalizedPicksAsync.when(
-                                    data: (events) => _PersonalizedPicksSection(
-                                      events: events,
-                                      isDark: isDark,
-                                      textColor: textColor,
-                                    ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _PersonalizedPicksSection(
+                                    events: resolvedPersonalizedPicks,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   const SizedBox(height: 24),
-                                  upcomingAwardsAsync.when(
-                                    data: (events) => _UpcomingAwardsSection(
-                                      events: events,
-                                      isDark: isDark,
-                                      textColor: textColor,
-                                    ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _UpcomingAwardsSection(
+                                    events: resolvedUpcomingAwards,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   const SizedBox(height: 24),
-                                  workshopsAsync.when(
-                                    data: (events) =>
-                                        _WorkshopsShortCoursesSection(
-                                          events: events,
-                                          isDark: isDark,
-                                          textColor: textColor,
-                                        ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _WorkshopsShortCoursesSection(
+                                    events: resolvedWorkshops,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   const SizedBox(height: 24),
-                                  citySpotlightAsync.when(
-                                    data: (events) => _CitySpotlightSection(
-                                      events: events,
-                                      isDark: isDark,
-                                      textColor: textColor,
-                                      selectedCityName: selectedCity?.name,
-                                    ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _CitySpotlightSection(
+                                    events: resolvedCitySpotlight,
+                                    isDark: isDark,
+                                    textColor: textColor,
+                                    selectedCityId: selectedCity?.id,
+                                    selectedCityName: selectedCity?.name,
                                   ),
                                   const SizedBox(height: 24),
-                                  lastMinuteTodayAsync.when(
-                                    data: (events) => _LastMinuteTodaySection(
-                                      events: events,
-                                      isDark: isDark,
-                                      textColor: textColor,
-                                    ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _LastMinuteTodaySection(
+                                    events: resolvedLastMinuteToday,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   const SizedBox(height: 24),
-                                  offersDealsAsync.when(
-                                    data: (events) => _OffersDealsSection(
-                                      events: events,
-                                      isDark: isDark,
-                                      textColor: textColor,
-                                    ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _OffersDealsSection(
+                                    events: resolvedOffersDeals,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   const SizedBox(height: 24),
-                                  newUpcomingExperiencesAsync.when(
-                                    data: (events) =>
-                                        _NewUpcomingExperiencesSection(
-                                          events: events,
-                                          isDark: isDark,
-                                          textColor: textColor,
-                                        ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
+                                  _NewUpcomingExperiencesSection(
+                                    events: resolvedNewUpcomingExperiences,
+                                    isDark: isDark,
+                                    textColor: textColor,
                                   ),
                                   if (recommended.isNotEmpty) ...[
                                     Padding(
@@ -1353,6 +1739,125 @@ Widget _eventTitleTagChip(String? tag, {bool compact = false}) {
   );
 }
 
+Widget _sectionSeeAllButton({
+  required BuildContext context,
+  required String title,
+  required List<Event> events,
+  required bool isDark,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: () => _openSectionEventsSheet(
+          context,
+          title: title,
+          events: events,
+          isDark: isDark,
+        ),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          foregroundColor: const Color(0xFF8B5CF6),
+        ),
+        child: Text(
+          'home.see_all'.tr(),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        ),
+      ),
+    ),
+  );
+}
+
+Future<void> _openSectionEventsSheet(
+  BuildContext context, {
+  required String title,
+  required List<Event> events,
+  required bool isDark,
+}) async {
+  final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) {
+      return SafeArea(
+        top: false,
+        child: SizedBox(
+          height: MediaQuery.of(ctx).size.height * 0.85,
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 42,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${events.length}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF8B5CF6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: events.isEmpty
+                    ? Center(
+                        child: Text(
+                          'home.no_events'.tr(),
+                          style: GoogleFonts.poppins(
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        itemCount: events.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) => _VerticalEventCard(
+                          event: events[index],
+                          isDark: isDark,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class _MovieSection extends StatelessWidget {
   final List<Event> movies;
   final bool isDark;
@@ -1407,6 +1912,12 @@ class _MovieSection extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'Recommended Movies',
+          events: movies,
+          isDark: isDark,
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -1677,6 +2188,12 @@ class _BestEventsWeekSection extends StatelessWidget {
             ],
           ),
         ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'Best Events This Week',
+          events: events,
+          isDark: isDark,
+        ),
         const SizedBox(height: 12),
         SizedBox(
           height: 228,
@@ -1878,6 +2395,12 @@ class _TrendingNowSection extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'Trending Now',
+          events: events,
+          isDark: isDark,
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -2105,6 +2628,12 @@ class _PersonalizedPicksSection extends StatelessWidget {
             ],
           ),
         ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'Recommended for You',
+          events: events,
+          isDark: isDark,
+        ),
         const SizedBox(height: 12),
         SizedBox(
           height: 170,
@@ -2286,6 +2815,12 @@ class _UpcomingAwardsSection extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'Upcoming Awards & Recognitions',
+          events: events,
+          isDark: isDark,
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -2475,6 +3010,12 @@ class _WorkshopsShortCoursesSection extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'Workshops & Short Courses',
+          events: events,
+          isDark: isDark,
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -2669,20 +3210,61 @@ class _CitySpotlightSection extends StatelessWidget {
   final List<Event> events;
   final bool isDark;
   final Color textColor;
+  final int? selectedCityId;
   final String? selectedCityName;
 
   const _CitySpotlightSection({
     required this.events,
     required this.isDark,
     required this.textColor,
+    this.selectedCityId,
     this.selectedCityName,
   });
 
   @override
   Widget build(BuildContext context) {
     if (events.isEmpty) return const SizedBox.shrink();
-    final cityName =
-        selectedCityName ?? events.first.city?.name ?? 'Addis Ababa';
+
+    String normalizeCity(String value) {
+      return value.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+    }
+
+    final hasSelectedId = selectedCityId != null && selectedCityId! > 0;
+    final normalizedSelectedName = normalizeCity(selectedCityName ?? '');
+
+    List<Event> cityEvents = events;
+    if (hasSelectedId) {
+      cityEvents = events
+          .where((event) => event.city?.id == selectedCityId)
+          .toList();
+    } else if (normalizedSelectedName.isNotEmpty) {
+      cityEvents = events.where((event) {
+        final eventCity = normalizeCity(event.city?.name ?? '');
+        return eventCity == normalizedSelectedName;
+      }).toList();
+    }
+
+    if (cityEvents.isEmpty) {
+      final firstCityId = events.first.city?.id;
+      if (firstCityId != null) {
+        cityEvents = events
+            .where((event) => event.city?.id == firstCityId)
+            .toList();
+      } else {
+        final firstCityName = normalizeCity(events.first.city?.name ?? '');
+        cityEvents = events.where((event) {
+          return normalizeCity(event.city?.name ?? '') == firstCityName;
+        }).toList();
+      }
+    }
+
+    if (cityEvents.isEmpty) {
+      cityEvents = [events.first];
+    }
+
+    final cityName = selectedCityName?.trim().isNotEmpty == true
+        ? selectedCityName!.trim()
+        : (cityEvents.first.city?.name ?? 'Addis Ababa');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2721,16 +3303,22 @@ class _CitySpotlightSection extends StatelessWidget {
             ],
           ),
         ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'Featured in $cityName',
+          events: cityEvents,
+          isDark: isDark,
+        ),
         const SizedBox(height: 12),
         SizedBox(
           height: 178,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: events.length,
+            itemCount: cityEvents.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, i) =>
-                _CitySpotlightCard(event: events[i], isDark: isDark),
+                _CitySpotlightCard(event: cityEvents[i], isDark: isDark),
           ),
         ),
       ],
@@ -2920,6 +3508,12 @@ class _LastMinuteTodaySection extends StatelessWidget {
             ],
           ),
         ),
+        _sectionSeeAllButton(
+          context: context,
+          title: "Last-Minute / Today's Events",
+          events: events,
+          isDark: isDark,
+        ),
         const SizedBox(height: 12),
         SizedBox(
           height: 174,
@@ -3096,6 +3690,12 @@ class _OffersDealsSection extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'Offers & Deals',
+          events: events,
+          isDark: isDark,
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -3289,6 +3889,12 @@ class _NewUpcomingExperiencesSection extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        _sectionSeeAllButton(
+          context: context,
+          title: 'New & Upcoming Experiences',
+          events: events,
+          isDark: isDark,
         ),
         const SizedBox(height: 12),
         SizedBox(

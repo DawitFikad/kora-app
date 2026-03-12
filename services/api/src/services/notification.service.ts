@@ -31,6 +31,46 @@ const DEFAULT_THROTTLE_MINUTES: Partial<Record<NotificationType, number>> = {
 };
 
 export class NotificationService {
+    private static mapUserEmailTypeKey(type?: NotificationType): string | null {
+        if (!type) return null;
+
+        if (type === NotificationTypes.NEW_EVENT) return "newEvent";
+        if (type === NotificationTypes.EVENT_REMINDER) return "eventReminder";
+        if (type === NotificationTypes.TICKET_CONFIRMATION) return "paymentSuccess";
+
+        return null;
+    }
+
+    private static applyUserChannelPrefs(
+        channels: NotificationChannel[],
+        notificationPreferences: any,
+        type?: NotificationType,
+    ): NotificationChannel[] {
+        if (!notificationPreferences || typeof notificationPreferences !== "object") {
+            return channels;
+        }
+
+        const globalEmailPref = notificationPreferences.emailNotifications;
+        const globalEmailAllowed =
+            typeof globalEmailPref === "boolean" ? globalEmailPref : true;
+
+        const perTypePrefs =
+            notificationPreferences.emailNotificationTypes &&
+                typeof notificationPreferences.emailNotificationTypes === "object"
+                ? notificationPreferences.emailNotificationTypes
+                : null;
+
+        const typeKey = this.mapUserEmailTypeKey(type);
+        const perTypeValue = typeKey ? perTypePrefs?.[typeKey] : undefined;
+        const typeEmailAllowed =
+            typeof perTypeValue === "boolean" ? perTypeValue : true;
+
+        return channels.filter((channel) => {
+            if (channel !== NotificationChannel.EMAIL) return true;
+            return globalEmailAllowed && typeEmailAllowed;
+        });
+    }
+
     private static normalizePersistedType(type?: string) {
         const normalized = String(type || "").toUpperCase();
         return (Object.values(NotificationTypes) as string[]).includes(normalized)
@@ -181,7 +221,12 @@ export class NotificationService {
 
         const wantsInApp = options.inApp ?? true;
 
-        const channels = await this.applyGlobalChannelSettings(options.channels);
+        const preferredChannels = this.applyUserChannelPrefs(
+            options.channels,
+            user.profile?.notificationPreferences,
+            options.type,
+        );
+        const channels = await this.applyGlobalChannelSettings(preferredChannels);
 
         const results = [];
         let inAppLogged = false;

@@ -23,6 +23,16 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _appVersion = '';
+  bool _isUpdatingEmailPreference = false;
+
+  Future<void> _saveNotificationPreferences(
+    Map<String, dynamic> notificationPreferences,
+  ) async {
+    await ref.read(profileServiceProvider).updateProfile({
+      'notificationPreferences': notificationPreferences,
+    });
+    ref.invalidate(userProfileProvider);
+  }
 
   @override
   void initState() {
@@ -37,21 +47,112 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     });
   }
 
+  Future<void> _updateEmailNotificationPreference(bool enabled) async {
+    if (_isUpdatingEmailPreference) return;
+
+    final storage = ref.read(localStorageProvider);
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    final previousLocalValue = storage.emailNotifications;
+
+    setState(() {
+      _isUpdatingEmailPreference = true;
+    });
+
+    await storage.setEmailNotifications(enabled);
+
+    try {
+      final existingPrefs =
+          (profile?.notificationPreferences ?? <String, dynamic>{});
+
+      final merged = <String, dynamic>{
+        ...existingPrefs,
+        'emailNotifications': enabled,
+      };
+
+      await _saveNotificationPreferences(merged);
+    } catch (_) {
+      await storage.setEmailNotifications(previousLocalValue);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update email notification preference'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingEmailPreference = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _updateEmailNotificationTypePreference(
+    String typeKey,
+    bool enabled,
+  ) async {
+    if (_isUpdatingEmailPreference) return;
+
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    final existingPrefs =
+        (profile?.notificationPreferences ?? <String, dynamic>{});
+    final existingTypePrefsRaw = existingPrefs['emailNotificationTypes'];
+    final existingTypePrefs = existingTypePrefsRaw is Map
+        ? Map<String, dynamic>.from(existingTypePrefsRaw)
+        : <String, dynamic>{};
+    final previousValue = existingTypePrefs[typeKey] is bool
+        ? existingTypePrefs[typeKey] as bool
+        : true;
+
+    setState(() {
+      _isUpdatingEmailPreference = true;
+    });
+
+    try {
+      final mergedTypePrefs = <String, dynamic>{
+        ...existingTypePrefs,
+        typeKey: enabled,
+      };
+
+      final mergedPrefs = <String, dynamic>{
+        ...existingPrefs,
+        'emailNotificationTypes': mergedTypePrefs,
+      };
+
+      await _saveNotificationPreferences(mergedPrefs);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              previousValue == enabled
+                  ? 'Failed to update email notification preference'
+                  : 'Failed to update email notification type',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingEmailPreference = false;
+        });
+      }
+    }
+  }
+
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark 
-            ? const Color(0xFF1D192B) 
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1D192B)
             : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(
-              Icons.logout,
-              color: Colors.red,
-              size: 28,
-            ),
+            const Icon(Icons.logout, color: Colors.red, size: 28),
             const SizedBox(width: 12),
             Text(
               "settings.logout".tr(),
@@ -82,12 +183,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             child: Text(
               "settings.logout".tr(),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -102,9 +208,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final profileAsync = ref.watch(userProfileProvider);
     final textColor = isDark ? Colors.white : const Color(0xFF1A1823);
     final cardColor = isDark ? const Color(0xFF1D192B) : Colors.white;
+    final profile = profileAsync.valueOrNull;
+    final backendEmailPref =
+        profile?.notificationPreferences?['emailNotifications'];
+    final emailTypePrefsRaw =
+        profile?.notificationPreferences?['emailNotificationTypes'];
+    final emailTypePrefs = emailTypePrefsRaw is Map<String, dynamic>
+        ? emailTypePrefsRaw
+        : emailTypePrefsRaw is Map
+        ? Map<String, dynamic>.from(emailTypePrefsRaw)
+        : <String, dynamic>{};
+    final effectiveEmailNotifications = backendEmailPref is bool
+        ? backendEmailPref
+        : ref.watch(localStorageProvider).emailNotifications;
+    final emailNewEventEnabled = emailTypePrefs['newEvent'] is bool
+        ? emailTypePrefs['newEvent'] as bool
+        : true;
+    final emailEventReminderEnabled = emailTypePrefs['eventReminder'] is bool
+        ? emailTypePrefs['eventReminder'] as bool
+        : true;
+    final emailPaymentSuccessEnabled = emailTypePrefs['paymentSuccess'] is bool
+        ? emailTypePrefs['paymentSuccess'] as bool
+        : true;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF15131C) : const Color(0xFFF8F7FA),
+      backgroundColor: isDark
+          ? const Color(0xFF15131C)
+          : const Color(0xFFF8F7FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -124,16 +254,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             data: (profile) => GestureDetector(
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const EditProfileScreen(),
+                ),
               ),
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF8B5CF6),
-                      Color(0xFF7C3AED),
-                    ],
+                    colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
@@ -151,7 +280,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       backgroundColor: Colors.white,
                       backgroundImage: avatarImageProvider(profile.avatarUrl),
                       child: profile.avatarUrl == null
-                          ? const Icon(Icons.person, size: 32, color: Color(0xFF8B5CF6))
+                          ? const Icon(
+                              Icons.person,
+                              size: 32,
+                              color: Color(0xFF8B5CF6),
+                            )
                           : null,
                     ),
                     const SizedBox(width: 16),
@@ -190,7 +323,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text("Error loading profile", style: TextStyle(color: Colors.red)),
+              child: const Text(
+                "Error loading profile",
+                style: TextStyle(color: Colors.red),
+              ),
             ),
           ),
 
@@ -198,21 +334,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // Staff Operations
           profileAsync.maybeWhen(
-            data: (profile) => profile.role != 'USER' ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionHeader("settings.staff_ops".tr(), Icons.admin_panel_settings),
-                const SizedBox(height: 12),
-                _SettingsTile(
-                  icon: Icons.qr_code_scanner,
-                  title: 'scanner.title'.tr(),
-                  subtitle: 'scanner.align_qr'.tr(),
-                  trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => context.push('/scanner'),
-                ),
-                const SizedBox(height: 32),
-              ],
-            ) : const SizedBox.shrink(),
+            data: (profile) => profile.role != 'USER'
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionHeader(
+                        "settings.staff_ops".tr(),
+                        Icons.admin_panel_settings,
+                      ),
+                      const SizedBox(height: 12),
+                      _SettingsTile(
+                        icon: Icons.qr_code_scanner,
+                        title: 'scanner.title'.tr(),
+                        subtitle: 'scanner.align_qr'.tr(),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.grey,
+                        ),
+                        onTap: () => context.push('/scanner'),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                  )
+                : const SizedBox.shrink(),
             orElse: () => const SizedBox.shrink(),
           ),
 
@@ -252,8 +396,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   fontWeight: FontWeight.w600,
                 ),
                 items: const [
-                  DropdownMenuItem(value: Locale('en'), child: Text('🇺🇸 English')),
-                  DropdownMenuItem(value: Locale('am'), child: Text('🇪🇹 አማርኛ')),
+                  DropdownMenuItem(
+                    value: Locale('en'),
+                    child: Text('🇺🇸 English'),
+                  ),
+                  DropdownMenuItem(
+                    value: Locale('am'),
+                    child: Text('🇪🇹 አማርኛ'),
+                  ),
                 ],
                 onChanged: (val) {
                   if (val != null) context.setLocale(val);
@@ -265,7 +415,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 32),
 
           // Notifications Section
-          _buildSectionHeader("settings.notifications".tr(), Icons.notifications),
+          _buildSectionHeader(
+            "settings.notifications".tr(),
+            Icons.notifications,
+          ),
           const SizedBox(height: 12),
 
           _SettingsTile(
@@ -274,7 +427,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: Switch(
               value: ref.watch(localStorageProvider).pushNotifications,
               activeThumbColor: const Color(0xFF8B5CF6),
-              onChanged: (val) => ref.read(localStorageProvider).setPushNotifications(val),
+              onChanged: (val) =>
+                  ref.read(localStorageProvider).setPushNotifications(val),
             ),
           ),
 
@@ -284,16 +438,87 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.email,
             title: 'settings.email_notif'.tr(),
             trailing: Switch(
-              value: ref.watch(localStorageProvider).emailNotifications,
+              value: effectiveEmailNotifications,
               activeThumbColor: const Color(0xFF8B5CF6),
-              onChanged: (val) => ref.read(localStorageProvider).setEmailNotifications(val),
+              onChanged: _isUpdatingEmailPreference
+                  ? null
+                  : (val) => _updateEmailNotificationPreference(val),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Opacity(
+            opacity: effectiveEmailNotifications ? 1.0 : 0.55,
+            child: _SettingsTile(
+              icon: Icons.campaign_outlined,
+              title: 'settings.email_notif_new_event'.tr(),
+              subtitle: 'settings.email_notif_new_event_desc'.tr(),
+              trailing: Switch(
+                value: emailNewEventEnabled,
+                activeThumbColor: const Color(0xFF8B5CF6),
+                onChanged:
+                    (!effectiveEmailNotifications || _isUpdatingEmailPreference)
+                    ? null
+                    : (val) => _updateEmailNotificationTypePreference(
+                        'newEvent',
+                        val,
+                      ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Opacity(
+            opacity: effectiveEmailNotifications ? 1.0 : 0.55,
+            child: _SettingsTile(
+              icon: Icons.schedule_outlined,
+              title: 'settings.email_notif_upcoming'.tr(),
+              subtitle: 'settings.email_notif_upcoming_desc'.tr(),
+              trailing: Switch(
+                value: emailEventReminderEnabled,
+                activeThumbColor: const Color(0xFF8B5CF6),
+                onChanged:
+                    (!effectiveEmailNotifications || _isUpdatingEmailPreference)
+                    ? null
+                    : (val) => _updateEmailNotificationTypePreference(
+                        'eventReminder',
+                        val,
+                      ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Opacity(
+            opacity: effectiveEmailNotifications ? 1.0 : 0.55,
+            child: _SettingsTile(
+              icon: Icons.payments_outlined,
+              title: 'settings.email_notif_payment_success'.tr(),
+              subtitle: 'settings.email_notif_payment_success_desc'.tr(),
+              trailing: Switch(
+                value: emailPaymentSuccessEnabled,
+                activeThumbColor: const Color(0xFF8B5CF6),
+                onChanged:
+                    (!effectiveEmailNotifications || _isUpdatingEmailPreference)
+                    ? null
+                    : (val) => _updateEmailNotificationTypePreference(
+                        'paymentSuccess',
+                        val,
+                      ),
+              ),
             ),
           ),
 
           const SizedBox(height: 32),
 
           // Support Section
-          _buildSectionHeader("settings.support_legal".tr(), Icons.help_outline),
+          _buildSectionHeader(
+            "settings.support_legal".tr(),
+            Icons.help_outline,
+          ),
           const SizedBox(height: 12),
 
           _SettingsTile(
@@ -326,7 +551,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right, color: Colors.grey),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => AboutScreen(appVersion: _appVersion)),
+              MaterialPageRoute(
+                builder: (context) => AboutScreen(appVersion: _appVersion),
+              ),
             ),
           ),
 
@@ -346,7 +573,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 padding: const EdgeInsets.all(16),
                 side: const BorderSide(color: Colors.red, width: 2),
                 foregroundColor: Colors.red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
@@ -421,7 +650,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           CircleAvatar(
             radius: 32,
-            backgroundColor: isDark ? const Color(0xFF2D2B3A) : Colors.grey[300],
+            backgroundColor: isDark
+                ? const Color(0xFF2D2B3A)
+                : Colors.grey[300],
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -501,20 +732,14 @@ class _SettingsTile extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
         ),
         subtitle: subtitle != null
             ? Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   subtitle!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
                 ),
               )
             : null,

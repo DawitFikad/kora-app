@@ -596,7 +596,7 @@ export class EventService {
             await NotificationService.notifyUser(userId, {
                 title: "New Event Near You",
                 content: `New event near you: ${event.title} is now available.`,
-                channels: [NotificationChannel.PUSH],
+                channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
                 type: "NEW_EVENT",
                 referenceId: event.id,
                 dedupeMinutes: 24 * 60,
