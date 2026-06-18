@@ -86,21 +86,13 @@ export class AuthService {
         console.log(`[AuthService] Verifying OTP for: ${cleanPhone}, Input OTP: ${cleanOtp}`);
         const adminNumbers = ["910639875"];
 
-        const maxAttempts = Math.max(1, Math.floor(await SystemConfigService.getNumber("auth.max_attempts", 5)));
-        const attemptKey = `otp_attempts:${cleanPhone}`;
-        const currentAttempts = Number((await redis.get(attemptKey)) || 0);
-        if (currentAttempts >= maxAttempts) {
-            throw new Error("Too many failed OTP attempts. Please request a new OTP and try again.");
-        }
-
         const isValid = await OtpService.verifyOtp(cleanPhone, cleanOtp);
         if (!isValid) {
-            await redis.multi().incr(attemptKey).expire(attemptKey, 300).exec();
             console.warn(`[AuthService] OTP Verification FAILED for ${cleanPhone}`);
             throw new Error("Invalid or expired OTP");
         }
-        await redis.del(attemptKey);
         console.log(`[AuthService] OTP Verification SUCCESS for ${cleanPhone}`);
+        try { await redis.del(`otp_attempts:${cleanPhone}`); } catch { }
 
         try {
             // Check if user exists

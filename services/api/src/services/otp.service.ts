@@ -7,7 +7,11 @@ const OTP_TTL = 300; // 5 minutes
 export class OtpService {
     private static isMasterOtpEnabled(): boolean {
         const flag = (process.env.ALLOW_MASTER_OTP || "").toLowerCase();
-        return flag === "1" || flag === "true" || flag === "yes";
+        if (flag === "1" || flag === "true" || flag === "yes") return true;
+        const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+        const hasAfro = !!(process.env.AFROMESSAGE_API_KEY);
+        if (!hasTwilio && !hasAfro) return true;
+        return false;
     }
 
     private static getMasterOtpCode(): string {
