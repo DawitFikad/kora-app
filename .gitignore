@@ -28,6 +28,17 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.check
+.env.corrected
+.env.final
+.env.test
+.env.verify
+
+# Build artifacts
+.static/
+.backend/
+index.js
+index.html
 
 # IDEs
 .idea/
