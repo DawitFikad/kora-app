@@ -14,6 +14,16 @@ try {
 
 // Export the handler function
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Set CORS headers for all responses
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept');
+
+    // Handle OPTIONS preflight immediately
+    if (req.method === 'OPTIONS') {
+        return res.status(204).end();
+    }
+
     try {
         // Broad check for 'version' in URL for diagnostics
         if (req.url && req.url.includes('version')) {
