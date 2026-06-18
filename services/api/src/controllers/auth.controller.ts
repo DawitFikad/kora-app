@@ -9,19 +9,15 @@ export class AuthController {
                 return res.status(400).json({ error: "Phone number is required" });
             }
 
-            // Optional controller-level bypass when no SMS provider is configured.
-            const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
-            const hasAfro = !!(process.env.AFROMESSAGE_API_KEY);
-            const smsConfigured = hasTwilio || hasAfro;
-            const allowBypassFlag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
-            const allowBypass = allowBypassFlag === "1" || allowBypassFlag === "true" || allowBypassFlag === "yes" || !smsConfigured;
-            if (allowBypass) {
-                console.log(`[AuthController] OTP bypass active for ${phoneNumber}`);
+            // Bypass: return master OTP for any phone when ALLOW_TEST_OTP_BYPASS is set
+            const bypassFlag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
+            const bypass = bypassFlag === "1" || bypassFlag === "true" || bypassFlag === "yes";
+            if (bypass) {
                 const otp = (process.env.MASTER_OTP_CODE || "123456").trim();
-                const explicit = (process.env.EXPOSE_OTP_IN_DOCKER || process.env.EXPOSE_OTP_IN_LOGS || "").toLowerCase();
-                const shouldExpose = explicit === "1" || explicit === "true" || explicit === "yes" || process.env.NODE_ENV !== "production";
-                if (shouldExpose) {
-                    console.log(`[OTP TEST] PHONE: ${phoneNumber} | CODE: ${otp} (master test OTP)`);
+                const expose = (process.env.EXPOSE_OTP_IN_DOCKER || process.env.EXPOSE_OTP_IN_LOGS || "").toLowerCase();
+                const showOtp = expose === "1" || expose === "true" || expose === "yes" || process.env.NODE_ENV !== "production";
+                console.log(`[AuthController] OTP bypass for ${phoneNumber}`);
+                if (showOtp) {
                     return res.json({ message: "OTP sent successfully", otp });
                 }
                 return res.json({ message: "OTP sent successfully" });

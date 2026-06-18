@@ -53,24 +53,15 @@ export class AuthService {
 
     private static allowTestNumberBypass() {
         const flag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
-        if (flag === "1" || flag === "true" || flag === "yes") return true;
-        const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
-        const hasAfro = !!(process.env.AFROMESSAGE_API_KEY);
-        if (!hasTwilio && !hasAfro) return true;
-        return false;
+        return flag === "1" || flag === "true" || flag === "yes";
     }
 
     static async requestOtp(phoneNumber: string) {
         const cleanPhone = this.normalizeEthiopianPhone(phoneNumber);
         console.log(`[AuthService] Requesting OTP for: ${cleanPhone}`);
 
-        // 🔹 BYPASS EVERYTHING for Admin & Test Numbers (No Redis, No SMS)
-        // This avoids the connection error since Vercel doesn't have local Redis
-        const isBypassEnabled = this.allowTestNumberBypass();
-        const testNumbers = ["910639875", "911111111", "922222222"];
-        const isExplicitBypass = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
-        const explicitBypass = isExplicitBypass === "1" || isExplicitBypass === "true" || isExplicitBypass === "yes";
-        if ((explicitBypass && testNumbers.some(num => cleanPhone.includes(num))) || (isBypassEnabled && !explicitBypass)) {
+        // Use master OTP for any phone when bypass is enabled
+        if (this.allowTestNumberBypass()) {
             const bypassOtp = (process.env.MASTER_OTP_CODE || "123456").trim();
             console.log(`[AuthService] Bypass active for ${cleanPhone}. Skipping OTP generation/Redis/SMS.`);
             if (this.shouldExposeOtpForTesting()) {
@@ -81,14 +72,11 @@ export class AuthService {
         }
 
         const otp = await OtpService.generateOtp(cleanPhone);
-
-        // Send real SMS (or fallback to console based on env)
         await SmsService.sendOtp(cleanPhone, otp);
 
         if (this.shouldExposeOtpForTesting()) {
             return { message: "OTP sent successfully", otp };
         }
-
         return { message: "OTP sent successfully" };
     }
 

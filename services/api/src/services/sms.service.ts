@@ -6,11 +6,7 @@ export class SmsService {
 
     private static allowTestNumberBypass() {
         const flag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
-        if (flag === "1" || flag === "true" || flag === "yes") return true;
-        const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
-        const hasAfro = !!(process.env.AFROMESSAGE_API_KEY);
-        if (!hasTwilio && !hasAfro) return true;
-        return false;
+        return flag === "1" || flag === "true" || flag === "yes";
     }
 
     private static shouldExposeOtpForTesting() {
