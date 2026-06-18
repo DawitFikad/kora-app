@@ -6,7 +6,11 @@ export class SmsService {
 
     private static allowTestNumberBypass() {
         const flag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
-        return flag === "1" || flag === "true" || flag === "yes";
+        if (flag === "1" || flag === "true" || flag === "yes") return true;
+        const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+        const hasAfro = !!(process.env.AFROMESSAGE_TOKEN);
+        if (!hasTwilio && !hasAfro) return true;
+        return false;
     }
 
     private static shouldExposeOtpForTesting() {
@@ -20,7 +24,8 @@ export class SmsService {
             const sid = process.env.TWILIO_ACCOUNT_SID;
             const token = process.env.TWILIO_AUTH_TOKEN;
             if (!sid || !token) {
-                throw new Error("Twilio credentials missing in environment variables");
+                console.warn("[SMS] Twilio credentials missing — falling back to console log");
+                return null;
             }
             this.twilioClient = new Twilio(sid, token);
         }
@@ -87,17 +92,24 @@ export class SmsService {
                 throw new Error("Failed to send SMS via AfroMessage. Please check logs.");
             }
         } else if (provider === "twilio") {
-            try {
-                const client = this.getTwilioClient();
-                await client.messages.create({
-                    body: message,
-                    from: process.env.TWILIO_PHONE_NUMBER,
-                    to: phoneNumber,
-                });
-                console.log(`[SMS] Message sent via Twilio to ${phoneNumber}`);
-            } catch (error: any) {
-                console.error("[SMS ERROR] Failed to send via Twilio:", error.message);
-                throw new Error("Failed to send SMS via Twilio. Please try again later.");
+            const client = this.getTwilioClient();
+            if (!client) {
+                console.log("\n-----------------------------------------");
+                console.log(`[MOCK SMS] TO: ${phoneNumber}`);
+                console.log(`[MOCK SMS] MESSAGE: ${message}`);
+                console.log("-----------------------------------------\n");
+            } else {
+                try {
+                    await client.messages.create({
+                        body: message,
+                        from: process.env.TWILIO_PHONE_NUMBER,
+                        to: phoneNumber,
+                    });
+                    console.log(`[SMS] Message sent via Twilio to ${phoneNumber}`);
+                } catch (error: any) {
+                    console.error("[SMS ERROR] Failed to send via Twilio:", error.message);
+                    throw new Error("Failed to send SMS via Twilio. Please try again later.");
+                }
             }
         } else {
             // Default: Console logging for development

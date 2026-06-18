@@ -9,11 +9,14 @@ export class AuthController {
                 return res.status(400).json({ error: "Phone number is required" });
             }
 
-            // Optional controller-level bypass for emergency local testing only.
+            // Optional controller-level bypass when no SMS provider is configured.
+            const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+            const hasAfro = !!(process.env.AFROMESSAGE_TOKEN);
+            const smsConfigured = hasTwilio || hasAfro;
             const allowBypassFlag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
-            const allowBypass = allowBypassFlag === "1" || allowBypassFlag === "true" || allowBypassFlag === "yes";
-            if (allowBypass && phoneNumber.includes("910639875")) {
-                console.log("[AuthController] Admin bypass triggered by ALLOW_TEST_OTP_BYPASS");
+            const allowBypass = allowBypassFlag === "1" || allowBypassFlag === "true" || allowBypassFlag === "yes" || !smsConfigured;
+            if (allowBypass) {
+                console.log(`[AuthController] OTP bypass active for ${phoneNumber}`);
                 const otp = (process.env.MASTER_OTP_CODE || "123456").trim();
                 const explicit = (process.env.EXPOSE_OTP_IN_DOCKER || process.env.EXPOSE_OTP_IN_LOGS || "").toLowerCase();
                 const shouldExpose = explicit === "1" || explicit === "true" || explicit === "yes" || process.env.NODE_ENV !== "production";

@@ -53,7 +53,11 @@ export class AuthService {
 
     private static allowTestNumberBypass() {
         const flag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
-        return flag === "1" || flag === "true" || flag === "yes";
+        if (flag === "1" || flag === "true" || flag === "yes") return true;
+        const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+        const hasAfro = !!(process.env.AFROMESSAGE_TOKEN);
+        if (!hasTwilio && !hasAfro) return true;
+        return false;
     }
 
     static async requestOtp(phoneNumber: string) {
@@ -62,10 +66,13 @@ export class AuthService {
 
         // 🔹 BYPASS EVERYTHING for Admin & Test Numbers (No Redis, No SMS)
         // This avoids the connection error since Vercel doesn't have local Redis
+        const isBypassEnabled = this.allowTestNumberBypass();
         const testNumbers = ["910639875", "911111111", "922222222"];
-        if (this.allowTestNumberBypass() && testNumbers.some(num => cleanPhone.includes(num))) {
+        const isExplicitBypass = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
+        const explicitBypass = isExplicitBypass === "1" || isExplicitBypass === "true" || isExplicitBypass === "yes";
+        if ((explicitBypass && testNumbers.some(num => cleanPhone.includes(num))) || (isBypassEnabled && !explicitBypass)) {
             const bypassOtp = (process.env.MASTER_OTP_CODE || "123456").trim();
-            console.log(`[AuthService] Test/Admin number detected (${cleanPhone}). Skipping OTP generation/Redis.`);
+            console.log(`[AuthService] Bypass active for ${cleanPhone}. Skipping OTP generation/Redis/SMS.`);
             if (this.shouldExposeOtpForTesting()) {
                 console.log(`[OTP TEST] PHONE: ${cleanPhone} | CODE: ${bypassOtp} (master test OTP)`);
                 return { message: "OTP sent successfully", otp: bypassOtp };
