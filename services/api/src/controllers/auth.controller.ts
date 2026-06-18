@@ -11,7 +11,7 @@ export class AuthController {
 
             // Optional controller-level bypass when no SMS provider is configured.
             const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
-            const hasAfro = !!(process.env.AFROMESSAGE_TOKEN);
+            const hasAfro = !!(process.env.AFROMESSAGE_API_KEY);
             const smsConfigured = hasTwilio || hasAfro;
             const allowBypassFlag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
             const allowBypass = allowBypassFlag === "1" || allowBypassFlag === "true" || allowBypassFlag === "yes" || !smsConfigured;

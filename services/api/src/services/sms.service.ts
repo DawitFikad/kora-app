@@ -8,7 +8,7 @@ export class SmsService {
         const flag = (process.env.ALLOW_TEST_OTP_BYPASS || "").toLowerCase();
         if (flag === "1" || flag === "true" || flag === "yes") return true;
         const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
-        const hasAfro = !!(process.env.AFROMESSAGE_TOKEN);
+        const hasAfro = !!(process.env.AFROMESSAGE_API_KEY);
         if (!hasTwilio && !hasAfro) return true;
         return false;
     }
@@ -56,9 +56,9 @@ export class SmsService {
 
         if (provider === "afromessage") {
             try {
-                const token = process.env.AFROMESSAGE_TOKEN;
-                const identifierId = process.env.AFROMESSAGE_IDENTIFIER_ID;
-                const senderName = process.env.AFROMESSAGE_SENDER_NAME || "ET-Ticket";
+                const token = process.env.AFROMESSAGE_API_KEY;
+                const identifierId = process.env.AFROMESSAGE_IDENTIFIER;
+                const senderName = process.env.AFROMESSAGE_SENDER || "ET-Ticket";
 
                 if (!token || !identifierId) {
                     throw new Error("AfroMessage credentials missing in environment variables");

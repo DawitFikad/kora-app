@@ -9,7 +9,7 @@ export class OtpService {
         const flag = (process.env.ALLOW_MASTER_OTP || "").toLowerCase();
         if (flag === "1" || flag === "true" || flag === "yes") return true;
         const hasTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
-        const hasAfro = !!(process.env.AFROMESSAGE_TOKEN);
+        const hasAfro = !!(process.env.AFROMESSAGE_API_KEY);
         if (!hasTwilio && !hasAfro) return true;
         return false;
     }
