@@ -186,12 +186,6 @@ export const LoginModal = ({ isOpen, mode = 'login', onClose }: LoginModalProps)
                     setError(regErr.response?.data?.error || regErr.error || regErr.message || 'Registration failed after verification.');
                 }
             } else {
-                // Regular login mode
-                const role = String(verifyRes?.user?.role || '').toUpperCase();
-                if (!verifyRes?.hasOrganizerProfile && role !== 'ADMIN') {
-                    setError(t('auth.noAccountError'));
-                    return;
-                }
                 await login({ accessToken: verifyRes.accessToken, user: verifyRes.user });
                 onClose();
             }
