@@ -1,4 +1,4 @@
-module.exports = (req, res) => {
+fluttermodule.exports = (req, res) => {
     res.status(200).json({
         message: "Plain JS Debug Endpoint",
         timestamp: new Date().toISOString(),
