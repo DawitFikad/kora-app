@@ -1,8 +1,6 @@
 {
     "version": 2,
     "name": "et-ticket-platform",
-    "buildCommand": "node build-all.js",
-    "installCommand": "npm install",
     "rewrites": [
         {
             "source": "/(.*)",
