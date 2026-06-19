@@ -135,15 +135,15 @@ class TicketDetailScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                            color: const Color(0xFFFF0000).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                            border: Border.all(color: const Color(0xFFFF0000).withOpacity(0.3)),
                           ),
                           child: Column(
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.calendar_today, color: Color(0xFF8B5CF6), size: 20),
+                                  const Icon(Icons.calendar_today, color: Color(0xFFFF0000), size: 20),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
@@ -163,7 +163,7 @@ class TicketDetailScreen extends StatelessWidget {
                               const SizedBox(height: 12),
                               Row(
                                 children: [
-                                  const Icon(Icons.location_on, color: Color(0xFF8B5CF6), size: 20),
+                                  const Icon(Icons.location_on, color: Color(0xFFFF0000), size: 20),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
@@ -226,13 +226,13 @@ class TicketDetailScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                                  color: const Color(0xFFFF0000).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
                                   "ticket_details.show_at_entrance".tr(),
                                   style: GoogleFonts.poppins(
-                                    color: const Color(0xFF8B5CF6),
+                                    color: const Color(0xFFFF0000),
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.5,
@@ -247,7 +247,7 @@ class TicketDetailScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                                      color: const Color(0xFFFF0000).withOpacity(0.2),
                                       blurRadius: 20,
                                       offset: const Offset(0, 8),
                                     ),

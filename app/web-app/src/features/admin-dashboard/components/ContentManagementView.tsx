@@ -281,7 +281,7 @@ export const ContentManagementView = () => {
                 border: '1px solid var(--border)'
             }}>
                 {[
-                    { id: 'banners', label: 'Banners', icon: ImageIcon, color: '#3B82F6' },
+                    { id: 'banners', label: 'Banners', icon: ImageIcon, color: '#FF0000' },
                     { id: 'categories', label: 'Categories', icon: Tag, color: '#D946EF' },
                     { id: 'cities', label: 'Active Cities', icon: MapPin, color: '#10B981' },
                 ].map((t) => {
@@ -463,7 +463,7 @@ export const ContentManagementView = () => {
                     >
                         <div className="admin-card" style={{ padding: '24px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                                <MapPin color="#3B82F6" />
+                                <MapPin color="#FF0000" />
                                 <h3 style={{ fontWeight: 800 }}>{t('admin.content.active_cities')}</h3>
                             </div>
 
@@ -484,10 +484,10 @@ export const ContentManagementView = () => {
                                         placeholder="slug-path"
                                         value={newCity.slug}
                                         onChange={e => setNewCity({ ...newCity, slug: e.target.value.toLowerCase() })}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: '#3B82F6', fontSize: '0.8rem', fontWeight: 700 }}
+                                        style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', color: '#FF0000', fontSize: '0.8rem', fontWeight: 700 }}
                                     />
                                 </div>
-                                <button onClick={handleAddCity} style={{ background: '#3B82F6', color: 'white', border: 'none', padding: '0 20px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}>
+                                <button onClick={handleAddCity} style={{ background: '#FF0000', color: 'white', border: 'none', padding: '0 20px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}>
                                     <Plus size={20} />
                                 </button>
                             </div>
@@ -513,7 +513,7 @@ export const ContentManagementView = () => {
                                     >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <MapPin size={18} color="#3B82F6" />
+                                                <MapPin size={18} color="#FF0000" />
                                             </div>
                                             <div>
                                                 <p style={{ fontWeight: 800, fontSize: '0.95rem' }}>{c.name}</p>
@@ -670,7 +670,7 @@ export const ContentManagementView = () => {
                                     <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                                         <button
                                             onClick={handleAddBanner}
-                                            style={{ width: '100%', background: 'linear-gradient(135deg, var(--primary), #3B82F6)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
+                                            style={{ width: '100%', background: '#FF0000', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
                                         >
                                             <Plus size={20} />
                                             {t('admin.content.create_banner_button')}
@@ -854,7 +854,7 @@ export const ContentManagementView = () => {
 
                                 <div style={{ display: 'flex', gap: '16px', marginTop: '40px' }}>
                                     <button onClick={() => setEditingBanner(null)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--border)', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s' }}>{t('admin.content.discard_changes_button')}</button>
-                                    <button onClick={handleUpdateBanner} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 950, cursor: 'pointer', boxShadow: '0 8px 20px rgba(29, 144, 245, 0.3)' }}>{t('admin.content.update_campaign_button')}</button>
+                                    <button onClick={handleUpdateBanner} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 950, cursor: 'pointer', boxShadow: '0 8px 20px rgba(255, 0, 0, 0.3)' }}>{t('admin.content.update_campaign_button')}</button>
                                 </div>
                             </motion.div>
                         </div>
@@ -995,7 +995,7 @@ export const ContentManagementView = () => {
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             style={{ width: '400px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
                         >
-                            <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: modalConfig.type === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(29, 144, 245, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                            <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: modalConfig.type === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 {modalConfig.type === 'danger' ? <Trash2 color="#EF4444" size={24} /> : <RefreshCcw color="var(--primary-blue)" size={24} />}
                             </div>
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-    Ticket,
     ArrowRight,
     CheckCircle2,
     ShieldCheck,
@@ -45,10 +44,8 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
         <nav className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`} style={{ transition: 'all 0.3s' }}>
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div className="logo-box">
-                        <Ticket color="var(--primary-blue)" size={20} />
-                    </div>
-                    <span className="logo-text" style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>ET-TICKETS</span>
+                    <img src="/KORA%20Icon.png" alt="KORA" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+                    <span className="logo-text" style={{ fontSize: '1.35rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>KORA</span>
                 </div>
 
                 {/* Desktop Nav */}
@@ -78,7 +75,7 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                 padding: '0.5rem 1.5rem',
                                 borderRadius: '8px',
                                 border: 'none',
-                                background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)',
+                                background: '#FF0000',
                                 color: 'white',
                                 fontWeight: 600,
                                 cursor: 'pointer',
@@ -169,13 +166,13 @@ const Navbar = ({ onAuthClick }: { onAuthClick: (mode: 'login' | 'register') => 
                                         padding: '0.6rem 1.2rem',
                                         borderRadius: '8px',
                                         border: 'none',
-                                        background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)',
+                                        background: '#FF0000',
                                         color: 'white',
                                         fontWeight: 600,
                                         fontSize: '0.9rem',
                                         cursor: 'pointer',
                                         transition: 'all 0.3s ease',
-                                        boxShadow: '0 2px 10px rgba(139, 92, 246, 0.3)',
+                                        boxShadow: '0 2px 10px rgba(255, 0, 0, 0.3)',
                                         whiteSpace: 'nowrap'
                                     }}
                                     className="nav-btn-primary"
@@ -252,8 +249,8 @@ const TrustSignals = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
                     {signals.map((item, i) => (
                         <div key={i} className="glass" style={{ padding: '1.8rem', borderRadius: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--border)' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <item.icon size={22} color="var(--primary)" />
+                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(255, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <item.icon size={22} color="#FF0000" />
                             </div>
                             <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{item.title}</span>
                         </div>
@@ -584,6 +581,20 @@ const OrganizerLanding = () => {
 
             <LoginModal isOpen={isLoginOpen} mode={authMode} onClose={() => setIsLoginOpen(false)} />
 
+            <style>{`
+                @media (max-width: 640px) {
+                    .container { padding: 0 1rem !important; }
+                    .hero-glass { padding: 1.5rem 1rem !important; border-radius: 1.5rem !important; }
+                    section { padding-top: 5rem !important; padding-bottom: 5rem !important; }
+                    h2 { font-size: 2rem !important; }
+                    .glass { padding: 1.25rem !important; }
+                    [style*="padding: 3.5rem"] { padding: 1.5rem !important; }
+                    footer { padding: 4rem 0 2rem !important; }
+                    footer [style*="gap: 5rem"] { gap: 2rem !important; }
+                    footer [style*="flex: 1 1 350px"] { flex: 1 1 100% !important; }
+                }
+            `}</style>
+
             {/* 1. Hero Section */}
             <section id="home" style={{ paddingTop: '9rem', paddingBottom: '7rem' }}>
                 <div className="container" style={{ textAlign: 'center' }}>
@@ -637,13 +648,13 @@ const OrganizerLanding = () => {
                             <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                                 <motion.button
                                     onClick={() => document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' })}
-                                    whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(139, 92, 246, 0.4)' }}
+                                    whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(255, 0, 0, 0.4)' }}
                                     whileTap={{ scale: 0.98 }}
                                     style={{
                                         padding: '1.05rem 2.4rem',
                                         borderRadius: '12px',
                                         border: 'none',
-                                        background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)',
+                                        background: '#FF0000',
                                         color: 'white',
                                         fontWeight: 700,
                                         fontSize: '1.05rem',
@@ -651,7 +662,7 @@ const OrganizerLanding = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '0.5rem',
-                                        boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
+                                        boxShadow: '0 4px 14px rgba(255, 0, 0, 0.3)',
                                         transition: 'all 0.3s ease',
                                         position: 'relative',
                                         overflow: 'hidden'
@@ -700,7 +711,7 @@ const OrganizerLanding = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                 {attendeeSteps.map((step, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '1rem' }}>
-                                        <div style={{ width: '34px', height: '34px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--primary)' }}>
+                                        <div style={{ width: '34px', height: '34px', borderRadius: '12px', background: 'rgba(255, 0, 0, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#FF0000' }}>
                                             {i + 1}
                                         </div>
                                         <div>
@@ -717,7 +728,7 @@ const OrganizerLanding = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                 {organizerSteps.map((step, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '1rem' }}>
-                                        <div style={{ width: '34px', height: '34px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#3B82F6' }}>
+                                        <div style={{ width: '34px', height: '34px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#000000' }}>
                                             {i + 1}
                                         </div>
                                         <div>
@@ -809,7 +820,7 @@ const OrganizerLanding = () => {
                                             {event.coverImage ? (
                                                 <img src={event.coverImage} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : (
-                                                <div style={{ width: '100%', height: '100%', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🎟️</div>
+                                                <div style={{ width: '100%', height: '100%', background: 'rgba(255, 0, 0, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🎟️</div>
                                             )}
                                             {event.featured && (
                                                 <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(17, 24, 39, 0.75)', color: 'white', padding: '4px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 800 }}>
@@ -826,17 +837,17 @@ const OrganizerLanding = () => {
                                             </div>
                                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                 {event.category?.name && (
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(139, 92, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(255, 0, 0, 0.12)', color: '#000000', fontSize: '0.75rem', fontWeight: 700 }}>
                                                         <Tag size={12} /> {event.category?.name}
                                                     </span>
                                                 )}
                                                 {event.subCategory?.name && (
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(139, 92, 246, 0.08)', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(255, 0, 0, 0.08)', color: '#000000', fontSize: '0.75rem', fontWeight: 700 }}>
                                                         <Tag size={12} /> {event.subCategory?.name}
                                                     </span>
                                                 )}
                                                 {event.organizer?.organizationName && (
-                                                    <span style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(59, 130, 246, 0.12)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                    <span style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', background: 'rgba(0, 0, 0, 0.08)', color: '#000000', fontSize: '0.75rem', fontWeight: 700 }}>
                                                         {event.organizer.organizationName}
                                                     </span>
                                                 )}
@@ -880,7 +891,7 @@ const OrganizerLanding = () => {
             </section>
 
             {/* 5. Organizer Call-to-Action */}
-            <section id="organizers" style={{ padding: '8rem 0', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15))' }}>
+            <section id="organizers" style={{ padding: '8rem 0', background: 'rgba(255, 0, 0, 0.05)' }}>
                 <div className="container">
                     <div className="glass" style={{ padding: '3.5rem', borderRadius: '2.5rem', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem', alignItems: 'center' }}>
                         <div>
@@ -888,7 +899,7 @@ const OrganizerLanding = () => {
                             <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '2rem' }}>{t('landing.organizer.subtitle')}</p>
                             <button
                                 onClick={() => { setAuthMode('register'); setIsLoginOpen(true); }}
-                                style={{ padding: '0.9rem 2rem', borderRadius: '12px', border: 'none', background: 'linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%)', color: 'white', fontWeight: 700, cursor: 'pointer' }}
+                                style={{ padding: '0.9rem 2rem', borderRadius: '12px', border: 'none', background: '#FF0000', color: 'white', fontWeight: 700, cursor: 'pointer' }}
                             >
                                 {t('landing.organizer.cta')}
                             </button>
@@ -913,8 +924,8 @@ const OrganizerLanding = () => {
             <section id="mobile-first" style={{ padding: '6rem 0' }}>
                 <div className="container">
                     <div className="glass" style={{ padding: '2.5rem', borderRadius: '2rem', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Smartphone size={26} color="#3B82F6" />
+                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'rgba(255, 0, 0, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Smartphone size={26} color="#FF0000" />
                         </div>
                         <div>
                             <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--text-main)' }}>{t('landing.mobile.title')}</h3>
@@ -938,8 +949,8 @@ const OrganizerLanding = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '5rem' }}>
                         <div style={{ flex: '1 1 350px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                                <Ticket color="var(--primary)" size={40} />
-                                <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>ET-TICKETS</span>
+                                <img src="/KORA%20Icon.png" alt="KORA" style={{ width: '50px', height: '50px', objectFit: 'contain' }} />
+                                <span style={{ fontSize: '1.9rem', fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--text-main)' }}>KORA</span>
                             </div>
                             <p style={{ color: 'var(--text-muted)', maxWidth: '350px', fontSize: '1.1rem', lineHeight: 1.6 }}>
                                 {t('footer.desc')}
@@ -1002,7 +1013,7 @@ const OrganizerLanding = () => {
 
                     <div style={{ borderTop: '1px solid var(--border)', marginTop: '6rem', paddingTop: '3rem', textAlign: 'center' }}>
                         <p style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 600 }}>
-                            © {new Date().getFullYear()} ET-TICKETS PLATFORM. {t('footer.rights')}
+                            © {new Date().getFullYear()} KORA PLATFORM. {t('footer.rights')}
                         </p>
                     </div>
                 </div>

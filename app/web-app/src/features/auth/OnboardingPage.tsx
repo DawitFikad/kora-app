@@ -10,8 +10,7 @@ import {
     Headphones,
     AlertTriangle,
     LogOut,
-    CheckCircle2,
-    BarChart3
+    CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../core/context/AuthContext';
 import { useLanguage } from '../../core/context/LanguageContext';
@@ -80,10 +79,8 @@ export const OnboardingPage = () => {
                 background: 'var(--bg-sidebar)', zIndex: 10
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div className="logo-box">
-                        <BarChart3 color="#1D90F5" size={24} strokeWidth={2.5} />
-                    </div>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-main)' }}>ET-TICKET</h2>
+                    <img src="/KORA%20Icon.png" alt="KORA" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+                    <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--text-main)' }}>KORA</h2>
                 </div>
 
                 <button
@@ -124,7 +121,7 @@ export const OnboardingPage = () => {
                             width: '300px', height: '300px',
                             background: isRejected
                                 ? 'radial-gradient(circle, rgba(239, 68, 68, 0.1) 0%, transparent 70%)'
-                                : 'radial-gradient(circle, rgba(29, 144, 245, 0.1) 0%, transparent 70%)',
+                                : 'radial-gradient(circle, rgba(255, 0, 0, 0.08) 0%, transparent 70%)',
                             zIndex: 0
                         }} />
 
@@ -185,15 +182,15 @@ export const OnboardingPage = () => {
                                 </div>
                                 <div style={{
                                     padding: '12px 24px', borderRadius: '16px',
-                                    background: isRejected ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)',
-                                    border: isRejected ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(59, 130, 246, 0.2)',
+                                    background: isRejected ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+                                    border: isRejected ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(255, 0, 0, 0.2)',
                                     display: 'flex', alignItems: 'center', gap: '10px'
                                 }}>
                                     {!isRejected && <div className="spinner-small" />}
                                     <span style={{
                                         fontSize: '0.9rem',
                                         fontWeight: 600,
-                                        color: isRejected ? '#EF4444' : '#3B82F6'
+                                        color: isRejected ? '#EF4444' : '#FF0000'
                                     }}>
                                         {isRejected ? t('org.rejected.status', "Action Needed") : t('org.pending.status_review', "Verification in Progress")}
                                     </span>
@@ -205,7 +202,7 @@ export const OnboardingPage = () => {
                     {/* Features Section */}
                     <div style={{ marginBottom: '60px' }}>
                         <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '32px', textAlign: 'center' }}>
-                            {t('org.pending.features_title', "What you'll get with ET-Ticket")}
+                            {t('org.pending.features_title', "What you'll get with KORA")}
                         </h2>
 
                         <div style={{
@@ -222,11 +219,11 @@ export const OnboardingPage = () => {
                                     transition: 'all 0.3s ease'
                                 }}>
                                     <div style={{
-                                        width: '48px', height: '48px', background: 'rgba(59, 130, 246, 0.1)',
+                                        width: '48px', height: '48px', background: 'rgba(255, 0, 0, 0.1)',
                                         borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         marginBottom: '20px'
                                     }}>
-                                        <f.icon size={24} color="#3B82F6" />
+                                        <f.icon size={24} color="#FF0000" />
                                     </div>
                                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '12px' }}>{f.title}</h3>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.5 }}>{f.desc}</p>
@@ -247,7 +244,7 @@ export const OnboardingPage = () => {
                         alignItems: 'center',
                         gap: '12px'
                     }}>
-                        <p>{t('org.pending.help', "Need help faster? Reach our onboarding team at")} <span style={{ color: 'var(--primary)', fontWeight: 700 }}>support@et-ticket.com</span></p>
+                        <p>{t('org.pending.help', "Need help faster? Reach our onboarding team at")} <span style={{ color: 'var(--primary)', fontWeight: 700 }}>support@kora.com</span></p>
                     </div>
                 </motion.div>
             </main>
@@ -256,8 +253,8 @@ export const OnboardingPage = () => {
                 .spinner-small {
                     width: 16px;
                     height: 16px;
-                    border: 2px solid rgba(59, 130, 246, 0.2);
-                    border-top-color: #3B82F6;
+                    border: 2px solid rgba(255, 0, 0, 0.2);
+                    border-top-color: #FF0000;
                     border-radius: 50%;
                     animation: spin 1s linear infinite;
                 }

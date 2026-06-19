@@ -168,7 +168,7 @@ class NotificationScreen extends ConsumerWidget {
                 child: Text(
                   "notifications.mark_all_read".tr(),
                   style: GoogleFonts.poppins(
-                    color: const Color(0xFF8B5CF6),
+                    color: const Color(0xFFFF0000),
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
                   ),
@@ -184,7 +184,7 @@ class NotificationScreen extends ConsumerWidget {
                 isScrollable: true,
                 indicator: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: const Color(0xFF8B5CF6),
+                  color: const Color(0xFFFF0000),
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
@@ -266,7 +266,7 @@ class NotificationScreen extends ConsumerWidget {
                   );
                 },
                 loading: () => const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+                  child: CircularProgressIndicator(color: Color(0xFFFF0000)),
                 ),
                 error: (err, stack) => Center(
                   child: Column(
@@ -292,7 +292,7 @@ class NotificationScreen extends ConsumerWidget {
                       ElevatedButton(
                         onPressed: () => ref.refresh(notificationsProvider),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8B5CF6),
+                          backgroundColor: const Color(0xFFFF0000),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -449,7 +449,7 @@ class _NotificationTile extends ConsumerWidget {
                               width: 8,
                               height: 8,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF8B5CF6),
+                                color: Color(0xFFFF0000),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -700,22 +700,22 @@ class _NotificationIcon extends StatelessWidget {
       case 'reminder':
         icon = Icons.calendar_today_outlined;
         bgColor = const Color(0xFF1D192B);
-        iconColor = const Color(0xFF8B5CF6);
+        iconColor = const Color(0xFFFF0000);
         break;
       case 'booking':
         icon = Icons.check_circle_outline;
         bgColor = const Color(0xFF162320);
-        iconColor = Colors.greenAccent;
+        iconColor = Colors.red;
         break;
       case 'update':
         icon = Icons.campaign_outlined;
         bgColor = const Color(0xFF2B1D19);
-        iconColor = Colors.orangeAccent;
+        iconColor = Colors.red;
         break;
       case 'alert':
         icon = Icons.lock_outline;
         bgColor = const Color(0xFF191D2B);
-        iconColor = Colors.blueAccent;
+        iconColor = Colors.red;
         break;
       default:
         icon = Icons.notifications_outlined;
@@ -772,7 +772,7 @@ class _BookingCard extends StatelessWidget {
                   children: [
                     const Icon(
                       Icons.confirmation_num,
-                      color: Color(0xFF8B5CF6),
+                      color: Color(0xFFFF0000),
                       size: 14,
                     ),
                     const SizedBox(width: 8),

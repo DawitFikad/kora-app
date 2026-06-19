@@ -267,7 +267,7 @@ export const ContentManagementView = () => {
                 {/* Cities Section */}
                 <div className="stat-card" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                        <MapPin color="#3B82F6" size={24} />
+                        <MapPin color="#FF0000" size={24} />
                         <h3 style={{ fontWeight: 800, fontSize: '1.1rem' }}>Active Cities</h3>
                     </div>
 
@@ -307,7 +307,7 @@ export const ContentManagementView = () => {
                         <button
                             onClick={handleAddCity}
                             style={{
-                                background: '#3B82F6',
+                                background: '#FF0000',
                                 color: 'white',
                                 border: 'none',
                                 padding: '10px 16px',

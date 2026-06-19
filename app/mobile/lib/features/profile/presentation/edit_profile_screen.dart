@@ -160,7 +160,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: const Color(0xFF8B5CF6),
+                          color: const Color(0xFFFF0000),
                           width: 2,
                         ),
                       ),
@@ -195,7 +195,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: const BoxDecoration(
-                            color: Color(0xFF8B5CF6),
+                            color: Color(0xFFFF0000),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -382,7 +382,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5CF6),
+                    backgroundColor: const Color(0xFFFF0000),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -423,7 +423,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         style: GoogleFonts.poppins(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF8B5CF6),
+          color: const Color(0xFFFF0000),
         ),
       ),
     );

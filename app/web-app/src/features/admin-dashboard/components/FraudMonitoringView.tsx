@@ -175,7 +175,7 @@ export const FraudMonitoringView = () => {
                                     <p style={{ fontWeight: 800, fontSize: '0.85rem', marginBottom: '4px' }}>{new Date(alert.createdAt).toLocaleTimeString()}</p>
                                     <button
                                         onClick={() => handleAnalyze(alert.id)}
-                                        style={{ color: '#3B82F6', background: 'none', border: 'none', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                                        style={{ color: '#FF0000', background: 'none', border: 'none', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
                                     >
                                         {t('admin.fraud.analyze_root')}
                                     </button>
@@ -194,7 +194,7 @@ export const FraudMonitoringView = () => {
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>{selectedAlert.message}</p>
 
                         <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid var(--border)' }}>
-                            <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B82F6', marginBottom: '8px', textTransform: 'uppercase' }}>{t('admin.fraud.metadata_analysis')}</h4>
+                            <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#FF0000', marginBottom: '8px', textTransform: 'uppercase' }}>{t('admin.fraud.metadata_analysis')}</h4>
                             <pre style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-muted)', overflow: 'auto', maxHeight: '200px' }}>
                                 {JSON.stringify(selectedAlert.metadata, null, 2)}
                             </pre>

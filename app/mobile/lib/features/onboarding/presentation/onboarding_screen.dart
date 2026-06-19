@@ -94,12 +94,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                            color: const Color(0xFFFF0000).withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.auto_awesome,
-                            color: Color(0xFF8B5CF6),
+                            color: Color(0xFFFF0000),
                             size: 18,
                           ),
                         ),
@@ -180,7 +180,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                         TextSpan(
                           text: _onboardingData[_currentPage]['highlight'],
-                          style: const TextStyle(color: Color(0xFF8B5CF6)),
+                          style: const TextStyle(color: Color(0xFFFF0000)),
                         ),
                       ],
                     ),
@@ -210,7 +210,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         width: _currentPage == index ? 32 : 8,
                         decoration: BoxDecoration(
                           color: _currentPage == index
-                              ? const Color(0xFF8B5CF6)
+                              ? const Color(0xFFFF0000)
                               : Colors.white24,
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -237,7 +237,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8B5CF6),
+                          backgroundColor: const Color(0xFFFF0000),
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 60),
                           shape: RoundedRectangleBorder(

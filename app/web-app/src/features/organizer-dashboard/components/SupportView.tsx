@@ -180,7 +180,7 @@ export const SupportView = () => {
                     {/* Help Center */}
                     <div className="stat-card" style={{ padding: '32px' }}>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <BookOpen size={20} color="#1D90F5" /> Help Center Articles
+                            <BookOpen size={20} color="#FF0000" /> Help Center Articles
                         </h3>
                         <input
                             type="text"
@@ -194,7 +194,7 @@ export const SupportView = () => {
                                 <div key={i} style={{ padding: '14px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 800 }}>{article.title}</h4>
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1D90F5' }}>{article.tag}</span>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#FF0000' }}>{article.tag}</span>
                                     </div>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{article.summary}</p>
                                 </div>
@@ -255,17 +255,17 @@ export const SupportView = () => {
                         </div>
                     </div>
 
-                    <div className="stat-card" style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(29, 144, 245, 0.1), rgba(29, 144, 245, 0.05))', border: '1px solid rgba(29, 144, 245, 0.2)' }}>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#1D90F5', marginBottom: '8px' }}>Need Urgent Help?</h4>
+                    <div className="stat-card" style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(255, 0, 0, 0.05))', border: '1px solid rgba(255, 0, 0, 0.2)' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#FF0000', marginBottom: '8px' }}>Need Urgent Help?</h4>
                         <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Call our support line directly.</p>
                         <a href="tel:+251911000000" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)', fontWeight: 700, textDecoration: 'none' }}>
                             📞 +251 911 000 000
                         </a>
                     </div>
 
-                    <div className="stat-card" style={{ padding: '20px', border: '1px dashed rgba(29, 144, 245, 0.3)' }}>
+                    <div className="stat-card" style={{ padding: '20px', border: '1px dashed rgba(255, 0, 0, 0.3)' }}>
                         <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Headset size={16} color="#1D90F5" /> Live Chat (Coming Soon)
+                            <Headset size={16} color="#FF0000" /> Live Chat (Coming Soon)
                         </h4>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>We’re building in‑dashboard chat for faster support.</p>
                     </div>

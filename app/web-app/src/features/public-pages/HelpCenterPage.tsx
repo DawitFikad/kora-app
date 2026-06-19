@@ -7,7 +7,7 @@ const HelpCenterPage: React.FC = () => {
         <PublicPageLayout title="Help Center">
             <div style={{ color: 'var(--text-main)', lineHeight: 1.8 }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginBottom: '3rem' }}>
-                    Find answers to frequently asked questions and learn how to make the most of ET-TICKETS.
+                    Find answers to frequently asked questions and learn how to make the most of KORA.
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>

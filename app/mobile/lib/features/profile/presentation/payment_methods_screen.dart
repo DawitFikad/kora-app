@@ -18,28 +18,28 @@ class PaymentMethodsScreen extends ConsumerWidget {
         'id': 'telebirr',
         'name': 'TeleBirr',
         'icon': Icons.account_balance_wallet,
-        'color': Colors.blue,
+        'color': Colors.red,
         'merchantId': 'MERCH-123-TELE',
       },
       {
         'id': 'cbe_birr',
         'name': 'CBE Birr',
         'icon': Icons.account_balance,
-        'color': Colors.purple,
+        'color': Colors.red,
         'merchantId': 'MERCH-456-CBE',
       },
       {
         'id': 'chapa',
         'name': 'Chapa',
         'icon': Icons.bolt,
-        'color': Colors.green,
+        'color': Colors.red,
         'merchantId': 'MERCH-789-CHAPA',
       },
       {
         'id': 'amole',
         'name': 'Amole',
         'icon': Icons.payment,
-        'color': Colors.orange,
+        'color': Colors.red,
         'merchantId': 'MERCH-012-AMOLE',
       }
     ];

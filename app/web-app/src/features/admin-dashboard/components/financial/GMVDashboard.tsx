@@ -90,7 +90,7 @@ export const GMVDashboard: React.FC = () => {
                 <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '32px', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <MapPin color="#3B82F6" size={20} />
+                            <MapPin color="#FF0000" size={20} />
                         </div>
                         <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>Top Region</span>
                     </div>
@@ -140,7 +140,7 @@ export const GMVDashboard: React.FC = () => {
                         <Download size={16} />
                         Export Ledger
                     </button>
-                    <button style={{ padding: '10px 20px', borderRadius: '12px', background: 'var(--primary)', border: 'none', color: 'white', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 20px rgba(29, 144, 245, 0.2)' }}>
+                    <button style={{ padding: '10px 20px', borderRadius: '12px', background: 'var(--primary)', border: 'none', color: 'white', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 20px rgba(255, 0, 0, 0.2)' }}>
                         Reconcile Batch
                     </button>
                 </div>
@@ -181,7 +181,7 @@ export const GMVDashboard: React.FC = () => {
                                     <td style={{ padding: '20px 24px', fontSize: '0.9rem', fontWeight: 700 }}>{r.date}</td>
                                     <td style={{ padding: '20px 24px', fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3B82F6' }} />
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FF0000' }} />
                                             {r.city}
                                         </div>
                                     </td>

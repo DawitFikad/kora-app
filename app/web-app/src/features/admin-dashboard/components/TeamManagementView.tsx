@@ -124,7 +124,7 @@ export const TeamManagementView = () => {
 
     const getRoleBadgeColor = (r: string) => {
         switch (r.toLowerCase()) {
-            case 'admin': return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3B82F6', label: t('admin.team.roles.admin') };
+            case 'admin': return { bg: 'rgba(59, 130, 246, 0.1)', text: '#FF0000', label: t('admin.team.roles.admin') };
             case 'financial': return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981', label: t('admin.team.roles.financial') };
             case 'events': return { bg: 'rgba(245, 158, 11, 0.1)', text: '#F59E0B', label: t('admin.team.roles.events') };
             default: return { bg: 'rgba(255, 255, 255, 0.05)', text: 'var(--text-muted)', label: r };
@@ -141,7 +141,7 @@ export const TeamManagementView = () => {
                 {/* 🔵 Left Side: Invitation Form */}
                 <div className="admin-card" style={{ padding: '32px', position: 'sticky', top: '100px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(29, 144, 245, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <UserPlus size={24} color="var(--primary-blue)" />
                         </div>
                         <div>
@@ -210,7 +210,7 @@ export const TeamManagementView = () => {
                                         onClick={() => setRole(r.id)}
                                         style={{
                                             padding: '12px 16px', borderRadius: '12px', border: `1px solid ${role === r.id ? 'var(--primary-blue)' : 'var(--border)'}`,
-                                            cursor: 'pointer', background: role === r.id ? 'rgba(29, 144, 245, 0.05)' : 'transparent',
+                                            cursor: 'pointer', background: role === r.id ? 'rgba(255, 0, 0, 0.05)' : 'transparent',
                                             display: 'flex', alignItems: 'center', gap: '16px', transition: 'all 0.2s ease'
                                         }}
                                     >
@@ -234,7 +234,7 @@ export const TeamManagementView = () => {
                                 width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: 'var(--primary-blue)',
                                 color: 'white', fontWeight: 800, fontSize: '1rem', cursor: formStatus === 'loading' ? 'not-allowed' : 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                                boxShadow: '0 10px 25px -5px rgba(29, 144, 245, 0.4)'
+                                boxShadow: '0 10px 25px -5px rgba(255, 0, 0, 0.4)'
                             }}
                         >
                             {formStatus === 'loading' ? <Loader2 size={20} className="animate-spin" /> : <Mail size={20} />}
@@ -468,7 +468,7 @@ export const TeamManagementView = () => {
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             style={{ width: '400px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
                         >
-                            <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: modalConfig.type === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(29, 144, 245, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                            <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: modalConfig.type === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 {modalConfig.type === 'danger' ? <Trash2 color="#EF4444" size={24} /> : <RefreshCcw color="var(--primary-blue)" size={24} />}
                             </div>
 

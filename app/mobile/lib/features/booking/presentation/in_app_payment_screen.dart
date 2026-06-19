@@ -162,7 +162,7 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
               value: _progress / 100,
               minHeight: 2,
               backgroundColor: Colors.white10,
-              color: const Color(0xFF8B5CF6),
+              color: const Color(0xFFFF0000),
             ),
           Expanded(
             child: _supportsEmbeddedWebView

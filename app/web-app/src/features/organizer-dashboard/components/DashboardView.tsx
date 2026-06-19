@@ -109,7 +109,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                     overview ? [
                         { label: t('org.dashboard.todaySales', "Today's Sales"), value: `ETB ${Number(todaySales || 0).toLocaleString()}`, change: t('org.dashboard.todaySalesHint', 'Today'), icon: DollarSign, bgColor: 'rgba(16, 185, 129, 0.1)', iconColor: '#10B981' },
                         { label: t('org.dashboard.totalTicketsSold', 'Total Tickets Sold'), value: `${Number(overview.ticketsSold || 0).toLocaleString()} / ${Number(overview.totalCapacity || 0).toLocaleString()}`, change: t('org.dashboard.totalTicketsHint', 'All events'), icon: Ticket, bgColor: 'rgba(251, 191, 36, 0.1)', iconColor: '#FBBF24' },
-                        { label: t('org.dashboard.activeEvents', 'Active Events'), value: Number(overview.activeEvents || 0).toLocaleString(), change: t('org.dashboard.activeEventsHint', 'Upcoming & live'), icon: CalendarDays, bgColor: 'rgba(29, 144, 245, 0.1)', iconColor: '#1D90F5' },
+                        { label: t('org.dashboard.activeEvents', 'Active Events'), value: Number(overview.activeEvents || 0).toLocaleString(), change: t('org.dashboard.activeEventsHint', 'Upcoming & live'), icon: CalendarDays, bgColor: 'rgba(255, 0, 0, 0.1)', iconColor: '#FF0000' },
                         { label: t('org.dashboard.upcomingCountdown', 'Upcoming Event Countdown'), value: upcomingCountdown ? (upcomingCountdown as any).label || `${(upcomingCountdown as any).days}d ${(upcomingCountdown as any).hours}h` : t('org.dashboard.noUpcomingShort', 'No upcoming events'), change: upcomingCountdown?.event?.title || t('org.dashboard.nextEvent', 'Next event'), icon: Clock, bgColor: 'rgba(167, 139, 250, 0.1)', iconColor: '#A78BFA' },
                         { label: t('org.dashboard.pendingPayout', 'Pending Payout'), value: `ETB ${Number(overview.nextPayout || 0).toLocaleString()}`, change: t('org.dashboard.pendingPayoutHint', 'Pending payout amount'), icon: Building2, bgColor: 'rgba(236, 72, 153, 0.1)', iconColor: '#EC4899' },
                     ] : []
@@ -169,7 +169,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                                             background: 'var(--bg-subtle)', display: 'flex', flexDirection: 'column',
                                             alignItems: 'center', justifyContent: 'center', fontWeight: 800
                                         }}>
-                                            <span style={{ fontSize: '0.6rem', color: '#1D90F5' }}>{new Date(e.date).toLocaleString('default', { month: 'short' }).toUpperCase()}</span>
+                                            <span style={{ fontSize: '0.6rem', color: '#FF0000' }}>{new Date(e.date).toLocaleString('default', { month: 'short' }).toUpperCase()}</span>
                                             <span style={{ fontSize: '1rem', color: 'var(--text-main)', lineHeight: 1 }}>{new Date(e.date).getDate()}</span>
                                         </div>
                                         <div>

@@ -131,14 +131,14 @@ export const CommissionsView = () => {
             <div className="admin-card" style={{ padding: '32px', marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                     <div style={{ padding: '8px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px' }}>
-                        <Hash size={20} color="#3B82F6" />
+                        <Hash size={20} color="#FF0000" />
                     </div>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>{t('admin.commissions.fee_config')}</h3>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
                     {fees.filter(f => f.isDefault).map(fee => (
                         <div key={fee.id} style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
-                            <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px 12px', background: '#3B82F6', color: 'white', fontSize: '0.65rem', fontWeight: 900, borderRadius: '0 0 0 10px' }}>{t('admin.commissions.default_config')}</div>
+                            <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px 12px', background: '#FF0000', color: 'white', fontSize: '0.65rem', fontWeight: 900, borderRadius: '0 0 0 10px' }}>{t('admin.commissions.default_config')}</div>
                             <div style={{ marginBottom: '16px' }}>
                                 <span style={{ fontWeight: 950, color: 'var(--text-main)', fontSize: '1.1rem' }}>{fee.name}</span>
                             </div>
@@ -218,7 +218,7 @@ export const CommissionsView = () => {
                                 <th>{t('admin.commissions.tx_detail')}</th>
                                 <th>{t('admin.commissions.gross')}</th>
                                 <th style={{ color: '#F59E0B' }}>{t('admin.commissions.platform_fee')}</th>
-                                <th style={{ color: '#1D90F5' }}>{t('admin.commissions.net_payout')}</th>
+                                <th style={{ color: '#FF0000' }}>{t('admin.commissions.net_payout')}</th>
                                 <th>{t('admin.commissions.status')}</th>
                                 <th>{t('admin.commissions.actions')}</th>
                             </tr>
@@ -241,7 +241,7 @@ export const CommissionsView = () => {
                                         </td>
                                         <td style={{ fontWeight: 900, fontSize: '0.9rem' }}>ETB {Number(tx.amount).toLocaleString()}</td>
                                         <td style={{ color: '#F59E0B', fontWeight: 950, fontSize: '0.9rem' }}>{tx.feeAmount > 0 ? `ETB ${Number(tx.feeAmount).toLocaleString()}` : '—'}</td>
-                                        <td style={{ color: '#1D90F5', fontWeight: 950, fontSize: '0.9rem' }}>ETB {Number(tx.netAmount).toLocaleString()}</td>
+                                        <td style={{ color: '#FF0000', fontWeight: 950, fontSize: '0.9rem' }}>ETB {Number(tx.netAmount).toLocaleString()}</td>
                                         <td>
                                             <span className="pill" style={{
                                                 background: tx.status === 'SETTLED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',

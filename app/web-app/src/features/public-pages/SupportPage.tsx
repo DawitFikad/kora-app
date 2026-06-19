@@ -14,7 +14,7 @@ const SupportPage: React.FC = () => {
                     <div className="glass" style={{ padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
                         <Mail color="var(--primary)" style={{ marginBottom: '1rem' }} />
                         <h4 style={{ margin: '0 0 0.5rem' }}>Email Us</h4>
-                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>support@et-tickets.com</p>
+                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>support@kora.com</p>
                         <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Response within 24 hours</p>
                     </div>
 
@@ -33,7 +33,7 @@ const SupportPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div style={{ background: 'rgba(29, 144, 245, 0.05)', padding: '2rem', borderRadius: '1.5rem', border: '1px solid rgba(29, 144, 245, 0.2)' }}>
+                <div style={{ background: 'rgba(255, 0, 0, 0.05)', padding: '2rem', borderRadius: '1.5rem', border: '1px solid rgba(255, 0, 0, 0.2)' }}>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                         <MessageSquare size={24} color="var(--primary)" />
                         <div>

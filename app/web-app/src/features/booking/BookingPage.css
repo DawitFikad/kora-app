@@ -23,7 +23,7 @@
     width: 48px;
     height: 48px;
     border: 3px solid rgba(138, 99, 210, 0.2);
-    border-top-color: #8a63d2;
+    border-top-color: #FF0000;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -62,7 +62,7 @@
 
 .btn-primary {
     padding: 0.75rem 2rem;
-    background: linear-gradient(135deg, #8a63d2, #6c4ab6);
+    background: linear-gradient(135deg, #FF0000, #CC0000);
     border: none;
     border-radius: 8px;
     color: #ffffff;
@@ -117,7 +117,7 @@
     font-size: 2rem;
     font-weight: 700;
     margin: 0 0 1rem 0;
-    background: linear-gradient(135deg, #ffffff, #8a63d2);
+    background: linear-gradient(135deg, #ffffff, #FF0000);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -226,7 +226,7 @@
 .btn-reserve {
     width: 100%;
     padding: 1rem 2rem;
-    background: linear-gradient(135deg, #8a63d2, #6c4ab6);
+    background: linear-gradient(135deg, #FF0000, #CC0000);
     border: none;
     border-radius: 12px;
     color: #ffffff;

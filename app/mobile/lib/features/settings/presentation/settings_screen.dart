@@ -262,12 +262,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                    colors: [Color(0xFFFF0000), Color(0xFFCC0000)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                      color: const Color(0xFFFF0000).withOpacity(0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -283,7 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ? const Icon(
                               Icons.person,
                               size: 32,
-                              color: Color(0xFF8B5CF6),
+                              color: Color(0xFFFF0000),
                             )
                           : null,
                     ),
@@ -369,7 +369,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'settings.dark_mode'.tr(),
             trailing: Switch(
               value: isDark,
-              activeThumbColor: const Color(0xFF8B5CF6),
+              activeThumbColor: const Color(0xFFFF0000),
               onChanged: (val) {
                 ref.read(themeModeProvider.notifier).toggleTheme();
               },
@@ -384,7 +384,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                color: const Color(0xFFFF0000).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: DropdownButton<Locale>(
@@ -392,7 +392,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 underline: const SizedBox(),
                 dropdownColor: isDark ? const Color(0xFF1D192B) : Colors.white,
                 style: GoogleFonts.poppins(
-                  color: const Color(0xFF8B5CF6),
+                  color: const Color(0xFFFF0000),
                   fontWeight: FontWeight.w600,
                 ),
                 items: const [
@@ -426,7 +426,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'settings.push_notif'.tr(),
             trailing: Switch(
               value: ref.watch(localStorageProvider).pushNotifications,
-              activeThumbColor: const Color(0xFF8B5CF6),
+              activeThumbColor: const Color(0xFFFF0000),
               onChanged: (val) =>
                   ref.read(localStorageProvider).setPushNotifications(val),
             ),
@@ -439,7 +439,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'settings.email_notif'.tr(),
             trailing: Switch(
               value: effectiveEmailNotifications,
-              activeThumbColor: const Color(0xFF8B5CF6),
+              activeThumbColor: const Color(0xFFFF0000),
               onChanged: _isUpdatingEmailPreference
                   ? null
                   : (val) => _updateEmailNotificationPreference(val),
@@ -456,7 +456,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'settings.email_notif_new_event_desc'.tr(),
               trailing: Switch(
                 value: emailNewEventEnabled,
-                activeThumbColor: const Color(0xFF8B5CF6),
+                activeThumbColor: const Color(0xFFFF0000),
                 onChanged:
                     (!effectiveEmailNotifications || _isUpdatingEmailPreference)
                     ? null
@@ -478,7 +478,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'settings.email_notif_upcoming_desc'.tr(),
               trailing: Switch(
                 value: emailEventReminderEnabled,
-                activeThumbColor: const Color(0xFF8B5CF6),
+                activeThumbColor: const Color(0xFFFF0000),
                 onChanged:
                     (!effectiveEmailNotifications || _isUpdatingEmailPreference)
                     ? null
@@ -500,7 +500,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'settings.email_notif_payment_success_desc'.tr(),
               trailing: Switch(
                 value: emailPaymentSuccessEnabled,
-                activeThumbColor: const Color(0xFF8B5CF6),
+                activeThumbColor: const Color(0xFFFF0000),
                 onChanged:
                     (!effectiveEmailNotifications || _isUpdatingEmailPreference)
                     ? null
@@ -624,7 +624,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Icon(icon, size: 20, color: const Color(0xFF8B5CF6)),
+        Icon(icon, size: 20, color: const Color(0xFFFF0000)),
         const SizedBox(width: 8),
         Text(
           title,
@@ -725,10 +725,10 @@ class _SettingsTile extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+            color: const Color(0xFFFF0000).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: const Color(0xFF8B5CF6), size: 22),
+          child: Icon(icon, color: const Color(0xFFFF0000), size: 22),
         ),
         title: Text(
           title,

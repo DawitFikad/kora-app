@@ -39,12 +39,12 @@ const ContactPage: React.FC = () => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(29, 144, 245, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(255, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Mail size={20} color="var(--primary)" />
                             </div>
                             <div>
                                 <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Email Support</h4>
-                                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>support@et-tickets.com</p>
+                                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>support@kora.com</p>
                             </div>
                         </div>
 

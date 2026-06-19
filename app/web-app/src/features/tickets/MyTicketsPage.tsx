@@ -65,7 +65,7 @@ const MyTicketsPage: React.FC = () => {
                         >
                             <div style={{ padding: '28px', flex: '1 1 400px', borderRight: '1px dashed #2D3748' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
-                                    <span style={{ background: 'rgba(29, 144, 245, 0.12)', color: '#1D90F5', padding: '6px 14px', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 800 }}>{ticket.tier.name}</span>
+                                    <span style={{ background: 'rgba(255, 0, 0, 0.12)', color: '#FF0000', padding: '6px 14px', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 800 }}>{ticket.tier.name}</span>
                                     <span style={{
                                         color: ticket.status === 'VALID' ? '#4ADE80' : '#F87171',
                                         fontWeight: 800,

@@ -472,7 +472,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: _isBulkMode
-                          ? const Color(0xFF8B5CF6)
+                          ? const Color(0xFFFF0000)
                           : Colors.black45,
                       borderRadius: BorderRadius.circular(100),
                       border: Border.all(
@@ -507,7 +507,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                   },
                   icon: Icon(
                     _isTorchOn ? Icons.flash_on : Icons.flash_off,
-                    color: _isTorchOn ? Colors.yellow : Colors.white,
+                    color: _isTorchOn ? Colors.red : Colors.white,
                   ),
                   style: IconButton.styleFrom(backgroundColor: Colors.black26),
                 ),
@@ -518,7 +518,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             Container(
               color: Colors.black54,
               child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+                child: CircularProgressIndicator(color: Color(0xFFFF0000)),
               ),
             ),
         ],
@@ -664,7 +664,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             height: 280,
             width: 280,
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+              border: Border.all(color: const Color(0xFFFF0000), width: 2),
               borderRadius: BorderRadius.circular(40),
             ),
             child: Stack(
@@ -709,16 +709,16 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         decoration: BoxDecoration(
           border: Border(
             top: top == 0
-                ? const BorderSide(color: Color(0xFF8B5CF6), width: 6)
+                ? const BorderSide(color: Color(0xFFFF0000), width: 6)
                 : BorderSide.none,
             bottom: top == 1
-                ? const BorderSide(color: Color(0xFF8B5CF6), width: 6)
+                ? const BorderSide(color: Color(0xFFFF0000), width: 6)
                 : BorderSide.none,
             left: left == 0
-                ? const BorderSide(color: Color(0xFF8B5CF6), width: 6)
+                ? const BorderSide(color: Color(0xFFFF0000), width: 6)
                 : BorderSide.none,
             right: left == 1
-                ? const BorderSide(color: Color(0xFF8B5CF6), width: 6)
+                ? const BorderSide(color: Color(0xFFFF0000), width: 6)
                 : BorderSide.none,
           ),
           borderRadius: BorderRadius.only(
@@ -783,16 +783,16 @@ class _ScanningLineState extends State<ScanningLine>
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.5),
+                  color: const Color(0xFFFF0000).withOpacity(0.5),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
               ],
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF8B5CF6).withOpacity(0),
-                  const Color(0xFF8B5CF6),
-                  const Color(0xFF8B5CF6).withOpacity(0),
+                  const Color(0xFFFF0000).withOpacity(0),
+                  const Color(0xFFFF0000),
+                  const Color(0xFFFF0000).withOpacity(0),
                 ],
               ),
             ),

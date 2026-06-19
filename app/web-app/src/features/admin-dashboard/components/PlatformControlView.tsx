@@ -131,7 +131,7 @@ export const PlatformControlView = () => {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                        <MetricCard label={t('admin.platform.cpu_usage')} value={`${systemMetrics.cpu.toFixed(0)}%`} icon={Server} color="#3B82F6" progress={systemMetrics.cpu} />
+                        <MetricCard label={t('admin.platform.cpu_usage')} value={`${systemMetrics.cpu.toFixed(0)}%`} icon={Server} color="#FF0000" progress={systemMetrics.cpu} />
                         <MetricCard label={t('admin.platform.ram_usage')} value={`${systemMetrics.memory.toFixed(0)}%`} icon={Zap} color="#A78BFA" progress={systemMetrics.memory} />
                         <MetricCard label={t('admin.platform.active_sessions')} value={systemMetrics.activeConnections.toLocaleString()} icon={Globe} color="#10B981" />
                         <MetricCard label={t('admin.platform.db_latency')} value={`${systemMetrics.dbLatency.toFixed(0)}ms`} icon={Database} color="#F59E0B" warn={systemMetrics.dbLatency > 80} />
@@ -146,7 +146,7 @@ export const PlatformControlView = () => {
                                 <motion.path
                                     d="M0,80 Q10,20 20,50 T40,30 T60,70 T80,40 T100,60 L100,100 L0,100 Z"
                                     fill="rgba(59, 130, 246, 0.1)"
-                                    stroke="#3B82F6"
+                                    stroke="#FF0000"
                                     strokeWidth="1"
                                     animate={{
                                         d: [

@@ -86,8 +86,8 @@ export const RevenueBreakdown: React.FC = () => {
                     <p style={{ margin: '8px 0 0', color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 600 }}>Aggregate earnings from all platform sources (30d rolling).</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#3B82F6', textTransform: 'uppercase', marginBottom: '4px' }}>Consolidated Total</p>
-                    <p style={{ fontSize: '2.4rem', fontWeight: 950, color: '#3B82F6', margin: 0 }}>{currency(netRevenue)}</p>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#FF0000', textTransform: 'uppercase', marginBottom: '4px' }}>Consolidated Total</p>
+                    <p style={{ fontSize: '2.4rem', fontWeight: 950, color: '#FF0000', margin: 0 }}>{currency(netRevenue)}</p>
                 </div>
             </div>
 
@@ -111,7 +111,7 @@ export const RevenueBreakdown: React.FC = () => {
                     label="Operational Adjustments"
                     amount={adjustments}
                     icon={ShieldCheck}
-                    color="#8B5CF6"
+                    color="#FF0000"
                     description="Net total of refunds, reversals, and disputed claims."
                 />
             </div>

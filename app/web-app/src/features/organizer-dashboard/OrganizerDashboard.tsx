@@ -55,11 +55,16 @@ const OrganizerDashboard = () => {
     const [organizerProfile, setOrganizerProfile] = useState<any>(null);
     const [dashboardAvatarFailed, setDashboardAvatarFailed] = useState(false);
 
+    // Mobile sidebar
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const closeMobileMenu = () => setMobileMenuOpen(false);
+
     // Notifications State
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [notificationRefreshToken, setNotificationRefreshToken] = useState(0);
+
 
     const normalizeNotifications = (payload: any): any[] => {
         if (!payload) return [];
@@ -407,15 +412,16 @@ const OrganizerDashboard = () => {
 
     return (
         <div className="container-fluid organizer-dashboard-layout">
+            {/* Mobile sidebar overlay */}
+            <div className={`sidebar-overlay ${mobileMenuOpen ? 'visible' : ''}`} onClick={closeMobileMenu} />
             {/* 🟢 Sidebar */}
-            <aside className="sidebar">
+            <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`}>
                 <div className="logo-section" style={{ padding: '32px 24px' }}>
-                    <div className="logo-box" style={{ width: '40px', height: '40px', background: 'rgba(29, 144, 245, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <BarChart3 color="#1D90F5" size={24} strokeWidth={2.5} />
-                    </div>
+                    <img src="/KORA%20Icon.png" alt="KORA" style={{ width: '46px', height: '46px', borderRadius: '10px', objectFit: 'contain', flexShrink: 0 }} />
+                    
                     <div>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 1.1 }}>{t('org.brand.title', 'Event Manager')}</h2>
-                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('org.brand.subtitle', 'Organizer Console')}</p>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: 900, lineHeight: 1.1 }}>{t('org.brand.title', 'KORA')}</h2>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('org.brand.subtitle', 'Organizer Console')}</p>
                     </div>
                 </div>
 
@@ -429,7 +435,7 @@ const OrganizerDashboard = () => {
                                 <div
                                     key={item.label}
                                     className={`nav-item ${activeTab === item.label ? 'active' : ''}`}
-                                    onClick={() => setActiveTab(item.label)}
+                                    onClick={() => { setActiveTab(item.label); closeMobileMenu(); }}
                                 >
                                     <item.icon size={20} />
                                     {item.display}
@@ -441,7 +447,7 @@ const OrganizerDashboard = () => {
 
                 <div className="sidebar-footer" style={{ padding: '24px', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <button
-                        onClick={() => setActiveTab('CreateEvent')}
+                        onClick={() => { setActiveTab('CreateEvent'); closeMobileMenu(); }}
                         className="btn-blue"
                         style={{ width: '100%', padding: '14px', borderRadius: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                     >
@@ -473,7 +479,12 @@ const OrganizerDashboard = () => {
             {/* 🔵 Main Content */}
             <main className="main-content hide-scrollbar">
                 <header className="top-header" style={{ padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu" type="button">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+                            </svg>
+                        </button>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
                             {activeTitle}
                         </h2>
@@ -532,7 +543,7 @@ const OrganizerDashboard = () => {
                                                 <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card-hover)' }}>
                                                     <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>Notifications</h4>
                                                     {unreadCount > 0 && (
-                                                        <span onClick={(e) => { e.stopPropagation(); handleMarkAsRead(); }} style={{ fontSize: '0.8rem', color: '#1D90F5', cursor: 'pointer', fontWeight: 600 }}>Mark all read</span>
+                                                        <span onClick={(e) => { e.stopPropagation(); handleMarkAsRead(); }} style={{ fontSize: '0.8rem', color: '#FF0000', cursor: 'pointer', fontWeight: 600 }}>Mark all read</span>
                                                     )}
                                                 </div>
                                                 <div className="hide-scrollbar" style={{ maxHeight: '420px', overflowY: 'auto' }}>
@@ -552,16 +563,16 @@ const OrganizerDashboard = () => {
                                                                             padding: '16px',
                                                                             borderBottom: '1px solid var(--border)',
                                                                             cursor: 'pointer',
-                                                                            background: n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)',
+                                                                            background: n.isRead ? 'transparent' : 'rgba(255, 0, 0, 0.05)',
                                                                             transition: 'background 0.2s',
                                                                             display: 'flex',
                                                                             gap: '12px'
                                                                         }}
-                                                                        onMouseEnter={(e) => e.currentTarget.style.background = n.isRead ? 'rgba(255,255,255,0.02)' : 'rgba(29, 144, 245, 0.08)'}
-                                                                        onMouseLeave={(e) => e.currentTarget.style.background = n.isRead ? 'transparent' : 'rgba(29, 144, 245, 0.05)'}
+                                                                        onMouseEnter={(e) => e.currentTarget.style.background = n.isRead ? 'rgba(255,255,255,0.02)' : 'rgba(255, 0, 0, 0.08)'}
+                                                                        onMouseLeave={(e) => e.currentTarget.style.background = n.isRead ? 'transparent' : 'rgba(255, 0, 0, 0.05)'}
                                                                     >
                                                                         <div style={{ marginTop: '2px' }}>
-                                                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.isRead ? 'transparent' : '#1D90F5', border: n.isRead ? '1px solid var(--text-muted)' : 'none' }} />
+                                                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.isRead ? 'transparent' : '#FF0000', border: n.isRead ? '1px solid var(--text-muted)' : 'none' }} />
                                                                         </div>
                                                                         <div style={{ flex: 1 }}>
                                                                             <p style={{ fontSize: '0.9rem', marginBottom: '4px', lineHeight: '1.4', color: n.isRead ? 'var(--text-muted)' : 'var(--text-main)' }}>{n.content}</p>
@@ -593,7 +604,7 @@ const OrganizerDashboard = () => {
                             onClick={() => setActiveTab('Settings')}
                             style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
                         >
-                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '2px' }}>
+                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#FF0000', padding: '2px' }}>
                                 {dashboardAvatarFailed ? (
                                     <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-main)' }}>
                                         {dashboardAvatarInitials || 'OR'}

@@ -70,7 +70,7 @@
 
 .promo-input:focus {
     outline: none;
-    border-color: #8a63d2;
+    border-color: #FF0000;
 }
 
 .promo-input:disabled {
@@ -79,7 +79,7 @@
 
 .apply-btn {
     padding: 0.75rem 1.25rem;
-    background: linear-gradient(135deg, #8a63d2, #6c4ab6);
+    background: linear-gradient(135deg, #FF0000, #CC0000);
     border: none;
     border-radius: 8px;
     color: #ffffff;

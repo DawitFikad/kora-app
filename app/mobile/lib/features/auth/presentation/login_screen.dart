@@ -67,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Theme(
       data: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: const Color(0xFF8B5CF6),
+        primaryColor: const Color(0xFFFF0000),
         scaffoldBackgroundColor: const Color(0xFF0F0D15),
         textTheme: GoogleFonts.poppinsTextTheme(
           ThemeData.dark().textTheme,
@@ -221,7 +221,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.2,
                                   ),
-                                  cursorColor: const Color(0xFF8B5CF6),
+                                  cursorColor: const Color(0xFFFF0000),
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     hintText: "login.hint_phone".tr(),
@@ -241,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           children: [
                             const Icon(
                               Icons.lock_outline,
-                              color: Color(0xFF8B5CF6),
+                              color: Color(0xFFFF0000),
                               size: 14,
                             ),
                             const SizedBox(width: 8),
@@ -262,7 +262,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ElevatedButton(
                           onPressed: _isLoading ? null : _sendOtp,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF8B5CF6),
+                            backgroundColor: const Color(0xFFFF0000),
                             foregroundColor: Colors.white,
                             minimumSize: const Size(double.infinity, 64),
                             shape: RoundedRectangleBorder(
@@ -270,7 +270,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             elevation: 8,
                             shadowColor: const Color(
-                              0xFF8B5CF6,
+                              0xFFFF0000,
                             ).withOpacity(0.5),
                           ),
                           child: _isLoading
@@ -322,7 +322,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   Text(
                                     "${"login.resend_in".tr()} 00:${_resendTimer.toString().padLeft(2, '0')}",
                                     style: GoogleFonts.poppins(
-                                      color: const Color(0xFF8B5CF6),
+                                      color: const Color(0xFFFF0000),
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -466,7 +466,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           "login.done".tr(),
                           style: GoogleFonts.poppins(
                             color: _isOtpSent
-                                ? const Color(0xFF8B5CF6)
+                                ? const Color(0xFFFF0000)
                                 : Colors.white24,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -627,7 +627,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF8B5CF6).withOpacity(0.2)
+              ? const Color(0xFFFF0000).withOpacity(0.2)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
@@ -635,7 +635,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           flag,
           style: TextStyle(
             fontSize: 16,
-            color: isSelected ? const Color(0xFF8B5CF6) : Colors.white38,
+            color: isSelected ? const Color(0xFFFF0000) : Colors.white38,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),

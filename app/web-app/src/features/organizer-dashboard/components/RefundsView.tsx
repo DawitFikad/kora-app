@@ -498,7 +498,7 @@ export const RefundsView = () => {
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Cancellation Policy</h3>
                             <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <li style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                                    <div style={{ background: 'rgba(29, 144, 245, 0.1)', padding: '8px', borderRadius: '50%' }}>
+                                    <div style={{ background: 'rgba(255, 0, 0, 0.1)', padding: '8px', borderRadius: '50%' }}>
                                         <Users size={16} color="var(--primary-blue)" />
                                     </div>
                                     <div>
@@ -507,7 +507,7 @@ export const RefundsView = () => {
                                     </div>
                                 </li>
                                 <li style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                                    <div style={{ background: 'rgba(29, 144, 245, 0.1)', padding: '8px', borderRadius: '50%' }}>
+                                    <div style={{ background: 'rgba(255, 0, 0, 0.1)', padding: '8px', borderRadius: '50%' }}>
                                         <DollarSign size={16} color="var(--primary-blue)" />
                                     </div>
                                     <div>
@@ -516,7 +516,7 @@ export const RefundsView = () => {
                                     </div>
                                 </li>
                                 <li style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                                    <div style={{ background: 'rgba(29, 144, 245, 0.1)', padding: '8px', borderRadius: '50%' }}>
+                                    <div style={{ background: 'rgba(255, 0, 0, 0.1)', padding: '8px', borderRadius: '50%' }}>
                                         <AlertTriangle size={16} color="var(--primary-blue)" />
                                     </div>
                                     <div>

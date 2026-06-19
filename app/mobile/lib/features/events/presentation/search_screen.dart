@@ -223,7 +223,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ElevatedButton(
                         onPressed: () => ref.refresh(eventsProvider),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8B5CF6),
+                          backgroundColor: const Color(0xFFFF0000),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

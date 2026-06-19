@@ -102,7 +102,7 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
         ],
       ),
       body: _isLoading && _seats.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF0000)))
           : _error != null
               ? Center(
                   child: Column(
@@ -172,10 +172,10 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
                   decoration: BoxDecoration(
                     color: isBooked || isLocked 
                         ? Colors.white12 
-                        : (isSelected ? const Color(0xFF8B5CF6) : Colors.transparent),
+                        : (isSelected ? const Color(0xFFFF0000) : Colors.transparent),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isAvailable ? (isSelected ? const Color(0xFF8B5CF6) : Colors.white24) : Colors.transparent,
+                      color: isAvailable ? (isSelected ? const Color(0xFFFF0000) : Colors.white24) : Colors.transparent,
                     ),
                   ),
                   child: Center(
@@ -205,7 +205,7 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _legendItem("tickets.available".tr(), Colors.white24, false),
-        _legendItem("tickets.selected".tr(), const Color(0xFF8B5CF6), true),
+        _legendItem("tickets.selected".tr(), const Color(0xFFFF0000), true),
         _legendItem("tickets.booked".tr(), Colors.white12, true),
       ],
     );
@@ -253,7 +253,7 @@ class _SeatSelectionScreenState extends ConsumerState<SeatSelectionScreen> {
              ElevatedButton(
                onPressed: _isLoading ? null : _onConfirm,
                style: ElevatedButton.styleFrom(
-                 backgroundColor: const Color(0xFF8B5CF6),
+                 backgroundColor: const Color(0xFFFF0000),
                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                ),

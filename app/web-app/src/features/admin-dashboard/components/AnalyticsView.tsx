@@ -149,14 +149,14 @@ export const AnalyticsView = ({ view = 'GMV' }: { view?: 'GMV' | 'REVENUE' }) =>
                 <div className="admin-card" style={{ padding: '32px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{view === 'REVENUE' ? 'Platform Revenue Trajectory' : 'Market Velocity (GMV)'}</h3>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', color: view === 'REVENUE' ? '#10B981' : '#3B82F6', fontSize: '0.8rem', fontWeight: 700 }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', color: view === 'REVENUE' ? '#10B981' : '#FF0000', fontSize: '0.8rem', fontWeight: 700 }}>
                             <span style={{ padding: '4px 8px', background: view === 'REVENUE' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)', borderRadius: '6px' }}>{view === 'REVENUE' ? '+8.2% Growth' : '+12.5% Velocity'}</span>
                         </div>
                     </div>
                     <div style={{ height: '200px', width: '100%', borderLeft: '2px solid var(--border)', borderBottom: '2px solid var(--border)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', padding: '20px' }}>
                         {monthlySales.map((s: any, i: number) => (
                             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: '40px', height: `${(s.amount / maxSale) * 100}%`, background: view === 'REVENUE' ? 'linear-gradient(180deg, #10B981 0%, #059669 100%)' : 'linear-gradient(180deg, #3B82F6 0%, #2563EB 100%)', borderRadius: '6px 6px 0 0', position: 'relative' }}>
+                                <div style={{ width: '40px', height: `${(s.amount / maxSale) * 100}%`, background: view === 'REVENUE' ? 'linear-gradient(180deg, #10B981 0%, #059669 100%)' : 'linear-gradient(180deg, #FF0000 0%, #2563EB 100%)', borderRadius: '6px 6px 0 0', position: 'relative' }}>
                                     <div style={{ position: 'absolute', top: '-25px', width: '100%', textAlign: 'center', fontSize: '0.65rem', fontWeight: 800 }}>{s.amount > 0 ? `${(s.amount / 1000).toFixed(1)}k` : ''}</div>
                                 </div>
                                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>{s.name}</span>
@@ -174,7 +174,7 @@ export const AnalyticsView = ({ view = 'GMV' }: { view?: 'GMV' | 'REVENUE' }) =>
                             </div>
                             <div style={{ padding: '16px', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
                                 <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)' }}>CONVENIENCE FEES</p>
-                                <h4 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#3B82F6' }}>25% of Platform Net</h4>
+                                <h4 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#FF0000' }}>25% of Platform Net</h4>
                             </div>
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>* Estimates based on current active fee configurations.</p>
                         </div>
@@ -212,9 +212,9 @@ export const AnalyticsView = ({ view = 'GMV' }: { view?: 'GMV' | 'REVENUE' }) =>
                                     <h4 style={{ fontSize: '1.25rem', fontWeight: 900 }}>ETB {(city.value || 0).toLocaleString()}</h4>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
                                         <div style={{ flex: 1, height: '4px', background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '10px' }}>
-                                            <div style={{ height: '100%', width: `${percent}%`, background: '#3B82F6', borderRadius: '10px' }} />
+                                            <div style={{ height: '100%', width: `${percent}%`, background: '#FF0000', borderRadius: '10px' }} />
                                         </div>
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B82F6' }}>{percent.toFixed(1)}%</span>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#FF0000' }}>{percent.toFixed(1)}%</span>
                                     </div>
                                 </div>
                             );

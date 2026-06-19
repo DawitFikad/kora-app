@@ -244,7 +244,7 @@ export const OrganizerApprovalsView = () => {
                         }}
                         disabled={isExporting}
                         style={{
-                            background: 'linear-gradient(135deg, var(--primary), #3B82F6)',
+                            background: '#FF0000',
                             color: 'white',
                             border: 'none',
                             display: 'flex',

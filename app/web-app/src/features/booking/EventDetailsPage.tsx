@@ -259,7 +259,7 @@ const EventDetailsPage: React.FC = () => {
                 <div className="download-modal" role="dialog" aria-modal="true">
                     <div className="download-modal-card">
                         <h3>Get tickets in the mobile app</h3>
-                        <p>For ticket purchases and QR entry, please download the ET-TICKETS app.</p>
+                        <p>For ticket purchases and QR entry, please download the KORA app.</p>
                         <div className="download-actions">
                             <a
                                 className={`download-btn ${!androidAppUrl ? 'disabled' : ''}`}
