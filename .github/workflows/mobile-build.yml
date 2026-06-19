@@ -20,7 +20,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: 'main'
 
       - name: Setup Java
         uses: actions/setup-java@v4
