@@ -211,10 +211,10 @@ export const PromotionsView = ({ searchQuery = '' }: { searchQuery?: string }) =
                 </motion.div>
             )}
 
-            <div className="stat-card" style={{ padding: '24px', marginBottom: '24px', border: '1px solid rgba(29,144,245,0.2)' }}>
+            <div className="stat-card" style={{ padding: '24px', marginBottom: '24px', border: '1px solid rgba(255, 0, 0,0.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <div style={{ padding: '10px', background: 'rgba(29,144,245,0.1)', borderRadius: '12px' }}>
-                        <Sparkles size={20} color="#1D90F5" />
+                    <div style={{ padding: '10px', background: 'rgba(255, 0, 0,0.1)', borderRadius: '12px' }}>
+                        <Sparkles size={20} color="#FF0000" />
                     </div>
                     <div>
                         <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>Promo Performance</h3>
@@ -283,7 +283,7 @@ export const PromotionsView = ({ searchQuery = '' }: { searchQuery?: string }) =
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <button
                                             onClick={() => handleCopyLink(p)}
-                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(29,144,245,0.1)', border: '1px solid rgba(29,144,245,0.2)', color: '#1D90F5', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 0, 0,0.1)', border: '1px solid rgba(255, 0, 0,0.2)', color: '#FF0000', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}
                                             title="Copy auto-apply link"
                                         >
                                             <Link2 size={14} /> Copy Link

@@ -9,9 +9,9 @@ import { AdminService } from '../../../../core/api/admin.service';
 
 const tabs = [
     { id: 'gmv', label: 'GMV Tracking', icon: TrendingUp, color: '#10B981' },
-    { id: 'revenue', label: 'Platform Revenue', icon: DollarSign, color: '#3B82F6' },
+    { id: 'revenue', label: 'Platform Revenue', icon: DollarSign, color: '#FF0000' },
     { id: 'payouts', label: 'Organizer Payouts', icon: Wallet, color: '#F59E0B' },
-    { id: 'ledger', label: 'Settlement Ledger', icon: Receipt, color: '#8B5CF6' },
+    { id: 'ledger', label: 'Settlement Ledger', icon: Receipt, color: '#FF0000' },
 ];
 
 export const FinancialControlIndex: React.FC = () => {

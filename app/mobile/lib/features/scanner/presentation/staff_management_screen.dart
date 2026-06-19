@@ -108,7 +108,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     decoration: InputDecoration(
                       hintText: 'staff.phone_hint'.tr(),
                       hintStyle: TextStyle(color: mutedColor),
-                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF8B5CF6)),
+                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFFFF0000)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -116,7 +116,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF8B5CF6)),
+                        borderSide: const BorderSide(color: Color(0xFFFF0000)),
                       ),
                     ),
                   ),
@@ -126,7 +126,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     dropdownColor: dropdownBg,
                     style: TextStyle(color: textColor),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF8B5CF6)),
+                      prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFFFF0000)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -134,7 +134,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF8B5CF6)),
+                        borderSide: const BorderSide(color: Color(0xFFFF0000)),
                       ),
                     ),
                     items: [
@@ -150,7 +150,7 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _inviteStaff,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8B5CF6),
+                        backgroundColor: const Color(0xFFFF0000),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       child: _isLoading 
@@ -191,8 +191,8 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
-                              child: Text(name[0].toUpperCase(), style: const TextStyle(color: Color(0xFF8B5CF6))),
+                              backgroundColor: const Color(0xFFFF0000).withOpacity(0.1),
+                              child: Text(name[0].toUpperCase(), style: const TextStyle(color: Color(0xFFFF0000))),
                             ),
                             const SizedBox(width: 16),
                             Expanded(

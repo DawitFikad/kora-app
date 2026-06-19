@@ -54,8 +54,8 @@
 }
 
 .legend-seat.selected {
-    background: linear-gradient(135deg, #8a63d2, #6c4ab6);
-    border: 2px solid #8a63d2;
+    background: linear-gradient(135deg, #FF0000, #CC0000);
+    border: 2px solid #FF0000;
 }
 
 .legend-seat.locked {
@@ -125,7 +125,7 @@
 }
 
 .seat.selected {
-    background: linear-gradient(135deg, #8a63d2, #6c4ab6);
+    background: linear-gradient(135deg, #FF0000, #CC0000);
     border-color: #a78bfa;
     color: #ffffff;
     transform: scale(1.05);

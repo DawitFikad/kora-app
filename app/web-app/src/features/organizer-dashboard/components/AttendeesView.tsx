@@ -177,9 +177,9 @@ export const AttendeesView = ({ searchQuery = '' }: { searchQuery?: string }) =>
                     cursor: pointer;
                 }
                 .attendee-action.primary {
-                    background: rgba(29, 144, 245, 0.12);
-                    border-color: rgba(29, 144, 245, 0.35);
-                    color: #1D90F5;
+                    background: rgba(255, 0, 0, 0.12);
+                    border-color: rgba(255, 0, 0, 0.35);
+                    color: #FF0000;
                 }
                 .attendee-action.success {
                     background: rgba(16, 185, 129, 0.12);

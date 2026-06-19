@@ -229,7 +229,7 @@ class _OnboardingLoginScreenState extends ConsumerState<OnboardingLoginScreen> {
                         height: 4,
                         decoration: BoxDecoration(
                           color: isActive
-                              ? const Color(0xFF8B5CF6)
+                              ? const Color(0xFFFF0000)
                               : Colors.white12,
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -261,7 +261,7 @@ class _OnboardingLoginScreenState extends ConsumerState<OnboardingLoginScreen> {
                             _verifyOtpAndLogin();
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
+                      backgroundColor: const Color(0xFFFF0000),
                       minimumSize: const Size.fromHeight(58),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),

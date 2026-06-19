@@ -41,7 +41,7 @@ export const FinancialSnapshot: React.FC<{
                     </button>
                     <button
                         onClick={onFeatureEvent}
-                        style={{ padding: '8px 14px', borderRadius: '10px', background: '#3B82F6', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800, boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
+                        style={{ padding: '8px 14px', borderRadius: '10px', background: '#FF0000', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800, boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
                     >
                         {t('admin.overview.feature_event')}
                     </button>

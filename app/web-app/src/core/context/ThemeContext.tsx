@@ -12,17 +12,17 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-    // Check localStorage or system preference, default to dark
+    // Check localStorage or system preference, default to light
     const [theme, setThemeState] = useState<Theme>(() => {
-        const saved = localStorage.getItem('et-ticket-theme');
+        const saved = localStorage.getItem('kora-theme');
         if (saved === 'light' || saved === 'dark') return saved;
-        return 'dark'; // Default to dark for now
+        return 'light'; // Default to light (white background)
     });
 
     useEffect(() => {
         const root = window.document.documentElement;
         root.setAttribute('data-theme', theme);
-        localStorage.setItem('et-ticket-theme', theme);
+        localStorage.setItem('kora-theme', theme);
     }, [theme]);
 
     const toggleTheme = () => {

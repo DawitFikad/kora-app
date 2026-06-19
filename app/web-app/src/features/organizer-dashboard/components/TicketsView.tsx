@@ -193,7 +193,7 @@ export const TicketsView = ({ searchQuery = '' }: { searchQuery?: string }) => {
                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Tickets Sold</p>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: colors[tier.status] || '#1D90F5', display: 'block', marginBottom: '8px' }}>{tier.status}</span>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: colors[tier.status] || '#FF0000', display: 'block', marginBottom: '8px' }}>{tier.status}</span>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
                                             <input
                                                 type="number"

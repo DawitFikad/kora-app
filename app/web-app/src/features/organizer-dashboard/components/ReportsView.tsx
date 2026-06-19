@@ -32,7 +32,7 @@ export const ReportsView = () => {
     }
 
     const stats = [
-        { label: 'Gross Sales', value: `ETB ${data?.grossSales.toLocaleString()}`, icon: DollarSign, color: '#1D90F5' },
+        { label: 'Gross Sales', value: `ETB ${data?.grossSales.toLocaleString()}`, icon: DollarSign, color: '#FF0000' },
         { label: 'Total Payouts', value: `ETB ${data?.totalPayouts.toLocaleString()}`, icon: CreditCard, color: '#10B981' },
         { label: 'Processing Fees', value: `ETB ${data?.processingFees.toLocaleString()}`, icon: Shield, color: '#EF4444' },
         { label: 'Available Balance', value: `ETB ${data?.availableBalance.toLocaleString()}`, icon: Package, color: '#FBBF24' },
@@ -103,7 +103,7 @@ export const ReportsView = () => {
                         <tbody>
                             {data?.transactions.map((tx: any, i: number) => (
                                 <tr key={i}>
-                                    <td style={{ fontWeight: 800, color: '#1D90F5' }}>{tx.id}</td>
+                                    <td style={{ fontWeight: 800, color: '#FF0000' }}>{tx.id}</td>
                                     <td style={{ fontWeight: 700 }}>{tx.name}</td>
                                     <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{new Date(tx.date).toLocaleDateString()}</td>
                                     <td style={{ fontWeight: 800 }}>ETB {tx.amount.toLocaleString()}</td>

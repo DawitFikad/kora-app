@@ -6,7 +6,7 @@ const AdminContentPolicyPage: React.FC = () => {
         <PublicPageLayout title="Admin Content Policy">
             <div style={{ color: 'var(--text-main)', lineHeight: 1.8 }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginBottom: '2rem' }}>
-                    Guidelines for the review and approval of content on the ET-TICKETS platform.
+                    Guidelines for the review and approval of content on the KORA platform.
                 </p>
 
                 <section style={{ marginBottom: '2rem' }}>

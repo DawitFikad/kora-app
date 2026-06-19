@@ -33,20 +33,20 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
   Color _titleTagColor(String tag) {
     final normalized = tag.toLowerCase();
-    if (normalized.contains('award')) return const Color(0xFF9333EA);
+    if (normalized.contains('award')) return const Color(0xFFFF0000);
     if (normalized.contains('workshop') || normalized.contains('course')) {
-      return const Color(0xFF0EA5E9);
+      return const Color(0xFFFF0000);
     }
     if (normalized.contains('offer') || normalized.contains('deal')) {
       return const Color(0xFFF59E0B);
     }
     if (normalized.contains('movie') || normalized.contains('film')) {
-      return const Color(0xFF7C3AED);
+      return const Color(0xFFCC0000);
     }
     if (normalized.contains('music') || normalized.contains('concert')) {
       return const Color(0xFF10B981);
     }
-    return const Color(0xFF8B5CF6);
+    return const Color(0xFFFF0000);
   }
 
   Widget _titleTagChip(String? tag) {
@@ -313,7 +313,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                           ? null
                           : () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8B5CF6),
+                        backgroundColor: const Color(0xFFFF0000),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -596,12 +596,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.12),
+                      color: const Color(0xFFFF0000).withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.people_alt_outlined,
-                      color: Color(0xFF8B5CF6),
+                      color: Color(0xFFFF0000),
                       size: 28,
                     ),
                   ),
@@ -632,8 +632,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(context, false),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF8B5CF6),
-                            side: const BorderSide(color: Color(0xFF8B5CF6)),
+                            foregroundColor: const Color(0xFFFF0000),
+                            side: const BorderSide(color: Color(0xFFFF0000)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -647,7 +647,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         child: ElevatedButton(
                           onPressed: () => Navigator.pop(context, true),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF8B5CF6),
+                            backgroundColor: const Color(0xFFFF0000),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -729,7 +729,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.all(3),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF8B5CF6),
+                        color: Color(0xFFFF0000),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -867,7 +867,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       loading: () => const Scaffold(
         backgroundColor: Color(0xFF0F0D15),
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+          child: CircularProgressIndicator(color: Color(0xFFFF0000)),
         ),
       ),
       error: (err, stack) => Scaffold(
@@ -891,7 +891,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 onPressed: () =>
                     ref.refresh(eventDetailsProvider(widget.eventId)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
+                  backgroundColor: const Color(0xFFFF0000),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -927,7 +927,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   height: 160,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  color: Colors.purple.withOpacity(0.3),
+                  color: Colors.red.withOpacity(0.3),
                   colorBlendMode: BlendMode.colorBurn,
                 ),
                 Positioned(
@@ -991,7 +991,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5CF6),
+                    backgroundColor: const Color(0xFFFF0000),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1041,19 +1041,19 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+            border: Border.all(color: const Color(0xFFFF0000).withOpacity(0.3)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                  color: const Color(0xFFFF0000).withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.verified_user,
-                  color: Color(0xFF8B5CF6),
+                  color: Color(0xFFFF0000),
                   size: 20,
                 ),
               ),
@@ -1075,7 +1075,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         const SizedBox(width: 6),
                         const Icon(
                           Icons.check_circle,
-                          color: Color(0xFF8B5CF6),
+                          color: Color(0xFFFF0000),
                           size: 16,
                         ),
                       ],
@@ -1174,7 +1174,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               : Icons.confirmation_number_outlined,
                           color: isLowAvailability
                               ? const Color(0xFFFF9F0A)
-                              : const Color(0xFF8B5CF6),
+                              : const Color(0xFFFF0000),
                           size: 16,
                         ),
                         const SizedBox(width: 6),
@@ -1319,7 +1319,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                           ? null
                           : () => _showRatingSheet(event, engagement),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8B5CF6),
+                        backgroundColor: const Color(0xFFFF0000),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -1499,7 +1499,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: eventUnavailable
                       ? const Color(0xFF6B7280)
-                      : const Color(0xFF8B5CF6),
+                      : const Color(0xFFFF0000),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   shape: RoundedRectangleBorder(
@@ -1598,7 +1598,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     Text(
                       '${lineTotal.toStringAsFixed(2)} ETB',
                       style: GoogleFonts.poppins(
-                        color: const Color(0xFF8B5CF6),
+                        color: const Color(0xFFFF0000),
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1629,7 +1629,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             Icons.location_on_outlined,
             "Venue & Location",
             event.venue,
-            const Color(0xFF8B5CF6),
+            const Color(0xFFFF0000),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1661,7 +1661,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               Icons.movie_outlined,
               "Movie Detail",
               "${event.duration ?? 120} min • ${event.rating ?? 'PG-13'}",
-              const Color(0xFFD8B4FE),
+              const Color(0xFFFF0000),
             ),
           ],
         ],
@@ -1836,7 +1836,7 @@ class _TicketTierTile extends StatelessWidget {
             Text(
               "${price.toStringAsFixed(2)} ETB",
               style: GoogleFonts.poppins(
-                color: const Color(0xFF8B5CF6),
+                color: const Color(0xFFFF0000),
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -1904,7 +1904,7 @@ class _QuantitySelector extends StatelessWidget {
     required bool isDark,
   }) {
     final baseBg = isPrimary
-        ? const Color(0xFF8B5CF6)
+        ? const Color(0xFFFF0000)
         : (isDark ? Colors.white10 : Colors.black12);
     final baseIcon = isPrimary
         ? Colors.white

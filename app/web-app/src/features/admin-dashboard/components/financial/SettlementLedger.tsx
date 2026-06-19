@@ -228,7 +228,7 @@ export const SettlementLedger: React.FC = () => {
                                 </div>
 
                                 <div style={{ padding: '20px', borderRadius: '20px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                    <p style={{ fontSize: '0.65rem', fontWeight: 900, color: '#3B82F6', textTransform: 'uppercase', marginBottom: '8px' }}>System Note</p>
+                                    <p style={{ fontSize: '0.65rem', fontWeight: 900, color: '#FF0000', textTransform: 'uppercase', marginBottom: '8px' }}>System Note</p>
                                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>{selectedEntry.notes || 'No extended annotation available for this ledger entry.'}</p>
                                 </div>
                             </div>

@@ -493,7 +493,7 @@ export const SalesRevenueView = () => {
                     className="stat-card"
                     style={{
                         padding: '24px',
-                        background: 'linear-gradient(135deg, #1D90F5 0%, #1570C9 100%)',
+                        background: '#FF0000',
                         color: 'white'
                     }}
                 >
@@ -579,11 +579,11 @@ export const SalesRevenueView = () => {
                 >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                         <div style={{
-                            background: 'rgba(139, 92, 246, 0.1)',
+                            background: 'rgba(255, 0, 0, 0.1)',
                             padding: '12px',
                             borderRadius: '12px'
                         }}>
-                            <BarChart3 size={24} color="#8B5CF6" />
+                            <BarChart3 size={24} color="#FF0000" />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 700, color: '#EF4444' }}>
                             <ArrowDown size={16} />
@@ -723,7 +723,7 @@ export const SalesRevenueView = () => {
                             ) : (
                                 pagedSalesTable.map((row, index) => (
                                     <tr key={`${row.id}-${index}`}>
-                                        <td style={{ fontWeight: 800, color: '#1D90F5' }}>{row.id}</td>
+                                        <td style={{ fontWeight: 800, color: '#FF0000' }}>{row.id}</td>
                                         <td style={{ fontWeight: 700 }}>{row.eventTitle}</td>
                                         <td>{row.customer}</td>
                                         <td>{row.date.toLocaleString()}</td>
@@ -928,7 +928,7 @@ export const SalesRevenueView = () => {
                                 wrapperStyle={{ color: 'var(--text-main)' }}
                                 formatter={(value: any) => <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{value}</span>}
                             />
-                            <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#1D90F5" strokeWidth={3} dot={{ r: 4 }} name="Revenue (ETB)" />
+                            <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#FF0000" strokeWidth={3} dot={{ r: 4 }} name="Revenue (ETB)" />
                             <Line yAxisId="right" type="monotone" dataKey="tickets" stroke="#10B981" strokeWidth={3} dot={{ r: 4 }} name="Tickets" />
                         </LineChart>
                     </ResponsiveContainer>

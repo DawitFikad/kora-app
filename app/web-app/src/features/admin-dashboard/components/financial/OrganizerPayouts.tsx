@@ -312,7 +312,7 @@ export const OrganizerPayouts: React.FC = () => {
                     <button
                         onClick={processAllPending}
                         disabled={actionBusy === 'process-all'}
-                        style={{ padding: '12px 24px', borderRadius: '16px', background: 'var(--primary)', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 20px rgba(29, 144, 245, 0.3)', opacity: actionBusy === 'process-all' ? 0.7 : 1 }}
+                        style={{ padding: '12px 24px', borderRadius: '16px', background: 'var(--primary)', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 20px rgba(255, 0, 0, 0.3)', opacity: actionBusy === 'process-all' ? 0.7 : 1 }}
                     >
                         {actionBusy === 'process-all' ? 'Processing...' : 'Process All Pending Payouts'}
                     </button>
@@ -331,7 +331,7 @@ export const OrganizerPayouts: React.FC = () => {
                     label="Available to Payout"
                     amount={payouts.availableTotal || payouts.available?.reduce((s: number, p: any) => s + (p.available || 0), 0)}
                     items={payouts.available?.filter((i: any) => (i.organizerName || '').toLowerCase().includes(filter.toLowerCase()))}
-                    color="#3B82F6"
+                    color="#FF0000"
                     icon={CheckCircle2}
                     type="available"
                 />
@@ -357,14 +357,14 @@ export const OrganizerPayouts: React.FC = () => {
             <div style={{ padding: '24px 32px', borderRadius: '24px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <ShieldCheck color="#3B82F6" size={20} />
+                        <ShieldCheck color="#FF0000" size={20} />
                     </div>
                     <div>
                         <h4 style={{ margin: 0, fontWeight: 850 }}>System Liquidity Assurance</h4>
                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{complianceText}</p>
                     </div>
                 </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{complianceBadge}</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#FF0000', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{complianceBadge}</div>
             </div>
         </div>
     );

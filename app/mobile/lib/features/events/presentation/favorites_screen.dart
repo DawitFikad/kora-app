@@ -171,7 +171,7 @@ class FavoritesScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+          child: CircularProgressIndicator(color: Color(0xFFFF0000)),
         ),
         error: (err, stack) => Center(
           child: Column(
@@ -191,7 +191,7 @@ class FavoritesScreen extends ConsumerWidget {
               ElevatedButton(
                 onPressed: () => ref.refresh(eventsProvider),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
+                  backgroundColor: const Color(0xFFFF0000),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -252,7 +252,7 @@ class FavoritesScreen extends ConsumerWidget {
               context.go('/home');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF8B5CF6),
+              backgroundColor: const Color(0xFFFF0000),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(
@@ -365,7 +365,7 @@ class _FavoriteCard extends ConsumerWidget {
                       ),
                       child: const Icon(
                         Icons.favorite,
-                        color: Color(0xFF8B5CF6),
+                        color: Color(0xFFFF0000),
                         size: 20,
                       ),
                     ),
@@ -403,7 +403,7 @@ class _FavoriteCard extends ConsumerWidget {
                             ? "${event.tiers.first.price} ETB"
                             : "favorites.free".tr(),
                         style: GoogleFonts.poppins(
-                          color: const Color(0xFF8B5CF6),
+                          color: const Color(0xFFFF0000),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -474,7 +474,7 @@ class _FavoriteCard extends ConsumerWidget {
                             openEventWithGuard(context, event);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF8B5CF6),
+                            backgroundColor: const Color(0xFFFF0000),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             elevation: 0,

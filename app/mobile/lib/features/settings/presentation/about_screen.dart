@@ -27,7 +27,7 @@ class AboutScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
-            backgroundColor: const Color(0xFF8B5CF6),
+            backgroundColor: const Color(0xFFFF0000),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 'About EtTicket',
@@ -41,7 +41,7 @@ class AboutScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                    colors: [Color(0xFFFF0000), Color(0xFF6D28D9)],
                   ),
                 ),
                 child: Center(
@@ -172,10 +172,10 @@ class AboutScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6).withOpacity(0.1),
+              color: const Color(0xFFFF0000).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFF8B5CF6), size: 24),
+            child: Icon(icon, color: const Color(0xFFFF0000), size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -211,7 +211,7 @@ class AboutScreen extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, color: const Color(0xFF8B5CF6), size: 28),
+          Icon(icon, color: const Color(0xFFFF0000), size: 28),
           const SizedBox(height: 4),
           Text(
             label,

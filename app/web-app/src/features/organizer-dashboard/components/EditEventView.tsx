@@ -228,7 +228,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
             </div>
 
             {(form as any).adminNote && (
-                <div style={{ background: 'rgba(29, 144, 245, 0.1)', border: '1px solid rgba(29, 144, 245, 0.3)', padding: '20px', borderRadius: '16px', marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ background: 'rgba(255, 0, 0, 0.1)', border: '1px solid rgba(255, 0, 0, 0.3)', padding: '20px', borderRadius: '16px', marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                     <div style={{ background: 'var(--primary)', color: 'white', padding: '8px', borderRadius: '10px' }}>
                         <AlertCircle size={20} />
                     </div>
@@ -244,7 +244,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                     {/* General Info */}
                     <div className="stat-card" style={{ padding: '32px' }}>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Calendar size={20} color="#1D90F5" /> Basic Information
+                            <Calendar size={20} color="#FF0000" /> Basic Information
                         </h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -477,7 +477,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                                 (newTiers[index] as any).expanded = !(newTiers[index] as any).expanded;
                                                 setForm({ ...form, tiers: newTiers });
                                             }}
-                                            style={{ background: 'transparent', border: 'none', color: '#1D90F5', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                                            style={{ background: 'transparent', border: 'none', color: '#FF0000', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
                                         >
                                             <Settings size={14} /> {(tier as any).expanded ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
                                         </button>
@@ -577,7 +577,7 @@ export const EditEventView = ({ eventId, onComplete }: EditEventViewProps) => {
                                                         }} />
                                                     </div>
                                                 </div>
-                                                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: 'rgba(29, 144, 245, 0.1)', borderRadius: '8px', fontSize: '0.75rem', color: '#1D90F5' }}>
+                                                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: 'rgba(255, 0, 0, 0.1)', borderRadius: '8px', fontSize: '0.75rem', color: '#FF0000' }}>
                                                     <AlertCircle size={14} />
                                                     <span>Estimated Fees: 5% Platform Commission + 2% Service Fee will be deducted/added based on configuration.</span>
                                                 </div>

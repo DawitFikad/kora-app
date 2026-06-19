@@ -46,7 +46,7 @@ const getToastStyles = (type: ToastType) => {
         case 'warning':
             return { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)', color: '#F59E0B' };
         case 'info':
-            return { bg: 'rgba(29, 144, 245, 0.15)', border: 'rgba(29, 144, 245, 0.3)', color: '#1D90F5' };
+            return { bg: 'rgba(255, 0, 0, 0.15)', border: 'rgba(255, 0, 0, 0.3)', color: '#FF0000' };
     }
 };
 

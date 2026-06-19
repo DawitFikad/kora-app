@@ -408,6 +408,20 @@ export const SettingsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    .settings-layout { grid-template-columns: 1fr !important; }
+                    .settings-layout .settings-tabs {
+                        flex-direction: row !important; overflow-x: auto; gap: 8px;
+                        padding-bottom: 8px; margin-bottom: 16px;
+                        scrollbar-width: none; -ms-overflow-style: none;
+                    }
+                    .settings-layout .settings-tabs::-webkit-scrollbar { display: none; }
+                    .settings-layout .settings-tabs > div { white-space: nowrap; flex-shrink: 0; }
+                    .settings-grid-2 { grid-template-columns: 1fr !important; }
+                    .settings-content-card { padding: 20px !important; }
+                }
+            `}</style>
             <ConfirmDialog
                 open={confirmState.open}
                 title={confirmState.title}
@@ -443,9 +457,9 @@ export const SettingsView = () => {
                 }
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '32px' }}>
+            <div className="settings-layout" style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '32px' }}>
                 {/* Sidebar Tabs */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="settings-tabs" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab.id;
                         const Icon = tab.icon;
@@ -456,15 +470,15 @@ export const SettingsView = () => {
                                 style={{
                                     padding: '12px 16px',
                                     borderRadius: '12px',
-                                    background: isActive ? 'rgba(29, 144, 245, 0.15)' : 'transparent',
-                                    color: isActive ? '#1D90F5' : 'var(--text-muted)',
+                                    background: isActive ? 'rgba(255, 0, 0, 0.15)' : 'transparent',
+                                    color: isActive ? '#FF0000' : 'var(--text-muted)',
                                     fontWeight: isActive ? 700 : 600,
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '10px',
                                     transition: 'all 0.2s',
-                                    border: isActive ? '1px solid rgba(29, 144, 245, 0.3)' : '1px solid transparent'
+                                    border: isActive ? '1px solid rgba(255, 0, 0, 0.3)' : '1px solid transparent'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isActive) {
@@ -485,7 +499,7 @@ export const SettingsView = () => {
                 </div>
 
                 {/* Content Area */}
-                <div className="stat-card" style={{ padding: '32px' }}>
+                <div className="stat-card settings-content-card" style={{ padding: '32px' }}>
                     {activeTab === 'General' && (
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Public Profile</h3>
@@ -519,14 +533,14 @@ export const SettingsView = () => {
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${profile?.completeness || 0}%` }}
-                                        style={{ height: '100%', background: '#1D90F5', borderRadius: '4px' }}
+                                        style={{ height: '100%', background: '#FF0000', borderRadius: '4px' }}
                                     />
                                 </div>
                             </div>
 
                             {/* Profile Picture Section */}
                             <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', alignItems: 'center' }}>
-                                <div style={{ width: '120px', height: '120px', borderRadius: '24px', background: 'linear-gradient(45deg, #1D90F5, #D946EF)', padding: '4px', position: 'relative' }}>
+                                <div style={{ width: '120px', height: '120px', borderRadius: '24px', background: '#FF0000', padding: '4px', position: 'relative' }}>
                                     {uploading && (
                                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
                                             <Loader2 className="animate-spin" size={32} color="white" />
@@ -576,7 +590,7 @@ export const SettingsView = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                            <div className="settings-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Organization Name</label>
                                     <input
@@ -604,7 +618,7 @@ export const SettingsView = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                            <div className="settings-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Contact Phone</label>
                                     <input
@@ -698,7 +712,7 @@ export const SettingsView = () => {
                             <div style={{ marginBottom: '32px' }}>
                                 <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '20px', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>Extended Profile Information</h4>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                                <div className="settings-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Website URL</label>
                                         <input
@@ -721,7 +735,7 @@ export const SettingsView = () => {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                                <div className="settings-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px' }}>Support Email (Public)</label>
                                         <input
@@ -849,7 +863,7 @@ export const SettingsView = () => {
                             {showAddPayment && (
                                 <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: '14px', padding: '24px', marginBottom: '24px' }}>
                                     <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '20px' }}>Add New Payment Method</h4>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                                    <div className="settings-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Provider</label>
                                             <select
@@ -920,7 +934,7 @@ export const SettingsView = () => {
                                                     <CreditCard size={20} color="var(--text-muted)" />
                                                     <span style={{ fontWeight: 700, fontSize: '1rem' }}>{method.provider.replace('_', ' ')}</span>
                                                     {method.isDefault && (
-                                                        <span style={{ background: 'rgba(29, 144, 245, 0.2)', color: '#1D90F5', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>Default</span>
+                                                        <span style={{ background: 'rgba(255, 0, 0, 0.2)', color: '#FF0000', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>Default</span>
                                                     )}
                                                 </div>
                                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0' }}>{method.accountName}</p>
@@ -931,7 +945,7 @@ export const SettingsView = () => {
                                                     <button
                                                         onClick={() => handleSetDefaultPayment(method.id)}
                                                         disabled={saving}
-                                                        style={{ padding: '8px 16px', background: 'rgba(29, 144, 245, 0.1)', border: '1px solid rgba(29, 144, 245, 0.3)', borderRadius: '8px', color: '#1D90F5', cursor: 'pointer', fontSize: '0.85rem' }}
+                                                        style={{ padding: '8px 16px', background: 'rgba(255, 0, 0, 0.1)', border: '1px solid rgba(255, 0, 0, 0.3)', borderRadius: '8px', color: '#FF0000', cursor: 'pointer', fontSize: '0.85rem' }}
                                                     >
                                                         Set Default
                                                     </button>
@@ -954,7 +968,7 @@ export const SettingsView = () => {
                     {activeTab === 'Team Access' && (
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Team Access</h3>
-                            <div style={{ background: 'rgba(29, 144, 245, 0.1)', border: '1px solid rgba(29, 144, 245, 0.3)', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
+                            <div style={{ background: 'rgba(255, 0, 0, 0.1)', border: '1px solid rgba(255, 0, 0, 0.3)', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
                                 <Users size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '8px' }}>Team management features coming soon</p>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Invite team members, manage roles, and control access to your events.</p>
@@ -1021,9 +1035,9 @@ export const SettingsView = () => {
                                                     padding: '8px 12px',
                                                     borderRadius: '8px',
                                                     border: '1px solid',
-                                                    borderColor: profile?.notificationPrefs?.[item.key]?.email ? '#1D90F5' : 'var(--border)',
-                                                    background: profile?.notificationPrefs?.[item.key]?.email ? 'rgba(29, 144, 245, 0.1)' : 'transparent',
-                                                    color: profile?.notificationPrefs?.[item.key]?.email ? '#1D90F5' : 'var(--text-muted)',
+                                                    borderColor: profile?.notificationPrefs?.[item.key]?.email ? '#FF0000' : 'var(--border)',
+                                                    background: profile?.notificationPrefs?.[item.key]?.email ? 'rgba(255, 0, 0, 0.1)' : 'transparent',
+                                                    color: profile?.notificationPrefs?.[item.key]?.email ? '#FF0000' : 'var(--text-muted)',
                                                     fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
                                                 }}
                                             >
@@ -1127,7 +1141,7 @@ export const SettingsView = () => {
                                 )}
                             </div>
 
-                            <div style={{ background: 'rgba(29, 144, 245, 0.1)', border: '1px solid rgba(29, 144, 245, 0.3)', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
+                            <div style={{ background: 'rgba(255, 0, 0, 0.1)', border: '1px solid rgba(255, 0, 0, 0.3)', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
                                 <Shield size={48} style={{ margin: '0 auto 16px', opacity: '0.5' }} />
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '8px' }}>Additional security features coming soon</p>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Password change, session management, and more security options will be available here.</p>
@@ -1138,7 +1152,7 @@ export const SettingsView = () => {
                     {activeTab === 'Billing' && (
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px' }}>Payout History</h3>
-                            <div style={{ background: 'rgba(29, 144, 245, 0.1)', border: '1px solid rgba(29, 144, 245, 0.35)', borderRadius: '12px', padding: '14px 16px', marginBottom: '16px', color: '#1D90F5', fontSize: '0.85rem', fontWeight: 600 }}>
+                            <div style={{ background: 'rgba(255, 0, 0, 0.1)', border: '1px solid rgba(255, 0, 0, 0.35)', borderRadius: '12px', padding: '14px 16px', marginBottom: '16px', color: '#FF0000', fontSize: '0.85rem', fontWeight: 600 }}>
                                 Billing controls are read-only right now. Automated billing and settlement actions are coming soon.
                             </div>
                             {loading ? (

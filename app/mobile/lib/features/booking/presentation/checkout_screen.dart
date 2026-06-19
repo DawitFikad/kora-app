@@ -152,7 +152,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             "Promo code applied!",
             style: TextStyle(color: Colors.white),
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.red,
         ),
       );
     } catch (e) {
@@ -217,7 +217,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 content: Text(
                   "Telebirr payment completed. Your ticket status will update shortly.",
                 ),
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.red,
                 duration: Duration(seconds: 5),
               ),
             );
@@ -235,7 +235,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   content: Text(
                     "Payment initiated via $paymentMethod. Complete payment to receive your tickets.",
                   ),
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.red,
                   duration: const Duration(seconds: 5),
                 ),
               );
@@ -328,7 +328,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   color: const Color(0xFF1B1728),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.35),
+                    color: const Color(0xFFFF0000).withOpacity(0.35),
                   ),
                 ),
                 child: Column(
@@ -404,7 +404,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8B5CF6),
+                              backgroundColor: const Color(0xFFFF0000),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -515,7 +515,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8B5CF6),
+                              backgroundColor: const Color(0xFFFF0000),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -608,7 +608,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   _processPayment(); // Retry without restarting flow
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
+                  backgroundColor: const Color(0xFFFF0000),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -927,13 +927,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     child: ElevatedButton(
                       onPressed: _isProcessingPayment ? null : _processPayment,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8B5CF6),
+                        backgroundColor: const Color(0xFFFF0000),
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                         disabledBackgroundColor: const Color(
-                          0xFF8B5CF6,
+                          0xFFFF0000,
                         ).withOpacity(0.5),
                       ),
                       child: _isProcessingPayment
@@ -1015,11 +1015,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF8B5CF6).withOpacity(0.2)
+              ? const Color(0xFFFF0000).withOpacity(0.2)
               : const Color(0xFF1D192B),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF8B5CF6) : Colors.transparent,
+            color: isSelected ? const Color(0xFFFF0000) : Colors.transparent,
             width: 2,
           ),
         ),
@@ -1027,7 +1027,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF8B5CF6) : Colors.white70,
+              color: isSelected ? const Color(0xFFFF0000) : Colors.white70,
             ),
             const SizedBox(width: 12),
             Text(
@@ -1041,7 +1041,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             if (isSelected)
               const Icon(
                 Icons.check_circle,
-                color: Color(0xFF8B5CF6),
+                color: Color(0xFFFF0000),
                 size: 20,
               ),
           ],

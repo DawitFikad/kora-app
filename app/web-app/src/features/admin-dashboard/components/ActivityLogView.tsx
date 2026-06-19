@@ -144,7 +144,7 @@ export const ActivityLogView = () => {
                                             {log.metadata && (
                                                 <button
                                                     onClick={() => setSelectedLog(log)}
-                                                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: '#3B82F6', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer' }}
+                                                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: '#FF0000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer' }}
                                                 >
                                                     DETAILS
                                                 </button>

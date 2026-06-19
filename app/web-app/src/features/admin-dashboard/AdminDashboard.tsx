@@ -23,8 +23,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import AdminEventDetails from './components/AdminEventDetails';
-import { useAuth } from '../../core/context/AuthContext';
-import { resolveMediaUrl } from '../../core/utils/media';
 
 // --- Sub-Pages ---
 import { AdminOverview } from './components/AdminOverview';
@@ -50,7 +48,6 @@ export type AdminTab = 'Dashboard' | 'Organizer Approvals' | 'Event Approvals' |
 
 const AdminDashboard = () => {
     const { t, i18n } = useTranslation();
-    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<AdminTab>('Dashboard');
     const [pendingCount, setPendingCount] = useState(0);
     const [eventPendingCount, setEventPendingCount] = useState(0);
@@ -58,11 +55,9 @@ const AdminDashboard = () => {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [notificationRefreshToken, setNotificationRefreshToken] = useState(0);
 
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const closeMobileMenu = () => setMobileMenuOpen(false);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
-
-    const adminAvatarSrc =
-        resolveMediaUrl(user?.profile?.avatarUrl) ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.profile?.fullName || user?.email || 'Admin Portal')}&background=000&color=fff`;
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -190,15 +185,15 @@ const AdminDashboard = () => {
     }
 
     return (
-        <div className="container-fluid" style={{ background: 'var(--bg-main)' }}>
+        <div className="container-fluid" style={{ background: 'var(--bg-main)', position: 'relative' }}>
+            {/* Mobile sidebar overlay */}
+            <div className={`sidebar-overlay ${mobileMenuOpen ? 'visible' : ''}`} onClick={closeMobileMenu} />
             {/* 🟢 Admin Sidebar */}
-            <aside className="sidebar" style={{ width: '280px', background: 'var(--bg-sidebar)' }}>
+            <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`} style={{ width: '280px', background: 'var(--bg-sidebar)' }}>
                 <div className="logo-section" style={{ marginBottom: '40px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#E0E0E0' }}>
-                        <img src={adminAvatarSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                    <div>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 900 }}>{t('admin.brand', 'Admin Portal')}</h2>
+                    <img src="/KORA%20Icon.png" alt="KORA" style={{ width: '46px', height: '46px', borderRadius: '10px', objectFit: 'contain', flexShrink: 0 }} />
+                    <div style={{ marginLeft: '4px' }}>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: 900 }}>{t('admin.brand', 'KORA Admin')}</h2>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('admin.super_admin_access', 'Super Admin Access')}</p>
                     </div>
                 </div>
@@ -207,8 +202,8 @@ const AdminDashboard = () => {
                     {/* Dashboard - Always top */}
                     <div
                         className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Dashboard')}
-                        style={{ marginBottom: '24px' }} // Spacing after dashboard
+                        onClick={() => { setActiveTab('Dashboard'); closeMobileMenu(); }}
+                        style={{ marginBottom: '24px' }}
                     >
                         <Layout size={18} />
                         <span style={{ fontSize: '0.9rem' }}>{t('admin.sidebar.dashboard_nav')}</span>
@@ -250,7 +245,7 @@ const AdminDashboard = () => {
                                 <div
                                     key={item.label}
                                     className={`nav-item ${activeTab === item.label ? 'active' : ''}`}
-                                    onClick={() => setActiveTab(item.label as AdminTab)}
+                                    onClick={() => { setActiveTab(item.label as AdminTab); closeMobileMenu(); }}
                                     style={{ position: 'relative' }}
                                 >
                                     <item.icon size={18} />
@@ -276,7 +271,7 @@ const AdminDashboard = () => {
                 </nav>
 
                 <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
-                    <div className="nav-item" onClick={() => setActiveTab('Settings')}>
+                    <div className="nav-item" onClick={() => { setActiveTab('Settings'); closeMobileMenu(); }}>
                         <Settings size={18} />
                         <span>{t('admin.sidebar.settings')}</span>
                     </div>
@@ -290,7 +285,14 @@ const AdminDashboard = () => {
             {/* 🔵 Admin Main Content */}
             <main className="main-content hide-scrollbar">
                 <header className="top-header">
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{(currentNavItem as any)?.display || activeTab}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu" type="button">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+                            </svg>
+                        </button>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{(currentNavItem as any)?.display || activeTab}</h2>
+                    </div>
 
                     {/* Search removed per request to keep header minimal */}
 
@@ -334,7 +336,7 @@ const AdminDashboard = () => {
                                                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                             >
                                                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <Users size={16} color="#3B82F6" />
+                                                    <Users size={16} color="#FF0000" />
                                                 </div>
                                                 <div>
                                                     <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>{t('admin.organizers')}</p>
@@ -389,7 +391,7 @@ const AdminDashboard = () => {
                                     <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
                                         <button
                                             onClick={() => setShowNotifications(false)}
-                                            style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                                            style={{ background: 'none', border: 'none', color: '#FF0000', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
                                         >
                                             Dismiss All
                                         </button>

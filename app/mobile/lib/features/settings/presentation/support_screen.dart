@@ -106,7 +106,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF8B5CF6) : chipBg,
+                      color: isSelected ? const Color(0xFFFF0000) : chipBg,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Text(
@@ -170,7 +170,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   onTap: () => ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('support.live_chat_unavailable'.tr())),
                   ),
-                  color: const Color(0xFF3B82F6),
+                  color: const Color(0xFFFF0000),
                   cardColor: cardColor,
                   textColor: textColor,
                   mutedColor: mutedColor,
@@ -221,17 +221,17 @@ class _SupportScreenState extends State<SupportScreen> {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFFFF0000).withOpacity(0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6).withOpacity(0.12),
+              color: const Color(0xFFFF0000).withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.support_agent, color: Color(0xFF8B5CF6)),
+            child: const Icon(Icons.support_agent, color: Color(0xFFFF0000)),
           ),
           const SizedBox(width: 14),
           Expanded(

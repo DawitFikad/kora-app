@@ -192,7 +192,7 @@ class ProfileScreen extends ConsumerWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFF8B5CF6),
+                            color: const Color(0xFFFF0000),
                             width: 2,
                           ),
                         ),
@@ -234,17 +234,17 @@ class ProfileScreen extends ConsumerWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                            color: const Color(0xFFFF0000).withOpacity(0.08),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: const Color(0xFF8B5CF6).withOpacity(0.35),
+                              color: const Color(0xFFFF0000).withOpacity(0.35),
                             ),
                           ),
                           child: Row(
                             children: [
                               const Icon(
                                 Icons.alternate_email,
-                                color: Color(0xFF8B5CF6),
+                                color: Color(0xFFFF0000),
                                 size: 18,
                               ),
                               const SizedBox(width: 10),
@@ -262,7 +262,7 @@ class ProfileScreen extends ConsumerWidget {
                                 icon: const Icon(
                                   Icons.close,
                                   size: 18,
-                                  color: Color(0xFF8B5CF6),
+                                  color: Color(0xFFFF0000),
                                 ),
                                 onPressed: () {
                                   storage.setField(
@@ -306,7 +306,7 @@ class ProfileScreen extends ConsumerWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF8B5CF6),
+                            color: const Color(0xFFFF0000),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -432,7 +432,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           loading: () => const Center(
-            child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+            child: CircularProgressIndicator(color: Color(0xFFFF0000)),
           ),
           error: (err, stack) => Center(
             child: Column(
@@ -458,7 +458,7 @@ class ProfileScreen extends ConsumerWidget {
                 ElevatedButton(
                   onPressed: () => ref.refresh(userProfileProvider),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5CF6),
+                    backgroundColor: const Color(0xFFFF0000),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -505,10 +505,10 @@ class ProfileScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                    color: const Color(0xFFFF0000).withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: const Color(0xFF8B5CF6), size: 20),
+                  child: Icon(icon, color: const Color(0xFFFF0000), size: 20),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

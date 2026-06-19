@@ -97,7 +97,7 @@ export const EventStatsView = ({ eventId, onBack }: EventStatsViewProps) => {
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '12px' }}>GROSS VOLUME</p>
                     <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>ETB {financial.grossVolume.toLocaleString()}</h3>
                     <p style={{ color: '#10B981', fontSize: '0.75rem', fontWeight: 800 }}>Net: ETB {financial.netRevenue.toLocaleString()}</p>
-                    <DollarSign size={20} color="#1D90F5" style={{ position: 'absolute', top: 24, right: 24 }} />
+                    <DollarSign size={20} color="#FF0000" style={{ position: 'absolute', top: 24, right: 24 }} />
                 </div>
                 <div className="stat-card">
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '12px' }}>TICKETS SOLD</p>
@@ -168,7 +168,7 @@ export const EventStatsView = ({ eventId, onBack }: EventStatsViewProps) => {
                             </div>
                         </div>
 
-                        <div style={{ textAlign: 'center', padding: '24px', background: 'rgba(29, 144, 245, 0.05)', borderRadius: '16px' }}>
+                        <div style={{ textAlign: 'center', padding: '24px', background: 'rgba(255, 0, 0, 0.05)', borderRadius: '16px' }}>
                             <p style={{ fontSize: '0.8rem', color: 'var(--primary-blue)', fontWeight: 800, marginBottom: '4px' }}>PEAK ENTRY TIME</p>
                             <h4 style={{ fontSize: '1.2rem', fontWeight: 900 }}>6:45 PM — 7:15 PM</h4>
                         </div>

@@ -38,7 +38,7 @@ class EtTicketApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'EtTicket',
+      title: 'KORA',
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: DevicePreview.locale(context) ?? context.locale,

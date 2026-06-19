@@ -168,7 +168,7 @@ export const ScannerView = () => {
 
         const unwrapKnownPrefixes = (value: string) =>
             value
-                .replace(/^et-ticket\s*[:|]\s*/i, '')
+                .replace(/^kora\s*[:|]\s*/i, '')
                 .replace(/^ticket\s*[:|]\s*/i, '')
                 .trim();
 
@@ -444,7 +444,7 @@ export const ScannerView = () => {
                 subtitle="Validate entry with real-time attendance tracking and duplicate detection"
                 actions={
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(29,144,245,0.08)', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(255, 0, 0,0.08)', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
                             <Shield size={14} /> {user?.role === 'SCANNER' ? 'Scanner Mode' : 'Organizer Mode'}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: isOnline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: isOnline ? '#10B981' : '#EF4444', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 700 }}>
@@ -466,7 +466,7 @@ export const ScannerView = () => {
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     className="stat-card"
-                    style={{ padding: '20px', background: 'linear-gradient(135deg, #1D90F5 0%, #1570C9 100%)', color: 'white' }}
+                    style={{ padding: '20px', background: '#FF0000', color: 'white' }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <Users size={20} />
@@ -561,8 +561,8 @@ export const ScannerView = () => {
                         <AnimatePresence mode="wait">
                             {status === 'idle' || status === 'validating' ? (
                                 <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                    <div style={{ width: '120px', height: '120px', background: 'rgba(29, 144, 245, 0.1)', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
-                                        <Maximize size={48} color="#1D90F5" className={status === 'validating' ? 'animate-pulse' : ''} />
+                                    <div style={{ width: '120px', height: '120px', background: 'rgba(255, 0, 0, 0.1)', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
+                                        <Maximize size={48} color="#FF0000" className={status === 'validating' ? 'animate-pulse' : ''} />
                                     </div>
                                     <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '16px' }}>Ready to Scan</h3>
                                     <p style={{ color: 'var(--text-muted)', maxWidth: '300px', margin: '0 auto 32px' }}>
@@ -575,7 +575,7 @@ export const ScannerView = () => {
                                                 <button
                                                     onClick={startCamera}
                                                     className="btn-blue"
-                                                    style={{ background: 'rgba(29,144,245,0.15)', color: '#1D90F5', border: '1px solid rgba(29,144,245,0.3)' }}
+                                                    style={{ background: 'rgba(255, 0, 0,0.15)', color: '#FF0000', border: '1px solid rgba(255, 0, 0,0.3)' }}
                                                 >
                                                     Start Camera Scan
                                                 </button>

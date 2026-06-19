@@ -273,7 +273,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                 </button>
                 <div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>Create New Event</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Fill in the details to publish your event to ET-Ticket.</p>
+                    <p style={{ color: 'var(--text-muted)' }}>Fill in the details to publish your event on KORA.</p>
                 </div>
             </div>
 
@@ -282,7 +282,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     {/* General Info */}
                     <div className="stat-card" style={{ padding: '32px' }}>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Calendar size={20} color="#1D90F5" /> Basic Information
+                            <Calendar size={20} color="#FF0000" /> Basic Information
                         </h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -477,7 +477,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                     <div className="stat-card" style={{ padding: '32px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Armchair size={20} color="#8B5CF6" /> Reserved Seating
+                                <Armchair size={20} color="#FF0000" /> Reserved Seating
                             </h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <span style={{ fontSize: '0.85rem', fontWeight: 600, color: (form as any).hasSeatMap ? 'var(--text-main)' : 'var(--text-muted)' }}>
@@ -507,8 +507,8 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                             </div>
                         </div>
                         {(form as any).hasSeatMap ? (
-                            <div style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '2px dashed #8B5CF6', textAlign: 'center' }}>
-                                <Armchair size={32} color="#8B5CF6" style={{ marginBottom: '12px', opacity: 0.5 }} />
+                            <div style={{ padding: '24px', background: 'var(--bg-subtle)', borderRadius: '12px', border: '2px dashed #FF0000', textAlign: 'center' }}>
+                                <Armchair size={32} color="#FF0000" style={{ marginBottom: '12px', opacity: 0.5 }} />
                                 <p style={{ fontWeight: 700, marginBottom: '8px' }}>Seat Map Configuration</p>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Seat map designer will be available after creating the draft.</p>
                             </div>
@@ -664,7 +664,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                                 (newTiers[index] as any).expanded = !(newTiers[index] as any).expanded;
                                                 setForm({ ...form, tiers: newTiers });
                                             }}
-                                            style={{ background: 'transparent', border: 'none', color: '#1D90F5', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                                            style={{ background: 'transparent', border: 'none', color: '#FF0000', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
                                         >
                                             <Settings size={14} /> {(tier as any).expanded ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
                                         </button>
@@ -765,7 +765,7 @@ export const CreateEventView = ({ onComplete }: CreateEventViewProps) => {
                                                         }} />
                                                     </div>
                                                 </div>
-                                                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: 'rgba(29, 144, 245, 0.1)', borderRadius: '8px', fontSize: '0.75rem', color: '#1D90F5' }}>
+                                                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: 'rgba(255, 0, 0, 0.1)', borderRadius: '8px', fontSize: '0.75rem', color: '#FF0000' }}>
                                                     <AlertCircle size={14} />
                                                     <span>Live estimate from your ticket price.</span>
                                                 </div>

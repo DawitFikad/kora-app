@@ -87,7 +87,7 @@ export const AdvancedAnalyticsView = () => {
             change: `${(analytics?.ticketsSoldVsCapacity?.percent || 0).toFixed(1)}%`,
             trend: 'up',
             icon: Ticket,
-            color: '#1D90F5'
+            color: '#FF0000'
         },
         {
             label: 'Peak Buying Time',
@@ -263,7 +263,7 @@ export const AdvancedAnalyticsView = () => {
                         }) || <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>No revenue data available</p>}
                     </div>
 
-                    <div style={{ marginTop: '32px', padding: '20px', background: 'rgba(29, 144, 245, 0.05)', borderRadius: '16px', border: '1px solid rgba(29, 144, 245, 0.1)' }}>
+                    <div style={{ marginTop: '32px', padding: '20px', background: 'rgba(255, 0, 0, 0.05)', borderRadius: '16px', border: '1px solid rgba(255, 0, 0, 0.1)' }}>
                         <p style={{ fontSize: '0.75rem', color: 'var(--primary-blue)', fontWeight: 800, marginBottom: '4px' }}>TOTAL REVENUE</p>
                         <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>ETB {analytics?.totalRevenue?.toLocaleString() || 0}</h3>
                     </div>
@@ -321,7 +321,7 @@ export const AdvancedAnalyticsView = () => {
                                         style={{
                                             height: '100%',
                                             width: `${analytics?.ticketsSold ? (row.tickets / analytics.ticketsSold) * 100 : 0}%`,
-                                            background: '#1D90F5'
+                                            background: '#FF0000'
                                         }}
                                     />
                                 </div>
@@ -355,7 +355,7 @@ export const AdvancedAnalyticsView = () => {
                             value: analytics?.advanced?.peakDay?.day || 'None',
                             metric: `${analytics?.advanced?.peakDay?.count || 0} tickets sold`,
                             icon: Calendar,
-                            color: '#1D90F5'
+                            color: '#FF0000'
                         },
                         {
                             title: 'Average Ticket Price',

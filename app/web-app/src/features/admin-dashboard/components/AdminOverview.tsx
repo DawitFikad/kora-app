@@ -242,7 +242,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                         }
                         value={`ETB ${stats.organizerEarnings.toLocaleString()}`}
                         trend={t('admin.commissions.organizer_net')}
-                        trendColor="#8B5CF6"
+                        trendColor="#FF0000"
                         icon={TrendingUp}
                     />
                     <StatCard
@@ -254,7 +254,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                         }
                         value={stats.activeOrganizers.toLocaleString()}
                         trend={`${stats.activeEvents} ${t('admin.active_users')}`}
-                        trendColor="#3B82F6"
+                        trendColor="#FF0000"
                         icon={UserPlus}
                     />
                     <StatCard
@@ -291,7 +291,7 @@ export const AdminOverview = ({ setActiveTab }: { setActiveTab: (tab: AdminTab) 
                             e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1))';
                         }}
                     >
-                        <div style={{ padding: '10px', background: '#3B82F6', borderRadius: '12px', color: 'white' }}>
+                        <div style={{ padding: '10px', background: '#FF0000', borderRadius: '12px', color: 'white' }}>
                             <ImageIcon size={20} />
                         </div>
                         <div style={{ textAlign: 'left' }}>

@@ -158,7 +158,7 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
                   Text(
                     '${tier.price.toStringAsFixed(2)} ETB',
                     style: GoogleFonts.poppins(
-                      color: const Color(0xFF8B5CF6),
+                      color: const Color(0xFFFF0000),
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -232,7 +232,7 @@ class _TicketSelectionScreenState extends State<TicketSelectionScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: isFullySoldOut
                     ? const Color(0xFF6B7280)
-                    : const Color(0xFF8B5CF6),
+                    : const Color(0xFFFF0000),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -323,7 +323,7 @@ class _QtyControl extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isPrimary
-              ? const Color(0xFF8B5CF6)
+              ? const Color(0xFFFF0000)
               : (isDark ? Colors.white10 : Colors.white),
           shape: BoxShape.circle,
         ),

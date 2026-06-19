@@ -68,7 +68,7 @@ class LegalScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF8B5CF6)),
+            Icon(icon, color: const Color(0xFFFF0000)),
             const SizedBox(width: 16),
             Expanded(
               child: Text(

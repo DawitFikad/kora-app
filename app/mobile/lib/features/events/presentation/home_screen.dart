@@ -282,14 +282,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               rippleColor: Colors.grey[300]!,
               hoverColor: Colors.grey[100]!,
               gap: compactNav ? 6 : 8,
-              activeColor: const Color(0xFF8B5CF6),
+              activeColor: const Color(0xFFFF0000),
               iconSize: compactNav ? 23 : 24,
               padding: EdgeInsets.symmetric(
                 horizontal: compactNav ? 16 : 20,
                 vertical: compactNav ? 11 : 12,
               ),
               duration: const Duration(milliseconds: 400),
-              tabBackgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
+              tabBackgroundColor: const Color(0xFFFF0000).withOpacity(0.1),
               color: isDark ? Colors.white54 : Colors.black54,
               tabs: [
                 GButton(icon: Icons.home_rounded, text: 'home.nav_home'.tr()),
@@ -383,11 +383,11 @@ class _HomeBody extends ConsumerWidget {
                               TextSpan(
                                 text: 'home.pulse_suffix'.tr(),
                                 style: TextStyle(
-                                  color: const Color(0xFF8B5CF6),
+                                  color: const Color(0xFFFF0000),
                                   shadows: [
                                     Shadow(
                                       color: const Color(
-                                        0xFF8B5CF6,
+                                        0xFFFF0000,
                                       ).withOpacity(0.4),
                                       blurRadius: 20,
                                       offset: const Offset(0, 4),
@@ -1050,7 +1050,7 @@ class _HomeBody extends ConsumerWidget {
                                 onPressed: () =>
                                     ref.refresh(filteredEventsProvider),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF8B5CF6),
+                                  backgroundColor: const Color(0xFFFF0000),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -1103,7 +1103,7 @@ class _HomeBody extends ConsumerWidget {
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+                  border: Border.all(color: const Color(0xFFFF0000), width: 2),
                 ),
                 child: CircleAvatar(
                   radius: 20,
@@ -1220,7 +1220,7 @@ class _HomeBody extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF8B5CF6),
+                        color: Color(0xFFFF0000),
                         shape: BoxShape.circle,
                       ),
                       constraints: const BoxConstraints(
@@ -1313,7 +1313,7 @@ class _HomeBody extends ConsumerWidget {
                   decoration: BoxDecoration(
                     gradient: isSelected
                         ? const LinearGradient(
-                            colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                            colors: [Color(0xFFFF0000), Color(0xFFCC0000)],
                           )
                         : null,
                     color: isSelected
@@ -1323,7 +1323,7 @@ class _HomeBody extends ConsumerWidget {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                              color: const Color(0xFFFF0000).withOpacity(0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -1373,13 +1373,13 @@ class _HomeBody extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                color: const Color(0xFFFF0000).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.event_busy,
                 size: 64,
-                color: const Color(0xFF8B5CF6).withOpacity(0.5),
+                color: const Color(0xFFFF0000).withOpacity(0.5),
               ),
             ),
             const SizedBox(height: 24),
@@ -1412,8 +1412,8 @@ class _HomeBody extends ConsumerWidget {
                 icon: const Icon(Icons.clear_all),
                 label: Text("home.clear_filters".tr()),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF8B5CF6),
-                  side: const BorderSide(color: Color(0xFF8B5CF6)),
+                  foregroundColor: const Color(0xFFFF0000),
+                  side: const BorderSide(color: Color(0xFFFF0000)),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 12,
@@ -1583,7 +1583,7 @@ class _FeaturedCard extends ConsumerWidget {
                   ),
                   child: Icon(
                     isFavorited ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorited ? const Color(0xFF8B5CF6) : Colors.white,
+                    color: isFavorited ? const Color(0xFFFF0000) : Colors.white,
                     size: 20,
                   ),
                 ),
@@ -1614,7 +1614,7 @@ class _FeaturedCard extends ConsumerWidget {
                     children: [
                       const Icon(
                         Icons.favorite_rounded,
-                        color: Color(0xFFF43F5E),
+                        color: Color(0xFFFF0000),
                         size: 14,
                       ),
                       const SizedBox(width: 4),
@@ -1667,16 +1667,16 @@ class _FeaturedCard extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                          color: const Color(0xFFFF0000).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.5),
+                            color: const Color(0xFFFF0000).withOpacity(0.5),
                           ),
                         ),
                         child: Text(
                           "${(event.tiers.isNotEmpty) ? event.tiers.first.price.toInt() : 0} ETB",
                           style: const TextStyle(
-                            color: Color(0xFFD8B4FE),
+                            color: Color(0xFFFF0000),
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -1699,20 +1699,20 @@ class _FeaturedCard extends ConsumerWidget {
 
 Color _eventTitleTagColor(String tag) {
   final normalized = tag.toLowerCase();
-  if (normalized.contains('award')) return const Color(0xFF9333EA);
+  if (normalized.contains('award')) return const Color(0xFFFF0000);
   if (normalized.contains('workshop') || normalized.contains('course')) {
-    return const Color(0xFF0EA5E9);
+    return const Color(0xFFFF0000);
   }
   if (normalized.contains('offer') || normalized.contains('deal')) {
     return const Color(0xFFF59E0B);
   }
   if (normalized.contains('movie') || normalized.contains('film')) {
-    return const Color(0xFF7C3AED);
+    return const Color(0xFFCC0000);
   }
   if (normalized.contains('music') || normalized.contains('concert')) {
     return const Color(0xFF10B981);
   }
-  return const Color(0xFF8B5CF6);
+  return const Color(0xFFFF0000);
 }
 
 Widget _eventTitleTagChip(String? tag, {bool compact = false}) {
@@ -1760,7 +1760,7 @@ Widget _sectionSeeAllButton({
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          foregroundColor: const Color(0xFF8B5CF6),
+          foregroundColor: const Color(0xFFFF0000),
         ),
         child: Text(
           'home.see_all'.tr(),
@@ -1823,7 +1823,7 @@ Future<void> _openSectionEventsSheet(
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF8B5CF6),
+                        color: const Color(0xFFFF0000),
                       ),
                     ),
                   ],
@@ -1897,7 +1897,7 @@ class _MovieSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                  color: const Color(0xFFFF0000).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -1906,7 +1906,7 @@ class _MovieSection extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
-                    color: const Color(0xFF8B5CF6),
+                    color: const Color(0xFFFF0000),
                   ),
                 ),
               ),
@@ -2042,8 +2042,8 @@ class _MovieCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 color: isDark
-                    ? const Color(0xFFD8B4FE)
-                    : const Color(0xFF7C3AED),
+                    ? const Color(0xFFFF0000)
+                    : const Color(0xFFCC0000),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -2071,7 +2071,7 @@ class _MovieCard extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.zero,
                   elevation: 0,
-                  backgroundColor: const Color(0xFF8B5CF6),
+                  backgroundColor: const Color(0xFFFF0000),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -2112,9 +2112,9 @@ class _MovieCard extends StatelessWidget {
   Widget _moviePill(String label) {
     final color = switch (label) {
       'Top Rated' => const Color(0xFFF59E0B),
-      'Premiere' => const Color(0xFF0EA5E9),
+      'Premiere' => const Color(0xFFFF0000),
       'Film Festival' => const Color(0xFF16A34A),
-      _ => const Color(0xFF8B5CF6),
+      _ => const Color(0xFFFF0000),
     };
 
     return Container(
@@ -2295,8 +2295,8 @@ class _BestEventsWeekCard extends StatelessWidget {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      _badge(categoryName, const Color(0xFF8B5CF6), isDark),
-                      _badge(cityName, const Color(0xFF0EA5E9), isDark),
+                      _badge(categoryName, const Color(0xFFFF0000), isDark),
+                      _badge(cityName, const Color(0xFFFF0000), isDark),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -2432,7 +2432,7 @@ class _TrendingNowCard extends StatelessWidget {
     final cardColor = isDark ? const Color(0xFF1F1C2A) : Colors.white;
     final actionLabel = _isLivestream(event) ? 'Watch Livestream' : 'Book Now';
     final actionColor = _isLivestream(event)
-        ? const Color(0xFF2563EB)
+        ? const Color(0xFF000000)
         : const Color(0xFF16A34A);
 
     return GestureDetector(
@@ -2504,12 +2504,12 @@ class _TrendingNowCard extends StatelessWidget {
                       children: [
                         _chip(
                           event.city?.name ?? 'Ethiopia',
-                          const Color(0xFF0EA5E9),
+                          const Color(0xFFFF0000),
                           isDark,
                         ),
                         _chip(
                           event.category?.name ?? 'Event',
-                          const Color(0xFF8B5CF6),
+                          const Color(0xFFFF0000),
                           isDark,
                         ),
                       ],
@@ -2716,7 +2716,7 @@ class _PersonalizedPickCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: event.isExplorationPick == true
-                          ? const Color(0xFF0EA5E9)
+                          ? const Color(0xFFFF0000)
                           : const Color(0xFF10B981),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -2738,7 +2738,7 @@ class _PersonalizedPickCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color:
                           (event.isExplorationPick == true
-                                  ? const Color(0xFF0EA5E9)
+                                  ? const Color(0xFFFF0000)
                                   : const Color(0xFF10B981))
                               .withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
@@ -2749,7 +2749,7 @@ class _PersonalizedPickCard extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: event.isExplorationPick == true
-                            ? const Color(0xFF0EA5E9)
+                            ? const Color(0xFFFF0000)
                             : const Color(0xFF10B981),
                       ),
                     ),
@@ -2801,7 +2801,7 @@ class _UpcomingAwardsSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9333EA).withOpacity(0.14),
+                  color: const Color(0xFFFF0000).withOpacity(0.14),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -2809,7 +2809,7 @@ class _UpcomingAwardsSection extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF9333EA),
+                    color: const Color(0xFFFF0000),
                   ),
                 ),
               ),
@@ -2911,7 +2911,7 @@ class _UpcomingAwardCard extends StatelessWidget {
                     runSpacing: 6,
                     children: [
                       if (event.livestreamAvailable == true)
-                        _pill('Livestream', const Color(0xFF2563EB), isDark),
+                        _pill('Livestream', const Color(0xFF000000), isDark),
                       if (event.nomineesInfoAvailable == true)
                         _pill('Nominees', const Color(0xFFF59E0B), isDark),
                       if (event.winnersInfoAvailable == true)
@@ -2996,7 +2996,7 @@ class _WorkshopsShortCoursesSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0EA5E9).withOpacity(0.14),
+                  color: const Color(0xFFFF0000).withOpacity(0.14),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -3004,7 +3004,7 @@ class _WorkshopsShortCoursesSection extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0EA5E9),
+                    color: const Color(0xFFFF0000),
                   ),
                 ),
               ),
@@ -3100,7 +3100,7 @@ class _WorkshopCourseCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Color(0xFF2563EB),
+                      color: Color(0xFF000000),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -3191,7 +3191,7 @@ class _WorkshopCourseCard extends StatelessWidget {
   Color _topicColor(String topic) {
     final text = topic.toLowerCase();
     if (text.contains('video') || text.contains('edit')) {
-      return const Color(0xFF7C3AED);
+      return const Color(0xFFCC0000);
     }
     if (text.contains('cook') || text.contains('culinary')) {
       return const Color(0xFFEA580C);
@@ -3202,7 +3202,7 @@ class _WorkshopCourseCard extends StatelessWidget {
     if (text.contains('photo') || text.contains('design')) {
       return const Color(0xFF16A34A);
     }
-    return const Color(0xFF8B5CF6);
+    return const Color(0xFFFF0000);
   }
 }
 
@@ -3403,12 +3403,12 @@ class _CitySpotlightCard extends StatelessWidget {
                       children: [
                         _pill(
                           event.city?.name ?? 'City',
-                          const Color(0xFF0EA5E9),
+                          const Color(0xFFFF0000),
                           isDark,
                         ),
                         _pill(
                           event.category?.name ?? 'Event',
-                          const Color(0xFF8B5CF6),
+                          const Color(0xFFFF0000),
                           isDark,
                         ),
                       ],
@@ -3816,10 +3816,10 @@ class _OfferDealCard extends StatelessWidget {
 
   (String, Color) _resolveDealTag(Event event) {
     if (event.hasBundle == true) {
-      return ('Bundle Deal', const Color(0xFF8B5CF6));
+      return ('Bundle Deal', const Color(0xFFFF0000));
     }
     if (event.hasPartner == true) {
-      return ('Partner Exclusive', const Color(0xFF0EA5E9));
+      return ('Partner Exclusive', const Color(0xFFFF0000));
     }
     if (event.hasLimitedTime == true) {
       return ('Limited Time', const Color(0xFFEF4444));
@@ -3875,7 +3875,7 @@ class _NewUpcomingExperiencesSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.14),
+                  color: const Color(0xFFFF0000).withOpacity(0.14),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -3883,7 +3883,7 @@ class _NewUpcomingExperiencesSection extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF8B5CF6),
+                    color: const Color(0xFFFF0000),
                   ),
                 ),
               ),
@@ -4011,13 +4011,13 @@ class _UpcomingExperienceCard extends ConsumerWidget {
                       scrollDirection: Axis.horizontal,
                       children: [
                         if (earlyBird)
-                          _chip('Early Bird', const Color(0xFF8B5CF6), isDark),
+                          _chip('Early Bird', const Color(0xFFFF0000), isDark),
                         if (earlyBird && (preReg || reminder))
                           const SizedBox(width: 6),
                         if (preReg)
                           _chip(
                             preRegistered ? 'Registered' : 'Pre-Register',
-                            const Color(0xFF0EA5E9),
+                            const Color(0xFFFF0000),
                             isDark,
                             onTap: preRegistered
                                 ? null
@@ -4154,7 +4154,7 @@ class _TrendingCard extends ConsumerWidget {
                   Text(
                     "TODAY • ${DateFormat('h:mm a').format(DateTime.parse(event.dateTime))}",
                     style: const TextStyle(
-                      color: Color(0xFF8B5CF6),
+                      color: Color(0xFFFF0000),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -4230,7 +4230,7 @@ class _TrendingCard extends ConsumerWidget {
                       .toggleFavorite(event.id.toString()),
                   child: Icon(
                     isFavorited ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorited ? const Color(0xFF8B5CF6) : Colors.grey,
+                    color: isFavorited ? const Color(0xFFFF0000) : Colors.grey,
                     size: 20,
                   ),
                 ),
@@ -4319,7 +4319,7 @@ class _VerticalEventCard extends ConsumerWidget {
                         child: Icon(
                           isFavorited ? Icons.favorite : Icons.favorite_border,
                           color: isFavorited
-                              ? const Color(0xFF8B5CF6)
+                              ? const Color(0xFFFF0000)
                               : mutedColor,
                           size: 20,
                         ),
@@ -4332,7 +4332,7 @@ class _VerticalEventCard extends ConsumerWidget {
                       'EEE, MMM d • h:mm a',
                     ).format(DateTime.parse(event.dateTime)),
                     style: TextStyle(
-                      color: const Color(0xFF8B5CF6),
+                      color: const Color(0xFFFF0000),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -4390,7 +4390,7 @@ Widget _engagementMiniRow({
 }) {
   return Row(
     children: [
-      const Icon(Icons.favorite_rounded, color: Color(0xFFF43F5E), size: 13),
+      const Icon(Icons.favorite_rounded, color: Color(0xFFFF0000), size: 13),
       const SizedBox(width: 4),
       Text(
         '$likesCount',
@@ -4525,7 +4525,7 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                   width: _currentPage == index ? 24 : 6,
                   decoration: BoxDecoration(
                     color: _currentPage == index
-                        ? const Color(0xFF8B5CF6)
+                        ? const Color(0xFFFF0000)
                         : (isDark ? Colors.white24 : Colors.black12),
                     borderRadius: BorderRadius.circular(3),
                   ),
@@ -4597,7 +4597,7 @@ class _FeaturedBannersState extends ConsumerState<_FeaturedBanners> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF8B5CF6),
+                                  color: const Color(0xFFFF0000),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Text(

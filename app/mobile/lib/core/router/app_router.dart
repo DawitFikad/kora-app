@@ -143,7 +143,7 @@ class AppRouter {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Payment successful! Your tickets are ready.'),
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.red,
                   duration: Duration(seconds: 3),
                 ),
               );

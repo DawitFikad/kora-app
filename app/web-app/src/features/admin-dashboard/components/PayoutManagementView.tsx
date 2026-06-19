@@ -141,7 +141,7 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                 <div className="admin-stat-card-main">
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 800, marginBottom: '8px' }}>{view === 'SETTLEMENTS' ? t('admin.payouts.total_settled') : t('admin.commissions.monthly_gmv')}</p>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900 }}>ETB {(view === 'SETTLEMENTS' ? processedPayouts.reduce((sum, p) => sum + Number(p.amount), 0) : metrics.monthlyGMV).toLocaleString()}</h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3B82F6', fontSize: '0.75rem', fontWeight: 700, marginTop: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#FF0000', fontSize: '0.75rem', fontWeight: 700, marginTop: '12px' }}>
                         <DollarSign size={14} /> {view === 'SETTLEMENTS' ? t('admin.payouts.lifetime_settlements') : t('admin.commissions.gross_volume_month')}
                     </div>
                 </div>
@@ -226,7 +226,7 @@ export const PayoutsManagementView = ({ view = 'QUEUE' }: { view?: 'QUEUE' | 'SE
                 <div className="admin-card">
                     <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('admin.payouts.fiscal_ledger')}</h3>
-                        <div style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
+                        <div style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#FF0000', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
                             {processedPayouts.length} {t('admin.payouts.settled_records_count')}
                         </div>
                     </div>

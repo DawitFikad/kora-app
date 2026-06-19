@@ -48,7 +48,7 @@ export const AdminSettingsView = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const categories: { id: SettingsCategory; label: string; icon: any; color: string }[] = [
-        { id: 'GENERAL', label: t('admin.settings.categories.general'), icon: Settings, color: '#3B82F6' },
+        { id: 'GENERAL', label: t('admin.settings.categories.general'), icon: Settings, color: '#FF0000' },
         { id: 'LANGUAGE', label: t('admin.settings.categories.language'), icon: Globe, color: '#10B981' },
         { id: 'AUTH', label: t('admin.settings.categories.auth'), icon: Lock, color: '#F59E0B' },
         { id: 'COMMISSION', label: t('admin.settings.categories.commission'), icon: Percent, color: '#6366F1' },
@@ -112,14 +112,27 @@ export const AdminSettingsView = () => {
 
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <style>{`
+                @media (max-width: 1024px) {
+                    .admin-settings-layout { grid-template-columns: 1fr !important; }
+                    .admin-settings-layout .admin-settings-tabs {
+                        flex-direction: row !important; overflow-x: auto; gap: 8px;
+                        padding-bottom: 8px; margin-bottom: 16px;
+                        scrollbar-width: none; -ms-overflow-style: none;
+                    }
+                    .admin-settings-layout .admin-settings-tabs::-webkit-scrollbar { display: none; }
+                    .admin-settings-layout .admin-settings-tabs > button { white-space: nowrap; flex-shrink: 0; }
+                    .admin-settings-content { padding: 20px !important; }
+                }
+            `}</style>
             <AdminPageHeader
                 title={t('admin.settings.title')}
                 subtitle={t('admin.settings.subtitle')}
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px', minHeight: '600px' }}>
+            <div className="admin-settings-layout" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px', minHeight: '600px' }}>
                 {/* 🧭 Sidebar */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="admin-settings-tabs" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {categories.map((cat) => (
                         <button
                             key={cat.id}
@@ -155,7 +168,7 @@ export const AdminSettingsView = () => {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             transition={{ duration: 0.2 }}
-                            className="admin-card"
+                            className="admin-card admin-settings-content"
                             style={{ padding: '32px', minHeight: '100%' }}
                         >
                             {isLoading ? (
@@ -228,7 +241,7 @@ const Section = ({ title, subtitle, children }: any) => (
 
 const GeneralSettings = ({ getConfigValue, handleUpdateConfig }: any) => (
     <>
-        <ConfigInput label="PLATFORM NAME" configKey="general.platform_name" description="The name used in emails, SEO, and headers." value={getConfigValue('general.platform_name', 'ET-Ticket')} onSave={handleUpdateConfig} />
+        <ConfigInput label="PLATFORM NAME" configKey="general.platform_name" description="The name used in emails, SEO, and headers." value={getConfigValue('general.platform_name', 'KORA')} onSave={handleUpdateConfig} />
         <ConfigInput label="SUPPORT HOTLINE" configKey="general.support_phone" description="Customer service number displayed to users." value={getConfigValue('general.support_phone', '+251911223344')} onSave={handleUpdateConfig} />
         <ConfigInput label="MAINTENANCE MODE" type="toggle" configKey="maintenance_mode" description="Put platform in read-only mode for all users." value={getConfigValue('maintenance_mode', 'false')} onSave={handleUpdateConfig} />
     </>
@@ -328,7 +341,7 @@ const ActivityLogs = ({ auditLogs, onRefreshLogs, onClearLogs }: { auditLogs: Au
                         flexShrink: 0,
                         border: '1px solid var(--border)'
                     }}>
-                        <ShieldCheck size={20} color="#3B82F6" />
+                        <ShieldCheck size={20} color="#FF0000" />
                     </div>
                     <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>

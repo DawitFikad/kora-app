@@ -41,7 +41,7 @@ export const ReportGeneratorView = () => {
             name: 'Sales Report',
             description: 'Ticket sales, trends, and performance',
             icon: Ticket,
-            color: '#1D90F5'
+            color: '#FF0000'
         },
         {
             id: 'attendees',
@@ -146,14 +146,14 @@ export const ReportGeneratorView = () => {
                         <title>${reportType.toUpperCase()} Report</title>
                         <style>
                             body { font-family: Arial, sans-serif; padding: 40px; }
-                            h1 { color: #1D90F5; }
+                            h1 { color: #FF0000; }
                             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
                             th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                            th { background-color: #1D90F5; color: white; }
+                            th { background-color: #FF0000; color: white; }
                             .summary { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
                             .metric { display: inline-block; margin: 10px 20px 10px 0; }
                             .metric-label { font-size: 12px; color: #666; }
-                            .metric-value { font-size: 24px; font-weight: bold; color: #1D90F5; }
+                            .metric-value { font-size: 24px; font-weight: bold; color: #FF0000; }
                         </style>
                     </head>
                     <body>
@@ -236,7 +236,7 @@ export const ReportGeneratorView = () => {
                             whileTap={{ scale: 0.98 }}
                             style={{
                                 padding: '24px',
-                                background: reportType === type.id ? 'rgba(29, 144, 245, 0.1)' : 'var(--bg-card)',
+                                background: reportType === type.id ? 'rgba(255, 0, 0, 0.1)' : 'var(--bg-card)',
                                 border: `2px solid ${reportType === type.id ? 'var(--primary-blue)' : 'var(--border)'}`,
                                 borderRadius: '16px',
                                 cursor: 'pointer',
@@ -339,7 +339,7 @@ export const ReportGeneratorView = () => {
                     {[
                         { format: 'pdf', label: 'PDF Report', description: 'Print-ready document', color: '#EF4444' },
                         { format: 'csv', label: 'CSV Export', description: 'Excel compatible', color: '#10B981' },
-                        { format: 'json', label: 'JSON Data', description: 'Raw data format', color: '#1D90F5' }
+                        { format: 'json', label: 'JSON Data', description: 'Raw data format', color: '#FF0000' }
                     ].map((option) => (
                         <button
                             key={option.format}
@@ -364,7 +364,7 @@ export const ReportGeneratorView = () => {
                     ))}
                 </div>
 
-                <div style={{ marginTop: '24px', padding: '16px', background: 'rgba(29, 144, 245, 0.05)', borderRadius: '12px', border: '1px solid rgba(29, 144, 245, 0.1)' }}>
+                <div style={{ marginTop: '24px', padding: '16px', background: 'rgba(255, 0, 0, 0.05)', borderRadius: '12px', border: '1px solid rgba(255, 0, 0, 0.1)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-blue)', fontSize: '0.85rem', fontWeight: 700 }}>
                         <TrendingUp size={16} />
                         <span>Reports are generated based on your current filters and date range</span>

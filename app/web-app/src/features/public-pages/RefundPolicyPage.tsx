@@ -11,7 +11,7 @@ const RefundPolicyPage: React.FC = () => {
 
                 <section style={{ marginBottom: '2rem' }}>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>General Terms</h3>
-                    <p>All ticket sales are considered final. By purchasing a ticket on ET-TICKETS, you acknowledge that tickets are non-refundable except under specific circumstances outlined below.</p>
+                    <p>All ticket sales are considered final. By purchasing a ticket on KORA, you acknowledge that tickets are non-refundable except under specific circumstances outlined below.</p>
                 </section>
 
                 <section style={{ marginBottom: '2rem' }}>
@@ -31,7 +31,7 @@ const RefundPolicyPage: React.FC = () => {
 
                 <section>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>How to Request</h3>
-                    <p>To request a refund for a cancelled or rescheduled event, please contact our support team at <strong style={{ color: 'var(--primary)' }}>support@et-tickets.com</strong> with your Ticket ID and purchase details.</p>
+                    <p>To request a refund for a cancelled or rescheduled event, please contact our support team at <strong style={{ color: 'var(--primary)' }}>support@kora.com</strong> with your Ticket ID and purchase details.</p>
                 </section>
             </div>
         </PublicPageLayout>

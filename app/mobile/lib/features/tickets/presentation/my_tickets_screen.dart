@@ -195,7 +195,7 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
                 isScrollable: true,
                 indicator: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: const Color(0xFF8B5CF6),
+                  color: const Color(0xFFFF0000),
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
@@ -272,7 +272,7 @@ class _MyTicketsScreenState extends ConsumerState<MyTicketsScreen> {
             child: Text(
               "tickets.buy_now".tr(),
               style: const TextStyle(
-                color: Color(0xFF8B5CF6),
+                color: Color(0xFFFF0000),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -373,7 +373,7 @@ class _TicketsListView extends StatelessWidget {
                     child: Text(
                       "tickets.buy_now".tr(),
                       style: const TextStyle(
-                        color: Color(0xFF8B5CF6),
+                        color: Color(0xFFFF0000),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -430,7 +430,7 @@ class _TicketsListView extends StatelessWidget {
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+          child: CircularProgressIndicator(color: Color(0xFFFF0000)),
         ),
         error: (err, stack) => Center(
           child: Column(
@@ -450,7 +450,7 @@ class _TicketsListView extends StatelessWidget {
               ElevatedButton(
                 onPressed: () => ref.refresh(myTicketsProvider),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
+                  backgroundColor: const Color(0xFFFF0000),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -523,7 +523,7 @@ class _LargeTicketCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
+                    color: Colors.red.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -696,7 +696,7 @@ class _LargeTicketCard extends StatelessWidget {
                       children: [
                         const Icon(
                           Icons.check_circle,
-                          color: Colors.green,
+                          color: Colors.red,
                           size: 18,
                         ),
                         const SizedBox(width: 8),
@@ -720,7 +720,7 @@ class _LargeTicketCard extends StatelessWidget {
                       child: Text(
                         "Details",
                         style: GoogleFonts.poppins(
-                          color: const Color(0xFF8B5CF6),
+                          color: const Color(0xFFFF0000),
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -819,7 +819,7 @@ class _CompactTicketCard extends StatelessWidget {
                     "${DateFormat('MMM d').format(eventDate)} • ${DateFormat('h:mm a').format(eventDate)}"
                         .toUpperCase(),
                     style: GoogleFonts.poppins(
-                      color: const Color(0xFF8B5CF6),
+                      color: const Color(0xFFFF0000),
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
