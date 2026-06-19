@@ -20,7 +20,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.x'
           channel: 'stable'
 
       - name: Setup Java
@@ -29,8 +28,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Show Flutter & Dart version
+        run: flutter --version
+
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Generate Gradle wrapper
+        run: flutter build apk --debug --no-publish
+        continue-on-error: true
+
+      - name: Analyze
+        run: flutter analyze
 
       - name: Build APK
         run: flutter build apk --release
