@@ -13,13 +13,21 @@ class ApiConstants {
   // 2) API_BASE_URL_WEB for web
   // 3) API_BASE_URL_ANDROID / API_BASE_URL_IOS / API_BASE_URL_MOBILE for mobile
   // 4) platform-safe defaults
+  // Production API URL (used as fallback in release mode)
+  static const String _productionBaseUrl = 'https://koranewapp.vercel.app/api';
+
   static String get baseUrl {
+    // 1) Compile-time override via --dart-define=API_BASE_URL=...
     const globalBaseUrl = String.fromEnvironment(
       'API_BASE_URL',
       defaultValue: '',
     );
     if (globalBaseUrl.isNotEmpty) return globalBaseUrl;
 
+    // 2) In release mode, default to production URL
+    if (kReleaseMode) return _productionBaseUrl;
+
+    // 3) Platform-specific overrides (dev only)
     const webBaseUrl = String.fromEnvironment(
       'API_BASE_URL_WEB',
       defaultValue: '',
